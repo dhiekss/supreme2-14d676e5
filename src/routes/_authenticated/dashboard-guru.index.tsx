@@ -9,7 +9,7 @@ import { Eye, QrCode, Search } from "lucide-react";
 import { listGuruForDashboard } from "@/lib/dashboard-guru.functions";
 import { QrDialog } from "@/components/qr-dialog";
 
-export const Route = createFileRoute("/_authenticated/dashboard-guru")({
+export const Route = createFileRoute("/_authenticated/dashboard-guru/")({
   head: () => ({ meta: [{ title: "Dashboard Guru — SUPREME XPOES" }] }),
   component: Page,
 });
