@@ -172,6 +172,22 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
     downloadXLSX("template-nisn.xlsx", [["nisn"], ["1234567890"], ["0987654321"]]);
   }
 
+  function handleTemplateMurid() {
+    downloadXLSX("template-bulk-murid.xlsx", [
+      ["name", "nis", "nisn", "gender", "rombel_name"],
+      ["Budi Santoso", "12345", "1234567890", "L", "X TKJ 1"],
+      ["Siti Aminah", "12346", "1234567891", "P", "X TKJ 1"],
+    ]);
+  }
+
+  function handleTemplateRombel() {
+    downloadXLSX("template-import-rombel.xlsx", [
+      ["name", "tingkat", "konsentrasi_keahlian", "wali_kelas_name", "wali_kelas_nip", "is_khusus"],
+      ["X TKJ 1", "X", "Teknik Komputer dan Jaringan", "Ahmad Fauzi", "198501012010011001", "false"],
+      ["XI RPL 2", "XI", "Rekayasa Perangkat Lunak", "Dewi Lestari", "198702022011012002", "false"],
+    ]);
+  }
+
   async function handleFile(kind: "nisn" | "murid" | "rombel", f: File) {
     const parsed = await parseXLSX(f);
     if (!parsed.length) { toast.error("File kosong"); return; }
