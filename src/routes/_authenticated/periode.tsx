@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/periode")({
   component: Page,
 });
 
-function Page() {
+export function Page() {
   const { tab } = useSearch({ from: "/_authenticated/periode" });
   const qc = useQueryClient();
   const fetchFn = useServerFn(listPeriode);
