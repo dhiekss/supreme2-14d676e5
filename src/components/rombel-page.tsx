@@ -1,0 +1,427 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useRef, useState } from "react";
+import * as XLSX from "xlsx";
+import { CrudTable } from "@/components/crud-table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Users, Download, Upload, FileDown, FileText, UserPlus, Trash2 } from "lucide-react";
+import { listRombel, saveRombel, deleteRombel } from "@/lib/sekolah.functions";
+import {
+  listStudentsByRombel,
+  listAllStudents,
+  saveStudent,
+  removeStudentFromRombel,
+  bulkImportStudents,
+  bulkImportRombel,
+  importNisnToRombel,
+} from "@/lib/rombel-members.functions";
+import { toast } from "sonner";
+
+type Row = {
+  id: string;
+  name: string | null;
+  tingkat: string | null;
+  konsentrasi_keahlian: string | null;
+  wali_kelas_name: string | null;
+  wali_kelas_nip: string | null;
+  is_khusus: boolean | null;
+};
+
+type Student = {
+  id: string;
+  name: string | null;
+  nis: string | null;
+  nisn: string | null;
+  gender: string | null;
+};
+
+function downloadXLSX(filename: string, rows: (string | number | null | undefined)[][]) {
+  const aoa = rows.map((r) => r.map((c) => (c == null ? "" : c)));
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const header = (rows[0] ?? []).map((h) => String(h ?? "").toLowerCase());
+  // Force ID-like columns to TEXT so leading zeros / long digits aren't mangled
+  const textCols = ["nisn", "nis", "wali_kelas_nip"]
+    .map((k) => header.indexOf(k))
+    .filter((i) => i >= 0);
+  const range = XLSX.utils.decode_range(ws["!ref"] ?? "A1");
+  for (let R = 1; R <= range.e.r; R++) {
+    for (const C of textCols) {
+      const addr = XLSX.utils.encode_cell({ r: R, c: C });
+      const cell = ws[addr];
+      if (cell && cell.v != null && cell.v !== "") {
+        cell.t = "s";
+        cell.v = String(cell.v);
+        cell.z = "@";
+      }
+    }
+  }
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+  XLSX.writeFile(wb, filename);
+}
+
+async function parseXLSX(file: File): Promise<string[][]> {
+  const buf = await file.arrayBuffer();
+  // cellNF preserves number formats; we read each cell manually for max fidelity
+  const wb = XLSX.read(buf, { type: "array", cellNF: true, cellText: true });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  if (!ws || !ws["!ref"]) return [];
+  const range = XLSX.utils.decode_range(ws["!ref"]);
+
+  // Detect header row (row 0) and which columns must stay as TEXT
+  const TEXT_KEYS = new Set(["nisn", "nis", "wali_kelas_nip", "nip"]);
+  const textCols = new Set<number>();
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    const h = ws[XLSX.utils.encode_cell({ r: range.s.r, c: C })];
+    const hv = h ? String(h.w ?? h.v ?? "").trim().toLowerCase() : "";
+    if (TEXT_KEYS.has(hv)) textCols.add(C);
+  }
+
+  const rows: string[][] = [];
+  for (let R = range.s.r; R <= range.e.r; R++) {
+    const row: string[] = [];
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+      let val = "";
+      if (cell && cell.v != null) {
+        if (textCols.has(C) && typeof cell.v === "number") {
+          // Force integer text: never scientific notation, never trailing .0
+          val = Number.isFinite(cell.v)
+            ? (Number.isInteger(cell.v) ? cell.v.toFixed(0) : String(cell.v))
+            : "";
+        } else if (cell.w != null) {
+          val = String(cell.w);
+        } else {
+          val = String(cell.v);
+        }
+      }
+      row.push(val.trim());
+    }
+    if (row.some((x) => x.length)) rows.push(row);
+  }
+  return rows;
+}
+
+export function RombelPage({ khusus = false }: { khusus?: boolean }) {
+  const qc = useQueryClient();
+  const fetchFn = useServerFn(listRombel);
+  const saveFn = useServerFn(saveRombel);
+  const delFn = useServerFn(deleteRombel);
+  const allStudentsFn = useServerFn(listAllStudents);
+  const bulkStudentsFn = useServerFn(bulkImportStudents);
+  const bulkRombelFn = useServerFn(bulkImportRombel);
+  const importNisnFn = useServerFn(importNisnToRombel);
+
+  const { data = [] } = useQuery({
+    queryKey: ["rombel", khusus],
+    queryFn: () => fetchFn({ data: { khusus } }) as Promise<Row[]>,
+  });
+
+  const [editing, setEditing] = useState<Partial<Row> | null>(null);
+  const [membersOf, setMembersOf] = useState<Row | null>(null);
+  const [importNisnFor, setImportNisnFor] = useState<string>("");
+  const fileInputs = {
+    nisn: useRef<HTMLInputElement>(null),
+    murid: useRef<HTMLInputElement>(null),
+    rombel: useRef<HTMLInputElement>(null),
+  };
+
+  const save = useMutation({
+    mutationFn: (v: any) => saveFn({ data: v }),
+    onSuccess: () => {
+      toast.success("Tersimpan");
+      qc.invalidateQueries({ queryKey: ["rombel"] });
+      setEditing(null);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const del = useMutation({
+    mutationFn: (id: string) => delFn({ data: { id } }),
+    onSuccess: () => { toast.success("Dihapus"); qc.invalidateQueries({ queryKey: ["rombel"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  async function handleExportRombel() {
+    const rows: any[][] = [["name", "tingkat", "konsentrasi_keahlian", "wali_kelas_name", "wali_kelas_nip", "is_khusus"]];
+    data.forEach((r) => rows.push([r.name, r.tingkat, r.konsentrasi_keahlian, r.wali_kelas_name, r.wali_kelas_nip, r.is_khusus ? "true" : "false"]));
+    downloadXLSX("rombel.xlsx", rows);
+  }
+
+  async function handleExportMurid() {
+    const all = (await allStudentsFn({})) as any[];
+    const rows: any[][] = [["name", "nis", "nisn", "gender", "rombel_name"]];
+    all.forEach((s) => rows.push([s.name, s.nis, s.nisn, s.gender, s.rombel_nama]));
+    downloadXLSX("daftar-murid.xlsx", rows);
+  }
+
+  function handleTemplateNisn() {
+    downloadXLSX("template-nisn.xlsx", [["nisn"], ["1234567890"], ["0987654321"]]);
+  }
+
+  async function handleFile(kind: "nisn" | "murid" | "rombel", f: File) {
+    const parsed = await parseXLSX(f);
+    if (!parsed.length) { toast.error("File kosong"); return; }
+    const [header, ...body] = parsed;
+    const idx = (k: string) => header.findIndex((h: string) => h.trim().toLowerCase() === k);
+
+
+    try {
+      if (kind === "nisn") {
+        if (!importNisnFor) { toast.error("Pilih rombel tujuan dulu"); return; }
+        const ci = idx("nisn");
+        if (ci < 0) { toast.error("Kolom 'nisn' tidak ditemukan"); return; }
+        const nisns = body.map((r: string[]) => r[ci]?.trim()).filter(Boolean) as string[];
+        const res = (await importNisnFn({ data: { rombel_id: importNisnFor, nisns } })) as any;
+        toast.success(`${res.count} murid dipindahkan`);
+      } else if (kind === "murid") {
+        const map = { name: idx("name"), nis: idx("nis"), nisn: idx("nisn"), gender: idx("gender"), rombel_name: idx("rombel_name") };
+        if (map.name < 0) { toast.error("Kolom 'name' wajib ada"); return; }
+        const rows = body.map((r: string[]) => ({
+          name: r[map.name]?.trim() ?? "",
+          nis: map.nis >= 0 ? r[map.nis]?.trim() || null : null,
+          nisn: map.nisn >= 0 ? r[map.nisn]?.trim() || null : null,
+          gender: map.gender >= 0 ? r[map.gender]?.trim() || null : null,
+          rombel_name: map.rombel_name >= 0 ? r[map.rombel_name]?.trim() || null : null,
+        })).filter((x: { name: string }) => x.name);
+        const res = (await bulkStudentsFn({ data: { rows } })) as any;
+        toast.success(`${res.count} murid diimpor`);
+      } else if (kind === "rombel") {
+        const map = {
+          name: idx("name"), tingkat: idx("tingkat"), konsentrasi_keahlian: idx("konsentrasi_keahlian"),
+          wali_kelas_name: idx("wali_kelas_name"), wali_kelas_nip: idx("wali_kelas_nip"), is_khusus: idx("is_khusus"),
+        };
+        if (map.name < 0) { toast.error("Kolom 'name' wajib ada"); return; }
+        const rows = body.map((r: string[]) => ({
+          name: r[map.name]?.trim() ?? "",
+          tingkat: map.tingkat >= 0 ? r[map.tingkat]?.trim() || null : null,
+          konsentrasi_keahlian: map.konsentrasi_keahlian >= 0 ? r[map.konsentrasi_keahlian]?.trim() || null : null,
+          wali_kelas_name: map.wali_kelas_name >= 0 ? r[map.wali_kelas_name]?.trim() || null : null,
+          wali_kelas_nip: map.wali_kelas_nip >= 0 ? r[map.wali_kelas_nip]?.trim() || null : null,
+          is_khusus: map.is_khusus >= 0 ? /^(true|1|ya)$/i.test(r[map.is_khusus]?.trim() ?? "") : false,
+        })).filter((x: { name: string }) => x.name);
+        const res = (await bulkRombelFn({ data: { rows } })) as any;
+        toast.success(`${res.count} rombel diimpor`);
+        qc.invalidateQueries({ queryKey: ["rombel"] });
+      }
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal impor");
+    }
+  }
+
+  return (
+    <>
+      <input ref={fileInputs.nisn} type="file" accept=".xlsx,.xls" hidden onChange={(e) => e.target.files?.[0] && handleFile("nisn", e.target.files[0]).then(() => (e.target.value = ""))} />
+      <input ref={fileInputs.murid} type="file" accept=".xlsx,.xls" hidden onChange={(e) => e.target.files?.[0] && handleFile("murid", e.target.files[0]).then(() => (e.target.value = ""))} />
+      <input ref={fileInputs.rombel} type="file" accept=".xlsx,.xls" hidden onChange={(e) => e.target.files?.[0] && handleFile("rombel", e.target.files[0]).then(() => (e.target.value = ""))} />
+
+      <CrudTable<Row>
+        title={khusus ? "Rombel Khusus" : "Manajemen Rombel"}
+        description={khusus ? "Rombel khusus / kelompok belajar." : "Kelola rombongan belajar (kelas)."}
+        rows={data}
+        search={(r, q) => `${r.name ?? ""} ${r.tingkat ?? ""} ${r.konsentrasi_keahlian ?? ""} ${r.wali_kelas_name ?? ""}`.toLowerCase().includes(q)}
+        columns={[
+          { header: "Nama Rombel", cell: (r) => <span className="font-medium">{r.name}</span> },
+          { header: "Tingkat", cell: (r) => r.tingkat ?? "—" },
+          { header: "Konsentrasi", cell: (r) => r.konsentrasi_keahlian ?? "—" },
+          { header: "Wali Kelas", cell: (r) => r.wali_kelas_name ?? "—" },
+          { header: "NIP", cell: (r) => r.wali_kelas_nip ?? "—" },
+          { header: "Tipe", cell: (r) => r.is_khusus ? <Badge variant="secondary">Khusus</Badge> : <Badge variant="outline">Reguler</Badge> },
+          { header: "Anggota", cell: (r) => (
+            <Button size="sm" variant="outline" onClick={() => setMembersOf(r)}>
+              <Users className="h-4 w-4 mr-1" /> Lihat
+            </Button>
+          )},
+        ]}
+        onAdd={() => setEditing({ is_khusus: khusus })}
+        onEdit={(r) => setEditing(r)}
+        onDelete={(r) => del.mutateAsync(r.id)}
+        addLabel="Tambah Rombel"
+        extra={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="outline" onClick={handleExportRombel}><Download className="h-4 w-4 mr-1" />Export Rombel</Button>
+            <Button size="sm" variant="outline" onClick={handleExportMurid}><Download className="h-4 w-4 mr-1" />Export Daftar Murid</Button>
+            <Button size="sm" variant="outline" onClick={handleTemplateNisn}><FileText className="h-4 w-4 mr-1" />Template NISN</Button>
+            <div className="flex items-center gap-1">
+              <Select value={importNisnFor} onValueChange={setImportNisnFor}>
+                <SelectTrigger className="h-9 w-[160px]"><SelectValue placeholder="Pilih rombel" /></SelectTrigger>
+                <SelectContent>{data.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" onClick={() => fileInputs.nisn.current?.click()}><Upload className="h-4 w-4 mr-1" />Import NISN</Button>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => fileInputs.murid.current?.click()}><FileDown className="h-4 w-4 mr-1" />Bulk Import Murid</Button>
+            <Button size="sm" variant="outline" onClick={() => fileInputs.rombel.current?.click()}><Upload className="h-4 w-4 mr-1" />Import Rombel</Button>
+          </div>
+        }
+      />
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editing?.id ? "Edit Rombel" : "Tambah Rombel"}</DialogTitle></DialogHeader>
+          {editing && (
+            <div className="grid gap-3">
+              <div><Label>Nama Rombel *</Label><Input value={editing.name ?? ""} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Tingkat</Label><Input value={editing.tingkat ?? ""} onChange={(e) => setEditing({ ...editing, tingkat: e.target.value })} placeholder="X / XI / XII" /></div>
+                <div><Label>Konsentrasi Keahlian</Label><Input value={editing.konsentrasi_keahlian ?? ""} onChange={(e) => setEditing({ ...editing, konsentrasi_keahlian: e.target.value })} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Wali Kelas</Label><Input value={editing.wali_kelas_name ?? ""} onChange={(e) => setEditing({ ...editing, wali_kelas_name: e.target.value })} /></div>
+                <div><Label>NIP Wali</Label><Input value={editing.wali_kelas_nip ?? ""} onChange={(e) => setEditing({ ...editing, wali_kelas_nip: e.target.value })} /></div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={!!editing.is_khusus} onCheckedChange={(v) => setEditing({ ...editing, is_khusus: v })} />
+                <Label>Rombel Khusus</Label>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Batal</Button>
+            <Button
+              disabled={save.isPending || !editing?.name}
+              onClick={() => save.mutate({
+                id: editing?.id,
+                name: editing?.name,
+                tingkat: editing?.tingkat || null,
+                konsentrasi_keahlian: editing?.konsentrasi_keahlian || null,
+                wali_kelas_name: editing?.wali_kelas_name || null,
+                wali_kelas_nip: editing?.wali_kelas_nip || null,
+                is_khusus: !!editing?.is_khusus,
+              })}
+            >Simpan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <MembersDialog rombel={membersOf} onClose={() => setMembersOf(null)} />
+    </>
+  );
+}
+
+function MembersDialog({ rombel, onClose }: { rombel: Row | null; onClose: () => void }) {
+  const qc = useQueryClient();
+  const listFn = useServerFn(listStudentsByRombel);
+  const saveFn = useServerFn(saveStudent);
+  const removeFn = useServerFn(removeStudentFromRombel);
+  const open = !!rombel;
+  const [adding, setAdding] = useState<Partial<Student> | null>(null);
+
+  const { data: students = [] } = useQuery({
+    queryKey: ["rombel-members", rombel?.id],
+    queryFn: () => listFn({ data: { rombel_id: rombel!.id } }) as Promise<Student[]>,
+    enabled: open,
+  });
+
+  const addMut = useMutation({
+    mutationFn: (v: any) => saveFn({ data: { ...v, rombel_id: rombel!.id } }),
+    onSuccess: () => {
+      toast.success("Murid ditambahkan");
+      qc.invalidateQueries({ queryKey: ["rombel-members", rombel?.id] });
+      setAdding(null);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const removeMut = useMutation({
+    mutationFn: (id: string) => removeFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Dikeluarkan dari rombel");
+      qc.invalidateQueries({ queryKey: ["rombel-members", rombel?.id] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Anggota Rombel — {rombel?.name}</DialogTitle>
+          <DialogDescription>Kelola murid di rombel ini.</DialogDescription>
+        </DialogHeader>
+
+        <div className="flex justify-end">
+          <Button size="sm" onClick={() => setAdding({})}><UserPlus className="h-4 w-4 mr-1" />Tambah Murid</Button>
+        </div>
+
+        <div className="rounded-md border max-h-[50vh] overflow-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted">
+              <tr>
+                <th className="text-left p-2">Nama</th>
+                <th className="text-left p-2">NIS</th>
+                <th className="text-left p-2">NISN</th>
+                <th className="text-left p-2">L/P</th>
+                <th className="text-right p-2 w-20">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {students.length === 0 ? (
+                <tr><td colSpan={5} className="text-center text-muted-foreground py-6">Belum ada anggota</td></tr>
+              ) : students.map((s) => (
+                <tr key={s.id} className="border-t">
+                  <td className="p-2">{s.name}</td>
+                  <td className="p-2">{s.nis ?? "—"}</td>
+                  <td className="p-2">{s.nisn ?? "—"}</td>
+                  <td className="p-2">{s.gender ?? "—"}</td>
+                  <td className="p-2 text-right">
+                    <Button size="icon" variant="ghost" onClick={() => removeMut.mutate(s.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {adding && (
+          <div className="grid gap-3 border-t pt-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Nama *</Label><Input value={adding.name ?? ""} onChange={(e) => setAdding({ ...adding, name: e.target.value })} /></div>
+              <div>
+                <Label>L/P</Label>
+                <Select value={adding.gender ?? ""} onValueChange={(v) => setAdding({ ...adding, gender: v })}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent><SelectItem value="L">Laki-laki</SelectItem><SelectItem value="P">Perempuan</SelectItem></SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>NIS</Label><Input value={adding.nis ?? ""} onChange={(e) => setAdding({ ...adding, nis: e.target.value })} /></div>
+              <div><Label>NISN</Label><Input value={adding.nisn ?? ""} onChange={(e) => setAdding({ ...adding, nisn: e.target.value })} /></div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setAdding(null)}>Batal</Button>
+              <Button
+                disabled={!adding.name || addMut.isPending}
+                onClick={() => addMut.mutate({
+                  name: adding.name,
+                  nis: adding.nis || null,
+                  nisn: adding.nisn || null,
+                  gender: adding.gender || null,
+                })}
+              >Simpan</Button>
+            </div>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Tutup</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
