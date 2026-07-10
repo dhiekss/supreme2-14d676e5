@@ -36,6 +36,9 @@ import {
   Award,
   BarChart3,
   BookOpenCheck,
+  Palette,
+  HardDrive,
+
 } from "lucide-react";
 import {
   Sidebar,
@@ -118,7 +121,16 @@ const items: MenuItem[] = [
   { title: "Manajemen User", url: "/users", icon: UserCog },
   { title: "Aktivitas / Log", url: "/aktivitas", icon: Activity },
   { title: "Impor Backup", url: "/import", icon: Database },
-  { title: "Pengaturan", url: "/pengaturan", icon: Settings },
+  {
+    title: "Pengaturan",
+    icon: Settings,
+    children: [
+      { title: "Tampilan", url: "/pengaturan/tampilan", icon: Palette },
+      { title: "Storage", url: "/pengaturan/storage", icon: HardDrive },
+      { title: "Database", url: "/pengaturan/database", icon: Database },
+      { title: "Analytics", url: "/pengaturan/analytics", icon: BarChart3 },
+    ],
+  },
 ];
 
 export function AppSidebar() {

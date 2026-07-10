@@ -49,6 +49,7 @@ import { Route as AuthenticatedBerkasRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedAktivitasRouteImport } from './routes/_authenticated/aktivitas'
 import { Route as AuthenticatedDashboardMuridIndexRouteImport } from './routes/_authenticated/dashboard-murid.index'
 import { Route as AuthenticatedDashboardGuruIndexRouteImport } from './routes/_authenticated/dashboard-guru.index'
+import { Route as AuthenticatedPengaturanTampilanRouteImport } from './routes/_authenticated/pengaturan.tampilan'
 import { Route as AuthenticatedPengaturanStorageRouteImport } from './routes/_authenticated/pengaturan.storage'
 import { Route as AuthenticatedPengaturanDatabaseRouteImport } from './routes/_authenticated/pengaturan.database'
 import { Route as AuthenticatedPengaturanAnalyticsRouteImport } from './routes/_authenticated/pengaturan.analytics'
@@ -272,6 +273,12 @@ const AuthenticatedDashboardGuruIndexRoute =
     path: '/dashboard-guru/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPengaturanTampilanRoute =
+  AuthenticatedPengaturanTampilanRouteImport.update({
+    id: '/tampilan',
+    path: '/tampilan',
+    getParentRoute: () => AuthenticatedPengaturanRoute,
+  } as any)
 const AuthenticatedPengaturanStorageRoute =
   AuthenticatedPengaturanStorageRouteImport.update({
     id: '/storage',
@@ -388,6 +395,7 @@ export interface FileRoutesByFullPath {
   '/pengaturan/analytics': typeof AuthenticatedPengaturanAnalyticsRoute
   '/pengaturan/database': typeof AuthenticatedPengaturanDatabaseRoute
   '/pengaturan/storage': typeof AuthenticatedPengaturanStorageRoute
+  '/pengaturan/tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/dashboard-guru/': typeof AuthenticatedDashboardGuruIndexRoute
   '/dashboard-murid/': typeof AuthenticatedDashboardMuridIndexRoute
 }
@@ -440,6 +448,7 @@ export interface FileRoutesByTo {
   '/pengaturan/analytics': typeof AuthenticatedPengaturanAnalyticsRoute
   '/pengaturan/database': typeof AuthenticatedPengaturanDatabaseRoute
   '/pengaturan/storage': typeof AuthenticatedPengaturanStorageRoute
+  '/pengaturan/tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/dashboard-guru': typeof AuthenticatedDashboardGuruIndexRoute
   '/dashboard-murid': typeof AuthenticatedDashboardMuridIndexRoute
 }
@@ -494,6 +503,7 @@ export interface FileRoutesById {
   '/_authenticated/pengaturan/analytics': typeof AuthenticatedPengaturanAnalyticsRoute
   '/_authenticated/pengaturan/database': typeof AuthenticatedPengaturanDatabaseRoute
   '/_authenticated/pengaturan/storage': typeof AuthenticatedPengaturanStorageRoute
+  '/_authenticated/pengaturan/tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/_authenticated/dashboard-guru/': typeof AuthenticatedDashboardGuruIndexRoute
   '/_authenticated/dashboard-murid/': typeof AuthenticatedDashboardMuridIndexRoute
 }
@@ -548,6 +558,7 @@ export interface FileRouteTypes {
     | '/pengaturan/analytics'
     | '/pengaturan/database'
     | '/pengaturan/storage'
+    | '/pengaturan/tampilan'
     | '/dashboard-guru/'
     | '/dashboard-murid/'
   fileRoutesByTo: FileRoutesByTo
@@ -600,6 +611,7 @@ export interface FileRouteTypes {
     | '/pengaturan/analytics'
     | '/pengaturan/database'
     | '/pengaturan/storage'
+    | '/pengaturan/tampilan'
     | '/dashboard-guru'
     | '/dashboard-murid'
   id:
@@ -653,6 +665,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pengaturan/analytics'
     | '/_authenticated/pengaturan/database'
     | '/_authenticated/pengaturan/storage'
+    | '/_authenticated/pengaturan/tampilan'
     | '/_authenticated/dashboard-guru/'
     | '/_authenticated/dashboard-murid/'
   fileRoutesById: FileRoutesById
@@ -945,6 +958,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardGuruIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pengaturan/tampilan': {
+      id: '/_authenticated/pengaturan/tampilan'
+      path: '/tampilan'
+      fullPath: '/pengaturan/tampilan'
+      preLoaderRoute: typeof AuthenticatedPengaturanTampilanRouteImport
+      parentRoute: typeof AuthenticatedPengaturanRoute
+    }
     '/_authenticated/pengaturan/storage': {
       id: '/_authenticated/pengaturan/storage'
       path: '/storage'
@@ -1029,6 +1049,7 @@ interface AuthenticatedPengaturanRouteChildren {
   AuthenticatedPengaturanAnalyticsRoute: typeof AuthenticatedPengaturanAnalyticsRoute
   AuthenticatedPengaturanDatabaseRoute: typeof AuthenticatedPengaturanDatabaseRoute
   AuthenticatedPengaturanStorageRoute: typeof AuthenticatedPengaturanStorageRoute
+  AuthenticatedPengaturanTampilanRoute: typeof AuthenticatedPengaturanTampilanRoute
 }
 
 const AuthenticatedPengaturanRouteChildren: AuthenticatedPengaturanRouteChildren =
@@ -1037,6 +1058,7 @@ const AuthenticatedPengaturanRouteChildren: AuthenticatedPengaturanRouteChildren
       AuthenticatedPengaturanAnalyticsRoute,
     AuthenticatedPengaturanDatabaseRoute: AuthenticatedPengaturanDatabaseRoute,
     AuthenticatedPengaturanStorageRoute: AuthenticatedPengaturanStorageRoute,
+    AuthenticatedPengaturanTampilanRoute: AuthenticatedPengaturanTampilanRoute,
   }
 
 const AuthenticatedPengaturanRouteWithChildren =
