@@ -255,14 +255,152 @@ function ImportBackupPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2 text-primary">
-            <Download className="h-5 w-5" /> Impor Data
+            <Upload className="h-5 w-5" /> Impor Data
           </CardTitle>
           <CardDescription>
-            Data lama sudah dimuat ke database SUPREME XPOES. Fitur unggah backup untuk
-            siklus tahun ajaran baru akan tersedia selanjutnya.
+            Unggah file backup <code>.json</code> hasil ekspor SUPREME XPOES untuk memuat ulang
+            data ke database. Baris yang sudah ada (berdasarkan <code>id</code>) akan
+            <strong> ditimpa</strong>. Disarankan membuat ekspor terlebih dahulu sebagai cadangan.
           </CardDescription>
         </CardHeader>
+        <CardContent className="space-y-4">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0] ?? null;
+              if (f) {
+                setPendingFile(f);
+                setConfirmOpen(true);
+              }
+              e.target.value = "";
+            }}
+          />
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importing || busy}
+            >
+              {importing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Mengimpor...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" /> Pilih file backup (.json)
+                </>
+              )}
+            </Button>
+            {pendingFile && !confirmOpen && (
+              <span className="text-xs text-muted-foreground truncate max-w-xs">
+                {pendingFile.name}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Proses berjalan tabel demi tabel mengikuti urutan dependensi. Bila ada tabel gagal,
+            proses tetap dilanjutkan dan galat ditampilkan di bawah.
+          </p>
+
+          {importResult && (
+            <div className="rounded-md border p-4 space-y-3 bg-muted/30">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <CheckCircle2 className="h-4 w-4 text-primary" />
+                Impor terakhir: {new Date(importResult.generated_at).toLocaleString("id-ID")}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Total <strong>{importResult.totalInserted.toLocaleString("id-ID")}</strong> baris
+                dimuat ke <strong>{importResult.tables}</strong> tabel.
+              </div>
+              <details className="text-xs">
+                <summary className="cursor-pointer text-primary hover:underline">
+                  Lihat rincian per tabel
+                </summary>
+                <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1 font-mono">
+                  {Object.entries(importResult.stats)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([t, n]) => (
+                      <div
+                        key={t}
+                        className="flex justify-between border-b border-dashed border-border/50 py-0.5"
+                      >
+                        <span className="truncate">{t}</span>
+                        <span className={n === 0 ? "text-muted-foreground" : "text-foreground"}>
+                          {n}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </details>
+              {Object.keys(importResult.errors).length > 0 && (
+                <div className="text-xs text-destructive flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-semibold">Tabel dengan galat:</div>
+                    <ul className="list-disc list-inside">
+                      {Object.entries(importResult.errors).map(([t, msg]) => (
+                        <li key={t}>
+                          <span className="font-mono">{t}</span>: {msg}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
       </Card>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Impor backup ke database?</AlertDialogTitle>
+            <AlertDialogDescription>
+              File <strong>{pendingFile?.name}</strong> akan dimuat ke database. Baris yang sudah
+              ada (berdasarkan <code>id</code>) akan ditimpa oleh isi backup. Tindakan ini tidak
+              dapat dibatalkan — pastikan Anda sudah mengunduh ekspor cadangan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingFile(null)}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!pendingFile) return;
+                setConfirmOpen(false);
+                setImporting(true);
+                const t = toast.loading("Membaca & mengimpor file...");
+                try {
+                  const text = await pendingFile.text();
+                  const parsed = JSON.parse(text);
+                  const payload =
+                    parsed && parsed.data && typeof parsed.data === "object"
+                      ? parsed
+                      : { data: parsed };
+                  const res = (await runImport({
+                    data: { data: payload.data, mode: "upsert" },
+                  })) as ImportResult;
+                  setImportResult(res);
+                  const errCount = Object.keys(res.errors).length;
+                  toast.success(
+                    `Impor selesai: ${res.totalInserted.toLocaleString("id-ID")} baris${errCount ? ` (${errCount} tabel gagal)` : ""}`,
+                    { id: t },
+                  );
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Gagal mengimpor backup", { id: t });
+                } finally {
+                  setImporting(false);
+                  setPendingFile(null);
+                }
+              }}
+            >
+              Ya, impor sekarang
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
