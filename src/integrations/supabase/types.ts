@@ -1066,6 +1066,27 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_layouts: {
+        Row: {
+          layout: Json
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          layout?: Json
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          layout?: Json
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       nilai_siswa: {
         Row: {
           catatan: string | null
