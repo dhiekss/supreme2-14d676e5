@@ -140,6 +140,11 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
+  const { data: d = DEFAULT_DISPLAY } = useQuery({
+    queryKey: ["display-settings"],
+    queryFn: fetchDisplaySettings,
+    initialData: DEFAULT_DISPLAY,
+  });
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
