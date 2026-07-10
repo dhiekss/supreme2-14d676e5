@@ -117,27 +117,27 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function DynamicFavicon() {
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
+  const { data } = useQuery({
+    queryKey: ["display-settings"],
+    queryFn: async () => {
       const { data } = await supabase
         .from("app_settings")
-        .select("value")
-        .eq("key", "display.logo_url")
-        .maybeSingle();
-      if (cancelled) return;
-      const url = data?.value;
-      if (!url) return;
-      let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
-      if (!link) {
-        link = document.createElement("link");
-        link.rel = "icon";
-        document.head.appendChild(link);
-      }
-      link.href = url;
-    })();
-    return () => { cancelled = true; };
-  }, []);
+        .select("key,value")
+        .like("key", "display.%");
+      return data ?? [];
+    },
+  });
+  useEffect(() => {
+    const url = data?.find((r) => r.key === "display.logo_url")?.value;
+    if (!url) return;
+    let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.appendChild(link);
+    }
+    link.href = url;
+  }, [data]);
   return null;
 }
 
