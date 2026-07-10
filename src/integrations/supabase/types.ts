@@ -773,6 +773,101 @@ export type Database = {
         }
         Relationships: []
       }
+      kbm_laporan: {
+        Row: {
+          capaian_pembelajaran: string | null
+          catatan: string | null
+          created_at: string
+          created_by: string | null
+          guru_id: string | null
+          guru_status: string
+          id: string
+          jam_mulai: number
+          jam_selesai: number
+          jumlah_alpa: number
+          jumlah_hadir: number
+          jumlah_izin: number
+          jumlah_sakit: number
+          mata_pelajaran_id: string | null
+          materi: string | null
+          rombel_id: string | null
+          semester_id: string | null
+          tanggal: string
+          updated_at: string
+        }
+        Insert: {
+          capaian_pembelajaran?: string | null
+          catatan?: string | null
+          created_at?: string
+          created_by?: string | null
+          guru_id?: string | null
+          guru_status?: string
+          id?: string
+          jam_mulai?: number
+          jam_selesai?: number
+          jumlah_alpa?: number
+          jumlah_hadir?: number
+          jumlah_izin?: number
+          jumlah_sakit?: number
+          mata_pelajaran_id?: string | null
+          materi?: string | null
+          rombel_id?: string | null
+          semester_id?: string | null
+          tanggal: string
+          updated_at?: string
+        }
+        Update: {
+          capaian_pembelajaran?: string | null
+          catatan?: string | null
+          created_at?: string
+          created_by?: string | null
+          guru_id?: string | null
+          guru_status?: string
+          id?: string
+          jam_mulai?: number
+          jam_selesai?: number
+          jumlah_alpa?: number
+          jumlah_hadir?: number
+          jumlah_izin?: number
+          jumlah_sakit?: number
+          mata_pelajaran_id?: string | null
+          materi?: string | null
+          rombel_id?: string | null
+          semester_id?: string | null
+          tanggal?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kbm_laporan_guru_id_fkey"
+            columns: ["guru_id"]
+            isOneToOne: false
+            referencedRelation: "guru"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kbm_laporan_mata_pelajaran_id_fkey"
+            columns: ["mata_pelajaran_id"]
+            isOneToOne: false
+            referencedRelation: "mata_pelajaran"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kbm_laporan_rombel_id_fkey"
+            columns: ["rombel_id"]
+            isOneToOne: false
+            referencedRelation: "rombel"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kbm_laporan_semester_id_fkey"
+            columns: ["semester_id"]
+            isOneToOne: false
+            referencedRelation: "semester"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kbm_records: {
         Row: {
           created_at: string | null
