@@ -363,7 +363,7 @@ function RiwayatTab({ batchesFn, undoFn, qc }: any) {
                       </TableCell>
                     </TableRow>
                   )}
-                </>
+                </Fragment>
               ))}
             </TableBody>
           </Table>
