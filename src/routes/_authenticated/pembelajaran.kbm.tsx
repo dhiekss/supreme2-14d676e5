@@ -139,6 +139,7 @@ function LaporKbmPage() {
           mata_pelajaran_id: mapelId,
           guru_id: guruId,
           jam_list: jamList,
+          jam_status: Object.fromEntries(jamList.map((j) => [String(j), jamStatus[j] ?? "M"])),
           ttd_path: ttdRes.path,
           foto_path: fotoRes.path,
         },
