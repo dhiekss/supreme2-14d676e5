@@ -9,38 +9,521 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedVervalRouteImport } from './routes/_authenticated/verval'
+import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedTpgRouteImport } from './routes/_authenticated/tpg'
+import { Route as AuthenticatedSpRouteImport } from './routes/_authenticated/sp'
+import { Route as AuthenticatedSarprasRouteImport } from './routes/_authenticated/sarpras'
+import { Route as AuthenticatedRombelKhususRouteImport } from './routes/_authenticated/rombel-khusus'
+import { Route as AuthenticatedRombelRouteImport } from './routes/_authenticated/rombel'
+import { Route as AuthenticatedRevisiPresensiRouteImport } from './routes/_authenticated/revisi-presensi'
+import { Route as AuthenticatedPresensiRouteImport } from './routes/_authenticated/presensi'
+import { Route as AuthenticatedPersuratanRouteImport } from './routes/_authenticated/persuratan'
+import { Route as AuthenticatedPerpusRouteImport } from './routes/_authenticated/perpus'
+import { Route as AuthenticatedPeriodeRouteImport } from './routes/_authenticated/periode'
+import { Route as AuthenticatedPengaturanRouteImport } from './routes/_authenticated/pengaturan'
+import { Route as AuthenticatedNotifikasiRouteImport } from './routes/_authenticated/notifikasi'
+import { Route as AuthenticatedMutasiRouteImport } from './routes/_authenticated/mutasi'
+import { Route as AuthenticatedMasterRouteImport } from './routes/_authenticated/master'
+import { Route as AuthenticatedMapelRouteImport } from './routes/_authenticated/mapel'
+import { Route as AuthenticatedLaporanPresensiRouteImport } from './routes/_authenticated/laporan-presensi'
+import { Route as AuthenticatedKonsentrasiRouteImport } from './routes/_authenticated/konsentrasi'
+import { Route as AuthenticatedKeterlambatanRouteImport } from './routes/_authenticated/keterlambatan'
+import { Route as AuthenticatedKbmRouteImport } from './routes/_authenticated/kbm'
+import { Route as AuthenticatedJadwalRouteImport } from './routes/_authenticated/jadwal'
+import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
+import { Route as AuthenticatedHariEfektifRouteImport } from './routes/_authenticated/hari-efektif'
+import { Route as AuthenticatedGuruIzinRouteImport } from './routes/_authenticated/guru-izin'
+import { Route as AuthenticatedGuruRouteImport } from './routes/_authenticated/guru'
+import { Route as AuthenticatedDenahRouteImport } from './routes/_authenticated/denah'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedBerkasRouteImport } from './routes/_authenticated/berkas'
+import { Route as AuthenticatedAktivitasRouteImport } from './routes/_authenticated/aktivitas'
+import { Route as AuthenticatedPembelajaranRekapKbmRouteImport } from './routes/_authenticated/pembelajaran.rekap-kbm'
+import { Route as AuthenticatedPembelajaranPengaturanRouteImport } from './routes/_authenticated/pembelajaran.pengaturan'
+import { Route as AuthenticatedPembelajaranNilaiRouteImport } from './routes/_authenticated/pembelajaran.nilai'
+import { Route as AuthenticatedPembelajaranKbmRouteImport } from './routes/_authenticated/pembelajaran.kbm'
+import { Route as AuthenticatedPembelajaranDashboardNilaiRouteImport } from './routes/_authenticated/pembelajaran.dashboard-nilai'
+import { Route as AuthenticatedPembelajaranAdministrasiRouteImport } from './routes/_authenticated/pembelajaran.administrasi'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedVervalRoute = AuthenticatedVervalRouteImport.update({
+  id: '/verval',
+  path: '/verval',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTpgRoute = AuthenticatedTpgRouteImport.update({
+  id: '/tpg',
+  path: '/tpg',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSpRoute = AuthenticatedSpRouteImport.update({
+  id: '/sp',
+  path: '/sp',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSarprasRoute = AuthenticatedSarprasRouteImport.update({
+  id: '/sarpras',
+  path: '/sarpras',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRombelKhususRoute =
+  AuthenticatedRombelKhususRouteImport.update({
+    id: '/rombel-khusus',
+    path: '/rombel-khusus',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRombelRoute = AuthenticatedRombelRouteImport.update({
+  id: '/rombel',
+  path: '/rombel',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRevisiPresensiRoute =
+  AuthenticatedRevisiPresensiRouteImport.update({
+    id: '/revisi-presensi',
+    path: '/revisi-presensi',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPresensiRoute = AuthenticatedPresensiRouteImport.update({
+  id: '/presensi',
+  path: '/presensi',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPersuratanRoute = AuthenticatedPersuratanRouteImport.update({
+  id: '/persuratan',
+  path: '/persuratan',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPerpusRoute = AuthenticatedPerpusRouteImport.update({
+  id: '/perpus',
+  path: '/perpus',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPeriodeRoute = AuthenticatedPeriodeRouteImport.update({
+  id: '/periode',
+  path: '/periode',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPengaturanRoute = AuthenticatedPengaturanRouteImport.update({
+  id: '/pengaturan',
+  path: '/pengaturan',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNotifikasiRoute = AuthenticatedNotifikasiRouteImport.update({
+  id: '/notifikasi',
+  path: '/notifikasi',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMutasiRoute = AuthenticatedMutasiRouteImport.update({
+  id: '/mutasi',
+  path: '/mutasi',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMasterRoute = AuthenticatedMasterRouteImport.update({
+  id: '/master',
+  path: '/master',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMapelRoute = AuthenticatedMapelRouteImport.update({
+  id: '/mapel',
+  path: '/mapel',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLaporanPresensiRoute =
+  AuthenticatedLaporanPresensiRouteImport.update({
+    id: '/laporan-presensi',
+    path: '/laporan-presensi',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedKonsentrasiRoute =
+  AuthenticatedKonsentrasiRouteImport.update({
+    id: '/konsentrasi',
+    path: '/konsentrasi',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedKeterlambatanRoute =
+  AuthenticatedKeterlambatanRouteImport.update({
+    id: '/keterlambatan',
+    path: '/keterlambatan',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedKbmRoute = AuthenticatedKbmRouteImport.update({
+  id: '/kbm',
+  path: '/kbm',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedJadwalRoute = AuthenticatedJadwalRouteImport.update({
+  id: '/jadwal',
+  path: '/jadwal',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedImportRoute = AuthenticatedImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHariEfektifRoute =
+  AuthenticatedHariEfektifRouteImport.update({
+    id: '/hari-efektif',
+    path: '/hari-efektif',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedGuruIzinRoute = AuthenticatedGuruIzinRouteImport.update({
+  id: '/guru-izin',
+  path: '/guru-izin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGuruRoute = AuthenticatedGuruRouteImport.update({
+  id: '/guru',
+  path: '/guru',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDenahRoute = AuthenticatedDenahRouteImport.update({
+  id: '/denah',
+  path: '/denah',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBerkasRoute = AuthenticatedBerkasRouteImport.update({
+  id: '/berkas',
+  path: '/berkas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAktivitasRoute = AuthenticatedAktivitasRouteImport.update({
+  id: '/aktivitas',
+  path: '/aktivitas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPembelajaranRekapKbmRoute =
+  AuthenticatedPembelajaranRekapKbmRouteImport.update({
+    id: '/pembelajaran/rekap-kbm',
+    path: '/pembelajaran/rekap-kbm',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPembelajaranPengaturanRoute =
+  AuthenticatedPembelajaranPengaturanRouteImport.update({
+    id: '/pembelajaran/pengaturan',
+    path: '/pembelajaran/pengaturan',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPembelajaranNilaiRoute =
+  AuthenticatedPembelajaranNilaiRouteImport.update({
+    id: '/pembelajaran/nilai',
+    path: '/pembelajaran/nilai',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPembelajaranKbmRoute =
+  AuthenticatedPembelajaranKbmRouteImport.update({
+    id: '/pembelajaran/kbm',
+    path: '/pembelajaran/kbm',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPembelajaranDashboardNilaiRoute =
+  AuthenticatedPembelajaranDashboardNilaiRouteImport.update({
+    id: '/pembelajaran/dashboard-nilai',
+    path: '/pembelajaran/dashboard-nilai',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPembelajaranAdministrasiRoute =
+  AuthenticatedPembelajaranAdministrasiRouteImport.update({
+    id: '/pembelajaran/administrasi',
+    path: '/pembelajaran/administrasi',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/aktivitas': typeof AuthenticatedAktivitasRoute
+  '/berkas': typeof AuthenticatedBerkasRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/denah': typeof AuthenticatedDenahRoute
+  '/guru': typeof AuthenticatedGuruRoute
+  '/guru-izin': typeof AuthenticatedGuruIzinRoute
+  '/hari-efektif': typeof AuthenticatedHariEfektifRoute
+  '/import': typeof AuthenticatedImportRoute
+  '/jadwal': typeof AuthenticatedJadwalRoute
+  '/kbm': typeof AuthenticatedKbmRoute
+  '/keterlambatan': typeof AuthenticatedKeterlambatanRoute
+  '/konsentrasi': typeof AuthenticatedKonsentrasiRoute
+  '/laporan-presensi': typeof AuthenticatedLaporanPresensiRoute
+  '/mapel': typeof AuthenticatedMapelRoute
+  '/master': typeof AuthenticatedMasterRoute
+  '/mutasi': typeof AuthenticatedMutasiRoute
+  '/notifikasi': typeof AuthenticatedNotifikasiRoute
+  '/pengaturan': typeof AuthenticatedPengaturanRoute
+  '/periode': typeof AuthenticatedPeriodeRoute
+  '/perpus': typeof AuthenticatedPerpusRoute
+  '/persuratan': typeof AuthenticatedPersuratanRoute
+  '/presensi': typeof AuthenticatedPresensiRoute
+  '/revisi-presensi': typeof AuthenticatedRevisiPresensiRoute
+  '/rombel': typeof AuthenticatedRombelRoute
+  '/rombel-khusus': typeof AuthenticatedRombelKhususRoute
+  '/sarpras': typeof AuthenticatedSarprasRoute
+  '/sp': typeof AuthenticatedSpRoute
+  '/tpg': typeof AuthenticatedTpgRoute
+  '/users': typeof AuthenticatedUsersRoute
+  '/verval': typeof AuthenticatedVervalRoute
+  '/pembelajaran/administrasi': typeof AuthenticatedPembelajaranAdministrasiRoute
+  '/pembelajaran/dashboard-nilai': typeof AuthenticatedPembelajaranDashboardNilaiRoute
+  '/pembelajaran/kbm': typeof AuthenticatedPembelajaranKbmRoute
+  '/pembelajaran/nilai': typeof AuthenticatedPembelajaranNilaiRoute
+  '/pembelajaran/pengaturan': typeof AuthenticatedPembelajaranPengaturanRoute
+  '/pembelajaran/rekap-kbm': typeof AuthenticatedPembelajaranRekapKbmRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/aktivitas': typeof AuthenticatedAktivitasRoute
+  '/berkas': typeof AuthenticatedBerkasRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/denah': typeof AuthenticatedDenahRoute
+  '/guru': typeof AuthenticatedGuruRoute
+  '/guru-izin': typeof AuthenticatedGuruIzinRoute
+  '/hari-efektif': typeof AuthenticatedHariEfektifRoute
+  '/import': typeof AuthenticatedImportRoute
+  '/jadwal': typeof AuthenticatedJadwalRoute
+  '/kbm': typeof AuthenticatedKbmRoute
+  '/keterlambatan': typeof AuthenticatedKeterlambatanRoute
+  '/konsentrasi': typeof AuthenticatedKonsentrasiRoute
+  '/laporan-presensi': typeof AuthenticatedLaporanPresensiRoute
+  '/mapel': typeof AuthenticatedMapelRoute
+  '/master': typeof AuthenticatedMasterRoute
+  '/mutasi': typeof AuthenticatedMutasiRoute
+  '/notifikasi': typeof AuthenticatedNotifikasiRoute
+  '/pengaturan': typeof AuthenticatedPengaturanRoute
+  '/periode': typeof AuthenticatedPeriodeRoute
+  '/perpus': typeof AuthenticatedPerpusRoute
+  '/persuratan': typeof AuthenticatedPersuratanRoute
+  '/presensi': typeof AuthenticatedPresensiRoute
+  '/revisi-presensi': typeof AuthenticatedRevisiPresensiRoute
+  '/rombel': typeof AuthenticatedRombelRoute
+  '/rombel-khusus': typeof AuthenticatedRombelKhususRoute
+  '/sarpras': typeof AuthenticatedSarprasRoute
+  '/sp': typeof AuthenticatedSpRoute
+  '/tpg': typeof AuthenticatedTpgRoute
+  '/users': typeof AuthenticatedUsersRoute
+  '/verval': typeof AuthenticatedVervalRoute
+  '/pembelajaran/administrasi': typeof AuthenticatedPembelajaranAdministrasiRoute
+  '/pembelajaran/dashboard-nilai': typeof AuthenticatedPembelajaranDashboardNilaiRoute
+  '/pembelajaran/kbm': typeof AuthenticatedPembelajaranKbmRoute
+  '/pembelajaran/nilai': typeof AuthenticatedPembelajaranNilaiRoute
+  '/pembelajaran/pengaturan': typeof AuthenticatedPembelajaranPengaturanRoute
+  '/pembelajaran/rekap-kbm': typeof AuthenticatedPembelajaranRekapKbmRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/aktivitas': typeof AuthenticatedAktivitasRoute
+  '/_authenticated/berkas': typeof AuthenticatedBerkasRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/denah': typeof AuthenticatedDenahRoute
+  '/_authenticated/guru': typeof AuthenticatedGuruRoute
+  '/_authenticated/guru-izin': typeof AuthenticatedGuruIzinRoute
+  '/_authenticated/hari-efektif': typeof AuthenticatedHariEfektifRoute
+  '/_authenticated/import': typeof AuthenticatedImportRoute
+  '/_authenticated/jadwal': typeof AuthenticatedJadwalRoute
+  '/_authenticated/kbm': typeof AuthenticatedKbmRoute
+  '/_authenticated/keterlambatan': typeof AuthenticatedKeterlambatanRoute
+  '/_authenticated/konsentrasi': typeof AuthenticatedKonsentrasiRoute
+  '/_authenticated/laporan-presensi': typeof AuthenticatedLaporanPresensiRoute
+  '/_authenticated/mapel': typeof AuthenticatedMapelRoute
+  '/_authenticated/master': typeof AuthenticatedMasterRoute
+  '/_authenticated/mutasi': typeof AuthenticatedMutasiRoute
+  '/_authenticated/notifikasi': typeof AuthenticatedNotifikasiRoute
+  '/_authenticated/pengaturan': typeof AuthenticatedPengaturanRoute
+  '/_authenticated/periode': typeof AuthenticatedPeriodeRoute
+  '/_authenticated/perpus': typeof AuthenticatedPerpusRoute
+  '/_authenticated/persuratan': typeof AuthenticatedPersuratanRoute
+  '/_authenticated/presensi': typeof AuthenticatedPresensiRoute
+  '/_authenticated/revisi-presensi': typeof AuthenticatedRevisiPresensiRoute
+  '/_authenticated/rombel': typeof AuthenticatedRombelRoute
+  '/_authenticated/rombel-khusus': typeof AuthenticatedRombelKhususRoute
+  '/_authenticated/sarpras': typeof AuthenticatedSarprasRoute
+  '/_authenticated/sp': typeof AuthenticatedSpRoute
+  '/_authenticated/tpg': typeof AuthenticatedTpgRoute
+  '/_authenticated/users': typeof AuthenticatedUsersRoute
+  '/_authenticated/verval': typeof AuthenticatedVervalRoute
+  '/_authenticated/pembelajaran/administrasi': typeof AuthenticatedPembelajaranAdministrasiRoute
+  '/_authenticated/pembelajaran/dashboard-nilai': typeof AuthenticatedPembelajaranDashboardNilaiRoute
+  '/_authenticated/pembelajaran/kbm': typeof AuthenticatedPembelajaranKbmRoute
+  '/_authenticated/pembelajaran/nilai': typeof AuthenticatedPembelajaranNilaiRoute
+  '/_authenticated/pembelajaran/pengaturan': typeof AuthenticatedPembelajaranPengaturanRoute
+  '/_authenticated/pembelajaran/rekap-kbm': typeof AuthenticatedPembelajaranRekapKbmRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/aktivitas'
+    | '/berkas'
+    | '/dashboard'
+    | '/denah'
+    | '/guru'
+    | '/guru-izin'
+    | '/hari-efektif'
+    | '/import'
+    | '/jadwal'
+    | '/kbm'
+    | '/keterlambatan'
+    | '/konsentrasi'
+    | '/laporan-presensi'
+    | '/mapel'
+    | '/master'
+    | '/mutasi'
+    | '/notifikasi'
+    | '/pengaturan'
+    | '/periode'
+    | '/perpus'
+    | '/persuratan'
+    | '/presensi'
+    | '/revisi-presensi'
+    | '/rombel'
+    | '/rombel-khusus'
+    | '/sarpras'
+    | '/sp'
+    | '/tpg'
+    | '/users'
+    | '/verval'
+    | '/pembelajaran/administrasi'
+    | '/pembelajaran/dashboard-nilai'
+    | '/pembelajaran/kbm'
+    | '/pembelajaran/nilai'
+    | '/pembelajaran/pengaturan'
+    | '/pembelajaran/rekap-kbm'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/aktivitas'
+    | '/berkas'
+    | '/dashboard'
+    | '/denah'
+    | '/guru'
+    | '/guru-izin'
+    | '/hari-efektif'
+    | '/import'
+    | '/jadwal'
+    | '/kbm'
+    | '/keterlambatan'
+    | '/konsentrasi'
+    | '/laporan-presensi'
+    | '/mapel'
+    | '/master'
+    | '/mutasi'
+    | '/notifikasi'
+    | '/pengaturan'
+    | '/periode'
+    | '/perpus'
+    | '/persuratan'
+    | '/presensi'
+    | '/revisi-presensi'
+    | '/rombel'
+    | '/rombel-khusus'
+    | '/sarpras'
+    | '/sp'
+    | '/tpg'
+    | '/users'
+    | '/verval'
+    | '/pembelajaran/administrasi'
+    | '/pembelajaran/dashboard-nilai'
+    | '/pembelajaran/kbm'
+    | '/pembelajaran/nilai'
+    | '/pembelajaran/pengaturan'
+    | '/pembelajaran/rekap-kbm'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/aktivitas'
+    | '/_authenticated/berkas'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/denah'
+    | '/_authenticated/guru'
+    | '/_authenticated/guru-izin'
+    | '/_authenticated/hari-efektif'
+    | '/_authenticated/import'
+    | '/_authenticated/jadwal'
+    | '/_authenticated/kbm'
+    | '/_authenticated/keterlambatan'
+    | '/_authenticated/konsentrasi'
+    | '/_authenticated/laporan-presensi'
+    | '/_authenticated/mapel'
+    | '/_authenticated/master'
+    | '/_authenticated/mutasi'
+    | '/_authenticated/notifikasi'
+    | '/_authenticated/pengaturan'
+    | '/_authenticated/periode'
+    | '/_authenticated/perpus'
+    | '/_authenticated/persuratan'
+    | '/_authenticated/presensi'
+    | '/_authenticated/revisi-presensi'
+    | '/_authenticated/rombel'
+    | '/_authenticated/rombel-khusus'
+    | '/_authenticated/sarpras'
+    | '/_authenticated/sp'
+    | '/_authenticated/tpg'
+    | '/_authenticated/users'
+    | '/_authenticated/verval'
+    | '/_authenticated/pembelajaran/administrasi'
+    | '/_authenticated/pembelajaran/dashboard-nilai'
+    | '/_authenticated/pembelajaran/kbm'
+    | '/_authenticated/pembelajaran/nilai'
+    | '/_authenticated/pembelajaran/pengaturan'
+    | '/_authenticated/pembelajaran/rekap-kbm'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +531,350 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/verval': {
+      id: '/_authenticated/verval'
+      path: '/verval'
+      fullPath: '/verval'
+      preLoaderRoute: typeof AuthenticatedVervalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/users': {
+      id: '/_authenticated/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AuthenticatedUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tpg': {
+      id: '/_authenticated/tpg'
+      path: '/tpg'
+      fullPath: '/tpg'
+      preLoaderRoute: typeof AuthenticatedTpgRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sp': {
+      id: '/_authenticated/sp'
+      path: '/sp'
+      fullPath: '/sp'
+      preLoaderRoute: typeof AuthenticatedSpRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sarpras': {
+      id: '/_authenticated/sarpras'
+      path: '/sarpras'
+      fullPath: '/sarpras'
+      preLoaderRoute: typeof AuthenticatedSarprasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rombel-khusus': {
+      id: '/_authenticated/rombel-khusus'
+      path: '/rombel-khusus'
+      fullPath: '/rombel-khusus'
+      preLoaderRoute: typeof AuthenticatedRombelKhususRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rombel': {
+      id: '/_authenticated/rombel'
+      path: '/rombel'
+      fullPath: '/rombel'
+      preLoaderRoute: typeof AuthenticatedRombelRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/revisi-presensi': {
+      id: '/_authenticated/revisi-presensi'
+      path: '/revisi-presensi'
+      fullPath: '/revisi-presensi'
+      preLoaderRoute: typeof AuthenticatedRevisiPresensiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/presensi': {
+      id: '/_authenticated/presensi'
+      path: '/presensi'
+      fullPath: '/presensi'
+      preLoaderRoute: typeof AuthenticatedPresensiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/persuratan': {
+      id: '/_authenticated/persuratan'
+      path: '/persuratan'
+      fullPath: '/persuratan'
+      preLoaderRoute: typeof AuthenticatedPersuratanRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/perpus': {
+      id: '/_authenticated/perpus'
+      path: '/perpus'
+      fullPath: '/perpus'
+      preLoaderRoute: typeof AuthenticatedPerpusRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/periode': {
+      id: '/_authenticated/periode'
+      path: '/periode'
+      fullPath: '/periode'
+      preLoaderRoute: typeof AuthenticatedPeriodeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pengaturan': {
+      id: '/_authenticated/pengaturan'
+      path: '/pengaturan'
+      fullPath: '/pengaturan'
+      preLoaderRoute: typeof AuthenticatedPengaturanRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notifikasi': {
+      id: '/_authenticated/notifikasi'
+      path: '/notifikasi'
+      fullPath: '/notifikasi'
+      preLoaderRoute: typeof AuthenticatedNotifikasiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mutasi': {
+      id: '/_authenticated/mutasi'
+      path: '/mutasi'
+      fullPath: '/mutasi'
+      preLoaderRoute: typeof AuthenticatedMutasiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/master': {
+      id: '/_authenticated/master'
+      path: '/master'
+      fullPath: '/master'
+      preLoaderRoute: typeof AuthenticatedMasterRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mapel': {
+      id: '/_authenticated/mapel'
+      path: '/mapel'
+      fullPath: '/mapel'
+      preLoaderRoute: typeof AuthenticatedMapelRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/laporan-presensi': {
+      id: '/_authenticated/laporan-presensi'
+      path: '/laporan-presensi'
+      fullPath: '/laporan-presensi'
+      preLoaderRoute: typeof AuthenticatedLaporanPresensiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/konsentrasi': {
+      id: '/_authenticated/konsentrasi'
+      path: '/konsentrasi'
+      fullPath: '/konsentrasi'
+      preLoaderRoute: typeof AuthenticatedKonsentrasiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/keterlambatan': {
+      id: '/_authenticated/keterlambatan'
+      path: '/keterlambatan'
+      fullPath: '/keterlambatan'
+      preLoaderRoute: typeof AuthenticatedKeterlambatanRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/kbm': {
+      id: '/_authenticated/kbm'
+      path: '/kbm'
+      fullPath: '/kbm'
+      preLoaderRoute: typeof AuthenticatedKbmRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/jadwal': {
+      id: '/_authenticated/jadwal'
+      path: '/jadwal'
+      fullPath: '/jadwal'
+      preLoaderRoute: typeof AuthenticatedJadwalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/import': {
+      id: '/_authenticated/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof AuthenticatedImportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/hari-efektif': {
+      id: '/_authenticated/hari-efektif'
+      path: '/hari-efektif'
+      fullPath: '/hari-efektif'
+      preLoaderRoute: typeof AuthenticatedHariEfektifRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/guru-izin': {
+      id: '/_authenticated/guru-izin'
+      path: '/guru-izin'
+      fullPath: '/guru-izin'
+      preLoaderRoute: typeof AuthenticatedGuruIzinRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/guru': {
+      id: '/_authenticated/guru'
+      path: '/guru'
+      fullPath: '/guru'
+      preLoaderRoute: typeof AuthenticatedGuruRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/denah': {
+      id: '/_authenticated/denah'
+      path: '/denah'
+      fullPath: '/denah'
+      preLoaderRoute: typeof AuthenticatedDenahRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/berkas': {
+      id: '/_authenticated/berkas'
+      path: '/berkas'
+      fullPath: '/berkas'
+      preLoaderRoute: typeof AuthenticatedBerkasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/aktivitas': {
+      id: '/_authenticated/aktivitas'
+      path: '/aktivitas'
+      fullPath: '/aktivitas'
+      preLoaderRoute: typeof AuthenticatedAktivitasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pembelajaran/rekap-kbm': {
+      id: '/_authenticated/pembelajaran/rekap-kbm'
+      path: '/pembelajaran/rekap-kbm'
+      fullPath: '/pembelajaran/rekap-kbm'
+      preLoaderRoute: typeof AuthenticatedPembelajaranRekapKbmRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pembelajaran/pengaturan': {
+      id: '/_authenticated/pembelajaran/pengaturan'
+      path: '/pembelajaran/pengaturan'
+      fullPath: '/pembelajaran/pengaturan'
+      preLoaderRoute: typeof AuthenticatedPembelajaranPengaturanRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pembelajaran/nilai': {
+      id: '/_authenticated/pembelajaran/nilai'
+      path: '/pembelajaran/nilai'
+      fullPath: '/pembelajaran/nilai'
+      preLoaderRoute: typeof AuthenticatedPembelajaranNilaiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pembelajaran/kbm': {
+      id: '/_authenticated/pembelajaran/kbm'
+      path: '/pembelajaran/kbm'
+      fullPath: '/pembelajaran/kbm'
+      preLoaderRoute: typeof AuthenticatedPembelajaranKbmRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pembelajaran/dashboard-nilai': {
+      id: '/_authenticated/pembelajaran/dashboard-nilai'
+      path: '/pembelajaran/dashboard-nilai'
+      fullPath: '/pembelajaran/dashboard-nilai'
+      preLoaderRoute: typeof AuthenticatedPembelajaranDashboardNilaiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pembelajaran/administrasi': {
+      id: '/_authenticated/pembelajaran/administrasi'
+      path: '/pembelajaran/administrasi'
+      fullPath: '/pembelajaran/administrasi'
+      preLoaderRoute: typeof AuthenticatedPembelajaranAdministrasiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAktivitasRoute: typeof AuthenticatedAktivitasRoute
+  AuthenticatedBerkasRoute: typeof AuthenticatedBerkasRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDenahRoute: typeof AuthenticatedDenahRoute
+  AuthenticatedGuruRoute: typeof AuthenticatedGuruRoute
+  AuthenticatedGuruIzinRoute: typeof AuthenticatedGuruIzinRoute
+  AuthenticatedHariEfektifRoute: typeof AuthenticatedHariEfektifRoute
+  AuthenticatedImportRoute: typeof AuthenticatedImportRoute
+  AuthenticatedJadwalRoute: typeof AuthenticatedJadwalRoute
+  AuthenticatedKbmRoute: typeof AuthenticatedKbmRoute
+  AuthenticatedKeterlambatanRoute: typeof AuthenticatedKeterlambatanRoute
+  AuthenticatedKonsentrasiRoute: typeof AuthenticatedKonsentrasiRoute
+  AuthenticatedLaporanPresensiRoute: typeof AuthenticatedLaporanPresensiRoute
+  AuthenticatedMapelRoute: typeof AuthenticatedMapelRoute
+  AuthenticatedMasterRoute: typeof AuthenticatedMasterRoute
+  AuthenticatedMutasiRoute: typeof AuthenticatedMutasiRoute
+  AuthenticatedNotifikasiRoute: typeof AuthenticatedNotifikasiRoute
+  AuthenticatedPengaturanRoute: typeof AuthenticatedPengaturanRoute
+  AuthenticatedPeriodeRoute: typeof AuthenticatedPeriodeRoute
+  AuthenticatedPerpusRoute: typeof AuthenticatedPerpusRoute
+  AuthenticatedPersuratanRoute: typeof AuthenticatedPersuratanRoute
+  AuthenticatedPresensiRoute: typeof AuthenticatedPresensiRoute
+  AuthenticatedRevisiPresensiRoute: typeof AuthenticatedRevisiPresensiRoute
+  AuthenticatedRombelRoute: typeof AuthenticatedRombelRoute
+  AuthenticatedRombelKhususRoute: typeof AuthenticatedRombelKhususRoute
+  AuthenticatedSarprasRoute: typeof AuthenticatedSarprasRoute
+  AuthenticatedSpRoute: typeof AuthenticatedSpRoute
+  AuthenticatedTpgRoute: typeof AuthenticatedTpgRoute
+  AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
+  AuthenticatedVervalRoute: typeof AuthenticatedVervalRoute
+  AuthenticatedPembelajaranAdministrasiRoute: typeof AuthenticatedPembelajaranAdministrasiRoute
+  AuthenticatedPembelajaranDashboardNilaiRoute: typeof AuthenticatedPembelajaranDashboardNilaiRoute
+  AuthenticatedPembelajaranKbmRoute: typeof AuthenticatedPembelajaranKbmRoute
+  AuthenticatedPembelajaranNilaiRoute: typeof AuthenticatedPembelajaranNilaiRoute
+  AuthenticatedPembelajaranPengaturanRoute: typeof AuthenticatedPembelajaranPengaturanRoute
+  AuthenticatedPembelajaranRekapKbmRoute: typeof AuthenticatedPembelajaranRekapKbmRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAktivitasRoute: AuthenticatedAktivitasRoute,
+  AuthenticatedBerkasRoute: AuthenticatedBerkasRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDenahRoute: AuthenticatedDenahRoute,
+  AuthenticatedGuruRoute: AuthenticatedGuruRoute,
+  AuthenticatedGuruIzinRoute: AuthenticatedGuruIzinRoute,
+  AuthenticatedHariEfektifRoute: AuthenticatedHariEfektifRoute,
+  AuthenticatedImportRoute: AuthenticatedImportRoute,
+  AuthenticatedJadwalRoute: AuthenticatedJadwalRoute,
+  AuthenticatedKbmRoute: AuthenticatedKbmRoute,
+  AuthenticatedKeterlambatanRoute: AuthenticatedKeterlambatanRoute,
+  AuthenticatedKonsentrasiRoute: AuthenticatedKonsentrasiRoute,
+  AuthenticatedLaporanPresensiRoute: AuthenticatedLaporanPresensiRoute,
+  AuthenticatedMapelRoute: AuthenticatedMapelRoute,
+  AuthenticatedMasterRoute: AuthenticatedMasterRoute,
+  AuthenticatedMutasiRoute: AuthenticatedMutasiRoute,
+  AuthenticatedNotifikasiRoute: AuthenticatedNotifikasiRoute,
+  AuthenticatedPengaturanRoute: AuthenticatedPengaturanRoute,
+  AuthenticatedPeriodeRoute: AuthenticatedPeriodeRoute,
+  AuthenticatedPerpusRoute: AuthenticatedPerpusRoute,
+  AuthenticatedPersuratanRoute: AuthenticatedPersuratanRoute,
+  AuthenticatedPresensiRoute: AuthenticatedPresensiRoute,
+  AuthenticatedRevisiPresensiRoute: AuthenticatedRevisiPresensiRoute,
+  AuthenticatedRombelRoute: AuthenticatedRombelRoute,
+  AuthenticatedRombelKhususRoute: AuthenticatedRombelKhususRoute,
+  AuthenticatedSarprasRoute: AuthenticatedSarprasRoute,
+  AuthenticatedSpRoute: AuthenticatedSpRoute,
+  AuthenticatedTpgRoute: AuthenticatedTpgRoute,
+  AuthenticatedUsersRoute: AuthenticatedUsersRoute,
+  AuthenticatedVervalRoute: AuthenticatedVervalRoute,
+  AuthenticatedPembelajaranAdministrasiRoute:
+    AuthenticatedPembelajaranAdministrasiRoute,
+  AuthenticatedPembelajaranDashboardNilaiRoute:
+    AuthenticatedPembelajaranDashboardNilaiRoute,
+  AuthenticatedPembelajaranKbmRoute: AuthenticatedPembelajaranKbmRoute,
+  AuthenticatedPembelajaranNilaiRoute: AuthenticatedPembelajaranNilaiRoute,
+  AuthenticatedPembelajaranPengaturanRoute:
+    AuthenticatedPembelajaranPengaturanRoute,
+  AuthenticatedPembelajaranRekapKbmRoute:
+    AuthenticatedPembelajaranRekapKbmRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
