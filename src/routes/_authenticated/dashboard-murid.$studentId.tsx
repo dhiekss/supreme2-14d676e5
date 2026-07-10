@@ -22,25 +22,27 @@ const BULAN = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus
 function Page() {
   const { studentId } = Route.useParams();
   const now = new Date();
+  const [mode, setMode] = useState<"bulan" | "semester">("bulan");
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
+  const [semesterId, setSemesterId] = useState<string | undefined>(undefined);
   const fn = useServerFn(getSiswaDashboard);
   const { data, isLoading, error } = useQuery({
-    queryKey: ["dashboard-murid", studentId, year, month],
-    queryFn: () => fn({ data: { studentId, year, month } }),
+    queryKey: ["dashboard-murid", studentId, mode, year, month, semesterId],
+    queryFn: () => fn({ data: { studentId, mode, year, month, semesterId } }),
   });
 
   if (isLoading) return <div className="text-sm text-muted-foreground">Memuat…</div>;
   if (error) return <div className="text-sm text-destructive">{(error as Error).message}</div>;
   if (!data) return null;
 
-  const { student, rombel, presensi, mapel, sp, teman, periode } = data;
+  const { student, rombel, presensi, mapel, sp, teman, periode, semesterOptions } = data;
   const progressSp1 = Math.min(100, Math.round(((sp.alfaTotal / 3 + sp.terlambatTotal / 5) / 2) * 100));
   const layakSp1 = sp.alfaTotal > 3 || sp.terlambatTotal > 5;
   const spLabel = sp.currentLevel === 0 ? "Tidak Ada SP" : `SP${sp.currentLevel}`;
-  const periodeLabel = `${BULAN[periode.month - 1]} ${periode.year}`;
+  const periodeLabel = periode.periodeLabel;
   const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1);
-  const yearOptions = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
+  const yearOptions = [now.getFullYear() - 2, now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
 
   return (
     <div className="space-y-4">
