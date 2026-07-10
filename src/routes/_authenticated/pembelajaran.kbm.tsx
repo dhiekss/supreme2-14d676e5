@@ -49,6 +49,7 @@ function LaporKbmPage() {
   const [mapelId, setMapelId] = useState("");
   const [guruId, setGuruId] = useState("");
   const [jamList, setJamList] = useState<number[]>([]);
+  const [jamStatus, setJamStatus] = useState<Record<number, "M" | "T+" | "T-">>({});
   const [fotoDataUrl, setFotoDataUrl] = useState<string>("");
   const [fotoExt, setFotoExt] = useState<string>("");
 
