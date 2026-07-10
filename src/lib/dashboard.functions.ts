@@ -26,8 +26,9 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     };
     let totalMurid = 0;
     for (const s of students.data ?? []) {
-      totalMurid++;
       const r = s.rombel_id ? rombelById.get(s.rombel_id) : null;
+      if (!r) continue; // skip murid tanpa rombel (mis. sisa kelas yang sudah dihapus)
+      totalMurid++;
       const t = r?.tingkat;
       if (t && tingkatStats[t]) {
         tingkatStats[t].total++;
