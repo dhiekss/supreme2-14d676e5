@@ -183,7 +183,7 @@ function BackgroundImageCard({ settings, onSave }: { settings: DisplaySettings; 
         <div className="rounded-md border bg-muted/40 p-3 text-xs space-y-1">
           <div className="font-medium">Ukuran Ideal Gambar:</div>
           <ul className="list-disc pl-4 space-y-0.5 text-muted-foreground">
-            <li>Resolusi: <strong>800 x 1000 piksel</strong> (rasio 4:5)</li>
+            <li>Resolusi: <strong>800 x 800 piksel</strong> (rasio 1:1 / persegi)</li>
             <li>Format: JPG, PNG, atau WebP</li>
             <li>Ukuran file: Maksimal 5MB</li>
           </ul>
