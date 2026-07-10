@@ -1,0 +1,160 @@
+  "tanggal_surat_pindah" date,
+  "sekolah_tujuan" text,
+  "file_surat" text,
+  "created_by" uuid,
+  "created_at" timestamptz DEFAULT now(),
+  "student_name" text,
+  "student_nis" text,
+  "dapodik_status" text,
+  "dapodik_tanggal" date
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."student_transfers_out" TO authenticated;
+GRANT ALL ON public."student_transfers_out" TO service_role;
+ALTER TABLE public."student_transfers_out" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "student_transfers_out_admin_all" ON public."student_transfers_out" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "student_transfers_out_auth_read" ON public."student_transfers_out" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."student_rombel_transfers" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "student_id" uuid,
+  "rombel_asal_id" uuid,
+  "rombel_tujuan_id" uuid,
+  "alasan" text,
+  "tanggal_pindah" date,
+  "created_by" uuid,
+  "created_at" timestamptz DEFAULT now(),
+  "dapodik_status" text,
+  "dapodik_tanggal" date
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."student_rombel_transfers" TO authenticated;
+GRANT ALL ON public."student_rombel_transfers" TO service_role;
+ALTER TABLE public."student_rombel_transfers" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "student_rombel_transfers_admin_all" ON public."student_rombel_transfers" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "student_rombel_transfers_auth_read" ON public."student_rombel_transfers" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."student_resignations" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "student_id" uuid,
+  "rombel_id" uuid,
+  "tanggal_surat" date,
+  "alasan" text,
+  "file_surat" text,
+  "created_by" uuid,
+  "created_at" timestamptz DEFAULT now(),
+  "student_name" text,
+  "student_nis" text,
+  "dapodik_status" text,
+  "dapodik_tanggal" date
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."student_resignations" TO authenticated;
+GRANT ALL ON public."student_resignations" TO service_role;
+ALTER TABLE public."student_resignations" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "student_resignations_admin_all" ON public."student_resignations" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "student_resignations_auth_read" ON public."student_resignations" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."user_rombel" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "user_id" uuid,
+  "rombel_id" uuid,
+  "created_at" timestamptz DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."user_rombel" TO authenticated;
+GRANT ALL ON public."user_rombel" TO service_role;
+ALTER TABLE public."user_rombel" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "user_rombel_admin_all" ON public."user_rombel" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "user_rombel_auth_read" ON public."user_rombel" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."user_menu_permissions" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "user_id" uuid,
+  "menu_key" text,
+  "created_at" timestamptz DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."user_menu_permissions" TO authenticated;
+GRANT ALL ON public."user_menu_permissions" TO service_role;
+ALTER TABLE public."user_menu_permissions" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "user_menu_permissions_admin_all" ON public."user_menu_permissions" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "user_menu_permissions_auth_read" ON public."user_menu_permissions" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."user_presence" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "user_id" uuid,
+  "last_seen_at" timestamptz,
+  "is_online" boolean,
+  "created_at" timestamptz DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."user_presence" TO authenticated;
+GRANT ALL ON public."user_presence" TO service_role;
+ALTER TABLE public."user_presence" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "user_presence_admin_all" ON public."user_presence" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "user_presence_auth_read" ON public."user_presence" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."books" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "judul" text,
+  "penulis" text,
+  "jenis_buku" text,
+  "jumlah_tersedia" bigint,
+  "created_at" timestamptz DEFAULT now(),
+  "created_by" uuid,
+  "isbn" text,
+  "tahun_pengadaan" bigint
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."books" TO authenticated;
+GRANT ALL ON public."books" TO service_role;
+ALTER TABLE public."books" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "books_admin_all" ON public."books" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "books_auth_read" ON public."books" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."book_copies" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "book_id" uuid,
+  "copy_number" bigint,
+  "barcode" text,
+  "status" text,
+  "created_at" timestamptz DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."book_copies" TO authenticated;
+GRANT ALL ON public."book_copies" TO service_role;
+ALTER TABLE public."book_copies" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "book_copies_admin_all" ON public."book_copies" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "book_copies_auth_read" ON public."book_copies" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."book_loans" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "borrower_type" text,
+  "borrower_id" uuid,
+  "borrower_name" text,
+  "rombel_id" uuid,
+  "book_ids" jsonb,
+  "tanggal_peminjaman" date,
+  "status" text,
+  "tanggal_pengembalian" date,
+  "created_by" uuid,
+  "created_at" timestamptz DEFAULT now(),
+  "book_copy_ids" jsonb
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."book_loans" TO authenticated;
+GRANT ALL ON public."book_loans" TO service_role;
+ALTER TABLE public."book_loans" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "book_loans_admin_all" ON public."book_loans" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "book_loans_auth_read" ON public."book_loans" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."sarpras_ruang" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "nama" text,
+  "kapasitas" bigint,
+  "created_at" timestamptz DEFAULT now(),
+  "created_by" uuid,
+  "updated_at" timestamptz DEFAULT now(),
+  "kode_ruang" text,
+  "rombel_id" uuid,
+  "denah_posisi_x" numeric,
+  "denah_posisi_y" numeric,
+  "jenis_ruang_id" uuid,
+  "denah_marker_size" numeric
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."sarpras_ruang" TO authenticated;
+GRANT ALL ON public."sarpras_ruang" TO service_role;
+ALTER TABLE public."sarpras_ruang" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "sarpras_ruang_admin_all" ON public."sarpras_ruang" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));

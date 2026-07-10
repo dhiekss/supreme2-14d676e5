@@ -1,0 +1,160 @@
+CREATE POLICY "sarpras_ruang_auth_read" ON public."sarpras_ruang" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."sarpras_jenis_ruang" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "nama" text,
+  "keterangan" text,
+  "is_kelas" boolean,
+  "created_at" timestamptz DEFAULT now(),
+  "created_by" uuid
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."sarpras_jenis_ruang" TO authenticated;
+GRANT ALL ON public."sarpras_jenis_ruang" TO service_role;
+ALTER TABLE public."sarpras_jenis_ruang" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "sarpras_jenis_ruang_admin_all" ON public."sarpras_jenis_ruang" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "sarpras_jenis_ruang_auth_read" ON public."sarpras_jenis_ruang" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."sarpras_pengajuan" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "nama" text,
+  "jenis" text,
+  "quantity" bigint,
+  "satuan" text,
+  "perkiraan_harga" bigint,
+  "total_harga" bigint,
+  "link_referensi" text,
+  "keperluan" text,
+  "status" text,
+  "pengaju_id" uuid,
+  "created_at" timestamptz DEFAULT now(),
+  "updated_at" timestamptz DEFAULT now(),
+  "catatan_penolakan" text,
+  "approved_by" uuid,
+  "approved_at" timestamptz
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."sarpras_pengajuan" TO authenticated;
+GRANT ALL ON public."sarpras_pengajuan" TO service_role;
+ALTER TABLE public."sarpras_pengajuan" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "sarpras_pengajuan_admin_all" ON public."sarpras_pengajuan" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "sarpras_pengajuan_auth_read" ON public."sarpras_pengajuan" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."admin_sarpras" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "user_id" uuid,
+  "created_at" timestamptz DEFAULT now(),
+  "created_by" uuid
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."admin_sarpras" TO authenticated;
+GRANT ALL ON public."admin_sarpras" TO service_role;
+ALTER TABLE public."admin_sarpras" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "admin_sarpras_admin_all" ON public."admin_sarpras" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "admin_sarpras_auth_read" ON public."admin_sarpras" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."surat_keluar" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "nomor_surat" text,
+  "tujuan" text,
+  "tanggal_surat" date,
+  "perihal" text,
+  "jenis_surat" text,
+  "sifat_surat" text,
+  "isi_ringkas" text,
+  "file_url" text,
+  "pembuat_id" uuid,
+  "penandatangan_id" uuid,
+  "status" text,
+  "created_at" timestamptz DEFAULT now(),
+  "updated_at" timestamptz DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."surat_keluar" TO authenticated;
+GRANT ALL ON public."surat_keluar" TO service_role;
+ALTER TABLE public."surat_keluar" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "surat_keluar_admin_all" ON public."surat_keluar" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "surat_keluar_auth_read" ON public."surat_keluar" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."surat_tugas" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "nomor_surat" text,
+  "jenis" text,
+  "tanggal_mulai" date,
+  "tanggal_selesai" date,
+  "tujuan_lokasi" text,
+  "keperluan" text,
+  "file_surat_tugas_url" text,
+  "file_sppd_url" text,
+  "pembuat_id" uuid,
+  "status" text,
+  "created_at" timestamptz DEFAULT now(),
+  "updated_at" timestamptz DEFAULT now(),
+  "kode_kegiatan" text,
+  "kode_ring" text,
+  "dasar_surat_ada" boolean,
+  "nomor_dasar_surat" text,
+  "tanggal_dasar_surat" date,
+  "perihal_dasar_surat" text,
+  "kendaraan" text,
+  "waktu_berangkat" time,
+  "instansi_dasar_surat" text
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."surat_tugas" TO authenticated;
+GRANT ALL ON public."surat_tugas" TO service_role;
+ALTER TABLE public."surat_tugas" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "surat_tugas_admin_all" ON public."surat_tugas" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "surat_tugas_auth_read" ON public."surat_tugas" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."surat_tugas_peserta" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "surat_tugas_id" uuid,
+  "nama_peserta" text,
+  "jabatan" text,
+  "nip" text,
+  "created_at" timestamptz DEFAULT now(),
+  "pangkat_golongan" text,
+  "urutan" bigint,
+  "is_utama" boolean
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."surat_tugas_peserta" TO authenticated;
+GRANT ALL ON public."surat_tugas_peserta" TO service_role;
+ALTER TABLE public."surat_tugas_peserta" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "surat_tugas_peserta_admin_all" ON public."surat_tugas_peserta" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "surat_tugas_peserta_auth_read" ON public."surat_tugas_peserta" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."persuratan_kode_surat" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "kode" text,
+  "nama" text,
+  "keterangan" text,
+  "urutan" bigint,
+  "is_active" boolean DEFAULT true,
+  "created_by" uuid,
+  "created_at" timestamptz DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."persuratan_kode_surat" TO authenticated;
+GRANT ALL ON public."persuratan_kode_surat" TO service_role;
+ALTER TABLE public."persuratan_kode_surat" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "persuratan_kode_surat_admin_all" ON public."persuratan_kode_surat" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "persuratan_kode_surat_auth_read" ON public."persuratan_kode_surat" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."persuratan_nomor_surat" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "jenis_surat" text,
+  "format_nomor" text,
+  "prefix" text,
+  "counter" bigint,
+  "tahun" bigint,
+  "contoh_hasil" text,
+  "is_active" boolean DEFAULT true,
+  "created_by" uuid,
+  "created_at" timestamptz DEFAULT now(),
+  "updated_at" timestamptz DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."persuratan_nomor_surat" TO authenticated;
+GRANT ALL ON public."persuratan_nomor_surat" TO service_role;
+ALTER TABLE public."persuratan_nomor_surat" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "persuratan_nomor_surat_admin_all" ON public."persuratan_nomor_surat" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "persuratan_nomor_surat_auth_read" ON public."persuratan_nomor_surat" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."persuratan_kop_surat" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "nama" text,
+  "file_url" text,

@@ -1,0 +1,104 @@
+  "nisn" text,
+  "tempat_lahir" text,
+  "tanggal_lahir" date,
+  "agama" text,
+  "nama_ayah" text,
+  "nama_ibu" text,
+  "status" text,
+  "catatan_perbaikan" text,
+  "data_perbaikan" jsonb,
+  "akte_kelahiran_url" text,
+  "kk_url" text,
+  "ijazah_sd_url" text,
+  "ijazah_smp_url" text,
+  "validated_by" uuid,
+  "validated_at" timestamptz,
+  "created_at" timestamptz DEFAULT now(),
+  "updated_at" timestamptz DEFAULT now(),
+  "created_by" uuid,
+  "nama_perbaikan" text
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."verval_siswa" TO authenticated;
+GRANT ALL ON public."verval_siswa" TO service_role;
+ALTER TABLE public."verval_siswa" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "verval_siswa_admin_all" ON public."verval_siswa" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "verval_siswa_auth_read" ON public."verval_siswa" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."app_settings" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "key" text,
+  "value" text,
+  "description" text,
+  "created_at" timestamptz DEFAULT now(),
+  "updated_at" timestamptz DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."app_settings" TO authenticated;
+GRANT ALL ON public."app_settings" TO service_role;
+ALTER TABLE public."app_settings" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "app_settings_admin_all" ON public."app_settings" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "app_settings_auth_read" ON public."app_settings" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."activity_logs" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "user_id" uuid,
+  "user_email" text,
+  "user_full_name" text,
+  "action" text,
+  "description" text,
+  "metadata" jsonb,
+  "ip_address" text,
+  "created_at" timestamptz DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."activity_logs" TO authenticated;
+GRANT ALL ON public."activity_logs" TO service_role;
+ALTER TABLE public."activity_logs" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "activity_logs_admin_all" ON public."activity_logs" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "activity_logs_auth_read" ON public."activity_logs" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."backup_logs" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "created_at" timestamptz DEFAULT now(),
+  "action_type" text,
+  "performed_by" uuid,
+  "file_name" text,
+  "file_size_bytes" bigint,
+  "tables_included" jsonb,
+  "records_count" jsonb,
+  "status" text,
+  "error_message" text,
+  "notes" text
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."backup_logs" TO authenticated;
+GRANT ALL ON public."backup_logs" TO service_role;
+ALTER TABLE public."backup_logs" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "backup_logs_admin_all" ON public."backup_logs" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "backup_logs_auth_read" ON public."backup_logs" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."notification_logs" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "type" text,
+  "recipient_phone" text,
+  "recipient_name" text,
+  "message" text,
+  "status" text,
+  "response_data" jsonb,
+  "created_by" uuid,
+  "created_at" timestamptz DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."notification_logs" TO authenticated;
+GRANT ALL ON public."notification_logs" TO service_role;
+ALTER TABLE public."notification_logs" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "notification_logs_admin_all" ON public."notification_logs" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "notification_logs_auth_read" ON public."notification_logs" FOR SELECT TO authenticated USING (true);
+
+CREATE TABLE public."kurator_pembelajaran" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "user_id" uuid,
+  "created_at" timestamptz DEFAULT now(),
+  "created_by" uuid
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."kurator_pembelajaran" TO authenticated;
+GRANT ALL ON public."kurator_pembelajaran" TO service_role;
+ALTER TABLE public."kurator_pembelajaran" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "kurator_pembelajaran_admin_all" ON public."kurator_pembelajaran" FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "kurator_pembelajaran_auth_read" ON public."kurator_pembelajaran" FOR SELECT TO authenticated USING (true);
