@@ -1,45 +1,6 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  LayoutDashboard,
-  CalendarCheck,
-  BookOpen,
-  Users,
-  Database,
-  LogOut,
-  GraduationCap,
-  FileBarChart,
-  Clock,
-  AlertTriangle,
-  CalendarDays,
-  FolderOpen,
-  UserCheck,
-  Library,
-  Mail,
-  Building2,
-  CalendarRange,
-  Wallet,
-  MessageSquare,
-  Settings,
-  ClipboardCheck,
-  UserCog,
-  Activity,
-  ArrowLeftRight,
-  School,
-  ChevronDown,
-  Layers,
-  Briefcase,
-  Map as MapIcon,
-  Bell,
-  CalendarClock,
-  FileText,
-  Award,
-  BarChart3,
-  BookOpenCheck,
-  Palette,
-  HardDrive,
-
-} from "lucide-react";
+import { LogOut, GraduationCap, ChevronDown } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -60,91 +21,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { fetchDisplaySettings, DEFAULT_DISPLAY } from "@/lib/display-settings";
-
-type LeafItem = { title: string; url: string; icon: any };
-type GroupItem = { title: string; icon: any; children: LeafItem[] };
-type MenuItem = LeafItem | GroupItem;
-
-const isGroup = (i: MenuItem): i is GroupItem => "children" in i;
-
-const items: MenuItem[] = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Dashboard Guru", url: "/dashboard-guru", icon: UserCheck },
-  { title: "Dashboard Murid", url: "/dashboard-murid", icon: GraduationCap },
-  { title: "Dashboard Kelas", url: "/dashboard-kelas", icon: School },
-  { title: "Dashboard Ka. Prog", url: "/dashboard-kaprog", icon: GraduationCap },
-  {
-    title: "Presensi",
-    icon: CalendarCheck,
-    children: [
-      { title: "Input Presensi", url: "/presensi", icon: CalendarCheck },
-      { title: "Laporan Presensi", url: "/laporan-presensi", icon: FileBarChart },
-      { title: "Revisi Presensi", url: "/revisi-presensi", icon: FileBarChart },
-    ],
-  },
-  { title: "Keterlambatan", url: "/keterlambatan", icon: Clock },
-  { title: "Surat Peringatan", url: "/sp", icon: AlertTriangle },
-  {
-    title: "Manajemen Sekolah",
-    icon: School,
-    children: [
-      { title: "Manajemen Rombel", url: "/rombel", icon: GraduationCap },
-      { title: "Rombel Khusus", url: "/rombel-khusus", icon: Layers },
-      { title: "Konsentrasi Keahlian", url: "/konsentrasi", icon: Briefcase },
-      { title: "Manajemen Mata Pelajaran", url: "/mapel", icon: BookOpen },
-      { title: "Manajemen Guru", url: "/guru", icon: Users },
-      { title: "Jadwal Pelajaran", url: "/jadwal", icon: CalendarDays },
-      { title: "Manajemen Denah", url: "/denah", icon: MapIcon },
-      { title: "Manajemen Hari Efektif", url: "/hari-efektif", icon: CalendarRange },
-      { title: "Manajemen Notifikasi", url: "/notifikasi", icon: Bell },
-      { title: "Tahun Ajaran", url: "/tahun-ajaran", icon: CalendarRange },
-      { title: "Semester", url: "/semester", icon: CalendarClock },
-    ],
-  },
-  { title: "Berkas Pembelajaran", url: "/berkas", icon: FolderOpen },
-  {
-    title: "Pembelajaran",
-    icon: GraduationCap,
-    children: [
-      { title: "Administrasi Pembelajaran", url: "/pembelajaran/administrasi", icon: FileText },
-      { title: "Pengaturan Pembelajaran", url: "/pembelajaran/pengaturan", icon: Settings },
-      { title: "Pengelolaan Nilai", url: "/pembelajaran/nilai", icon: Award },
-      { title: "Dashboard Nilai", url: "/pembelajaran/dashboard-nilai", icon: BarChart3 },
-    ],
-  },
-  { title: "Izin Guru", url: "/guru-izin", icon: UserCheck },
-  { title: "Perpustakaan", url: "/perpus", icon: Library },
-  { title: "Persuratan", url: "/persuratan", icon: Mail },
-  { title: "Sarpras", url: "/sarpras", icon: Building2 },
-  { title: "TPG", url: "/tpg", icon: Wallet },
-  { title: "Notifikasi WA", url: "/notifikasi", icon: MessageSquare },
-  { title: "Verval Siswa", url: "/verval", icon: ClipboardCheck },
-  { title: "Mutasi Siswa", url: "/mutasi", icon: ArrowLeftRight },
-  { title: "Kenaikan Kelas", url: "/kenaikan-kelas", icon: GraduationCap },
-  {
-    title: "KBM",
-    icon: BookOpen,
-    children: [
-      { title: "Lapor KBM", url: "/pembelajaran/kbm", icon: BookOpenCheck },
-      { title: "Rekap KBM", url: "/pembelajaran/rekap-kbm", icon: BarChart3 },
-    ],
-  },
-  { title: "Master Data", url: "/master", icon: Users },
-  { title: "Manajemen User", url: "/users", icon: UserCog },
-  { title: "Aktivitas / Log", url: "/aktivitas", icon: Activity },
-  { title: "Impor Backup", url: "/import", icon: Database },
-  {
-    title: "Pengaturan",
-    icon: Settings,
-    children: [
-      { title: "Tampilan", url: "/pengaturan/tampilan", icon: Palette },
-      { title: "Storage", url: "/pengaturan/storage", icon: HardDrive },
-      { title: "Database", url: "/pengaturan/database", icon: Database },
-      { title: "Analytics", url: "/pengaturan/analytics", icon: BarChart3 },
-    ],
-  },
-];
+import { getMyMenuLayout } from "@/lib/menu-layout.functions";
+import { resolveLayout, type ResolvedGroup, type ResolvedNode } from "@/lib/sidebar-menu";
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -156,6 +36,16 @@ export function AppSidebar() {
     queryFn: fetchDisplaySettings,
     initialData: DEFAULT_DISPLAY,
   });
+
+  const getLayout = useServerFn(getMyMenuLayout);
+  const { data: layoutRes } = useQuery({
+    queryKey: ["sidebar-layout"],
+    queryFn: () => getLayout(),
+    staleTime: 60_000,
+  });
+  const nodes: ResolvedNode[] = resolveLayout(layoutRes?.layout ?? null).filter(
+    (n) => !n.hidden,
+  );
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -190,11 +80,11 @@ export function AppSidebar() {
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) =>
-                isGroup(item) ? (
-                  <GroupMenu key={item.title} item={item} collapsed={collapsed} isActive={isActive} />
+              {nodes.map((item) =>
+                item.kind === "group" ? (
+                  <GroupMenu key={item.id} item={item} collapsed={collapsed} isActive={isActive} />
                 ) : (
-                  <SidebarMenuItem key={item.title}>
+                  <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton asChild isActive={isActive(item.url)}>
                       <Link to={item.url} className="flex items-center gap-2">
                         <item.icon className="h-4 w-4" />
@@ -227,12 +117,15 @@ function GroupMenu({
   collapsed,
   isActive,
 }: {
-  item: GroupItem;
+  item: ResolvedGroup;
   collapsed: boolean;
   isActive: (url: string) => boolean;
 }) {
-  const anyActive = item.children.some((c) => isActive(c.url));
+  const visibleChildren = item.children.filter((c) => !c.hidden);
+  const anyActive = visibleChildren.some((c) => isActive(c.url));
   const [open, setOpen] = useState(anyActive);
+
+  if (visibleChildren.length === 0) return null;
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -253,8 +146,8 @@ function GroupMenu({
         {!collapsed && (
           <CollapsibleContent>
             <SidebarMenuSub>
-              {item.children.map((c) => (
-                <SidebarMenuSubItem key={c.title}>
+              {visibleChildren.map((c) => (
+                <SidebarMenuSubItem key={c.id}>
                   <SidebarMenuSubButton asChild isActive={isActive(c.url)}>
                     <Link to={c.url} className="flex items-center gap-2">
                       <c.icon className="h-3.5 w-3.5" />
