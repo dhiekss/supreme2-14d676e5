@@ -779,11 +779,13 @@ export type Database = {
           catatan: string | null
           created_at: string
           created_by: string | null
+          foto_path: string | null
           guru_id: string | null
           guru_status: string
           id: string
-          jam_mulai: number
-          jam_selesai: number
+          jam_list: number[]
+          jam_mulai: number | null
+          jam_selesai: number | null
           jumlah_alpa: number
           jumlah_hadir: number
           jumlah_izin: number
@@ -793,6 +795,7 @@ export type Database = {
           rombel_id: string | null
           semester_id: string | null
           tanggal: string
+          ttd_path: string | null
           updated_at: string
         }
         Insert: {
@@ -800,11 +803,13 @@ export type Database = {
           catatan?: string | null
           created_at?: string
           created_by?: string | null
+          foto_path?: string | null
           guru_id?: string | null
           guru_status?: string
           id?: string
-          jam_mulai?: number
-          jam_selesai?: number
+          jam_list?: number[]
+          jam_mulai?: number | null
+          jam_selesai?: number | null
           jumlah_alpa?: number
           jumlah_hadir?: number
           jumlah_izin?: number
@@ -814,6 +819,7 @@ export type Database = {
           rombel_id?: string | null
           semester_id?: string | null
           tanggal: string
+          ttd_path?: string | null
           updated_at?: string
         }
         Update: {
@@ -821,11 +827,13 @@ export type Database = {
           catatan?: string | null
           created_at?: string
           created_by?: string | null
+          foto_path?: string | null
           guru_id?: string | null
           guru_status?: string
           id?: string
-          jam_mulai?: number
-          jam_selesai?: number
+          jam_list?: number[]
+          jam_mulai?: number | null
+          jam_selesai?: number | null
           jumlah_alpa?: number
           jumlah_hadir?: number
           jumlah_izin?: number
@@ -835,6 +843,7 @@ export type Database = {
           rombel_id?: string | null
           semester_id?: string | null
           tanggal?: string
+          ttd_path?: string | null
           updated_at?: string
         }
         Relationships: [
