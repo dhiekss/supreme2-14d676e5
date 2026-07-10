@@ -247,7 +247,8 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
             wali_kelas_nip: rombel.wali_kelas_nip,
           }
         : null,
-      periode: { year, month, monthStart, monthEnd },
+      periode: { mode, year, month, semesterId, periodeStart, periodeEnd, periodeLabel },
+      semesterOptions: semesterOptions ?? [],
       presensi: { hadir, sakit, izin, alfa, persenHadir, riwayat },
       mapel: mapelRows,
       sp: {
