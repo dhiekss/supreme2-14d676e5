@@ -145,3 +145,32 @@
     color: var(--color-foreground);
   }
 }
+
+/* Sidebar scrollbar blends into the dark sidebar background */
+[data-sidebar="content"] {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sidebar-scrollbar-thumb) transparent;
+}
+
+[data-sidebar="content"]::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+[data-sidebar="content"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-sidebar="content"]::-webkit-scrollbar-thumb {
+  background: var(--sidebar-scrollbar-thumb);
+  border-radius: 9999px;
+}
+
+[data-sidebar="content"]::-webkit-scrollbar-thumb:hover {
+  background: var(--sidebar-scrollbar-thumb-hover);
+}
+
+:root {
+  --sidebar-scrollbar-thumb: color-mix(in oklab, var(--sidebar-foreground) 25%, transparent);
+  --sidebar-scrollbar-thumb-hover: color-mix(in oklab, var(--sidebar-foreground) 40%, transparent);
+}
