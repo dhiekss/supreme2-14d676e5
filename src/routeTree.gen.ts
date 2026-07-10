@@ -17,6 +17,7 @@ import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedTpgRouteImport } from './routes/_authenticated/tpg'
 import { Route as AuthenticatedTahunAjaranRouteImport } from './routes/_authenticated/tahun-ajaran'
 import { Route as AuthenticatedSpRouteImport } from './routes/_authenticated/sp'
+import { Route as AuthenticatedSemesterRouteImport } from './routes/_authenticated/semester'
 import { Route as AuthenticatedSarprasRouteImport } from './routes/_authenticated/sarpras'
 import { Route as AuthenticatedRombelKhususRouteImport } from './routes/_authenticated/rombel-khusus'
 import { Route as AuthenticatedRombelRouteImport } from './routes/_authenticated/rombel'
@@ -93,6 +94,11 @@ const AuthenticatedTahunAjaranRoute =
 const AuthenticatedSpRoute = AuthenticatedSpRouteImport.update({
   id: '/sp',
   path: '/sp',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSemesterRoute = AuthenticatedSemesterRouteImport.update({
+  id: '/semester',
+  path: '/semester',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSarprasRoute = AuthenticatedSarprasRouteImport.update({
@@ -332,6 +338,7 @@ export interface FileRoutesByFullPath {
   '/rombel': typeof AuthenticatedRombelRoute
   '/rombel-khusus': typeof AuthenticatedRombelKhususRoute
   '/sarpras': typeof AuthenticatedSarprasRoute
+  '/semester': typeof AuthenticatedSemesterRoute
   '/sp': typeof AuthenticatedSpRoute
   '/tahun-ajaran': typeof AuthenticatedTahunAjaranRoute
   '/tpg': typeof AuthenticatedTpgRoute
@@ -378,6 +385,7 @@ export interface FileRoutesByTo {
   '/rombel': typeof AuthenticatedRombelRoute
   '/rombel-khusus': typeof AuthenticatedRombelKhususRoute
   '/sarpras': typeof AuthenticatedSarprasRoute
+  '/semester': typeof AuthenticatedSemesterRoute
   '/sp': typeof AuthenticatedSpRoute
   '/tahun-ajaran': typeof AuthenticatedTahunAjaranRoute
   '/tpg': typeof AuthenticatedTpgRoute
@@ -426,6 +434,7 @@ export interface FileRoutesById {
   '/_authenticated/rombel': typeof AuthenticatedRombelRoute
   '/_authenticated/rombel-khusus': typeof AuthenticatedRombelKhususRoute
   '/_authenticated/sarpras': typeof AuthenticatedSarprasRoute
+  '/_authenticated/semester': typeof AuthenticatedSemesterRoute
   '/_authenticated/sp': typeof AuthenticatedSpRoute
   '/_authenticated/tahun-ajaran': typeof AuthenticatedTahunAjaranRoute
   '/_authenticated/tpg': typeof AuthenticatedTpgRoute
@@ -474,6 +483,7 @@ export interface FileRouteTypes {
     | '/rombel'
     | '/rombel-khusus'
     | '/sarpras'
+    | '/semester'
     | '/sp'
     | '/tahun-ajaran'
     | '/tpg'
@@ -520,6 +530,7 @@ export interface FileRouteTypes {
     | '/rombel'
     | '/rombel-khusus'
     | '/sarpras'
+    | '/semester'
     | '/sp'
     | '/tahun-ajaran'
     | '/tpg'
@@ -567,6 +578,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rombel'
     | '/_authenticated/rombel-khusus'
     | '/_authenticated/sarpras'
+    | '/_authenticated/semester'
     | '/_authenticated/sp'
     | '/_authenticated/tahun-ajaran'
     | '/_authenticated/tpg'
@@ -642,6 +654,13 @@ declare module '@tanstack/react-router' {
       path: '/sp'
       fullPath: '/sp'
       preLoaderRoute: typeof AuthenticatedSpRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/semester': {
+      id: '/_authenticated/semester'
+      path: '/semester'
+      fullPath: '/semester'
+      preLoaderRoute: typeof AuthenticatedSemesterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/sarpras': {
@@ -938,6 +957,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRombelRoute: typeof AuthenticatedRombelRoute
   AuthenticatedRombelKhususRoute: typeof AuthenticatedRombelKhususRoute
   AuthenticatedSarprasRoute: typeof AuthenticatedSarprasRoute
+  AuthenticatedSemesterRoute: typeof AuthenticatedSemesterRoute
   AuthenticatedSpRoute: typeof AuthenticatedSpRoute
   AuthenticatedTahunAjaranRoute: typeof AuthenticatedTahunAjaranRoute
   AuthenticatedTpgRoute: typeof AuthenticatedTpgRoute
@@ -983,6 +1003,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRombelRoute: AuthenticatedRombelRoute,
   AuthenticatedRombelKhususRoute: AuthenticatedRombelKhususRoute,
   AuthenticatedSarprasRoute: AuthenticatedSarprasRoute,
+  AuthenticatedSemesterRoute: AuthenticatedSemesterRoute,
   AuthenticatedSpRoute: AuthenticatedSpRoute,
   AuthenticatedTahunAjaranRoute: AuthenticatedTahunAjaranRoute,
   AuthenticatedTpgRoute: AuthenticatedTpgRoute,

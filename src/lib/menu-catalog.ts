@@ -32,7 +32,8 @@ export const MENU_CATALOG: MenuGroup[] = [
       { key: "denah", label: "Manajemen Denah" },
       { key: "hari-efektif", label: "Manajemen Hari Efektif" },
       { key: "notifikasi", label: "Manajemen Notifikasi" },
-      { key: "periode", label: "Manajemen Periode" },
+      { key: "tahun-ajaran", label: "Tahun Ajaran" },
+      { key: "semester", label: "Semester" },
     ],
   },
   {
