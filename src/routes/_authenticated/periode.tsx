@@ -12,10 +12,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, CheckCircle2 } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckCircle2, Power } from "lucide-react";
 import {
-  listPeriode, saveTahunAjaran, deleteTahunAjaran,
-  saveSemester, deleteSemester,
+  listPeriode, saveTahunAjaran, deleteTahunAjaran, setActiveTahun,
+  saveSemester, deleteSemester, setActiveSemester,
 } from "@/lib/sekolah.functions";
 import { toast } from "sonner";
 
@@ -40,6 +40,8 @@ export function Page({ defaultTab = "tahun" }: { defaultTab?: "tahun" | "semeste
   const delT = useServerFn(deleteTahunAjaran);
   const saveS = useServerFn(saveSemester);
   const delS = useServerFn(deleteSemester);
+  const actT = useServerFn(setActiveTahun);
+  const actS = useServerFn(setActiveSemester);
 
   const { data } = useQuery({ queryKey: ["periode"], queryFn: () => fetchFn() as Promise<{ tahun: Tahun[]; semester: Sem[] }> });
   const tahun = data?.tahun ?? [];
@@ -61,6 +63,8 @@ export function Page({ defaultTab = "tahun" }: { defaultTab?: "tahun" | "semeste
   });
   const dT = useMutation({ mutationFn: (id: string) => delT({ data: { id } }), onSuccess: () => qc.invalidateQueries({ queryKey: ["periode"] }), onError: (e: any) => toast.error(e.message) });
   const dS = useMutation({ mutationFn: (id: string) => delS({ data: { id } }), onSuccess: () => qc.invalidateQueries({ queryKey: ["periode"] }), onError: (e: any) => toast.error(e.message) });
+  const aT = useMutation({ mutationFn: (id: string) => actT({ data: { id } }), onSuccess: () => { toast.success("Tahun ajaran diaktifkan"); qc.invalidateQueries({ queryKey: ["periode"] }); }, onError: (e: any) => toast.error(e.message) });
+  const aS = useMutation({ mutationFn: (id: string) => actS({ data: { id } }), onSuccess: () => { toast.success("Semester diaktifkan"); qc.invalidateQueries({ queryKey: ["periode"] }); }, onError: (e: any) => toast.error(e.message) });
 
   return (
     <div className="space-y-4">
@@ -95,6 +99,11 @@ export function Page({ defaultTab = "tahun" }: { defaultTab?: "tahun" | "semeste
                       <TableCell>{t.tanggal_selesai ?? "—"}</TableCell>
                       <TableCell>{t.is_active ? <Badge className="gap-1"><CheckCircle2 className="h-3 w-3" />Aktif</Badge> : <Badge variant="outline">—</Badge>}</TableCell>
                       <TableCell className="text-right">
+                        {!t.is_active && (
+                          <Button size="sm" variant="outline" className="mr-1" disabled={aT.isPending} onClick={() => aT.mutate(t.id)}>
+                            <Power className="h-3.5 w-3.5 mr-1" />Aktifkan
+                          </Button>
+                        )}
                         <Button size="icon" variant="ghost" onClick={() => setEditT(t)}><Pencil className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" onClick={() => dT.mutate(t.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                       </TableCell>
@@ -127,6 +136,11 @@ export function Page({ defaultTab = "tahun" }: { defaultTab?: "tahun" | "semeste
                       <TableCell>{s.tanggal_selesai ?? "—"}</TableCell>
                       <TableCell>{s.is_active ? <Badge className="gap-1"><CheckCircle2 className="h-3 w-3" />Aktif</Badge> : <Badge variant="outline">—</Badge>}</TableCell>
                       <TableCell className="text-right">
+                        {!s.is_active && (
+                          <Button size="sm" variant="outline" className="mr-1" disabled={aS.isPending} onClick={() => aS.mutate(s.id)}>
+                            <Power className="h-3.5 w-3.5 mr-1" />Aktifkan
+                          </Button>
+                        )}
                         <Button size="icon" variant="ghost" onClick={() => setEditS(s)}><Pencil className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" onClick={() => dS.mutate(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                       </TableCell>

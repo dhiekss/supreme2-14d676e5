@@ -287,6 +287,28 @@ export const deleteSemester = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const setActiveTahun = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: uuid }).parse)
+  .handler(async ({ context, data }) => {
+    const off = await context.supabase.from("tahun_ajaran").update({ is_active: false }).neq("id", data.id);
+    if (off.error) throw new Error(off.error.message);
+    const on = await context.supabase.from("tahun_ajaran").update({ is_active: true }).eq("id", data.id);
+    if (on.error) throw new Error(on.error.message);
+    return { ok: true };
+  });
+
+export const setActiveSemester = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: uuid }).parse)
+  .handler(async ({ context, data }) => {
+    const off = await context.supabase.from("semester").update({ is_active: false }).neq("id", data.id);
+    if (off.error) throw new Error(off.error.message);
+    const on = await context.supabase.from("semester").update({ is_active: true }).eq("id", data.id);
+    if (on.error) throw new Error(on.error.message);
+    return { ok: true };
+  });
+
 // ============ DENAH (sarpras_ruang + jenis_ruang) ============
 export const listDenah = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
