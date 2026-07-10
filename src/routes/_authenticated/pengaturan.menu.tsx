@@ -486,7 +486,7 @@ function LeafRow({
   node: LayoutLeafOverride;
   defaultTitle: string;
   url?: string;
-  onUpdate: (patch: Partial<LayoutLeafOverride>) => void;
+  onUpdate: (patch: { label?: string; hidden?: boolean }) => void;
   parent: string;
   groupOptions: { value: string; label: string }[];
   onMove: (target: string) => void;
