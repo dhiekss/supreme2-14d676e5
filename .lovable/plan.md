@@ -1,68 +1,96 @@
-## Fitur Naik Kelas (Kenaikan Kelas)
+# Pengaturan Menu Sidebar
 
-Alur batch per rombel, memindahkan seluruh siswa ke rombel tujuan pada periode (tahun ajaran/semester) yang dipilih manual, dengan penanganan status naik / tinggal / lulus / keluar, dan menyimpan riwayat per siswa.
+Menu baru **Pengaturan → Pengaturan Menu** untuk admin mengatur susunan sidebar per role.
+
+## Yang bisa diatur admin
+
+- **Urutan**: drag & drop item menu dan grup.
+- **Sembunyikan/tampilkan**: toggle visibility per item.
+- **Ganti nama**: ubah label item/grup.
+- **Pindah antar grup**: menu leaf bisa dipindah ke grup lain, atau dijadikan menu top-level (tanpa grup).
+- **Cakupan per role**: konfigurasi terpisah untuk `admin`, `moderator`, `user` (mengikuti enum `app_role` yang sudah ada).
+
+## Struktur menu di database
+
+Satu row per role menyimpan layout sebagai JSON:
+
+```text
+[
+  { "kind": "leaf",  "key": "dashboard",  "label": "Dashboard", "hidden": false },
+  { "kind": "group", "id": "presensi",    "label": "Presensi",  "hidden": false,
+    "children": [
+      { "key": "presensi",         "label": "Input Presensi",   "hidden": false },
+      { "key": "laporan-presensi", "label": "Laporan Presensi", "hidden": false }
+    ]
+  }
+]
+```
+
+`key` (leaf) dan `id` (group) memakai identitas stabil dari katalog default agar
+tetap mengenali item saat ada perubahan label. Item baru yang muncul di
+katalog default tapi belum ada di layout tersimpan otomatis di-append di akhir
+saat sidebar merender.
+
+## Perubahan yang diperlukan
 
 ### 1. Database (migration)
 
-Buat tabel baru `student_promotions` untuk audit trail:
+Tabel `menu_layouts`:
+- `role app_role PRIMARY KEY`
+- `layout jsonb NOT NULL`
+- `updated_at timestamptz`
+- GRANT `SELECT` ke `authenticated`; GRANT `ALL` ke `service_role`.
+- RLS: SELECT untuk `authenticated`; INSERT/UPDATE/DELETE hanya admin (`has_role(auth.uid(),'admin')`).
+- Trigger `update_updated_at_column` untuk `updated_at`.
 
-- `student_id` (fk students)
-- `student_name`, `student_nis` (snapshot)
-- `rombel_asal_id`, `rombel_asal_name` (snapshot)
-- `rombel_tujuan_id` (nullable — kosong untuk lulus/keluar)
-- `tahun_ajaran_asal_id`, `tahun_ajaran_tujuan_id`
-- `semester_asal_id`, `semester_tujuan_id`
-- `status` enum: `naik` | `tinggal` | `lulus` | `keluar`
-- `tanggal_proses`, `batch_id` (uuid — mengelompokkan satu proses batch)
-- `catatan`
-- `created_by`, `created_at`
+### 2. Katalog default sidebar
 
-Grants untuk `authenticated` + `service_role`, RLS aktif, policy: user login dapat SELECT/INSERT; UPDATE/DELETE hanya admin (via `has_role`).
+Ekstrak definisi menu (icon + url + grup) dari `src/components/app-sidebar.tsx`
+ke `src/lib/sidebar-menu.ts` sebagai `DEFAULT_SIDEBAR: SidebarNode[]` dengan
+`id`/`key` stabil. `menu-catalog.ts` yang lama tetap dipakai untuk fitur akses
+menu; ini file baru khusus layout sidebar.
 
-### 2. Server functions (`src/lib/kenaikan.functions.ts`)
+### 3. Server functions — `src/lib/menu-layout.functions.ts`
 
-- `listRombelWithCounts` — daftar rombel + jumlah siswa aktif untuk pilih rombel asal.
-- `listStudentsForPromotion({ rombel_id })` — siswa aktif di rombel asal (nama, nis, tanda sudah mutasi/keluar untuk default status).
-- `previewPromotion({ rombel_asal_id })` — ambil siswa + default status per siswa (siswa yang punya baris di `student_resignations` / `student_transfers_out` → default `keluar`).
-- `commitPromotion({ rombel_asal_id, rombel_tujuan_id, tahun_ajaran_tujuan_id, semester_tujuan_id, items: [{student_id, status, rombel_tujuan_override?}] })`:
-  - Untuk status `naik` → update `students.rombel_id` = rombel_tujuan (atau override per siswa jika perlu).
-  - Untuk `tinggal` → update ke `rombel_tujuan_override` (rombel tingkat sama tahun baru).
-  - Untuk `lulus` / `keluar` → set `students.rombel_id = null` (dan tandai status jika kolom tersedia; jika tidak, cukup null).
-  - Insert satu baris per siswa ke `student_promotions` dengan `batch_id` sama.
-- `listPromotionHistory({ search?, batch_id? })` — daftar riwayat, dikelompokkan per batch.
-- `undoPromotionBatch({ batch_id })` — admin only; balikkan `students.rombel_id` ke `rombel_asal_id` dan hapus baris batch.
+- `getMyMenuLayout()` — pakai `requireSupabaseAuth`, deteksi role user, kembalikan layout tersimpan untuk role tersebut (fallback ke default).
+- `listMenuLayouts()` — admin only, kembalikan layout semua role.
+- `saveMenuLayout({ role, layout })` — admin only, upsert.
+- `resetMenuLayout({ role })` — admin only, delete row.
 
-### 3. UI — halaman baru `src/routes/_authenticated/kenaikan-kelas.tsx`
+Guard admin memakai `has_role(auth.uid(),'admin')` via RPC.
 
-Tab: **Proses Kenaikan** | **Riwayat**.
+### 4. Sidebar refactor — `src/components/app-sidebar.tsx`
 
-**Tab Proses Kenaikan** (wizard 1 halaman):
-1. Pilih **Rombel Asal**.
-2. Pilih **Periode Tujuan**: `Tahun Ajaran` + `Semester` (select dari data periode yang ada).
-3. Pilih **Rombel Tujuan default** (untuk siswa berstatus "naik").
-4. Tabel siswa dengan kolom: Nama, NIS, Status (Select: Naik / Tinggal / Lulus / Keluar), Rombel Tujuan (auto-isi default; bisa override per siswa untuk kasus tinggal/naik lintas rombel).
-5. Ringkasan: total naik / tinggal / lulus / keluar.
-6. Tombol **Proses Kenaikan** → dialog konfirmasi → panggil `commitPromotion`.
+- Ambil layout via `useQuery(['sidebar-layout'])` dari `getMyMenuLayout`.
+- Merge dengan `DEFAULT_SIDEBAR`: pakai override (order, label, hidden, group placement); item baru dari default di-append; item yang sudah tidak ada di default di-drop.
+- Tetap render hidden=false saja; icon dan url tetap dari katalog default.
 
-Aturan default status:
-- Siswa yang sudah punya baris di `student_transfers_out` atau `student_resignations` → default `keluar`, baris di-disable.
-- Rombel asal tingkat XII → default semua `lulus`, rombel tujuan disembunyikan.
-- Selain itu → default `naik`.
+### 5. Route baru — `src/routes/_authenticated/pengaturan.menu.tsx`
 
-**Tab Riwayat**:
-- Daftar batch (tanggal, rombel asal → tujuan, jumlah per status, oleh siapa).
-- Klik batch → lihat detail siswa.
-- Tombol **Undo** (admin only) per batch.
+- Tab role (Admin / Moderator / User).
+- Untuk role terpilih: pohon menu (top-level list + group dengan children) memakai `@dnd-kit/core` + `@dnd-kit/sortable`.
+  - Drag handle di setiap baris.
+  - Drop antar top-level dan antar children.
+  - Leaf bisa didrop ke top-level (jadi item tanpa grup) atau ke dalam grup.
+  - Group tidak bisa di-nest.
+- Setiap baris: toggle visibility (switch), input rename inline, tombol reset label ke default, badge url/key.
+- Tombol "Simpan Perubahan" dan "Reset ke Default".
+- Loader route memakai `listMenuLayouts` (authenticated + admin). Non-admin diarahkan ke `/dashboard` dengan toast.
 
-### 4. Integrasi menu
+### 6. Tambah entry sidebar
 
-- Tambah entry di `src/lib/menu-catalog.ts` grup Kesiswaan/Akademik: "Kenaikan Kelas" → `/kenaikan-kelas`.
-- Tambah link di `src/components/app-sidebar.tsx` jika perlu.
-- Route ter-generate otomatis oleh TanStack Router setelah file route dibuat.
+Tambah `{ title: "Menu", url: "/pengaturan/menu", icon: ListTree }` ke grup **Pengaturan** di `DEFAULT_SIDEBAR`.
 
-### 5. Catatan teknis
+### 7. Cache invalidation
 
-- Semua operasi via `createServerFn` + `requireSupabaseAuth`; tidak menyentuh `auth`/`storage` schema.
-- Snapshot nama rombel/siswa disimpan di `student_promotions` supaya riwayat tetap terbaca meski rombel dihapus di kemudian hari.
-- Tidak ada perubahan pada tabel `students` lain selain kolom `rombel_id` (diasumsikan tidak ada kolom status siswa; jika ada nanti kita tambahkan).
-- Data saat ini (semester Genap 2025/2026) akan menjadi periode asal default di form.
+Setelah save/reset di halaman admin, invalidate `['sidebar-layout']` supaya sidebar user lain (dan admin sendiri) refresh setelah reload.
+
+## Dependency baru
+
+- `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` untuk drag & drop.
+
+## Catatan teknis
+
+- Perubahan hanya berlaku untuk sidebar UI; RLS/route access tetap dijaga oleh fitur "Akses Menu" yang sudah ada (`user_menu_permissions`). Menyembunyikan menu di sini tidak menutup route — hanya UI.
+- Layout untuk role user yang belum pernah disimpan otomatis pakai default.
+- Icon tidak bisa diganti admin (di luar scope permintaan).

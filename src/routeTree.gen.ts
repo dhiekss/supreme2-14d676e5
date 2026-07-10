@@ -50,6 +50,7 @@ import { Route as AuthenticatedDashboardMuridIndexRouteImport } from './routes/_
 import { Route as AuthenticatedDashboardGuruIndexRouteImport } from './routes/_authenticated/dashboard-guru.index'
 import { Route as AuthenticatedPengaturanTampilanRouteImport } from './routes/_authenticated/pengaturan.tampilan'
 import { Route as AuthenticatedPengaturanStorageRouteImport } from './routes/_authenticated/pengaturan.storage'
+import { Route as AuthenticatedPengaturanMenuRouteImport } from './routes/_authenticated/pengaturan.menu'
 import { Route as AuthenticatedPengaturanDatabaseRouteImport } from './routes/_authenticated/pengaturan.database'
 import { Route as AuthenticatedPengaturanAnalyticsRouteImport } from './routes/_authenticated/pengaturan.analytics'
 import { Route as AuthenticatedPembelajaranRekapKbmRouteImport } from './routes/_authenticated/pembelajaran.rekap-kbm'
@@ -279,6 +280,12 @@ const AuthenticatedPengaturanStorageRoute =
     path: '/storage',
     getParentRoute: () => AuthenticatedPengaturanRoute,
   } as any)
+const AuthenticatedPengaturanMenuRoute =
+  AuthenticatedPengaturanMenuRouteImport.update({
+    id: '/menu',
+    path: '/menu',
+    getParentRoute: () => AuthenticatedPengaturanRoute,
+  } as any)
 const AuthenticatedPengaturanDatabaseRoute =
   AuthenticatedPengaturanDatabaseRouteImport.update({
     id: '/database',
@@ -387,6 +394,7 @@ export interface FileRoutesByFullPath {
   '/pembelajaran/rekap-kbm': typeof AuthenticatedPembelajaranRekapKbmRoute
   '/pengaturan/analytics': typeof AuthenticatedPengaturanAnalyticsRoute
   '/pengaturan/database': typeof AuthenticatedPengaturanDatabaseRoute
+  '/pengaturan/menu': typeof AuthenticatedPengaturanMenuRoute
   '/pengaturan/storage': typeof AuthenticatedPengaturanStorageRoute
   '/pengaturan/tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/dashboard-guru/': typeof AuthenticatedDashboardGuruIndexRoute
@@ -439,6 +447,7 @@ export interface FileRoutesByTo {
   '/pembelajaran/rekap-kbm': typeof AuthenticatedPembelajaranRekapKbmRoute
   '/pengaturan/analytics': typeof AuthenticatedPengaturanAnalyticsRoute
   '/pengaturan/database': typeof AuthenticatedPengaturanDatabaseRoute
+  '/pengaturan/menu': typeof AuthenticatedPengaturanMenuRoute
   '/pengaturan/storage': typeof AuthenticatedPengaturanStorageRoute
   '/pengaturan/tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/dashboard-guru': typeof AuthenticatedDashboardGuruIndexRoute
@@ -493,6 +502,7 @@ export interface FileRoutesById {
   '/_authenticated/pembelajaran/rekap-kbm': typeof AuthenticatedPembelajaranRekapKbmRoute
   '/_authenticated/pengaturan/analytics': typeof AuthenticatedPengaturanAnalyticsRoute
   '/_authenticated/pengaturan/database': typeof AuthenticatedPengaturanDatabaseRoute
+  '/_authenticated/pengaturan/menu': typeof AuthenticatedPengaturanMenuRoute
   '/_authenticated/pengaturan/storage': typeof AuthenticatedPengaturanStorageRoute
   '/_authenticated/pengaturan/tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/_authenticated/dashboard-guru/': typeof AuthenticatedDashboardGuruIndexRoute
@@ -547,6 +557,7 @@ export interface FileRouteTypes {
     | '/pembelajaran/rekap-kbm'
     | '/pengaturan/analytics'
     | '/pengaturan/database'
+    | '/pengaturan/menu'
     | '/pengaturan/storage'
     | '/pengaturan/tampilan'
     | '/dashboard-guru/'
@@ -599,6 +610,7 @@ export interface FileRouteTypes {
     | '/pembelajaran/rekap-kbm'
     | '/pengaturan/analytics'
     | '/pengaturan/database'
+    | '/pengaturan/menu'
     | '/pengaturan/storage'
     | '/pengaturan/tampilan'
     | '/dashboard-guru'
@@ -652,6 +664,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pembelajaran/rekap-kbm'
     | '/_authenticated/pengaturan/analytics'
     | '/_authenticated/pengaturan/database'
+    | '/_authenticated/pengaturan/menu'
     | '/_authenticated/pengaturan/storage'
     | '/_authenticated/pengaturan/tampilan'
     | '/_authenticated/dashboard-guru/'
@@ -953,6 +966,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPengaturanStorageRouteImport
       parentRoute: typeof AuthenticatedPengaturanRoute
     }
+    '/_authenticated/pengaturan/menu': {
+      id: '/_authenticated/pengaturan/menu'
+      path: '/menu'
+      fullPath: '/pengaturan/menu'
+      preLoaderRoute: typeof AuthenticatedPengaturanMenuRouteImport
+      parentRoute: typeof AuthenticatedPengaturanRoute
+    }
     '/_authenticated/pengaturan/database': {
       id: '/_authenticated/pengaturan/database'
       path: '/database'
@@ -1029,6 +1049,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedPengaturanRouteChildren {
   AuthenticatedPengaturanAnalyticsRoute: typeof AuthenticatedPengaturanAnalyticsRoute
   AuthenticatedPengaturanDatabaseRoute: typeof AuthenticatedPengaturanDatabaseRoute
+  AuthenticatedPengaturanMenuRoute: typeof AuthenticatedPengaturanMenuRoute
   AuthenticatedPengaturanStorageRoute: typeof AuthenticatedPengaturanStorageRoute
   AuthenticatedPengaturanTampilanRoute: typeof AuthenticatedPengaturanTampilanRoute
 }
@@ -1038,6 +1059,7 @@ const AuthenticatedPengaturanRouteChildren: AuthenticatedPengaturanRouteChildren
     AuthenticatedPengaturanAnalyticsRoute:
       AuthenticatedPengaturanAnalyticsRoute,
     AuthenticatedPengaturanDatabaseRoute: AuthenticatedPengaturanDatabaseRoute,
+    AuthenticatedPengaturanMenuRoute: AuthenticatedPengaturanMenuRoute,
     AuthenticatedPengaturanStorageRoute: AuthenticatedPengaturanStorageRoute,
     AuthenticatedPengaturanTampilanRoute: AuthenticatedPengaturanTampilanRoute,
   }
