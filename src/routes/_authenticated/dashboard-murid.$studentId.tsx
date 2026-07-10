@@ -304,12 +304,17 @@ function StatCard({ icon, label, value, tone }: { icon: React.ReactNode; label: 
 }
 
 function StatusBadge({ status }: { status: string }) {
+  const key = String(status ?? "").toLowerCase();
   const map: Record<string, { label: string; cls: string }> = {
-    H: { label: "Hadir", cls: "bg-emerald-100 text-emerald-700" },
-    S: { label: "Sakit", cls: "bg-amber-100 text-amber-700" },
-    I: { label: "Izin", cls: "bg-blue-100 text-blue-700" },
-    A: { label: "Alfa", cls: "bg-red-100 text-red-700" },
+    h: { label: "Hadir", cls: "bg-emerald-100 text-emerald-700" },
+    hadir: { label: "Hadir", cls: "bg-emerald-100 text-emerald-700" },
+    s: { label: "Sakit", cls: "bg-amber-100 text-amber-700" },
+    sakit: { label: "Sakit", cls: "bg-amber-100 text-amber-700" },
+    i: { label: "Izin", cls: "bg-blue-100 text-blue-700" },
+    izin: { label: "Izin", cls: "bg-blue-100 text-blue-700" },
+    a: { label: "Alfa", cls: "bg-red-100 text-red-700" },
+    alfa: { label: "Alfa", cls: "bg-red-100 text-red-700" },
   };
-  const m = map[status] ?? { label: status, cls: "bg-muted" };
+  const m = map[key] ?? { label: status, cls: "bg-muted" };
   return <span className={`text-xs px-2 py-0.5 rounded ${m.cls}`}>{m.label}</span>;
 }
