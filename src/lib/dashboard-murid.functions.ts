@@ -149,11 +149,12 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
           .in("attendance_record_id", recIds)
           .eq("student_id", data.studentId);
         (dets ?? []).forEach((d: any) => {
-          if (d.status === "H") hadir++;
-          else if (d.status === "S") sakit++;
-          else if (d.status === "I") izin++;
-          else if (d.status === "A") alfa++;
-          riwayat.push({ date: dateMap.get(d.attendance_record_id) as string, status: d.status });
+          const s = String(d.status ?? "").toLowerCase();
+          if (s === "h" || s === "hadir") hadir++;
+          else if (s === "s" || s === "sakit") sakit++;
+          else if (s === "i" || s === "izin") izin++;
+          else if (s === "a" || s === "alfa") alfa++;
+          riwayat.push({ date: dateMap.get(d.attendance_record_id) as string, status: s });
         });
       }
     }
@@ -167,7 +168,7 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
         .from("attendance_details")
         .select("id", { count: "exact", head: true })
         .eq("student_id", data.studentId)
-        .eq("status", "A"),
+        .in("status", ["A", "a", "alfa", "Alfa", "ALFA"]),
       supabase
         .from("late_records")
         .select("id", { count: "exact", head: true })
