@@ -42,6 +42,7 @@ import { Route as AuthenticatedGuruRouteImport } from './routes/_authenticated/g
 import { Route as AuthenticatedDenahRouteImport } from './routes/_authenticated/denah'
 import { Route as AuthenticatedDashboardMuridRouteImport } from './routes/_authenticated/dashboard-murid'
 import { Route as AuthenticatedDashboardKelasRouteImport } from './routes/_authenticated/dashboard-kelas'
+import { Route as AuthenticatedDashboardKaprogRouteImport } from './routes/_authenticated/dashboard-kaprog'
 import { Route as AuthenticatedDashboardGuruRouteImport } from './routes/_authenticated/dashboard-guru'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBerkasRouteImport } from './routes/_authenticated/berkas'
@@ -226,6 +227,12 @@ const AuthenticatedDashboardKelasRoute =
     path: '/dashboard-kelas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDashboardKaprogRoute =
+  AuthenticatedDashboardKaprogRouteImport.update({
+    id: '/dashboard-kaprog',
+    path: '/dashboard-kaprog',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardGuruRoute =
   AuthenticatedDashboardGuruRouteImport.update({
     id: '/dashboard-guru',
@@ -291,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/berkas': typeof AuthenticatedBerkasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dashboard-guru': typeof AuthenticatedDashboardGuruRoute
+  '/dashboard-kaprog': typeof AuthenticatedDashboardKaprogRoute
   '/dashboard-kelas': typeof AuthenticatedDashboardKelasRoute
   '/dashboard-murid': typeof AuthenticatedDashboardMuridRoute
   '/denah': typeof AuthenticatedDenahRoute
@@ -335,6 +343,7 @@ export interface FileRoutesByTo {
   '/berkas': typeof AuthenticatedBerkasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dashboard-guru': typeof AuthenticatedDashboardGuruRoute
+  '/dashboard-kaprog': typeof AuthenticatedDashboardKaprogRoute
   '/dashboard-kelas': typeof AuthenticatedDashboardKelasRoute
   '/dashboard-murid': typeof AuthenticatedDashboardMuridRoute
   '/denah': typeof AuthenticatedDenahRoute
@@ -381,6 +390,7 @@ export interface FileRoutesById {
   '/_authenticated/berkas': typeof AuthenticatedBerkasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/dashboard-guru': typeof AuthenticatedDashboardGuruRoute
+  '/_authenticated/dashboard-kaprog': typeof AuthenticatedDashboardKaprogRoute
   '/_authenticated/dashboard-kelas': typeof AuthenticatedDashboardKelasRoute
   '/_authenticated/dashboard-murid': typeof AuthenticatedDashboardMuridRoute
   '/_authenticated/denah': typeof AuthenticatedDenahRoute
@@ -427,6 +437,7 @@ export interface FileRouteTypes {
     | '/berkas'
     | '/dashboard'
     | '/dashboard-guru'
+    | '/dashboard-kaprog'
     | '/dashboard-kelas'
     | '/dashboard-murid'
     | '/denah'
@@ -471,6 +482,7 @@ export interface FileRouteTypes {
     | '/berkas'
     | '/dashboard'
     | '/dashboard-guru'
+    | '/dashboard-kaprog'
     | '/dashboard-kelas'
     | '/dashboard-murid'
     | '/denah'
@@ -516,6 +528,7 @@ export interface FileRouteTypes {
     | '/_authenticated/berkas'
     | '/_authenticated/dashboard'
     | '/_authenticated/dashboard-guru'
+    | '/_authenticated/dashboard-kaprog'
     | '/_authenticated/dashboard-kelas'
     | '/_authenticated/dashboard-murid'
     | '/_authenticated/denah'
@@ -793,6 +806,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardKelasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dashboard-kaprog': {
+      id: '/_authenticated/dashboard-kaprog'
+      path: '/dashboard-kaprog'
+      fullPath: '/dashboard-kaprog'
+      preLoaderRoute: typeof AuthenticatedDashboardKaprogRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard-guru': {
       id: '/_authenticated/dashboard-guru'
       path: '/dashboard-guru'
@@ -871,6 +891,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBerkasRoute: typeof AuthenticatedBerkasRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDashboardGuruRoute: typeof AuthenticatedDashboardGuruRoute
+  AuthenticatedDashboardKaprogRoute: typeof AuthenticatedDashboardKaprogRoute
   AuthenticatedDashboardKelasRoute: typeof AuthenticatedDashboardKelasRoute
   AuthenticatedDashboardMuridRoute: typeof AuthenticatedDashboardMuridRoute
   AuthenticatedDenahRoute: typeof AuthenticatedDenahRoute
@@ -914,6 +935,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBerkasRoute: AuthenticatedBerkasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDashboardGuruRoute: AuthenticatedDashboardGuruRoute,
+  AuthenticatedDashboardKaprogRoute: AuthenticatedDashboardKaprogRoute,
   AuthenticatedDashboardKelasRoute: AuthenticatedDashboardKelasRoute,
   AuthenticatedDashboardMuridRoute: AuthenticatedDashboardMuridRoute,
   AuthenticatedDenahRoute: AuthenticatedDenahRoute,
