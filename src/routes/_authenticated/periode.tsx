@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -24,10 +24,16 @@ type Sem = { id: string; tahun_ajaran_id: string | null; nama: string | null; ta
 
 export const Route = createFileRoute("/_authenticated/periode")({
   head: () => ({ meta: [{ title: "Manajemen Periode — SUPREME XPOES" }] }),
-  component: Page,
+  validateSearch: (s: Record<string, unknown>) => ({ tab: (s.tab === "semester" ? "semester" : "tahun") as "tahun" | "semester" }),
+  component: RouteComponent,
 });
 
-function Page() {
+function RouteComponent() {
+  const { tab } = useSearch({ from: "/_authenticated/periode" });
+  return <Page defaultTab={tab} />;
+}
+
+export function Page({ defaultTab = "tahun" }: { defaultTab?: "tahun" | "semester" }) {
   const qc = useQueryClient();
   const fetchFn = useServerFn(listPeriode);
   const saveT = useServerFn(saveTahunAjaran);
@@ -63,7 +69,7 @@ function Page() {
         <p className="text-sm text-muted-foreground">Kelola tahun ajaran & semester aktif.</p>
       </div>
 
-      <Tabs defaultValue="tahun">
+      <Tabs defaultValue={defaultTab}>
         <TabsList>
           <TabsTrigger value="tahun">Tahun Ajaran</TabsTrigger>
           <TabsTrigger value="semester">Semester</TabsTrigger>
