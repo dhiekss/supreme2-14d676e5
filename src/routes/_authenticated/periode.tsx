@@ -99,6 +99,11 @@ export function Page({ defaultTab = "tahun" }: { defaultTab?: "tahun" | "semeste
                       <TableCell>{t.tanggal_selesai ?? "—"}</TableCell>
                       <TableCell>{t.is_active ? <Badge className="gap-1"><CheckCircle2 className="h-3 w-3" />Aktif</Badge> : <Badge variant="outline">—</Badge>}</TableCell>
                       <TableCell className="text-right">
+                        {!t.is_active && (
+                          <Button size="sm" variant="outline" className="mr-1" disabled={aT.isPending} onClick={() => aT.mutate(t.id)}>
+                            <Power className="h-3.5 w-3.5 mr-1" />Aktifkan
+                          </Button>
+                        )}
                         <Button size="icon" variant="ghost" onClick={() => setEditT(t)}><Pencil className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" onClick={() => dT.mutate(t.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                       </TableCell>
