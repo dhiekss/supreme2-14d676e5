@@ -80,7 +80,7 @@ export const exportBackup = createServerFn({ method: "GET" })
     await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const tables: Record<string, unknown[]> = {};
+    const tables: Record<string, any[]> = {};
     const stats: Record<string, number> = {};
     const errors: Record<string, string> = {};
 
