@@ -45,6 +45,7 @@ import {
   listMenuLayouts,
   saveMenuLayout,
   resetMenuLayout,
+  applyMenuLayoutToAll,
   ROLES,
   type Role,
 } from "@/lib/menu-layout.functions";
@@ -106,6 +107,7 @@ function Editor() {
   const listFn = useServerFn(listMenuLayouts);
   const saveFn = useServerFn(saveMenuLayout);
   const resetFn = useServerFn(resetMenuLayout);
+  const applyAllFn = useServerFn(applyMenuLayoutToAll);
 
   const { data, isLoading } = useQuery({
     queryKey: ["menu-layouts-all"],
@@ -145,6 +147,17 @@ function Editor() {
       setDirty(false);
     },
     onError: (e: any) => toast.error(e?.message ?? "Gagal mereset"),
+  });
+
+  const applyAllMut = useMutation({
+    mutationFn: (payload: { layout: LayoutNode[] }) => applyAllFn({ data: payload }),
+    onSuccess: (res: any) => {
+      toast.success(`Layout diterapkan ke ${res?.count ?? ROLES.length} role`);
+      qc.invalidateQueries({ queryKey: ["menu-layouts-all"] });
+      qc.invalidateQueries({ queryKey: ["sidebar-layout"] });
+      setDirty(false);
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Gagal menerapkan"),
   });
 
   return (
@@ -203,6 +216,22 @@ function Editor() {
                     >
                       <Save className="h-4 w-4 mr-1" />
                       Simpan Perubahan
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        if (
+                          confirm(
+                            `Terapkan layout ini ke SEMUA role (${ROLES.length})? Ini akan menimpa layout tersimpan pada semua role.`,
+                          )
+                        ) {
+                          applyAllMut.mutate({ layout });
+                        }
+                      }}
+                      disabled={applyAllMut.isPending}
+                    >
+                      Terapkan ke Semua Role
                     </Button>
                     <Button
                       size="sm"
