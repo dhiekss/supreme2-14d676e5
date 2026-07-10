@@ -1,7 +1,9 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { fetchDisplaySettings, DEFAULT_DISPLAY } from "@/lib/display-settings";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -14,6 +16,11 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthedLayout() {
+  const { data: d = DEFAULT_DISPLAY } = useQuery({
+    queryKey: ["display-settings"],
+    queryFn: fetchDisplaySettings,
+    initialData: DEFAULT_DISPLAY,
+  });
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
@@ -26,6 +33,9 @@ function AuthedLayout() {
           <main className="flex-1 p-6">
             <Outlet />
           </main>
+          <footer className="border-t bg-card text-center text-xs text-muted-foreground py-3 px-4">
+            {d.footer}
+          </footer>
         </div>
       </div>
     </SidebarProvider>
