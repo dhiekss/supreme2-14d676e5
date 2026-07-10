@@ -63,6 +63,8 @@ export function Page({ defaultTab = "tahun" }: { defaultTab?: "tahun" | "semeste
   });
   const dT = useMutation({ mutationFn: (id: string) => delT({ data: { id } }), onSuccess: () => qc.invalidateQueries({ queryKey: ["periode"] }), onError: (e: any) => toast.error(e.message) });
   const dS = useMutation({ mutationFn: (id: string) => delS({ data: { id } }), onSuccess: () => qc.invalidateQueries({ queryKey: ["periode"] }), onError: (e: any) => toast.error(e.message) });
+  const aT = useMutation({ mutationFn: (id: string) => actT({ data: { id } }), onSuccess: () => { toast.success("Tahun ajaran diaktifkan"); qc.invalidateQueries({ queryKey: ["periode"] }); }, onError: (e: any) => toast.error(e.message) });
+  const aS = useMutation({ mutationFn: (id: string) => actS({ data: { id } }), onSuccess: () => { toast.success("Semester diaktifkan"); qc.invalidateQueries({ queryKey: ["periode"] }); }, onError: (e: any) => toast.error(e.message) });
 
   return (
     <div className="space-y-4">
