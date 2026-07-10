@@ -106,3 +106,24 @@ export const resetMenuLayout = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const applyMenuLayoutToAll = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { layout: LayoutNode[] }) => {
+    if (!Array.isArray(input.layout)) throw new Error("Invalid layout");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const rows = ROLES.map((role) => ({
+      role,
+      layout: data.layout,
+      updated_by: context.userId,
+      updated_at: new Date().toISOString(),
+    }));
+    const { error } = await context.supabase
+      .from("menu_layouts")
+      .upsert(rows, { onConflict: "role" });
+    if (error) throw new Error(error.message);
+    return { ok: true, count: rows.length };
+  });
