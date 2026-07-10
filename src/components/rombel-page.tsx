@@ -127,6 +127,7 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
 
   const [editing, setEditing] = useState<Partial<Row> | null>(null);
   const [membersOf, setMembersOf] = useState<Row | null>(null);
+  const [confirmDelAll, setConfirmDelAll] = useState(false);
   const [importNisnFor, setImportNisnFor] = useState<string>("");
   const fileInputs = {
     nisn: useRef<HTMLInputElement>(null),
