@@ -3,101 +3,185 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Database, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Download, Database, Loader2, CheckCircle2, AlertTriangle, FileSpreadsheet, FileJson } from "lucide-react";
 import { toast } from "sonner";
 import { exportBackup } from "@/lib/backup.functions";
+import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/_authenticated/import")({
   head: () => ({ meta: [{ title: "Impor & Backup — SUPREME XPOES" }] }),
   component: ImportBackupPage,
 });
 
-function ImportBackupPage() {
-  const runExport = useServerFn(exportBackup);
-  const [loading, setLoading] = useState(false);
-  const [lastResult, setLastResult] = useState<null | {
+type BackupResult = {
+  meta: {
     generated_at: string;
+    app: string;
+    version: number;
     totalRows: number;
     tables: number;
     stats: Record<string, number>;
     errors: Record<string, string>;
-  }>(null);
+  };
+  data: Record<string, any[]>;
+};
 
-  const handleExport = async () => {
-    setLoading(true);
-    const t = toast.loading("Menyiapkan backup database...");
+function ImportBackupPage() {
+  const runExport = useServerFn(exportBackup);
+  const [loadingFormat, setLoadingFormat] = useState<null | "json" | "xlsx">(null);
+  const [lastResult, setLastResult] = useState<null | BackupResult["meta"]>(null);
+
+  const fetchBackup = async (): Promise<BackupResult> => {
+    return (await runExport()) as BackupResult;
+  };
+
+  const triggerDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const stamp = () => new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+
+  const handleExportJson = async () => {
+    setLoadingFormat("json");
+    const t = toast.loading("Menyiapkan backup JSON...");
     try {
-      const result = (await runExport()) as {
-        meta: {
-          generated_at: string;
-          totalRows: number;
-          tables: number;
-          stats: Record<string, number>;
-          errors: Record<string, string>;
-        };
-        data: Record<string, unknown[]>;
-      };
+      const result = await fetchBackup();
       const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-      a.href = url;
-      a.download = `supremexpoes-backup-${stamp}.json`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      triggerDownload(blob, `supremexpoes-backup-${stamp()}.json`);
       setLastResult(result.meta);
       const errCount = Object.keys(result.meta.errors).length;
       toast.success(
-        `Backup selesai: ${result.meta.totalRows.toLocaleString("id-ID")} baris dari ${result.meta.tables} tabel${errCount ? ` (${errCount} tabel gagal)` : ""}`,
+        `Backup JSON selesai: ${result.meta.totalRows.toLocaleString("id-ID")} baris dari ${result.meta.tables} tabel${errCount ? ` (${errCount} tabel gagal)` : ""}`,
         { id: t },
       );
     } catch (e: any) {
-      toast.error(e?.message ?? "Gagal membuat backup", { id: t });
+      toast.error(e?.message ?? "Gagal membuat backup JSON", { id: t });
     } finally {
-      setLoading(false);
+      setLoadingFormat(null);
     }
   };
+
+  const handleExportXlsx = async () => {
+    setLoadingFormat("xlsx");
+    const t = toast.loading("Menyiapkan backup Excel...");
+    try {
+      const result = await fetchBackup();
+      const wb = XLSX.utils.book_new();
+
+      // _META sheet
+      const metaRows: any[][] = [
+        ["Aplikasi", result.meta.app],
+        ["Versi", result.meta.version],
+        ["Dibuat pada", result.meta.generated_at],
+        ["Total tabel", result.meta.tables],
+        ["Total baris", result.meta.totalRows],
+        [],
+        ["Tabel", "Jumlah Baris", "Error"],
+        ...Object.keys(result.data)
+          .sort()
+          .map((name) => [name, result.meta.stats[name] ?? 0, result.meta.errors[name] ?? ""]),
+      ];
+      const metaWs = XLSX.utils.aoa_to_sheet(metaRows);
+      XLSX.utils.book_append_sheet(wb, metaWs, "_META");
+
+      // Data sheets — one per table
+      for (const [table, rows] of Object.entries(result.data)) {
+        const flatRows = (rows ?? []).map((r) => {
+          const out: Record<string, any> = {};
+          for (const [k, v] of Object.entries(r ?? {})) {
+            out[k] = v === null || v === undefined
+              ? ""
+              : typeof v === "object"
+                ? JSON.stringify(v)
+                : v;
+          }
+          return out;
+        });
+        const ws = flatRows.length
+          ? XLSX.utils.json_to_sheet(flatRows)
+          : XLSX.utils.aoa_to_sheet([["(tabel kosong)"]]);
+        // Excel sheet name max 31 chars, no : \ / ? * [ ]
+        const safe = table.replace(/[:\\/?*\[\]]/g, "_").slice(0, 31);
+        XLSX.utils.book_append_sheet(wb, ws, safe);
+      }
+
+      const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([buf], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      triggerDownload(blob, `supremexpoes-backup-${stamp()}.xlsx`);
+      setLastResult(result.meta);
+      const errCount = Object.keys(result.meta.errors).length;
+      toast.success(
+        `Backup Excel selesai: ${result.meta.totalRows.toLocaleString("id-ID")} baris dari ${result.meta.tables} tabel${errCount ? ` (${errCount} tabel gagal)` : ""}`,
+        { id: t },
+      );
+    } catch (e: any) {
+      toast.error(e?.message ?? "Gagal membuat backup Excel", { id: t });
+    } finally {
+      setLoadingFormat(null);
+    }
+  };
+
+  const busy = loadingFormat !== null;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Impor & Backup</h1>
         <p className="text-sm text-muted-foreground">
-          Unduh backup lengkap database atau muat ulang dari file backup JSON.
+          Unduh backup lengkap database atau muat ulang dari file backup.
         </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Database className="h-5 w-5 text-primary" /> Backup Database
+            <Database className="h-5 w-5 text-primary" /> Ekspor Database
           </CardTitle>
           <CardDescription>
-            Membuat file JSON berisi seluruh data dari semua modul: master (guru, siswa,
-            rombel, mapel), presensi & KBM, pembelajaran (nilai, berkas, agenda),
-            perpustakaan, sarpras, persuratan, TPG, SP, suara publik, pengguna & peran,
-            serta log aktivitas dan notifikasi.
+            Ekspor seluruh data dari semua menu (guru, murid, rombel, KBM, nilai, kehadiran,
+            perpustakaan, sarpras, persuratan, TPG, pengaturan, dsb.) menjadi satu berkas.
+            Gunakan sebagai cadangan berkala atau arsip akhir tahun ajaran.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={handleExport} disabled={loading}>
-              {loading ? (
+            <Button onClick={handleExportXlsx} disabled={busy}>
+              {loadingFormat === "xlsx" ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Menyiapkan backup...
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Menyiapkan Excel...
                 </>
               ) : (
                 <>
-                  <Download className="h-4 w-4 mr-2" /> Unduh Backup (.json)
+                  <FileSpreadsheet className="h-4 w-4 mr-2" /> Ekspor ke Excel (.xlsx)
                 </>
               )}
             </Button>
-            <p className="text-xs text-muted-foreground">
-              Proses dapat memakan waktu beberapa saat tergantung volume data.
-            </p>
+            <Button variant="outline" onClick={handleExportJson} disabled={busy}>
+              {loadingFormat === "json" ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Menyiapkan JSON...
+                </>
+              ) : (
+                <>
+                  <FileJson className="h-4 w-4 mr-2" /> Ekspor ke JSON
+                </>
+              )}
+            </Button>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Excel: setiap tabel jadi satu sheet, plus sheet <code>_META</code> berisi ringkasan.
+            JSON: satu berkas berisi semua tabel — cocok untuk restore penuh di kemudian hari.
+            Proses bisa memakan waktu bila data besar; jangan tutup halaman.
+          </p>
 
           {lastResult && (
             <div className="rounded-md border p-4 space-y-3 bg-muted/30">
@@ -147,11 +231,11 @@ function ImportBackupPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2 text-primary">
-            <CheckCircle2 className="h-5 w-5" /> Impor Data
+            <Download className="h-5 w-5" /> Impor Data
           </CardTitle>
           <CardDescription>
-            Data lama sudah dimuat ke database SUPREME XPOES. Fitur unggah backup JSON
-            untuk siklus tahun ajaran baru akan tersedia selanjutnya.
+            Data lama sudah dimuat ke database SUPREME XPOES. Fitur unggah backup untuk
+            siklus tahun ajaran baru akan tersedia selanjutnya.
           </CardDescription>
         </CardHeader>
       </Card>
