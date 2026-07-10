@@ -74,8 +74,17 @@ function LaporKbmPage() {
     enabled: !!rombelId && !!mapelId,
   });
 
-  const toggleJam = (n: number) =>
+  const toggleJam = (n: number) => {
     setJamList((p) => (p.includes(n) ? p.filter((x) => x !== n) : [...p, n].sort((a, b) => a - b)));
+    setJamStatus((p) => {
+      const next = { ...p };
+      if (n in next) delete next[n];
+      else next[n] = "M";
+      return next;
+    });
+  };
+  const setStatus = (n: number, s: "M" | "T+" | "T-") =>
+    setJamStatus((p) => ({ ...p, [n]: s }));
 
   const onPickFile = (file: File | null) => {
     if (!file) return;
