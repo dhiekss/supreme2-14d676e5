@@ -107,6 +107,7 @@ function Editor() {
   const listFn = useServerFn(listMenuLayouts);
   const saveFn = useServerFn(saveMenuLayout);
   const resetFn = useServerFn(resetMenuLayout);
+  const applyAllFn = useServerFn(applyMenuLayoutToAll);
 
   const { data, isLoading } = useQuery({
     queryKey: ["menu-layouts-all"],
