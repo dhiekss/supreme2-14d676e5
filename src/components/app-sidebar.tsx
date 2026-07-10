@@ -59,6 +59,8 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { fetchDisplaySettings, DEFAULT_DISPLAY } from "@/lib/display-settings";
 
 type LeafItem = { title: string; url: string; icon: any };
 type GroupItem = { title: string; icon: any; children: LeafItem[] };
