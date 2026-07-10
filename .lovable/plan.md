@@ -1,78 +1,68 @@
-## Ringkasan
+## Fitur Naik Kelas (Kenaikan Kelas)
 
-Membangun ulang aplikasi **SUPREME XPOES** (Students Presence and Management of Education) SMKN 1 Pusakanagara berdasarkan backup JSON (79 tabel, ±226k baris) dan screenshot UI. Iterasi pertama fokus ke modul prioritas (Presensi + KBM) plus seluruh master data yang dibutuhkan. Modul lain (perpustakaan, sarpras, persuratan, TPG, verval, surat tugas, suara publik, dll.) menyusul di iterasi berikutnya — datanya tetap diimpor agar tidak hilang.
+Alur batch per rombel, memindahkan seluruh siswa ke rombel tujuan pada periode (tahun ajaran/semester) yang dipilih manual, dengan penanganan status naik / tinggal / lulus / keluar, dan menyimpan riwayat per siswa.
 
-## Cakupan iterasi pertama (yang akan dibangun sekarang)
+### 1. Database (migration)
 
-**Auth & Role**
-- Login email/NIP/NIS + password (sesuai screenshot)
-- Tabel `profiles` + `user_roles` (enum `app_role`: admin, wakasek, kaprog, guru, murid, + role tambahan dari data: admin_sarpras, admin_persuratan, admin_tpg)
-- Layout `_authenticated` dengan sidebar (Halaman Utama, Dashboard Guru/Murid/Kelas/Ka.Prog, Pembelajaran, Nilai PSAJ, Kelulusan, PKL, Buku Induk, Input Presensi, Laporan Presensi, Revisi Presensi, Input KBM, Laporan KBM, Keluar)
-- Brand: nama "SUPREME XPOES", logo SMKN 1 Pusakanagara, palet biru tua (#1e3a8a-ish) sesuai screenshot, font sans-serif yang bersih
+Buat tabel baru `student_promotions` untuk audit trail:
 
-**Halaman Utama (Dashboard Admin)**
-- Card statistik: Jumlah Guru, Jumlah Murid, Jumlah Rombel, Kehadiran Hari Ini
-- Card per tingkat: Kelas X / XI / XII (L/P)
-- Grafik mingguan presensi murid (stacked bar Hadir/Izin/Sakit/Alfa/PKL)
-- Card Data KBM Guru (realisasi %), Keterlambatan Murid, Notifikasi Penting (Alfa 3+ hari, Kasus SP)
+- `student_id` (fk students)
+- `student_name`, `student_nis` (snapshot)
+- `rombel_asal_id`, `rombel_asal_name` (snapshot)
+- `rombel_tujuan_id` (nullable — kosong untuk lulus/keluar)
+- `tahun_ajaran_asal_id`, `tahun_ajaran_tujuan_id`
+- `semester_asal_id`, `semester_tujuan_id`
+- `status` enum: `naik` | `tinggal` | `lulus` | `keluar`
+- `tanggal_proses`, `batch_id` (uuid — mengelompokkan satu proses batch)
+- `catatan`
+- `created_by`, `created_at`
 
-**Master Data (CRUD untuk Admin/Kaprog, read-only untuk role lain)**
-- `tahun_ajaran`, `semester` (set semester aktif)
-- `konsentrasi_keahlian` (jurusan)
-- `rombel` (kelas) + wali kelas
-- `mata_pelajaran`
-- `guru`, `students`
-- `jadwal_pelajaran`, `jadwal_alokasi_waktu`, `hari_efektif`
-- `rombel_mata_pelajaran` (mapping guru-rombel-mapel per semester)
+Grants untuk `authenticated` + `service_role`, RLS aktif, policy: user login dapat SELECT/INSERT; UPDATE/DELETE hanya admin (via `has_role`).
 
-**Modul Presensi**
-- Input Presensi Harian: pilih tanggal + rombel → daftar siswa → status (Hadir/Izin/Sakit/Alfa/PKL)
-- Laporan Presensi: filter rombel + rentang tanggal, ekspor
-- Revisi Presensi: alur request → approve/reject (sesuai `attendance_revision_requests`)
-- Pencatatan keterlambatan (`late_records`)
-- Pencatatan Surat Peringatan (`sp_records`) untuk siswa Alfa 3+
+### 2. Server functions (`src/lib/kenaikan.functions.ts`)
 
-**Modul KBM**
-- Input KBM: tanggal, rombel, mapel, jam pelajaran (1–10), materi, foto kegiatan, TTD pelapor (signature canvas)
-- KBM Agenda + kehadiran per pertemuan (`kbm_agenda`, `kbm_agenda_kehadiran`)
-- Laporan KBM: rekap realisasi per guru/rombel/mapel
-- Berkas pembelajaran (`berkas_pembelajaran`): upload Prota/Promes/ATP/Modul Ajar dengan alur validasi
+- `listRombelWithCounts` — daftar rombel + jumlah siswa aktif untuk pilih rombel asal.
+- `listStudentsForPromotion({ rombel_id })` — siswa aktif di rombel asal (nama, nis, tanda sudah mutasi/keluar untuk default status).
+- `previewPromotion({ rombel_asal_id })` — ambil siswa + default status per siswa (siswa yang punya baris di `student_resignations` / `student_transfers_out` → default `keluar`).
+- `commitPromotion({ rombel_asal_id, rombel_tujuan_id, tahun_ajaran_tujuan_id, semester_tujuan_id, items: [{student_id, status, rombel_tujuan_override?}] })`:
+  - Untuk status `naik` → update `students.rombel_id` = rombel_tujuan (atau override per siswa jika perlu).
+  - Untuk `tinggal` → update ke `rombel_tujuan_override` (rombel tingkat sama tahun baru).
+  - Untuk `lulus` / `keluar` → set `students.rombel_id = null` (dan tandai status jika kolom tersedia; jika tidak, cukup null).
+  - Insert satu baris per siswa ke `student_promotions` dengan `batch_id` sama.
+- `listPromotionHistory({ search?, batch_id? })` — daftar riwayat, dikelompokkan per batch.
+- `undoPromotionBatch({ batch_id })` — admin only; balikkan `students.rombel_id` ke `rombel_asal_id` dan hapus baris batch.
 
-**Impor data dari backup JSON**
-- Script Node/TypeScript dijalankan via `createServerFn` admin-only memakai `supabaseAdmin`
-- Urutan: tahun_ajaran → semester → konsentrasi → rombel → mata_pelajaran → guru → students → profiles → user_roles → user_rombel → jadwal → rombel_mata_pelajaran → tujuan_pembelajaran → attendance_records/details → kbm_records/agenda/kehadiran → late_records → sp_records → hari_efektif
-- Tabel di luar MVP (books, sarpras, surat, tpg, verval, dll.) dibuat skemanya saja & data diimpor (tanpa UI dulu) supaya tidak hilang
-- Password user tidak ada di backup → admin reset / generate password awal (NIP untuk guru, NIS untuk murid) dan kirim via daftar download
+### 3. UI — halaman baru `src/routes/_authenticated/kenaikan-kelas.tsx`
 
-## Stack & teknis
+Tab: **Proses Kenaikan** | **Riwayat**.
 
-- **Frontend**: TanStack Start v1 + React 19, Tailwind v4, shadcn/ui, lucide-react, recharts (grafik dashboard), react-signature-canvas (TTD)
-- **Backend**: Lovable Cloud (Supabase) — Postgres + Auth + Storage (foto kegiatan, file berkas, file surat)
-- **Akses data**: `createServerFn` + RLS (`requireSupabaseAuth`); admin job pakai `supabaseAdmin` di `.handler()`
-- **Routing**: `src/routes/_authenticated/*` (gate `ssr: false`), `src/routes/auth.tsx`
-- **RLS**: function `has_role(uuid, app_role)` security definer; policy per tabel berdasarkan role + scoping per rombel (guru hanya rombel yang diajar, murid hanya datanya sendiri)
-- **Storage buckets**: `kbm-foto`, `berkas-pembelajaran`, `sp-dokumen`, `verval-dokumen`, `surat-files` (private + signed URL)
+**Tab Proses Kenaikan** (wizard 1 halaman):
+1. Pilih **Rombel Asal**.
+2. Pilih **Periode Tujuan**: `Tahun Ajaran` + `Semester` (select dari data periode yang ada).
+3. Pilih **Rombel Tujuan default** (untuk siswa berstatus "naik").
+4. Tabel siswa dengan kolom: Nama, NIS, Status (Select: Naik / Tinggal / Lulus / Keluar), Rombel Tujuan (auto-isi default; bisa override per siswa untuk kasus tinggal/naik lintas rombel).
+5. Ringkasan: total naik / tinggal / lulus / keluar.
+6. Tombol **Proses Kenaikan** → dialog konfirmasi → panggil `commitPromotion`.
 
-## Tidak masuk iterasi ini (menyusul)
+Aturan default status:
+- Siswa yang sudah punya baris di `student_transfers_out` atau `student_resignations` → default `keluar`, baris di-disable.
+- Rombel asal tingkat XII → default semua `lulus`, rombel tujuan disembunyikan.
+- Selain itu → default `naik`.
 
-UI untuk: Perpustakaan (books/loans), Sarpras (alat/ruang/peminjaman/pengajuan), Persuratan (surat masuk/keluar/tugas/disposisi/arsip), TPG (referensi/laporan/administrasi), Verval Siswa, Suara Publik, Mutasi (transfers in/out, resignations, rombel transfers), Buku Induk lengkap, Nilai PSAJ, Kelulusan, PKL. Skemanya tetap dibuat & datanya tetap diimpor.
+**Tab Riwayat**:
+- Daftar batch (tanggal, rombel asal → tujuan, jumlah per status, oleh siapa).
+- Klik batch → lihat detail siswa.
+- Tombol **Undo** (admin only) per batch.
 
-## Tahapan kerja
+### 4. Integrasi menu
 
-1. Enable Lovable Cloud
-2. Setup design system (tokens warna SUPREME, font, logo, layout sidebar)
-3. Migrasi skema: enum + tabel master + tabel presensi + tabel KBM + tabel-tabel sisa (skema saja)
-4. RLS + grants + function `has_role`
-5. Auth pages + layout `_authenticated`
-6. Halaman master data (CRUD)
-7. Halaman Presensi (input, laporan, revisi, keterlambatan, SP)
-8. Halaman KBM (input, agenda, laporan, berkas)
-9. Dashboard Halaman Utama + Dashboard Guru/Murid/Kelas/Kaprog
-10. Script impor data dari backup JSON → jalankan
-11. QA: login sebagai admin/guru/murid sample, cek dashboard & alur presensi/KBM
+- Tambah entry di `src/lib/menu-catalog.ts` grup Kesiswaan/Akademik: "Kenaikan Kelas" → `/kenaikan-kelas`.
+- Tambah link di `src/components/app-sidebar.tsx` jika perlu.
+- Route ter-generate otomatis oleh TanStack Router setelah file route dibuat.
 
-## Pertanyaan terbuka (akan saya tangani saat eksekusi, beritahu kalau Anda punya preferensi)
+### 5. Catatan teknis
 
-- **Password awal user**: pakai pola default (NIP untuk guru, NIS untuk murid, `admin12345` untuk admin lama) atau Anda mau set manual?
-- **File storage**: backup JSON tidak menyertakan binary file (foto kegiatan, file surat, dll.). URL lama tetap disimpan tapi file aslinya tidak ikut. OK?
-- **Domain custom**: setelah selesai, apakah mau dipasang ulang ke `supreme.smknpusakanagara.sch.id` (perlu update DNS)?
+- Semua operasi via `createServerFn` + `requireSupabaseAuth`; tidak menyentuh `auth`/`storage` schema.
+- Snapshot nama rombel/siswa disimpan di `student_promotions` supaya riwayat tetap terbaca meski rombel dihapus di kemudian hari.
+- Tidak ada perubahan pada tabel `students` lain selain kolom `rombel_id` (diasumsikan tidak ada kolom status siswa; jika ada nanti kita tambahkan).
+- Data saat ini (semester Genap 2025/2026) akan menjadi periode asal default di form.
