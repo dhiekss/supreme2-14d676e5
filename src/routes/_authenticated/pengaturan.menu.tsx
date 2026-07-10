@@ -45,6 +45,7 @@ import {
   listMenuLayouts,
   saveMenuLayout,
   resetMenuLayout,
+  applyMenuLayoutToAll,
   ROLES,
   type Role,
 } from "@/lib/menu-layout.functions";
