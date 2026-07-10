@@ -128,7 +128,7 @@ function DynamicFavicon() {
     },
   });
   useEffect(() => {
-    const url = data?.find((r: { key: string; value: string | null }) => r.key === "display.logo_url")?.value;
+    const url = data?.find((r) => r.key === "display.logo_url")?.value;
     if (!url) return;
     let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
     if (!link) {
