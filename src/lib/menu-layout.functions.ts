@@ -2,8 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { LayoutNode } from "@/lib/sidebar-menu";
 
-const ROLES = ["admin", "moderator", "user"] as const;
-type Role = (typeof ROLES)[number];
+export const ROLES = [
+  "admin",
+  "wakasek",
+  "kaprog",
+  "guru",
+  "murid",
+  "admin_sarpras",
+  "admin_persuratan",
+  "admin_tpg",
+] as const;
+export type Role = (typeof ROLES)[number];
 
 async function assertAdmin(ctx: {
   supabase: any;
