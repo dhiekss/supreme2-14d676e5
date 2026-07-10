@@ -91,7 +91,7 @@ function Page() {
 
       <QrDialog
         open={!!qrFor}
-        onOpenChange={(o) => !o && setQrFor(null)}
+        onOpenChange={(o: boolean) => !o && setQrFor(null)}
         title={qrFor ? `QR Code — ${qrFor.nama}` : ""}
         value={qrFor?.id ?? ""}
       />
