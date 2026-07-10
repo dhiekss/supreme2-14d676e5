@@ -40,6 +40,8 @@ export function Page({ defaultTab = "tahun" }: { defaultTab?: "tahun" | "semeste
   const delT = useServerFn(deleteTahunAjaran);
   const saveS = useServerFn(saveSemester);
   const delS = useServerFn(deleteSemester);
+  const actT = useServerFn(setActiveTahun);
+  const actS = useServerFn(setActiveSemester);
 
   const { data } = useQuery({ queryKey: ["periode"], queryFn: () => fetchFn() as Promise<{ tahun: Tahun[]; semester: Sem[] }> });
   const tahun = data?.tahun ?? [];
