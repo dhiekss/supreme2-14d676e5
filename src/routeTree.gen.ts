@@ -49,6 +49,10 @@ import { Route as AuthenticatedBerkasRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedAktivitasRouteImport } from './routes/_authenticated/aktivitas'
 import { Route as AuthenticatedDashboardMuridIndexRouteImport } from './routes/_authenticated/dashboard-murid.index'
 import { Route as AuthenticatedDashboardGuruIndexRouteImport } from './routes/_authenticated/dashboard-guru.index'
+import { Route as AuthenticatedPengaturanTampilanRouteImport } from './routes/_authenticated/pengaturan.tampilan'
+import { Route as AuthenticatedPengaturanStorageRouteImport } from './routes/_authenticated/pengaturan.storage'
+import { Route as AuthenticatedPengaturanDatabaseRouteImport } from './routes/_authenticated/pengaturan.database'
+import { Route as AuthenticatedPengaturanAnalyticsRouteImport } from './routes/_authenticated/pengaturan.analytics'
 import { Route as AuthenticatedPembelajaranRekapKbmRouteImport } from './routes/_authenticated/pembelajaran.rekap-kbm'
 import { Route as AuthenticatedPembelajaranPengaturanRouteImport } from './routes/_authenticated/pembelajaran.pengaturan'
 import { Route as AuthenticatedPembelajaranNilaiRouteImport } from './routes/_authenticated/pembelajaran.nilai'
@@ -269,6 +273,30 @@ const AuthenticatedDashboardGuruIndexRoute =
     path: '/dashboard-guru/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPengaturanTampilanRoute =
+  AuthenticatedPengaturanTampilanRouteImport.update({
+    id: '/tampilan',
+    path: '/tampilan',
+    getParentRoute: () => AuthenticatedPengaturanRoute,
+  } as any)
+const AuthenticatedPengaturanStorageRoute =
+  AuthenticatedPengaturanStorageRouteImport.update({
+    id: '/storage',
+    path: '/storage',
+    getParentRoute: () => AuthenticatedPengaturanRoute,
+  } as any)
+const AuthenticatedPengaturanDatabaseRoute =
+  AuthenticatedPengaturanDatabaseRouteImport.update({
+    id: '/database',
+    path: '/database',
+    getParentRoute: () => AuthenticatedPengaturanRoute,
+  } as any)
+const AuthenticatedPengaturanAnalyticsRoute =
+  AuthenticatedPengaturanAnalyticsRouteImport.update({
+    id: '/analytics',
+    path: '/analytics',
+    getParentRoute: () => AuthenticatedPengaturanRoute,
+  } as any)
 const AuthenticatedPembelajaranRekapKbmRoute =
   AuthenticatedPembelajaranRekapKbmRouteImport.update({
     id: '/pembelajaran/rekap-kbm',
@@ -341,7 +369,7 @@ export interface FileRoutesByFullPath {
   '/master': typeof AuthenticatedMasterRoute
   '/mutasi': typeof AuthenticatedMutasiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
-  '/pengaturan': typeof AuthenticatedPengaturanRoute
+  '/pengaturan': typeof AuthenticatedPengaturanRouteWithChildren
   '/periode': typeof AuthenticatedPeriodeRoute
   '/perpus': typeof AuthenticatedPerpusRoute
   '/persuratan': typeof AuthenticatedPersuratanRoute
@@ -364,6 +392,10 @@ export interface FileRoutesByFullPath {
   '/pembelajaran/nilai': typeof AuthenticatedPembelajaranNilaiRoute
   '/pembelajaran/pengaturan': typeof AuthenticatedPembelajaranPengaturanRoute
   '/pembelajaran/rekap-kbm': typeof AuthenticatedPembelajaranRekapKbmRoute
+  '/pengaturan/analytics': typeof AuthenticatedPengaturanAnalyticsRoute
+  '/pengaturan/database': typeof AuthenticatedPengaturanDatabaseRoute
+  '/pengaturan/storage': typeof AuthenticatedPengaturanStorageRoute
+  '/pengaturan/tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/dashboard-guru/': typeof AuthenticatedDashboardGuruIndexRoute
   '/dashboard-murid/': typeof AuthenticatedDashboardMuridIndexRoute
 }
@@ -390,7 +422,7 @@ export interface FileRoutesByTo {
   '/master': typeof AuthenticatedMasterRoute
   '/mutasi': typeof AuthenticatedMutasiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
-  '/pengaturan': typeof AuthenticatedPengaturanRoute
+  '/pengaturan': typeof AuthenticatedPengaturanRouteWithChildren
   '/periode': typeof AuthenticatedPeriodeRoute
   '/perpus': typeof AuthenticatedPerpusRoute
   '/persuratan': typeof AuthenticatedPersuratanRoute
@@ -413,6 +445,10 @@ export interface FileRoutesByTo {
   '/pembelajaran/nilai': typeof AuthenticatedPembelajaranNilaiRoute
   '/pembelajaran/pengaturan': typeof AuthenticatedPembelajaranPengaturanRoute
   '/pembelajaran/rekap-kbm': typeof AuthenticatedPembelajaranRekapKbmRoute
+  '/pengaturan/analytics': typeof AuthenticatedPengaturanAnalyticsRoute
+  '/pengaturan/database': typeof AuthenticatedPengaturanDatabaseRoute
+  '/pengaturan/storage': typeof AuthenticatedPengaturanStorageRoute
+  '/pengaturan/tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/dashboard-guru': typeof AuthenticatedDashboardGuruIndexRoute
   '/dashboard-murid': typeof AuthenticatedDashboardMuridIndexRoute
 }
@@ -441,7 +477,7 @@ export interface FileRoutesById {
   '/_authenticated/master': typeof AuthenticatedMasterRoute
   '/_authenticated/mutasi': typeof AuthenticatedMutasiRoute
   '/_authenticated/notifikasi': typeof AuthenticatedNotifikasiRoute
-  '/_authenticated/pengaturan': typeof AuthenticatedPengaturanRoute
+  '/_authenticated/pengaturan': typeof AuthenticatedPengaturanRouteWithChildren
   '/_authenticated/periode': typeof AuthenticatedPeriodeRoute
   '/_authenticated/perpus': typeof AuthenticatedPerpusRoute
   '/_authenticated/persuratan': typeof AuthenticatedPersuratanRoute
@@ -464,6 +500,10 @@ export interface FileRoutesById {
   '/_authenticated/pembelajaran/nilai': typeof AuthenticatedPembelajaranNilaiRoute
   '/_authenticated/pembelajaran/pengaturan': typeof AuthenticatedPembelajaranPengaturanRoute
   '/_authenticated/pembelajaran/rekap-kbm': typeof AuthenticatedPembelajaranRekapKbmRoute
+  '/_authenticated/pengaturan/analytics': typeof AuthenticatedPengaturanAnalyticsRoute
+  '/_authenticated/pengaturan/database': typeof AuthenticatedPengaturanDatabaseRoute
+  '/_authenticated/pengaturan/storage': typeof AuthenticatedPengaturanStorageRoute
+  '/_authenticated/pengaturan/tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/_authenticated/dashboard-guru/': typeof AuthenticatedDashboardGuruIndexRoute
   '/_authenticated/dashboard-murid/': typeof AuthenticatedDashboardMuridIndexRoute
 }
@@ -515,6 +555,10 @@ export interface FileRouteTypes {
     | '/pembelajaran/nilai'
     | '/pembelajaran/pengaturan'
     | '/pembelajaran/rekap-kbm'
+    | '/pengaturan/analytics'
+    | '/pengaturan/database'
+    | '/pengaturan/storage'
+    | '/pengaturan/tampilan'
     | '/dashboard-guru/'
     | '/dashboard-murid/'
   fileRoutesByTo: FileRoutesByTo
@@ -564,6 +608,10 @@ export interface FileRouteTypes {
     | '/pembelajaran/nilai'
     | '/pembelajaran/pengaturan'
     | '/pembelajaran/rekap-kbm'
+    | '/pengaturan/analytics'
+    | '/pengaturan/database'
+    | '/pengaturan/storage'
+    | '/pengaturan/tampilan'
     | '/dashboard-guru'
     | '/dashboard-murid'
   id:
@@ -614,6 +662,10 @@ export interface FileRouteTypes {
     | '/_authenticated/pembelajaran/nilai'
     | '/_authenticated/pembelajaran/pengaturan'
     | '/_authenticated/pembelajaran/rekap-kbm'
+    | '/_authenticated/pengaturan/analytics'
+    | '/_authenticated/pengaturan/database'
+    | '/_authenticated/pengaturan/storage'
+    | '/_authenticated/pengaturan/tampilan'
     | '/_authenticated/dashboard-guru/'
     | '/_authenticated/dashboard-murid/'
   fileRoutesById: FileRoutesById
@@ -906,6 +958,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardGuruIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pengaturan/tampilan': {
+      id: '/_authenticated/pengaturan/tampilan'
+      path: '/tampilan'
+      fullPath: '/pengaturan/tampilan'
+      preLoaderRoute: typeof AuthenticatedPengaturanTampilanRouteImport
+      parentRoute: typeof AuthenticatedPengaturanRoute
+    }
+    '/_authenticated/pengaturan/storage': {
+      id: '/_authenticated/pengaturan/storage'
+      path: '/storage'
+      fullPath: '/pengaturan/storage'
+      preLoaderRoute: typeof AuthenticatedPengaturanStorageRouteImport
+      parentRoute: typeof AuthenticatedPengaturanRoute
+    }
+    '/_authenticated/pengaturan/database': {
+      id: '/_authenticated/pengaturan/database'
+      path: '/database'
+      fullPath: '/pengaturan/database'
+      preLoaderRoute: typeof AuthenticatedPengaturanDatabaseRouteImport
+      parentRoute: typeof AuthenticatedPengaturanRoute
+    }
+    '/_authenticated/pengaturan/analytics': {
+      id: '/_authenticated/pengaturan/analytics'
+      path: '/analytics'
+      fullPath: '/pengaturan/analytics'
+      preLoaderRoute: typeof AuthenticatedPengaturanAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedPengaturanRoute
+    }
     '/_authenticated/pembelajaran/rekap-kbm': {
       id: '/_authenticated/pembelajaran/rekap-kbm'
       path: '/pembelajaran/rekap-kbm'
@@ -965,6 +1045,27 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedPengaturanRouteChildren {
+  AuthenticatedPengaturanAnalyticsRoute: typeof AuthenticatedPengaturanAnalyticsRoute
+  AuthenticatedPengaturanDatabaseRoute: typeof AuthenticatedPengaturanDatabaseRoute
+  AuthenticatedPengaturanStorageRoute: typeof AuthenticatedPengaturanStorageRoute
+  AuthenticatedPengaturanTampilanRoute: typeof AuthenticatedPengaturanTampilanRoute
+}
+
+const AuthenticatedPengaturanRouteChildren: AuthenticatedPengaturanRouteChildren =
+  {
+    AuthenticatedPengaturanAnalyticsRoute:
+      AuthenticatedPengaturanAnalyticsRoute,
+    AuthenticatedPengaturanDatabaseRoute: AuthenticatedPengaturanDatabaseRoute,
+    AuthenticatedPengaturanStorageRoute: AuthenticatedPengaturanStorageRoute,
+    AuthenticatedPengaturanTampilanRoute: AuthenticatedPengaturanTampilanRoute,
+  }
+
+const AuthenticatedPengaturanRouteWithChildren =
+  AuthenticatedPengaturanRoute._addFileChildren(
+    AuthenticatedPengaturanRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAktivitasRoute: typeof AuthenticatedAktivitasRoute
   AuthenticatedBerkasRoute: typeof AuthenticatedBerkasRoute
@@ -986,7 +1087,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMasterRoute: typeof AuthenticatedMasterRoute
   AuthenticatedMutasiRoute: typeof AuthenticatedMutasiRoute
   AuthenticatedNotifikasiRoute: typeof AuthenticatedNotifikasiRoute
-  AuthenticatedPengaturanRoute: typeof AuthenticatedPengaturanRoute
+  AuthenticatedPengaturanRoute: typeof AuthenticatedPengaturanRouteWithChildren
   AuthenticatedPeriodeRoute: typeof AuthenticatedPeriodeRoute
   AuthenticatedPerpusRoute: typeof AuthenticatedPerpusRoute
   AuthenticatedPersuratanRoute: typeof AuthenticatedPersuratanRoute
@@ -1034,7 +1135,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMasterRoute: AuthenticatedMasterRoute,
   AuthenticatedMutasiRoute: AuthenticatedMutasiRoute,
   AuthenticatedNotifikasiRoute: AuthenticatedNotifikasiRoute,
-  AuthenticatedPengaturanRoute: AuthenticatedPengaturanRoute,
+  AuthenticatedPengaturanRoute: AuthenticatedPengaturanRouteWithChildren,
   AuthenticatedPeriodeRoute: AuthenticatedPeriodeRoute,
   AuthenticatedPerpusRoute: AuthenticatedPerpusRoute,
   AuthenticatedPersuratanRoute: AuthenticatedPersuratanRoute,

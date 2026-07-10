@@ -69,7 +69,10 @@ export const MENU_CATALOG: MenuGroup[] = [
       { key: "users", label: "Manajemen User" },
       { key: "aktivitas", label: "Aktivitas / Log" },
       { key: "import", label: "Impor Backup" },
-      { key: "pengaturan", label: "Pengaturan" },
+      { key: "pengaturan/tampilan", label: "Pengaturan Tampilan" },
+      { key: "pengaturan/storage", label: "Pengaturan Storage" },
+      { key: "pengaturan/database", label: "Pengaturan Database" },
+      { key: "pengaturan/analytics", label: "Pengaturan Analytics" },
     ],
   },
 ];
