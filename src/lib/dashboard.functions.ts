@@ -26,8 +26,9 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     };
     let totalMurid = 0;
     for (const s of students.data ?? []) {
-      totalMurid++;
       const r = s.rombel_id ? rombelById.get(s.rombel_id) : null;
+      if (!r) continue; // skip murid tanpa rombel (mis. sisa kelas yang sudah dihapus)
+      totalMurid++;
       const t = r?.tingkat;
       if (t && tingkatStats[t]) {
         tingkatStats[t].total++;
@@ -49,7 +50,8 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     }
     const perKonsentrasi: Record<string, { total: number }> = {};
     for (const s of students.data ?? []) {
-      const k = (s.rombel_id && konsentrasiByRombel[s.rombel_id]) || "Lainnya";
+      if (!s.rombel_id || !rombelById.has(s.rombel_id)) continue;
+      const k = konsentrasiByRombel[s.rombel_id] || "Lainnya";
       perKonsentrasi[k] = perKonsentrasi[k] || { total: 0 };
       perKonsentrasi[k].total++;
     }
