@@ -1,0 +1,1 @@
+DELETE FROM public.students WHERE rombel_id IS NULL;
