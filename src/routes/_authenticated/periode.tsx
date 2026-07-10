@@ -24,6 +24,7 @@ type Sem = { id: string; tahun_ajaran_id: string | null; nama: string | null; ta
 
 export const Route = createFileRoute("/_authenticated/periode")({
   head: () => ({ meta: [{ title: "Manajemen Periode — SUPREME XPOES" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({ tab: (s.tab === "semester" ? "semester" : "tahun") as "tahun" | "semester" }),
   component: Page,
 });
 
