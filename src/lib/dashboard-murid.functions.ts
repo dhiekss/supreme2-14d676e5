@@ -168,7 +168,7 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
         .from("attendance_details")
         .select("id", { count: "exact", head: true })
         .eq("student_id", data.studentId)
-        .eq("status", "A"),
+        .in("status", ["A", "a", "alfa", "Alfa", "ALFA"]),
       supabase
         .from("late_records")
         .select("id", { count: "exact", head: true })
