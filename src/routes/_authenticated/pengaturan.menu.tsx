@@ -149,6 +149,17 @@ function Editor() {
     onError: (e: any) => toast.error(e?.message ?? "Gagal mereset"),
   });
 
+  const applyAllMut = useMutation({
+    mutationFn: (payload: { layout: LayoutNode[] }) => applyAllFn({ data: payload }),
+    onSuccess: (res: any) => {
+      toast.success(`Layout diterapkan ke ${res?.count ?? ROLES.length} role`);
+      qc.invalidateQueries({ queryKey: ["menu-layouts-all"] });
+      qc.invalidateQueries({ queryKey: ["sidebar-layout"] });
+      setDirty(false);
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Gagal menerapkan"),
+  });
+
   return (
     <div className="p-6 space-y-4">
       <div>
