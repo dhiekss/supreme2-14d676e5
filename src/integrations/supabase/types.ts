@@ -786,6 +786,7 @@ export type Database = {
           jam_list: number[]
           jam_mulai: number | null
           jam_selesai: number | null
+          jam_status: Json
           jumlah_alpa: number
           jumlah_hadir: number
           jumlah_izin: number
@@ -810,6 +811,7 @@ export type Database = {
           jam_list?: number[]
           jam_mulai?: number | null
           jam_selesai?: number | null
+          jam_status?: Json
           jumlah_alpa?: number
           jumlah_hadir?: number
           jumlah_izin?: number
@@ -834,6 +836,7 @@ export type Database = {
           jam_list?: number[]
           jam_mulai?: number | null
           jam_selesai?: number | null
+          jam_status?: Json
           jumlah_alpa?: number
           jumlah_hadir?: number
           jumlah_izin?: number
