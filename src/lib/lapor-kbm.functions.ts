@@ -187,6 +187,7 @@ const createSchema = z.object({
   mata_pelajaran_id: z.string().uuid(),
   guru_id: z.string().uuid(),
   jam_list: z.array(z.number().int().min(1).max(12)).min(1, "Pilih minimal 1 jam"),
+  jam_status: z.record(z.string(), z.enum(["M", "T+", "T-"])),
   ttd_path: z.string().min(1, "Tanda tangan wajib diisi"),
   foto_path: z.string().min(1, "Foto kegiatan wajib diunggah"),
 });
@@ -206,6 +207,7 @@ export const createLaporanKbm = createServerFn({ method: "POST" })
       mata_pelajaran_id: data.mata_pelajaran_id,
       guru_id: data.guru_id,
       jam_list: data.jam_list,
+      jam_status: data.jam_status,
       ttd_path: data.ttd_path,
       foto_path: data.foto_path,
       semester_id: sem?.id ?? null,
@@ -214,3 +216,4 @@ export const createLaporanKbm = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
