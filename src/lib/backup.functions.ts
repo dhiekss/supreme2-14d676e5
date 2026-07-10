@@ -143,3 +143,75 @@ export const exportBackup = createServerFn({ method: "GET" })
       data: tables,
     };
   });
+
+export const importBackup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        data: z.record(z.string(), z.array(z.record(z.string(), z.any()))),
+        mode: z.enum(["upsert", "insert"]).optional().default("upsert"),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const stats: Record<string, number> = {};
+    const errors: Record<string, string> = {};
+    let totalInserted = 0;
+
+    // Restore in declared order (respects FK dependencies of BACKUP_TABLES)
+    for (const table of BACKUP_TABLES) {
+      const rows = data.data[table];
+      if (!Array.isArray(rows) || rows.length === 0) {
+        stats[table] = 0;
+        continue;
+      }
+      const chunkSize = 500;
+      let inserted = 0;
+      let tableError: string | null = null;
+      for (let i = 0; i < rows.length; i += chunkSize) {
+        const chunk = rows.slice(i, i + chunkSize);
+        const query =
+          data.mode === "insert"
+            ? supabaseAdmin.from(table).insert(chunk as any)
+            : supabaseAdmin.from(table).upsert(chunk as any, { onConflict: "id" });
+        const { error } = await query;
+        if (error) {
+          tableError = error.message;
+          break;
+        }
+        inserted += chunk.length;
+      }
+      if (tableError) {
+        errors[table] = tableError;
+        stats[table] = inserted;
+      } else {
+        stats[table] = inserted;
+      }
+      totalInserted += inserted;
+    }
+
+    try {
+      await supabaseAdmin.from("backup_logs").insert({
+        user_id: context.userId,
+        action: "import",
+        status: Object.keys(errors).length ? "partial" : "success",
+        description: `Impor backup (${totalInserted} baris)`,
+        metadata: { stats, errors, mode: data.mode },
+      } as any);
+    } catch {
+      // ignore log errors
+    }
+
+    return {
+      generated_at: new Date().toISOString(),
+      totalInserted,
+      tables: Object.keys(stats).length,
+      stats,
+      errors,
+    };
+  });
+
