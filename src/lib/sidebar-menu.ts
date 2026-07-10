@@ -1,0 +1,328 @@
+// Default sidebar catalog with stable IDs. This is the source of truth for
+// icons and URLs. Admin-configurable layout (order, hidden, rename, group
+// placement) is stored per-role in the `menu_layouts` table and merged with
+// this catalog at render time.
+
+import {
+  LayoutDashboard,
+  CalendarCheck,
+  BookOpen,
+  Users,
+  Database,
+  GraduationCap,
+  FileBarChart,
+  Clock,
+  AlertTriangle,
+  CalendarDays,
+  FolderOpen,
+  UserCheck,
+  Library,
+  Mail,
+  Building2,
+  CalendarRange,
+  Wallet,
+  MessageSquare,
+  Settings,
+  ClipboardCheck,
+  UserCog,
+  Activity,
+  ArrowLeftRight,
+  School,
+  Layers,
+  Briefcase,
+  Map as MapIcon,
+  Bell,
+  CalendarClock,
+  FileText,
+  Award,
+  BarChart3,
+  BookOpenCheck,
+  Palette,
+  HardDrive,
+  ListTree,
+  type LucideIcon,
+} from "lucide-react";
+
+export type DefaultLeaf = {
+  id: string;
+  title: string;
+  url: string;
+  icon: LucideIcon;
+};
+
+export type DefaultGroup = {
+  id: string;
+  title: string;
+  icon: LucideIcon;
+  children: DefaultLeaf[];
+};
+
+export type DefaultNode = DefaultLeaf | DefaultGroup;
+
+export const isDefaultGroup = (n: DefaultNode): n is DefaultGroup =>
+  "children" in n;
+
+export const DEFAULT_SIDEBAR: DefaultNode[] = [
+  { id: "dashboard", title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { id: "dashboard-guru", title: "Dashboard Guru", url: "/dashboard-guru", icon: UserCheck },
+  { id: "dashboard-murid", title: "Dashboard Murid", url: "/dashboard-murid", icon: GraduationCap },
+  { id: "dashboard-kelas", title: "Dashboard Kelas", url: "/dashboard-kelas", icon: School },
+  { id: "dashboard-kaprog", title: "Dashboard Ka. Prog", url: "/dashboard-kaprog", icon: GraduationCap },
+  {
+    id: "grp-presensi",
+    title: "Presensi",
+    icon: CalendarCheck,
+    children: [
+      { id: "presensi", title: "Input Presensi", url: "/presensi", icon: CalendarCheck },
+      { id: "laporan-presensi", title: "Laporan Presensi", url: "/laporan-presensi", icon: FileBarChart },
+      { id: "revisi-presensi", title: "Revisi Presensi", url: "/revisi-presensi", icon: FileBarChart },
+    ],
+  },
+  { id: "keterlambatan", title: "Keterlambatan", url: "/keterlambatan", icon: Clock },
+  { id: "sp", title: "Surat Peringatan", url: "/sp", icon: AlertTriangle },
+  {
+    id: "grp-manajemen-sekolah",
+    title: "Manajemen Sekolah",
+    icon: School,
+    children: [
+      { id: "rombel", title: "Manajemen Rombel", url: "/rombel", icon: GraduationCap },
+      { id: "rombel-khusus", title: "Rombel Khusus", url: "/rombel-khusus", icon: Layers },
+      { id: "konsentrasi", title: "Konsentrasi Keahlian", url: "/konsentrasi", icon: Briefcase },
+      { id: "mapel", title: "Manajemen Mata Pelajaran", url: "/mapel", icon: BookOpen },
+      { id: "guru", title: "Manajemen Guru", url: "/guru", icon: Users },
+      { id: "jadwal", title: "Jadwal Pelajaran", url: "/jadwal", icon: CalendarDays },
+      { id: "denah", title: "Manajemen Denah", url: "/denah", icon: MapIcon },
+      { id: "hari-efektif", title: "Manajemen Hari Efektif", url: "/hari-efektif", icon: CalendarRange },
+      { id: "manajemen-notifikasi", title: "Manajemen Notifikasi", url: "/notifikasi", icon: Bell },
+      { id: "tahun-ajaran", title: "Tahun Ajaran", url: "/tahun-ajaran", icon: CalendarRange },
+      { id: "semester", title: "Semester", url: "/semester", icon: CalendarClock },
+    ],
+  },
+  { id: "berkas", title: "Berkas Pembelajaran", url: "/berkas", icon: FolderOpen },
+  {
+    id: "grp-pembelajaran",
+    title: "Pembelajaran",
+    icon: GraduationCap,
+    children: [
+      { id: "pembelajaran-administrasi", title: "Administrasi Pembelajaran", url: "/pembelajaran/administrasi", icon: FileText },
+      { id: "pembelajaran-pengaturan", title: "Pengaturan Pembelajaran", url: "/pembelajaran/pengaturan", icon: Settings },
+      { id: "pembelajaran-nilai", title: "Pengelolaan Nilai", url: "/pembelajaran/nilai", icon: Award },
+      { id: "pembelajaran-dashboard-nilai", title: "Dashboard Nilai", url: "/pembelajaran/dashboard-nilai", icon: BarChart3 },
+    ],
+  },
+  { id: "guru-izin", title: "Izin Guru", url: "/guru-izin", icon: UserCheck },
+  { id: "perpus", title: "Perpustakaan", url: "/perpus", icon: Library },
+  { id: "persuratan", title: "Persuratan", url: "/persuratan", icon: Mail },
+  { id: "sarpras", title: "Sarpras", url: "/sarpras", icon: Building2 },
+  { id: "tpg", title: "TPG", url: "/tpg", icon: Wallet },
+  { id: "notifikasi-wa", title: "Notifikasi WA", url: "/notifikasi", icon: MessageSquare },
+  { id: "verval", title: "Verval Siswa", url: "/verval", icon: ClipboardCheck },
+  { id: "mutasi", title: "Mutasi Siswa", url: "/mutasi", icon: ArrowLeftRight },
+  { id: "kenaikan-kelas", title: "Kenaikan Kelas", url: "/kenaikan-kelas", icon: GraduationCap },
+  {
+    id: "grp-kbm",
+    title: "KBM",
+    icon: BookOpen,
+    children: [
+      { id: "kbm-lapor", title: "Lapor KBM", url: "/pembelajaran/kbm", icon: BookOpenCheck },
+      { id: "kbm-rekap", title: "Rekap KBM", url: "/pembelajaran/rekap-kbm", icon: BarChart3 },
+    ],
+  },
+  { id: "master", title: "Master Data", url: "/master", icon: Users },
+  { id: "users", title: "Manajemen User", url: "/users", icon: UserCog },
+  { id: "aktivitas", title: "Aktivitas / Log", url: "/aktivitas", icon: Activity },
+  { id: "import", title: "Impor Backup", url: "/import", icon: Database },
+  {
+    id: "grp-pengaturan",
+    title: "Pengaturan",
+    icon: Settings,
+    children: [
+      { id: "pengaturan-tampilan", title: "Tampilan", url: "/pengaturan/tampilan", icon: Palette },
+      { id: "pengaturan-storage", title: "Storage", url: "/pengaturan/storage", icon: HardDrive },
+      { id: "pengaturan-database", title: "Database", url: "/pengaturan/database", icon: Database },
+      { id: "pengaturan-analytics", title: "Analytics", url: "/pengaturan/analytics", icon: BarChart3 },
+      { id: "pengaturan-menu", title: "Pengaturan Menu", url: "/pengaturan/menu", icon: ListTree },
+    ],
+  },
+];
+
+// ---------- Layout types (stored in DB) ----------
+
+export type LayoutLeafOverride = {
+  kind: "leaf";
+  id: string;
+  label?: string;
+  hidden?: boolean;
+};
+
+export type LayoutGroupOverride = {
+  kind: "group";
+  id: string;
+  label?: string;
+  hidden?: boolean;
+  children: LayoutLeafOverride[];
+};
+
+export type LayoutNode = LayoutLeafOverride | LayoutGroupOverride;
+
+// ---------- Resolved (rendered) types ----------
+
+export type ResolvedLeaf = {
+  kind: "leaf";
+  id: string;
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  hidden: boolean;
+};
+
+export type ResolvedGroup = {
+  kind: "group";
+  id: string;
+  title: string;
+  icon: LucideIcon;
+  hidden: boolean;
+  children: ResolvedLeaf[];
+};
+
+export type ResolvedNode = ResolvedLeaf | ResolvedGroup;
+
+// Indexes over defaults for lookup by id.
+export function buildDefaultIndex() {
+  const leaves = new Map<string, DefaultLeaf>();
+  const groups = new Map<string, DefaultGroup>();
+  for (const n of DEFAULT_SIDEBAR) {
+    if (isDefaultGroup(n)) {
+      groups.set(n.id, n);
+      for (const c of n.children) leaves.set(c.id, c);
+    } else {
+      leaves.set(n.id, n);
+    }
+  }
+  return { leaves, groups };
+}
+
+// Convert defaults to a fresh layout (for admin editor / fallback).
+export function defaultLayout(): LayoutNode[] {
+  return DEFAULT_SIDEBAR.map((n) =>
+    isDefaultGroup(n)
+      ? {
+          kind: "group" as const,
+          id: n.id,
+          children: n.children.map((c) => ({ kind: "leaf" as const, id: c.id })),
+        }
+      : { kind: "leaf" as const, id: n.id },
+  );
+}
+
+// Merge stored layout with defaults into renderable tree. Missing default
+// items are appended at the end (leaves top-level, groups with all children).
+export function resolveLayout(layout: LayoutNode[] | null | undefined): ResolvedNode[] {
+  const { leaves: leafIdx, groups: groupIdx } = buildDefaultIndex();
+  const usedLeafIds = new Set<string>();
+  const usedGroupIds = new Set<string>();
+  const out: ResolvedNode[] = [];
+
+  const src = layout && layout.length ? layout : defaultLayout();
+
+  for (const node of src) {
+    if (node.kind === "group") {
+      const def = groupIdx.get(node.id);
+      if (!def) continue;
+      usedGroupIds.add(node.id);
+      const children: ResolvedLeaf[] = [];
+      for (const c of node.children) {
+        const leafDef = leafIdx.get(c.id);
+        if (!leafDef || usedLeafIds.has(c.id)) continue;
+        usedLeafIds.add(c.id);
+        children.push({
+          kind: "leaf",
+          id: leafDef.id,
+          title: c.label?.trim() || leafDef.title,
+          url: leafDef.url,
+          icon: leafDef.icon,
+          hidden: !!c.hidden,
+        });
+      }
+      out.push({
+        kind: "group",
+        id: def.id,
+        title: node.label?.trim() || def.title,
+        icon: def.icon,
+        hidden: !!node.hidden,
+        children,
+      });
+    } else {
+      const def = leafIdx.get(node.id);
+      if (!def || usedLeafIds.has(node.id)) continue;
+      usedLeafIds.add(node.id);
+      out.push({
+        kind: "leaf",
+        id: def.id,
+        title: node.label?.trim() || def.title,
+        url: def.url,
+        icon: def.icon,
+        hidden: !!node.hidden,
+      });
+    }
+  }
+
+  // Append any defaults missing from the stored layout.
+  for (const n of DEFAULT_SIDEBAR) {
+    if (isDefaultGroup(n)) {
+      if (usedGroupIds.has(n.id)) {
+        // Group present but maybe missing new default children — append missing.
+        const g = out.find((r) => r.kind === "group" && r.id === n.id) as ResolvedGroup | undefined;
+        if (g) {
+          for (const c of n.children) {
+            if (!usedLeafIds.has(c.id)) {
+              usedLeafIds.add(c.id);
+              g.children.push({
+                kind: "leaf",
+                id: c.id,
+                title: c.title,
+                url: c.url,
+                icon: c.icon,
+                hidden: false,
+              });
+            }
+          }
+        }
+      } else {
+        const children: ResolvedLeaf[] = [];
+        for (const c of n.children) {
+          if (usedLeafIds.has(c.id)) continue;
+          usedLeafIds.add(c.id);
+          children.push({
+            kind: "leaf",
+            id: c.id,
+            title: c.title,
+            url: c.url,
+            icon: c.icon,
+            hidden: false,
+          });
+        }
+        out.push({
+          kind: "group",
+          id: n.id,
+          title: n.title,
+          icon: n.icon,
+          hidden: false,
+          children,
+        });
+      }
+    } else if (!usedLeafIds.has(n.id)) {
+      usedLeafIds.add(n.id);
+      out.push({
+        kind: "leaf",
+        id: n.id,
+        title: n.title,
+        url: n.url,
+        icon: n.icon,
+        hidden: false,
+      });
+    }
+  }
+
+  return out;
+}
