@@ -1508,6 +1508,72 @@ export type Database = {
         }
         Relationships: []
       }
+      student_promotions: {
+        Row: {
+          batch_id: string
+          catatan: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          rombel_asal_id: string | null
+          rombel_asal_name: string | null
+          rombel_tujuan_id: string | null
+          rombel_tujuan_name: string | null
+          semester_asal_id: string | null
+          semester_tujuan_id: string | null
+          status: Database["public"]["Enums"]["promotion_status"]
+          student_id: string | null
+          student_name: string | null
+          student_nis: string | null
+          tahun_ajaran_asal_id: string | null
+          tahun_ajaran_tujuan_id: string | null
+          tanggal_proses: string
+          updated_at: string
+        }
+        Insert: {
+          batch_id: string
+          catatan?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          rombel_asal_id?: string | null
+          rombel_asal_name?: string | null
+          rombel_tujuan_id?: string | null
+          rombel_tujuan_name?: string | null
+          semester_asal_id?: string | null
+          semester_tujuan_id?: string | null
+          status: Database["public"]["Enums"]["promotion_status"]
+          student_id?: string | null
+          student_name?: string | null
+          student_nis?: string | null
+          tahun_ajaran_asal_id?: string | null
+          tahun_ajaran_tujuan_id?: string | null
+          tanggal_proses?: string
+          updated_at?: string
+        }
+        Update: {
+          batch_id?: string
+          catatan?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          rombel_asal_id?: string | null
+          rombel_asal_name?: string | null
+          rombel_tujuan_id?: string | null
+          rombel_tujuan_name?: string | null
+          semester_asal_id?: string | null
+          semester_tujuan_id?: string | null
+          status?: Database["public"]["Enums"]["promotion_status"]
+          student_id?: string | null
+          student_name?: string | null
+          student_nis?: string | null
+          tahun_ajaran_asal_id?: string | null
+          tahun_ajaran_tujuan_id?: string | null
+          tanggal_proses?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       student_resignations: {
         Row: {
           alasan: string | null
@@ -2261,6 +2327,7 @@ export type Database = {
         | "admin_sarpras"
         | "admin_persuratan"
         | "admin_tpg"
+      promotion_status: "naik" | "tinggal" | "lulus" | "keluar"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2398,6 +2465,7 @@ export const Constants = {
         "admin_persuratan",
         "admin_tpg",
       ],
+      promotion_status: ["naik", "tinggal", "lulus", "keluar"],
     },
   },
 } as const
