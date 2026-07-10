@@ -9,6 +9,10 @@ export const MENU_CATALOG: MenuGroup[] = [
     title: "Menu Utama",
     items: [
       { key: "dashboard", label: "Dashboard" },
+      { key: "dashboard-guru", label: "Dashboard Guru" },
+      { key: "dashboard-murid", label: "Dashboard Murid" },
+      { key: "dashboard-kelas", label: "Dashboard Kelas" },
+      { key: "dashboard-kaprog", label: "Dashboard Ka. Prog" },
       { key: "presensi", label: "Presensi" },
       { key: "laporan-presensi", label: "Laporan Presensi" },
       { key: "revisi-presensi", label: "Revisi Presensi" },
