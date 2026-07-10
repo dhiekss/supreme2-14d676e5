@@ -40,6 +40,7 @@ import { Route as AuthenticatedHariEfektifRouteImport } from './routes/_authenti
 import { Route as AuthenticatedGuruIzinRouteImport } from './routes/_authenticated/guru-izin'
 import { Route as AuthenticatedGuruRouteImport } from './routes/_authenticated/guru'
 import { Route as AuthenticatedDenahRouteImport } from './routes/_authenticated/denah'
+import { Route as AuthenticatedDashboardMuridRouteImport } from './routes/_authenticated/dashboard-murid'
 import { Route as AuthenticatedDashboardGuruRouteImport } from './routes/_authenticated/dashboard-guru'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBerkasRouteImport } from './routes/_authenticated/berkas'
@@ -212,6 +213,12 @@ const AuthenticatedDenahRoute = AuthenticatedDenahRouteImport.update({
   path: '/denah',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDashboardMuridRoute =
+  AuthenticatedDashboardMuridRouteImport.update({
+    id: '/dashboard-murid',
+    path: '/dashboard-murid',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardGuruRoute =
   AuthenticatedDashboardGuruRouteImport.update({
     id: '/dashboard-guru',
@@ -277,6 +284,7 @@ export interface FileRoutesByFullPath {
   '/berkas': typeof AuthenticatedBerkasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dashboard-guru': typeof AuthenticatedDashboardGuruRoute
+  '/dashboard-murid': typeof AuthenticatedDashboardMuridRoute
   '/denah': typeof AuthenticatedDenahRoute
   '/guru': typeof AuthenticatedGuruRoute
   '/guru-izin': typeof AuthenticatedGuruIzinRoute
@@ -319,6 +327,7 @@ export interface FileRoutesByTo {
   '/berkas': typeof AuthenticatedBerkasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dashboard-guru': typeof AuthenticatedDashboardGuruRoute
+  '/dashboard-murid': typeof AuthenticatedDashboardMuridRoute
   '/denah': typeof AuthenticatedDenahRoute
   '/guru': typeof AuthenticatedGuruRoute
   '/guru-izin': typeof AuthenticatedGuruIzinRoute
@@ -363,6 +372,7 @@ export interface FileRoutesById {
   '/_authenticated/berkas': typeof AuthenticatedBerkasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/dashboard-guru': typeof AuthenticatedDashboardGuruRoute
+  '/_authenticated/dashboard-murid': typeof AuthenticatedDashboardMuridRoute
   '/_authenticated/denah': typeof AuthenticatedDenahRoute
   '/_authenticated/guru': typeof AuthenticatedGuruRoute
   '/_authenticated/guru-izin': typeof AuthenticatedGuruIzinRoute
@@ -407,6 +417,7 @@ export interface FileRouteTypes {
     | '/berkas'
     | '/dashboard'
     | '/dashboard-guru'
+    | '/dashboard-murid'
     | '/denah'
     | '/guru'
     | '/guru-izin'
@@ -449,6 +460,7 @@ export interface FileRouteTypes {
     | '/berkas'
     | '/dashboard'
     | '/dashboard-guru'
+    | '/dashboard-murid'
     | '/denah'
     | '/guru'
     | '/guru-izin'
@@ -492,6 +504,7 @@ export interface FileRouteTypes {
     | '/_authenticated/berkas'
     | '/_authenticated/dashboard'
     | '/_authenticated/dashboard-guru'
+    | '/_authenticated/dashboard-murid'
     | '/_authenticated/denah'
     | '/_authenticated/guru'
     | '/_authenticated/guru-izin'
@@ -753,6 +766,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDenahRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dashboard-murid': {
+      id: '/_authenticated/dashboard-murid'
+      path: '/dashboard-murid'
+      fullPath: '/dashboard-murid'
+      preLoaderRoute: typeof AuthenticatedDashboardMuridRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard-guru': {
       id: '/_authenticated/dashboard-guru'
       path: '/dashboard-guru'
@@ -831,6 +851,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBerkasRoute: typeof AuthenticatedBerkasRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDashboardGuruRoute: typeof AuthenticatedDashboardGuruRoute
+  AuthenticatedDashboardMuridRoute: typeof AuthenticatedDashboardMuridRoute
   AuthenticatedDenahRoute: typeof AuthenticatedDenahRoute
   AuthenticatedGuruRoute: typeof AuthenticatedGuruRoute
   AuthenticatedGuruIzinRoute: typeof AuthenticatedGuruIzinRoute
@@ -872,6 +893,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBerkasRoute: AuthenticatedBerkasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDashboardGuruRoute: AuthenticatedDashboardGuruRoute,
+  AuthenticatedDashboardMuridRoute: AuthenticatedDashboardMuridRoute,
   AuthenticatedDenahRoute: AuthenticatedDenahRoute,
   AuthenticatedGuruRoute: AuthenticatedGuruRoute,
   AuthenticatedGuruIzinRoute: AuthenticatedGuruIzinRoute,
