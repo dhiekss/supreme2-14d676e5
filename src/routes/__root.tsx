@@ -79,18 +79,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
+      { title: "SUPREME XPOES" },
       { name: "description", content: "Student Presence and Management of Education" },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
+      { property: "og:title", content: "SUPREME XPOES" },
       { property: "og:description", content: "Student Presence and Management of Education" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Lovable App" },
+      { name: "twitter:title", content: "SUPREME XPOES" },
       { name: "twitter:description", content: "Student Presence and Management of Education" },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4dc24a47-63bd-4dd3-bc7e-57a6e36a57df/id-preview-94822b8b--c94f85c7-0de7-4b35-81af-61b180f078ca.lovable.app-1782364200958.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4dc24a47-63bd-4dd3-bc7e-57a6e36a57df/id-preview-94822b8b--c94f85c7-0de7-4b35-81af-61b180f078ca.lovable.app-1782364200958.png" },
     ],
     links: [
       {
