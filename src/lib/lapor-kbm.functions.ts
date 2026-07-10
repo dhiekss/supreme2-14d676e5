@@ -2,8 +2,65 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
-const STATUS = ["Hadir", "Izin", "Sakit", "Dinas Luar"] as const;
+// ============ Options / dependent selects ============
 
+export const listRombelForKbm = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("rombel")
+      .select("id, name")
+      .order("name");
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const listMapelByRombel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ rombel_id: z.string().uuid() }).parse(d))
+  .handler(async ({ context, data }) => {
+    const { data: rows, error } = await context.supabase
+      .from("rombel_mata_pelajaran")
+      .select("mata_pelajaran_id")
+      .eq("rombel_id", data.rombel_id)
+      .is("deleted_at", null);
+    if (error) throw new Error(error.message);
+    const ids = [...new Set((rows ?? []).map((r: any) => r.mata_pelajaran_id).filter(Boolean))];
+    if (!ids.length) return [];
+    const { data: mapel, error: e2 } = await context.supabase
+      .from("mata_pelajaran")
+      .select("id, nama, kode")
+      .in("id", ids)
+      .order("nama");
+    if (e2) throw new Error(e2.message);
+    return mapel ?? [];
+  });
+
+export const listGuruByRombelMapel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ rombel_id: z.string().uuid(), mata_pelajaran_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: rows, error } = await context.supabase
+      .from("rombel_mata_pelajaran")
+      .select("guru_id")
+      .eq("rombel_id", data.rombel_id)
+      .eq("mata_pelajaran_id", data.mata_pelajaran_id)
+      .is("deleted_at", null);
+    if (error) throw new Error(error.message);
+    const ids = [...new Set((rows ?? []).map((r: any) => r.guru_id).filter(Boolean))];
+    if (!ids.length) return [];
+    const { data: guru, error: e2 } = await context.supabase
+      .from("guru")
+      .select("id, nama, nip")
+      .in("id", ids)
+      .order("nama");
+    if (e2) throw new Error(e2.message);
+    return guru ?? [];
+  });
+
+// Kept for Rekap KBM filters (all guru/mapel/rombel)
 export const listLaporanKbmOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -18,6 +75,8 @@ export const listLaporanKbmOptions = createServerFn({ method: "GET" })
       guru: guru.data ?? [],
     };
   });
+
+// ============ List / Delete ============
 
 export const listLaporanKbm = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -39,10 +98,9 @@ export const listLaporanKbm = createServerFn({ method: "GET" })
     let q = s
       .from("kbm_laporan")
       .select(
-        "id, tanggal, jam_mulai, jam_selesai, rombel_id, mata_pelajaran_id, guru_id, guru_status, materi, capaian_pembelajaran, jumlah_hadir, jumlah_izin, jumlah_sakit, jumlah_alpa, catatan, created_at",
+        "id, tanggal, jam_list, rombel_id, mata_pelajaran_id, guru_id, guru_status, materi, capaian_pembelajaran, jumlah_hadir, jumlah_izin, jumlah_sakit, jumlah_alpa, catatan, ttd_path, foto_path, created_at",
       )
       .order("tanggal", { ascending: false })
-      .order("jam_mulai", { ascending: true })
       .limit(data?.limit ?? 200);
 
     if (data?.rombel_id && data.rombel_id !== "all") q = q.eq("rombel_id", data.rombel_id);
@@ -74,26 +132,68 @@ export const listLaporanKbm = createServerFn({ method: "GET" })
     }));
   });
 
-const inputSchema = z.object({
+export const deleteLaporanKbm = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("kbm_laporan").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ============ Upload media (TTD / Foto) ============
+
+const uploadSchema = z.object({
+  kind: z.enum(["ttd", "foto"]),
+  dataUrl: z.string().min(1),
+  ext: z.string().min(1).max(6),
+});
+
+export const uploadKbmMedia = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => uploadSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const match = /^data:([^;]+);base64,(.+)$/.exec(data.dataUrl);
+    if (!match) throw new Error("Format data URL tidak valid");
+    const contentType = match[1];
+    const base64 = match[2];
+    const buffer = Buffer.from(base64, "base64");
+    const path = `${data.kind}/${context.userId}/${Date.now()}.${data.ext}`;
+    const { error } = await supabaseAdmin.storage
+      .from("kbm-foto")
+      .upload(path, buffer, { contentType, upsert: false });
+    if (error) throw new Error(error.message);
+    return { path };
+  });
+
+export const signKbmMedia = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ path: z.string().min(1) }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: signed, error } = await supabaseAdmin.storage
+      .from("kbm-foto")
+      .createSignedUrl(data.path, 60 * 60);
+    if (error) throw new Error(error.message);
+    return { url: signed.signedUrl };
+  });
+
+// ============ Create ============
+
+const createSchema = z.object({
   tanggal: z.string(),
-  jam_mulai: z.number().int().min(1).max(12),
-  jam_selesai: z.number().int().min(1).max(12),
   rombel_id: z.string().uuid(),
   mata_pelajaran_id: z.string().uuid(),
   guru_id: z.string().uuid(),
-  guru_status: z.enum(STATUS).default("Hadir"),
-  materi: z.string().max(3000).optional().default(""),
-  capaian_pembelajaran: z.string().max(3000).optional().default(""),
-  jumlah_hadir: z.number().int().min(0).default(0),
-  jumlah_izin: z.number().int().min(0).default(0),
-  jumlah_sakit: z.number().int().min(0).default(0),
-  jumlah_alpa: z.number().int().min(0).default(0),
-  catatan: z.string().max(2000).optional().default(""),
+  jam_list: z.array(z.number().int().min(1).max(12)).min(1, "Pilih minimal 1 jam"),
+  ttd_path: z.string().min(1, "Tanda tangan wajib diisi"),
+  foto_path: z.string().min(1, "Foto kegiatan wajib diunggah"),
 });
 
 export const createLaporanKbm = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => inputSchema.parse(d))
+  .inputValidator((d) => createSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { data: sem } = await context.supabase
       .from("semester")
@@ -101,19 +201,16 @@ export const createLaporanKbm = createServerFn({ method: "POST" })
       .eq("is_active", true)
       .maybeSingle();
     const { error } = await context.supabase.from("kbm_laporan").insert({
-      ...data,
+      tanggal: data.tanggal,
+      rombel_id: data.rombel_id,
+      mata_pelajaran_id: data.mata_pelajaran_id,
+      guru_id: data.guru_id,
+      jam_list: data.jam_list,
+      ttd_path: data.ttd_path,
+      foto_path: data.foto_path,
       semester_id: sem?.id ?? null,
       created_by: context.userId,
     });
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
-export const deleteLaporanKbm = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("kbm_laporan").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

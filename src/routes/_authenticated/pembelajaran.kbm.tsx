@@ -1,184 +1,407 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo, useRef, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
-import { listLaporanKbmOptions, createLaporanKbm } from "@/lib/lapor-kbm.functions";
-import { ClipboardCheck } from "lucide-react";
+import {
+  listRombelForKbm,
+  listMapelByRombel,
+  listGuruByRombelMapel,
+  uploadKbmMedia,
+  createLaporanKbm,
+} from "@/lib/lapor-kbm.functions";
+import { BookOpen, Camera, ImageIcon, Save, RotateCcw, Eraser, X } from "lucide-react";
+import { SignaturePad, type SignaturePadHandle } from "@/components/signature-pad";
+import { cn } from "@/lib/utils";
 
-const optionsQO = queryOptions({
-  queryKey: ["lapor-kbm-options"],
-  queryFn: () => listLaporanKbmOptions(),
+const rombelQO = queryOptions({
+  queryKey: ["lapor-kbm-rombel"],
+  queryFn: () => listRombelForKbm(),
 });
 
 export const Route = createFileRoute("/_authenticated/pembelajaran/kbm")({
   head: () => ({ meta: [{ title: "Lapor KBM — SUPREME EXPOES" }] }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(optionsQO),
+  loader: ({ context }) => context.queryClient.ensureQueryData(rombelQO),
   component: LaporKbmPage,
   errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal memuat: {error.message}</div>,
 });
 
-const STATUS = ["Hadir", "Izin", "Sakit", "Dinas Luar"] as const;
+const HOURS = Array.from({ length: 10 }, (_, i) => i + 1);
 
 function LaporKbmPage() {
-  const { data: opts } = useSuspenseQuery(optionsQO);
+  const { data: rombelList } = useSuspenseQuery(rombelQO);
   const qc = useQueryClient();
-  const create = useServerFn(createLaporanKbm);
 
   const today = new Date().toISOString().slice(0, 10);
-  const initial = {
-    tanggal: today,
-    jam_mulai: 1,
-    jam_selesai: 1,
-    rombel_id: "",
-    mata_pelajaran_id: "",
-    guru_id: "",
-    guru_status: "Hadir" as (typeof STATUS)[number],
-    materi: "",
-    capaian_pembelajaran: "",
-    jumlah_hadir: 0,
-    jumlah_izin: 0,
-    jumlah_sakit: 0,
-    jumlah_alpa: 0,
-    catatan: "",
-  };
-  const [form, setForm] = useState(initial);
-  const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((p) => ({ ...p, [k]: v }));
+  const [tanggal, setTanggal] = useState(today);
+  const [rombelId, setRombelId] = useState("");
+  const [mapelId, setMapelId] = useState("");
+  const [guruId, setGuruId] = useState("");
+  const [jamList, setJamList] = useState<number[]>([]);
+  const [fotoDataUrl, setFotoDataUrl] = useState<string>("");
+  const [fotoExt, setFotoExt] = useState<string>("");
 
-  const mutation = useMutation({
-    mutationFn: (data: typeof form) => create({ data }),
+  const sigRef = useRef<SignaturePadHandle>(null);
+  const fileCam = useRef<HTMLInputElement>(null);
+  const fileGal = useRef<HTMLInputElement>(null);
+
+  const mapelFn = useServerFn(listMapelByRombel);
+  const guruFn = useServerFn(listGuruByRombelMapel);
+  const uploadFn = useServerFn(uploadKbmMedia);
+  const createFn = useServerFn(createLaporanKbm);
+
+  const mapelQ = useQuery({
+    queryKey: ["lapor-kbm-mapel", rombelId],
+    queryFn: () => mapelFn({ data: { rombel_id: rombelId } }),
+    enabled: !!rombelId,
+  });
+
+  const guruQ = useQuery({
+    queryKey: ["lapor-kbm-guru", rombelId, mapelId],
+    queryFn: () => guruFn({ data: { rombel_id: rombelId, mata_pelajaran_id: mapelId } }),
+    enabled: !!rombelId && !!mapelId,
+  });
+
+  const toggleJam = (n: number) =>
+    setJamList((p) => (p.includes(n) ? p.filter((x) => x !== n) : [...p, n].sort((a, b) => a - b)));
+
+  const onPickFile = (file: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("File harus berupa gambar");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran foto maksimal 5 MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFotoDataUrl(String(reader.result));
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      setFotoExt(ext);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const resetForm = () => {
+    setTanggal(today);
+    setRombelId("");
+    setMapelId("");
+    setGuruId("");
+    setJamList([]);
+    setFotoDataUrl("");
+    setFotoExt("");
+    sigRef.current?.clear();
+  };
+
+  const submitMut = useMutation({
+    mutationFn: async () => {
+      if (!rombelId) throw new Error("Pilih rombel siswa");
+      if (!mapelId) throw new Error("Pilih mata pelajaran");
+      if (!guruId) throw new Error("Pilih nama guru pengajar");
+      if (jamList.length === 0) throw new Error("Pilih minimal 1 jam pelajaran");
+      if (sigRef.current?.isEmpty()) throw new Error("Tanda tangan pelapor wajib diisi");
+      if (!fotoDataUrl) throw new Error("Foto kegiatan wajib diunggah");
+
+      const ttdData = sigRef.current!.toDataURL();
+      const [ttdRes, fotoRes] = await Promise.all([
+        uploadFn({ data: { kind: "ttd", dataUrl: ttdData, ext: "png" } }),
+        uploadFn({ data: { kind: "foto", dataUrl: fotoDataUrl, ext: fotoExt || "jpg" } }),
+      ]);
+
+      return createFn({
+        data: {
+          tanggal,
+          rombel_id: rombelId,
+          mata_pelajaran_id: mapelId,
+          guru_id: guruId,
+          jam_list: jamList,
+          ttd_path: ttdRes.path,
+          foto_path: fotoRes.path,
+        },
+      });
+    },
     onSuccess: () => {
-      toast.success("Laporan KBM tersimpan");
+      toast.success("Laporan KBM berhasil disimpan");
       qc.invalidateQueries({ queryKey: ["lapor-kbm-list"] });
-      setForm({ ...initial, tanggal: form.tanggal });
+      resetForm();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.rombel_id || !form.mata_pelajaran_id || !form.guru_id) {
-      toast.error("Lengkapi rombel, mapel, dan guru");
-      return;
+  const tanggalDisplay = useMemo(() => {
+    try {
+      return new Date(tanggal).toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    } catch {
+      return tanggal;
     }
-    if (form.jam_selesai < form.jam_mulai) {
-      toast.error("Jam selesai tidak boleh lebih kecil dari jam mulai");
-      return;
-    }
-    mutation.mutate(form);
-  };
+  }, [tanggal]);
 
   return (
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <ClipboardCheck className="h-6 w-6 text-primary" />
+          <BookOpen className="h-6 w-6 text-primary" />
           Lapor KBM
         </h1>
-        <p className="text-sm text-muted-foreground">Catat pelaksanaan Kegiatan Belajar Mengajar harian.</p>
+        <p className="text-sm text-muted-foreground">Lapor data Kegiatan Belajar Mengajar harian</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Form Laporan</CardTitle>
+          <CardTitle>Form Lapor KBM</CardTitle>
+          <CardDescription>Lengkapi data kegiatan belajar mengajar</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={submit} className="grid gap-4 grid-cols-1 md:grid-cols-4">
-            <div className="space-y-2 md:col-span-2">
-              <Label>Tanggal</Label>
-              <Input type="date" value={form.tanggal} onChange={(e) => set("tanggal", e.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label>Jam Mulai</Label>
-              <Input type="number" min={1} max={12} value={form.jam_mulai} onChange={(e) => set("jam_mulai", Number(e.target.value))} required />
-            </div>
-            <div className="space-y-2">
-              <Label>Jam Selesai</Label>
-              <Input type="number" min={1} max={12} value={form.jam_selesai} onChange={(e) => set("jam_selesai", Number(e.target.value))} required />
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitMut.mutate();
+            }}
+            className="space-y-6"
+          >
+            <div className="grid gap-6 md:grid-cols-2">
+              <Field label="Tanggal" required>
+                <div className="relative">
+                  <Input
+                    type="date"
+                    value={tanggal}
+                    onChange={(e) => setTanggal(e.target.value)}
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">{tanggalDisplay}</p>
+                </div>
+              </Field>
+
+              <Field label="Rombel Siswa" required>
+                <Select
+                  value={rombelId}
+                  onValueChange={(v) => {
+                    setRombelId(v);
+                    setMapelId("");
+                    setGuruId("");
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Cari dan pilih rombel..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rombelList.map((r: any) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field label="Mata Pelajaran" required>
+                <Select
+                  value={mapelId}
+                  onValueChange={(v) => {
+                    setMapelId(v);
+                    setGuruId("");
+                  }}
+                  disabled={!rombelId}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        !rombelId
+                          ? "Pilih rombel terlebih dahulu"
+                          : mapelQ.isLoading
+                            ? "Memuat..."
+                            : (mapelQ.data ?? []).length === 0
+                              ? "Tidak ada mata pelajaran"
+                              : "Pilih mata pelajaran"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(mapelQ.data ?? []).map((m: any) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.nama}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field label="Nama Guru Pengajar" required>
+                <Select value={guruId} onValueChange={setGuruId} disabled={!mapelId}>
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        !mapelId
+                          ? "Pilih mata pelajaran terlebih dahulu"
+                          : guruQ.isLoading
+                            ? "Memuat..."
+                            : (guruQ.data ?? []).length === 0
+                              ? "Tidak ada guru"
+                              : "Pilih guru pengajar"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(guruQ.data ?? []).map((g: any) => (
+                      <SelectItem key={g.id} value={g.id}>
+                        {g.nama}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
             </div>
 
-            <div className="space-y-2 md:col-span-2">
-              <Label>Rombel</Label>
-              <Select value={form.rombel_id} onValueChange={(v) => set("rombel_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Pilih rombel" /></SelectTrigger>
-                <SelectContent>
-                  {opts.rombel.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label>Mata Pelajaran</Label>
-              <Select value={form.mata_pelajaran_id} onValueChange={(v) => set("mata_pelajaran_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Pilih mapel" /></SelectTrigger>
-                <SelectContent>
-                  {opts.mapel.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nama}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label>Guru Pengajar</Label>
-              <Select value={form.guru_id} onValueChange={(v) => set("guru_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Pilih guru" /></SelectTrigger>
-                <SelectContent>
-                  {opts.guru.map((g: any) => <SelectItem key={g.id} value={g.id}>{g.nama}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label>Status Guru</Label>
-              <Select value={form.guru_status} onValueChange={(v: any) => set("guru_status", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {STATUS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                Jam Pelajaran <span className="text-destructive">*</span>
+                <span className="text-xs text-muted-foreground font-normal">(Pilih satu atau lebih)</span>
+              </Label>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                {HOURS.map((n) => {
+                  const active = jamList.includes(n);
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => toggleJam(n)}
+                      className={cn(
+                        "px-3 py-2 rounded-md border text-sm font-medium transition-colors",
+                        active
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                          : "bg-background hover:bg-muted border-input",
+                      )}
+                    >
+                      Jam {n}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="space-y-2 md:col-span-4">
-              <Label>Materi</Label>
-              <Textarea value={form.materi} onChange={(e) => set("materi", e.target.value)} rows={3} />
-            </div>
-            <div className="space-y-2 md:col-span-4">
-              <Label>Capaian Pembelajaran</Label>
-              <Textarea value={form.capaian_pembelajaran} onChange={(e) => set("capaian_pembelajaran", e.target.value)} rows={3} />
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  TTD Pelapor <span className="text-destructive">*</span>
+                </Label>
+                <SignaturePad ref={sigRef} />
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    Gambar tanda tangan di area di atas
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => sigRef.current?.clear()}
+                  >
+                    <Eraser className="h-3.5 w-3.5 mr-1" />
+                    Hapus Tanda Tangan
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  Foto Kegiatan <span className="text-destructive">*</span>
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileCam.current?.click()}
+                  >
+                    <Camera className="h-4 w-4 mr-1" />
+                    Ambil Foto
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileGal.current?.click()}
+                  >
+                    <ImageIcon className="h-4 w-4 mr-1" />
+                    Pilih dari Galeri
+                  </Button>
+                </div>
+                <input
+                  ref={fileCam}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
+                />
+                <input
+                  ref={fileGal}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
+                />
+                {fotoDataUrl ? (
+                  <div className="relative mt-2 border rounded-lg overflow-hidden">
+                    <img src={fotoDataUrl} alt="Preview" className="w-full h-40 object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFotoDataUrl("");
+                        setFotoExt("");
+                      }}
+                      className="absolute top-2 right-2 bg-background/80 rounded-full p-1 hover:bg-background"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">
+                    Belum ada foto. Maksimal 5 MB.
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Hadir</Label>
-              <Input type="number" min={0} value={form.jumlah_hadir} onChange={(e) => set("jumlah_hadir", Number(e.target.value))} />
-            </div>
-            <div className="space-y-2">
-              <Label>Izin</Label>
-              <Input type="number" min={0} value={form.jumlah_izin} onChange={(e) => set("jumlah_izin", Number(e.target.value))} />
-            </div>
-            <div className="space-y-2">
-              <Label>Sakit</Label>
-              <Input type="number" min={0} value={form.jumlah_sakit} onChange={(e) => set("jumlah_sakit", Number(e.target.value))} />
-            </div>
-            <div className="space-y-2">
-              <Label>Alpa</Label>
-              <Input type="number" min={0} value={form.jumlah_alpa} onChange={(e) => set("jumlah_alpa", Number(e.target.value))} />
-            </div>
-
-            <div className="space-y-2 md:col-span-4">
-              <Label>Catatan</Label>
-              <Textarea value={form.catatan} onChange={(e) => set("catatan", e.target.value)} rows={2} />
-            </div>
-
-            <div className="md:col-span-4">
-              <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? "Menyimpan..." : "Simpan Laporan"}
+            <div className="flex items-center gap-2 pt-2">
+              <Button type="submit" disabled={submitMut.isPending}>
+                <Save className="h-4 w-4 mr-1" />
+                {submitMut.isPending ? "Menyimpan..." : "Simpan Data KBM"}
+              </Button>
+              <Button type="button" variant="outline" onClick={resetForm}>
+                <RotateCcw className="h-4 w-4 mr-1" />
+                Reset Form
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <Label className="flex items-center gap-1">
+        {label}
+        {required && <span className="text-destructive">*</span>}
+      </Label>
+      {children}
     </div>
   );
 }
