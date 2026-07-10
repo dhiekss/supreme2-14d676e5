@@ -98,7 +98,7 @@ export const listLaporanKbm = createServerFn({ method: "GET" })
     let q = s
       .from("kbm_laporan")
       .select(
-        "id, tanggal, jam_list, rombel_id, mata_pelajaran_id, guru_id, guru_status, materi, capaian_pembelajaran, jumlah_hadir, jumlah_izin, jumlah_sakit, jumlah_alpa, catatan, ttd_path, foto_path, created_at",
+        "id, tanggal, jam_list, jam_status, rombel_id, mata_pelajaran_id, guru_id, guru_status, materi, capaian_pembelajaran, jumlah_hadir, jumlah_izin, jumlah_sakit, jumlah_alpa, catatan, ttd_path, foto_path, created_at",
       )
       .order("tanggal", { ascending: false })
       .limit(data?.limit ?? 200);
