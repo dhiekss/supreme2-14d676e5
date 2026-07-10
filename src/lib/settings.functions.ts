@@ -29,7 +29,9 @@ export const upsertSetting = createServerFn({ method: "POST" })
         .eq("id", data.id);
       if (error) throw new Error(error.message);
     } else {
-      const { error } = await context.supabase.from("app_settings").insert(payload);
+      const { error } = await context.supabase
+        .from("app_settings")
+        .upsert(payload, { onConflict: "key" });
       if (error) throw new Error(error.message);
     }
     return { ok: true };
