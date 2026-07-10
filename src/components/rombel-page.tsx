@@ -334,6 +334,30 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
       </Dialog>
 
       <MembersDialog rombel={membersOf} onClose={() => setMembersOf(null)} />
+
+      <AlertDialog open={confirmDelAll} onOpenChange={setConfirmDelAll}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Hapus semua rombel?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini akan menghapus <strong>{data.length}</strong> rombel{khusus ? " khusus" : " reguler"} beserta relasi anggotanya. Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={delAll.isPending}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={delAll.isPending}
+              onClick={(e) => { e.preventDefault(); delAll.mutate(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {delAll.isPending ? "Menghapus…" : "Hapus Semua"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
