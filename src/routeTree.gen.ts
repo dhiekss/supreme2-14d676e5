@@ -26,7 +26,6 @@ import { Route as AuthenticatedPresensiRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPersuratanRouteImport } from './routes/_authenticated/persuratan'
 import { Route as AuthenticatedPerpusRouteImport } from './routes/_authenticated/perpus'
 import { Route as AuthenticatedPeriodeRouteImport } from './routes/_authenticated/periode'
-import { Route as AuthenticatedPengaturanRouteImport } from './routes/_authenticated/pengaturan'
 import { Route as AuthenticatedNotifikasiRouteImport } from './routes/_authenticated/notifikasi'
 import { Route as AuthenticatedMutasiRouteImport } from './routes/_authenticated/mutasi'
 import { Route as AuthenticatedMasterRouteImport } from './routes/_authenticated/master'
@@ -49,6 +48,7 @@ import { Route as AuthenticatedBerkasRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedAktivitasRouteImport } from './routes/_authenticated/aktivitas'
 import { Route as AuthenticatedDashboardMuridIndexRouteImport } from './routes/_authenticated/dashboard-murid.index'
 import { Route as AuthenticatedDashboardGuruIndexRouteImport } from './routes/_authenticated/dashboard-guru.index'
+import { Route as AuthenticatedPengaturanDatabaseRouteImport } from './routes/_authenticated/pengaturan.database'
 import { Route as AuthenticatedPembelajaranRekapKbmRouteImport } from './routes/_authenticated/pembelajaran.rekap-kbm'
 import { Route as AuthenticatedPembelajaranPengaturanRouteImport } from './routes/_authenticated/pembelajaran.pengaturan'
 import { Route as AuthenticatedPembelajaranNilaiRouteImport } from './routes/_authenticated/pembelajaran.nilai'
@@ -143,11 +143,6 @@ const AuthenticatedPerpusRoute = AuthenticatedPerpusRouteImport.update({
 const AuthenticatedPeriodeRoute = AuthenticatedPeriodeRouteImport.update({
   id: '/periode',
   path: '/periode',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedPengaturanRoute = AuthenticatedPengaturanRouteImport.update({
-  id: '/pengaturan',
-  path: '/pengaturan',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedNotifikasiRoute = AuthenticatedNotifikasiRouteImport.update({
@@ -269,6 +264,12 @@ const AuthenticatedDashboardGuruIndexRoute =
     path: '/dashboard-guru/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPengaturanDatabaseRoute =
+  AuthenticatedPengaturanDatabaseRouteImport.update({
+    id: '/pengaturan/database',
+    path: '/pengaturan/database',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPembelajaranRekapKbmRoute =
   AuthenticatedPembelajaranRekapKbmRouteImport.update({
     id: '/pembelajaran/rekap-kbm',
@@ -341,7 +342,6 @@ export interface FileRoutesByFullPath {
   '/master': typeof AuthenticatedMasterRoute
   '/mutasi': typeof AuthenticatedMutasiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
-  '/pengaturan': typeof AuthenticatedPengaturanRoute
   '/periode': typeof AuthenticatedPeriodeRoute
   '/perpus': typeof AuthenticatedPerpusRoute
   '/persuratan': typeof AuthenticatedPersuratanRoute
@@ -364,6 +364,7 @@ export interface FileRoutesByFullPath {
   '/pembelajaran/nilai': typeof AuthenticatedPembelajaranNilaiRoute
   '/pembelajaran/pengaturan': typeof AuthenticatedPembelajaranPengaturanRoute
   '/pembelajaran/rekap-kbm': typeof AuthenticatedPembelajaranRekapKbmRoute
+  '/pengaturan/database': typeof AuthenticatedPengaturanDatabaseRoute
   '/dashboard-guru/': typeof AuthenticatedDashboardGuruIndexRoute
   '/dashboard-murid/': typeof AuthenticatedDashboardMuridIndexRoute
 }
@@ -390,7 +391,6 @@ export interface FileRoutesByTo {
   '/master': typeof AuthenticatedMasterRoute
   '/mutasi': typeof AuthenticatedMutasiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
-  '/pengaturan': typeof AuthenticatedPengaturanRoute
   '/periode': typeof AuthenticatedPeriodeRoute
   '/perpus': typeof AuthenticatedPerpusRoute
   '/persuratan': typeof AuthenticatedPersuratanRoute
@@ -413,6 +413,7 @@ export interface FileRoutesByTo {
   '/pembelajaran/nilai': typeof AuthenticatedPembelajaranNilaiRoute
   '/pembelajaran/pengaturan': typeof AuthenticatedPembelajaranPengaturanRoute
   '/pembelajaran/rekap-kbm': typeof AuthenticatedPembelajaranRekapKbmRoute
+  '/pengaturan/database': typeof AuthenticatedPengaturanDatabaseRoute
   '/dashboard-guru': typeof AuthenticatedDashboardGuruIndexRoute
   '/dashboard-murid': typeof AuthenticatedDashboardMuridIndexRoute
 }
@@ -441,7 +442,6 @@ export interface FileRoutesById {
   '/_authenticated/master': typeof AuthenticatedMasterRoute
   '/_authenticated/mutasi': typeof AuthenticatedMutasiRoute
   '/_authenticated/notifikasi': typeof AuthenticatedNotifikasiRoute
-  '/_authenticated/pengaturan': typeof AuthenticatedPengaturanRoute
   '/_authenticated/periode': typeof AuthenticatedPeriodeRoute
   '/_authenticated/perpus': typeof AuthenticatedPerpusRoute
   '/_authenticated/persuratan': typeof AuthenticatedPersuratanRoute
@@ -464,6 +464,7 @@ export interface FileRoutesById {
   '/_authenticated/pembelajaran/nilai': typeof AuthenticatedPembelajaranNilaiRoute
   '/_authenticated/pembelajaran/pengaturan': typeof AuthenticatedPembelajaranPengaturanRoute
   '/_authenticated/pembelajaran/rekap-kbm': typeof AuthenticatedPembelajaranRekapKbmRoute
+  '/_authenticated/pengaturan/database': typeof AuthenticatedPengaturanDatabaseRoute
   '/_authenticated/dashboard-guru/': typeof AuthenticatedDashboardGuruIndexRoute
   '/_authenticated/dashboard-murid/': typeof AuthenticatedDashboardMuridIndexRoute
 }
@@ -492,7 +493,6 @@ export interface FileRouteTypes {
     | '/master'
     | '/mutasi'
     | '/notifikasi'
-    | '/pengaturan'
     | '/periode'
     | '/perpus'
     | '/persuratan'
@@ -515,6 +515,7 @@ export interface FileRouteTypes {
     | '/pembelajaran/nilai'
     | '/pembelajaran/pengaturan'
     | '/pembelajaran/rekap-kbm'
+    | '/pengaturan/database'
     | '/dashboard-guru/'
     | '/dashboard-murid/'
   fileRoutesByTo: FileRoutesByTo
@@ -541,7 +542,6 @@ export interface FileRouteTypes {
     | '/master'
     | '/mutasi'
     | '/notifikasi'
-    | '/pengaturan'
     | '/periode'
     | '/perpus'
     | '/persuratan'
@@ -564,6 +564,7 @@ export interface FileRouteTypes {
     | '/pembelajaran/nilai'
     | '/pembelajaran/pengaturan'
     | '/pembelajaran/rekap-kbm'
+    | '/pengaturan/database'
     | '/dashboard-guru'
     | '/dashboard-murid'
   id:
@@ -591,7 +592,6 @@ export interface FileRouteTypes {
     | '/_authenticated/master'
     | '/_authenticated/mutasi'
     | '/_authenticated/notifikasi'
-    | '/_authenticated/pengaturan'
     | '/_authenticated/periode'
     | '/_authenticated/perpus'
     | '/_authenticated/persuratan'
@@ -614,6 +614,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pembelajaran/nilai'
     | '/_authenticated/pembelajaran/pengaturan'
     | '/_authenticated/pembelajaran/rekap-kbm'
+    | '/_authenticated/pengaturan/database'
     | '/_authenticated/dashboard-guru/'
     | '/_authenticated/dashboard-murid/'
   fileRoutesById: FileRoutesById
@@ -743,13 +744,6 @@ declare module '@tanstack/react-router' {
       path: '/periode'
       fullPath: '/periode'
       preLoaderRoute: typeof AuthenticatedPeriodeRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/pengaturan': {
-      id: '/_authenticated/pengaturan'
-      path: '/pengaturan'
-      fullPath: '/pengaturan'
-      preLoaderRoute: typeof AuthenticatedPengaturanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/notifikasi': {
@@ -906,6 +900,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardGuruIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pengaturan/database': {
+      id: '/_authenticated/pengaturan/database'
+      path: '/pengaturan/database'
+      fullPath: '/pengaturan/database'
+      preLoaderRoute: typeof AuthenticatedPengaturanDatabaseRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/pembelajaran/rekap-kbm': {
       id: '/_authenticated/pembelajaran/rekap-kbm'
       path: '/pembelajaran/rekap-kbm'
@@ -986,7 +987,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMasterRoute: typeof AuthenticatedMasterRoute
   AuthenticatedMutasiRoute: typeof AuthenticatedMutasiRoute
   AuthenticatedNotifikasiRoute: typeof AuthenticatedNotifikasiRoute
-  AuthenticatedPengaturanRoute: typeof AuthenticatedPengaturanRoute
   AuthenticatedPeriodeRoute: typeof AuthenticatedPeriodeRoute
   AuthenticatedPerpusRoute: typeof AuthenticatedPerpusRoute
   AuthenticatedPersuratanRoute: typeof AuthenticatedPersuratanRoute
@@ -1009,6 +1009,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPembelajaranNilaiRoute: typeof AuthenticatedPembelajaranNilaiRoute
   AuthenticatedPembelajaranPengaturanRoute: typeof AuthenticatedPembelajaranPengaturanRoute
   AuthenticatedPembelajaranRekapKbmRoute: typeof AuthenticatedPembelajaranRekapKbmRoute
+  AuthenticatedPengaturanDatabaseRoute: typeof AuthenticatedPengaturanDatabaseRoute
   AuthenticatedDashboardGuruIndexRoute: typeof AuthenticatedDashboardGuruIndexRoute
   AuthenticatedDashboardMuridIndexRoute: typeof AuthenticatedDashboardMuridIndexRoute
 }
@@ -1034,7 +1035,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMasterRoute: AuthenticatedMasterRoute,
   AuthenticatedMutasiRoute: AuthenticatedMutasiRoute,
   AuthenticatedNotifikasiRoute: AuthenticatedNotifikasiRoute,
-  AuthenticatedPengaturanRoute: AuthenticatedPengaturanRoute,
   AuthenticatedPeriodeRoute: AuthenticatedPeriodeRoute,
   AuthenticatedPerpusRoute: AuthenticatedPerpusRoute,
   AuthenticatedPersuratanRoute: AuthenticatedPersuratanRoute,
@@ -1062,6 +1062,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedPembelajaranPengaturanRoute,
   AuthenticatedPembelajaranRekapKbmRoute:
     AuthenticatedPembelajaranRekapKbmRoute,
+  AuthenticatedPengaturanDatabaseRoute: AuthenticatedPengaturanDatabaseRoute,
   AuthenticatedDashboardGuruIndexRoute: AuthenticatedDashboardGuruIndexRoute,
   AuthenticatedDashboardMuridIndexRoute: AuthenticatedDashboardMuridIndexRoute,
 }

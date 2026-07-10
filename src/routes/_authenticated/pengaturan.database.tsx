@@ -12,7 +12,7 @@ import { Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { listSettings, upsertSetting, deleteSetting } from "@/lib/settings.functions";
 
-export const Route = createFileRoute("/_authenticated/pengaturan")({
+export const Route = createFileRoute("/_authenticated/pengaturan/database")({
   head: () => ({ meta: [{ title: "Pengaturan — SUPREME XPOES" }] }),
   component: PengaturanPage,
   errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
