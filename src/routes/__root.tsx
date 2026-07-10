@@ -116,6 +116,31 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function DynamicFavicon() {
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "display.logo_url")
+        .maybeSingle();
+      if (cancelled) return;
+      const url = data?.value;
+      if (!url) return;
+      let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.head.appendChild(link);
+      }
+      link.href = url;
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
@@ -133,6 +158,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <DynamicFavicon />
       <Outlet />
       {mounted && <Toaster richColors position="top-right" />}
     </QueryClientProvider>
