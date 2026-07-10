@@ -28,8 +28,12 @@ export const Route = createFileRoute("/_authenticated/periode")({
   component: Page,
 });
 
-export function Page() {
+function RouteComponent() {
   const { tab } = useSearch({ from: "/_authenticated/periode" });
+  return <Page defaultTab={tab} />;
+}
+
+export function Page({ defaultTab = "tahun" }: { defaultTab?: "tahun" | "semester" }) {
   const qc = useQueryClient();
   const fetchFn = useServerFn(listPeriode);
   const saveT = useServerFn(saveTahunAjaran);
