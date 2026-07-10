@@ -65,8 +65,10 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
   .inputValidator(
     z.object({
       studentId: z.string().uuid(),
+      mode: z.enum(["bulan", "semester"]).optional(),
       year: z.number().int().optional(),
       month: z.number().int().min(1).max(12).optional(),
+      semesterId: z.string().uuid().optional(),
     }).parse,
   )
   .handler(async ({ context, data }) => {
@@ -86,12 +88,41 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
       if (!selfNis || selfNis !== student.nis) throw new Error("Forbidden");
     }
 
+    // Semester options
+    const { data: semesterOptions } = await supabase
+      .from("semester")
+      .select("id, nama, tanggal_mulai, tanggal_selesai, is_active")
+      .order("tanggal_mulai", { ascending: false });
+
+    const mode = data.mode ?? "bulan";
     const now = new Date();
-    const year = data.year ?? now.getFullYear();
-    const month = data.month ?? now.getMonth() + 1;
-    const monthStart = `${year}-${String(month).padStart(2, "0")}-01`;
-    const monthEndDate = new Date(year, month, 0);
-    const monthEnd = `${year}-${String(month).padStart(2, "0")}-${String(monthEndDate.getDate()).padStart(2, "0")}`;
+    let periodeStart = "";
+    let periodeEnd = "";
+    let periodeLabel = "";
+    let year = data.year ?? now.getFullYear();
+    let month = data.month ?? now.getMonth() + 1;
+    let semesterId = data.semesterId ?? null;
+
+    if (mode === "semester") {
+      let sem = semesterId ? (semesterOptions ?? []).find((s: any) => s.id === semesterId) : null;
+      if (!sem) sem = (semesterOptions ?? []).find((s: any) => s.is_active) ?? (semesterOptions ?? [])[0] ?? null;
+      if (sem) {
+        semesterId = sem.id;
+        periodeStart = sem.tanggal_mulai ?? `${year}-01-01`;
+        periodeEnd = sem.tanggal_selesai ?? `${year}-12-31`;
+        periodeLabel = sem.nama ?? "Semester";
+      } else {
+        periodeStart = `${year}-01-01`;
+        periodeEnd = `${year}-12-31`;
+        periodeLabel = `${year}`;
+      }
+    } else {
+      periodeStart = `${year}-${String(month).padStart(2, "0")}-01`;
+      const monthEndDate = new Date(year, month, 0);
+      periodeEnd = `${year}-${String(month).padStart(2, "0")}-${String(monthEndDate.getDate()).padStart(2, "0")}`;
+      periodeLabel = new Date(year, month - 1, 1).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+    }
+
 
     // rombel + wali kelas
     const { data: rombel } = student.rombel_id
@@ -138,8 +169,8 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
         .from("attendance_records")
         .select("id, date")
         .eq("rombel_id", student.rombel_id)
-        .gte("date", monthStart)
-        .lte("date", monthEnd);
+        .gte("date", periodeStart)
+        .lte("date", periodeEnd);
       const recIds = (recs ?? []).map((r: any) => r.id);
       const dateMap = new Map((recs ?? []).map((r: any) => [r.id, r.date]));
       if (recIds.length) {
@@ -216,7 +247,8 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
             wali_kelas_nip: rombel.wali_kelas_nip,
           }
         : null,
-      periode: { year, month, monthStart, monthEnd },
+      periode: { mode, year, month, semesterId, periodeStart, periodeEnd, periodeLabel },
+      semesterOptions: semesterOptions ?? [],
       presensi: { hadir, sakit, izin, alfa, persenHadir, riwayat },
       mapel: mapelRows,
       sp: {

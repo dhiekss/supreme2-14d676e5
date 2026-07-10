@@ -22,25 +22,27 @@ const BULAN = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus
 function Page() {
   const { studentId } = Route.useParams();
   const now = new Date();
+  const [mode, setMode] = useState<"bulan" | "semester">("bulan");
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
+  const [semesterId, setSemesterId] = useState<string | undefined>(undefined);
   const fn = useServerFn(getSiswaDashboard);
   const { data, isLoading, error } = useQuery({
-    queryKey: ["dashboard-murid", studentId, year, month],
-    queryFn: () => fn({ data: { studentId, year, month } }),
+    queryKey: ["dashboard-murid", studentId, mode, year, month, semesterId],
+    queryFn: () => fn({ data: { studentId, mode, year, month, semesterId } }),
   });
 
   if (isLoading) return <div className="text-sm text-muted-foreground">Memuat…</div>;
   if (error) return <div className="text-sm text-destructive">{(error as Error).message}</div>;
   if (!data) return null;
 
-  const { student, rombel, presensi, mapel, sp, teman, periode } = data;
+  const { student, rombel, presensi, mapel, sp, teman, periode, semesterOptions } = data;
   const progressSp1 = Math.min(100, Math.round(((sp.alfaTotal / 3 + sp.terlambatTotal / 5) / 2) * 100));
   const layakSp1 = sp.alfaTotal > 3 || sp.terlambatTotal > 5;
   const spLabel = sp.currentLevel === 0 ? "Tidak Ada SP" : `SP${sp.currentLevel}`;
-  const periodeLabel = `${BULAN[periode.month - 1]} ${periode.year}`;
+  const periodeLabel = periode.periodeLabel;
   const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1);
-  const yearOptions = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
+  const yearOptions = [now.getFullYear() - 2, now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
 
   return (
     <div className="space-y-4">
@@ -104,26 +106,44 @@ function Page() {
           <div className="flex items-center gap-2 text-sm font-medium">
             <Calendar className="h-4 w-4" /> Filter Periode:
           </div>
-          <Select value="bulan" onValueChange={() => {}}>
-            <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="bulan">Per Bulan</SelectItem></SelectContent>
-          </Select>
-          <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
+          <Select value={mode} onValueChange={(v) => setMode(v as "bulan" | "semester")}>
             <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {monthOptions.map((m) => (
-                <SelectItem key={m} value={String(m)}>{BULAN[m - 1]}</SelectItem>
-              ))}
+              <SelectItem value="bulan">Per Bulan</SelectItem>
+              <SelectItem value="semester">Per Semester</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
-            <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {yearOptions.map((y) => (
-                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {mode === "bulan" ? (
+            <>
+              <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
+                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {monthOptions.map((m) => (
+                    <SelectItem key={m} value={String(m)}>{BULAN[m - 1]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
+                <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {yearOptions.map((y) => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          ) : (
+            <Select value={periode.semesterId ?? ""} onValueChange={(v) => setSemesterId(v)}>
+              <SelectTrigger className="w-72"><SelectValue placeholder="Pilih Semester" /></SelectTrigger>
+              <SelectContent>
+                {(semesterOptions ?? []).map((s: any) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.nama}{s.is_active ? " (Aktif)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </CardContent>
       </Card>
 
@@ -177,7 +197,7 @@ function Page() {
             <CardTitle className="flex items-center gap-2 text-lg">
               <Clock className="h-5 w-5" /> Riwayat Presensi {periodeLabel}
             </CardTitle>
-            <p className="text-xs text-muted-foreground">{periode.monthStart} — {periode.monthEnd}</p>
+            <p className="text-xs text-muted-foreground">{periode.periodeStart} — {periode.periodeEnd}</p>
           </CardHeader>
           <CardContent className="p-4 pt-0">
             {presensi.riwayat.length === 0 ? (
