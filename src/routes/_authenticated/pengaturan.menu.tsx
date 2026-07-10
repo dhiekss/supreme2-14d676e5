@@ -395,8 +395,8 @@ function GroupRow({
 }: {
   node: LayoutGroupOverride;
   defaultTitle: string;
-  onUpdate: (patch: Partial<LayoutGroupOverride>) => void;
-  onChildUpdate: (id: string, patch: Partial<LayoutLeafOverride>) => void;
+  onUpdate: (patch: { label?: string; hidden?: boolean }) => void;
+  onChildUpdate: (id: string, patch: { label?: string; hidden?: boolean }) => void;
   onMoveChild: (leafId: string, target: string) => void;
   groupOptions: { value: string; label: string }[];
   onChildDragEnd: (e: DragEndEvent) => void;
