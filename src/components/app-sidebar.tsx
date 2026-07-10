@@ -88,6 +88,8 @@ const items: MenuItem[] = [
       { title: "Manajemen Hari Efektif", url: "/hari-efektif", icon: CalendarRange },
       { title: "Manajemen Notifikasi", url: "/notifikasi", icon: Bell },
       { title: "Manajemen Periode", url: "/periode", icon: CalendarClock },
+      { title: "Tahun Ajaran", url: "/periode?tab=tahun", icon: CalendarRange },
+      { title: "Semester", url: "/periode?tab=semester", icon: CalendarClock },
     ],
   },
   { title: "Berkas Pembelajaran", url: "/berkas", icon: FolderOpen },
