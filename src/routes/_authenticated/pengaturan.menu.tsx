@@ -219,6 +219,22 @@ function Editor() {
                     </Button>
                     <Button
                       size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        if (
+                          confirm(
+                            `Terapkan layout ini ke SEMUA role (${ROLES.length})? Ini akan menimpa layout tersimpan pada semua role.`,
+                          )
+                        ) {
+                          applyAllMut.mutate({ layout });
+                        }
+                      }}
+                      disabled={applyAllMut.isPending}
+                    >
+                      Terapkan ke Semua Role
+                    </Button>
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={() => {
                         setLayout(defaultLayout());
