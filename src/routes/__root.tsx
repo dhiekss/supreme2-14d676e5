@@ -89,6 +89,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "SUPREME XPOES" },
       { name: "twitter:description", content: "Student Presence and Management of Education" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b3d2b4c6-1a37-442d-b7a7-7ec2be26c972/id-preview-965114ff--9746b827-b1b8-4180-a06c-041c4a169583.lovable.app-1783656284675.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b3d2b4c6-1a37-442d-b7a7-7ec2be26c972/id-preview-965114ff--9746b827-b1b8-4180-a06c-041c4a169583.lovable.app-1783656284675.png" },
     ],
     links: [
       {
