@@ -306,7 +306,57 @@ function LaporKbmPage() {
                   );
                 })}
               </div>
+
+              {jamList.length > 0 && (
+                <div className="mt-4 rounded-lg border bg-muted/30 p-4 space-y-3">
+                  <div className="text-sm font-medium">Keterangan Kehadiran Guru per Jam:</div>
+                  <div className="space-y-2">
+                    {jamList.map((n) => {
+                      const cur = jamStatus[n] ?? "M";
+                      const opts: Array<{ v: "M" | "T+" | "T-"; label: string; active: string }> = [
+                        { v: "M", label: "M", active: "bg-emerald-500 text-white border-emerald-500 hover:bg-emerald-600" },
+                        { v: "T+", label: "T+", active: "bg-amber-500 text-white border-amber-500 hover:bg-amber-600" },
+                        { v: "T-", label: "T-", active: "bg-red-500 text-white border-red-500 hover:bg-red-600" },
+                      ];
+                      const desc = cur === "M" ? "(Masuk)" : cur === "T+" ? "(Tidak Masuk + Tugas)" : "(Tidak Masuk Tanpa Tugas)";
+                      return (
+                        <div key={n} className="flex items-center gap-3 text-sm">
+                          <span className="w-14 shrink-0 text-muted-foreground">Jam {n}:</span>
+                          <div className="flex gap-1">
+                            {opts.map((o) => (
+                              <button
+                                key={o.v}
+                                type="button"
+                                onClick={() => setStatus(n, o.v)}
+                                className={cn(
+                                  "h-8 min-w-9 px-2 rounded-md border text-xs font-semibold transition-colors",
+                                  cur === o.v ? o.active : "bg-background text-muted-foreground hover:bg-muted",
+                                )}
+                              >
+                                {o.label}
+                              </button>
+                            ))}
+                          </div>
+                          <span className="text-xs text-muted-foreground">{desc}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="pt-3 border-t flex flex-wrap gap-4 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-block h-3 w-3 rounded-sm bg-emerald-500" /> M = Masuk
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-block h-3 w-3 rounded-sm bg-amber-500" /> T+ = Tidak Masuk + Tugas
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-block h-3 w-3 rounded-sm bg-red-500" /> T- = Tidak Masuk Tanpa Tugas
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
+
 
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
