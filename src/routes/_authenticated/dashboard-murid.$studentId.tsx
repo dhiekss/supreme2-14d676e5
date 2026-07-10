@@ -106,26 +106,44 @@ function Page() {
           <div className="flex items-center gap-2 text-sm font-medium">
             <Calendar className="h-4 w-4" /> Filter Periode:
           </div>
-          <Select value="bulan" onValueChange={() => {}}>
-            <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="bulan">Per Bulan</SelectItem></SelectContent>
-          </Select>
-          <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
+          <Select value={mode} onValueChange={(v) => setMode(v as "bulan" | "semester")}>
             <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {monthOptions.map((m) => (
-                <SelectItem key={m} value={String(m)}>{BULAN[m - 1]}</SelectItem>
-              ))}
+              <SelectItem value="bulan">Per Bulan</SelectItem>
+              <SelectItem value="semester">Per Semester</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
-            <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {yearOptions.map((y) => (
-                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {mode === "bulan" ? (
+            <>
+              <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
+                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {monthOptions.map((m) => (
+                    <SelectItem key={m} value={String(m)}>{BULAN[m - 1]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
+                <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {yearOptions.map((y) => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          ) : (
+            <Select value={periode.semesterId ?? ""} onValueChange={(v) => setSemesterId(v)}>
+              <SelectTrigger className="w-72"><SelectValue placeholder="Pilih Semester" /></SelectTrigger>
+              <SelectContent>
+                {(semesterOptions ?? []).map((s: any) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.nama}{s.is_active ? " (Aktif)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </CardContent>
       </Card>
 
