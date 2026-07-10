@@ -161,15 +161,36 @@ function Editor() {
           <CardTitle>Editor Menu per Role</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mb-4">
+            {ROLES.map((r) => {
+              const hasOverride = !!data?.rows.find((x) => x.role === r)?.layout?.length;
+              const active = r === role;
+              return (
+                <div
+                  key={r}
+                  className={`flex items-center justify-between rounded-md border p-2 ${
+                    active ? "border-primary bg-primary/5" : ""
+                  }`}
+                >
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-medium truncate">{ROLE_LABEL[r]}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {hasOverride ? "Custom" : "Default"}
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant={active ? "default" : "outline"}
+                    onClick={() => setRole(r)}
+                  >
+                    Atur
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
           <Tabs value={role} onValueChange={(v) => setRole(v as Role)}>
-            <TabsList className="flex-wrap h-auto">
-              {ROLES.map((r) => (
-                <TabsTrigger key={r} value={r}>
-                  {ROLE_LABEL[r]}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            <TabsContent value={role} className="mt-4">
+            <TabsContent value={role} className="mt-2">
               {isLoading ? (
                 <div className="text-sm text-muted-foreground">Memuat…</div>
               ) : (
