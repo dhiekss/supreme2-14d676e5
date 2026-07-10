@@ -107,6 +107,7 @@ const items: MenuItem[] = [
   { title: "Notifikasi WA", url: "/notifikasi", icon: MessageSquare },
   { title: "Verval Siswa", url: "/verval", icon: ClipboardCheck },
   { title: "Mutasi Siswa", url: "/mutasi", icon: ArrowLeftRight },
+  { title: "Kenaikan Kelas", url: "/kenaikan-kelas", icon: GraduationCap },
   { title: "KBM", url: "/kbm", icon: BookOpen },
   { title: "Master Data", url: "/master", icon: Users },
   { title: "Manajemen User", url: "/users", icon: UserCog },
