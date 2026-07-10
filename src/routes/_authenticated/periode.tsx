@@ -29,6 +29,7 @@ export const Route = createFileRoute("/_authenticated/periode")({
 });
 
 function Page() {
+  const { tab } = useSearch({ from: "/_authenticated/periode" });
   const qc = useQueryClient();
   const fetchFn = useServerFn(listPeriode);
   const saveT = useServerFn(saveTahunAjaran);
