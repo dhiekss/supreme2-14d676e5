@@ -157,14 +157,19 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2 px-2 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-            <GraduationCap className="h-5 w-5" />
-          </div>
+        <div className="flex items-center gap-3 px-2 py-3">
+          {d.logo_url ? (
+            <img src={d.logo_url} alt="logo" className="h-10 w-10 object-contain shrink-0" />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground shrink-0">
+              <GraduationCap className="h-5 w-5" />
+            </div>
+          )}
           {!collapsed && (
-            <div className="leading-tight">
-              <div className="font-bold text-sm">SUPREME</div>
-              <div className="text-xs opacity-80">XPOES</div>
+            <div className="leading-tight min-w-0">
+              <div className="font-bold text-sm truncate">{d.app_name}</div>
+              <div className="text-xs opacity-80 truncate">{d.subtitle}</div>
+              <div className="text-xs opacity-80 truncate">{d.instansi}</div>
             </div>
           )}
         </div>
