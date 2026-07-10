@@ -111,6 +111,7 @@ function LaporKbmPage() {
     setMapelId("");
     setGuruId("");
     setJamList([]);
+    setJamStatus({});
     setFotoDataUrl("");
     setFotoExt("");
     sigRef.current?.clear();
