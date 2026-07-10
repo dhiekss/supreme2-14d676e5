@@ -12,10 +12,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, CheckCircle2 } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckCircle2, Power } from "lucide-react";
 import {
-  listPeriode, saveTahunAjaran, deleteTahunAjaran,
-  saveSemester, deleteSemester,
+  listPeriode, saveTahunAjaran, deleteTahunAjaran, setActiveTahun,
+  saveSemester, deleteSemester, setActiveSemester,
 } from "@/lib/sekolah.functions";
 import { toast } from "sonner";
 
