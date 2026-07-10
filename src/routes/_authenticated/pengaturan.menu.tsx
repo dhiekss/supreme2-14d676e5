@@ -257,14 +257,19 @@ function LayoutEditor({
 
   const topLevelIds = layout.map((n) => n.id);
 
-  const updateNode = (nodeId: string, patch: Partial<LayoutLeafOverride & LayoutGroupOverride>) => {
+  const updateNode = (nodeId: string, patch: { label?: string; hidden?: boolean }) => {
     onChange(
-      layout.map((n) => {
-        if (n.id === nodeId) return { ...n, ...patch } as LayoutNode;
+      layout.map((n): LayoutNode => {
+        if (n.id === nodeId) {
+          if (n.kind === "group") return { ...n, ...patch };
+          return { ...n, ...patch };
+        }
         if (n.kind === "group") {
           return {
             ...n,
-            children: n.children.map((c) => (c.id === nodeId ? { ...c, ...patch } as LayoutLeafOverride : c)),
+            children: n.children.map((c) =>
+              c.id === nodeId ? { ...c, ...patch } : c,
+            ),
           };
         }
         return n;
