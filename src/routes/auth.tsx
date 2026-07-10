@@ -61,37 +61,38 @@ function AuthPage() {
       <main className="flex-1 flex items-center justify-center">
         <div className="w-full max-w-6xl bg-white rounded-[2rem] shadow-2xl p-6 md:p-10">
           {/* Header identitas — di dalam card */}
-          <header className="flex items-start gap-3 mb-6">
+          <header className="flex items-center gap-4 mb-8">
             {d.logo_url ? (
-              <img src={d.logo_url} alt="logo" className="h-14 w-14 object-contain" />
+              <img src={d.logo_url} alt="logo" className="h-20 w-20 object-contain shrink-0" />
             ) : (
-              <div className="h-14 w-14 rounded bg-muted flex items-center justify-center">
-                <ImageIcon className="h-6 w-6 text-primary/60" />
+              <div className="h-20 w-20 rounded bg-muted flex items-center justify-center shrink-0">
+                <ImageIcon className="h-8 w-8 text-primary/60" />
               </div>
             )}
-            <div className="leading-tight">
-              <div className="font-bold text-primary text-lg">{d.app_name}</div>
-              <div className="text-sm font-semibold text-foreground">{d.subtitle}</div>
-              <div className="text-sm font-semibold text-foreground">{d.instansi}</div>
+            <div className="leading-tight min-w-0">
+              <div className="font-bold text-primary text-xl md:text-2xl">{d.app_name}</div>
+              <div className="text-base font-semibold text-foreground">{d.subtitle}</div>
+              <div className="text-base font-semibold text-foreground">{d.instansi}</div>
             </div>
           </header>
 
-          <div className="grid gap-8 md:gap-10 md:grid-cols-2 items-center">
+          <div className="grid gap-8 md:gap-10 md:grid-cols-2 items-stretch">
             {/* Gambar */}
-            <div className="flex justify-center">
+            <div className="flex">
               {d.bg_url ? (
                 <img
                   src={d.bg_url}
                   alt="Login illustration"
-                  className="rounded-2xl w-full aspect-square object-cover shadow-md"
+                  className="rounded-2xl w-full h-full min-h-[420px] object-cover shadow-md"
                 />
               ) : (
                 <div
-                  className="rounded-2xl w-full aspect-square shadow-md"
+                  className="rounded-2xl w-full min-h-[420px] shadow-md"
                   style={{ background: d.bg_color }}
                 />
               )}
             </div>
+
 
             {/* Form */}
             <div className="w-full space-y-5">
