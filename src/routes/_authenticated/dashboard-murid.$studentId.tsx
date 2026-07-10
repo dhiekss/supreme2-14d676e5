@@ -197,7 +197,7 @@ function Page() {
             <CardTitle className="flex items-center gap-2 text-lg">
               <Clock className="h-5 w-5" /> Riwayat Presensi {periodeLabel}
             </CardTitle>
-            <p className="text-xs text-muted-foreground">{periode.monthStart} — {periode.monthEnd}</p>
+            <p className="text-xs text-muted-foreground">{periode.periodeStart} — {periode.periodeEnd}</p>
           </CardHeader>
           <CardContent className="p-4 pt-0">
             {presensi.riwayat.length === 0 ? (
