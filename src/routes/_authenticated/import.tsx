@@ -36,10 +36,24 @@ type BackupResult = {
   data: Record<string, any[]>;
 };
 
+type ImportResult = {
+  generated_at: string;
+  totalInserted: number;
+  tables: number;
+  stats: Record<string, number>;
+  errors: Record<string, string>;
+};
+
 function ImportBackupPage() {
   const runExport = useServerFn(exportBackup);
+  const runImport = useServerFn(importBackup);
   const [loadingFormat, setLoadingFormat] = useState<null | "json" | "xlsx">(null);
   const [lastResult, setLastResult] = useState<null | BackupResult["meta"]>(null);
+  const [importing, setImporting] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [importResult, setImportResult] = useState<null | ImportResult>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchBackup = async (): Promise<BackupResult> => {
     return (await runExport()) as BackupResult;
