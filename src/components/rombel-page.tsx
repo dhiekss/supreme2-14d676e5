@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Download, Upload, FileDown, FileText, UserPlus, Trash2 } from "lucide-react";
+import { Users, Download, Upload, FileDown, FileText, UserPlus, Trash2, AlertTriangle } from "lucide-react";
 import { listRombel, saveRombel, deleteRombel, deleteAllRombel } from "@/lib/sekolah.functions";
 import {
   listStudentsByRombel,
