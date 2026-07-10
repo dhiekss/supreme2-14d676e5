@@ -169,8 +169,8 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
         .from("attendance_records")
         .select("id, date")
         .eq("rombel_id", student.rombel_id)
-        .gte("date", monthStart)
-        .lte("date", monthEnd);
+        .gte("date", periodeStart)
+        .lte("date", periodeEnd);
       const recIds = (recs ?? []).map((r: any) => r.id);
       const dateMap = new Map((recs ?? []).map((r: any) => [r.id, r.date]));
       if (recIds.length) {
