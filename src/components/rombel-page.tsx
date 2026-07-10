@@ -114,6 +114,7 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
   const fetchFn = useServerFn(listRombel);
   const saveFn = useServerFn(saveRombel);
   const delFn = useServerFn(deleteRombel);
+  const delAllFn = useServerFn(deleteAllRombel);
   const allStudentsFn = useServerFn(listAllStudents);
   const bulkStudentsFn = useServerFn(bulkImportStudents);
   const bulkRombelFn = useServerFn(bulkImportRombel);
