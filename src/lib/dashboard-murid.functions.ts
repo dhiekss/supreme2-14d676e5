@@ -108,8 +108,8 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
       if (!sem) sem = (semesterOptions ?? []).find((s: any) => s.is_active) ?? (semesterOptions ?? [])[0] ?? null;
       if (sem) {
         semesterId = sem.id;
-        periodeStart = sem.tanggal_mulai;
-        periodeEnd = sem.tanggal_selesai;
+        periodeStart = sem.tanggal_mulai ?? `${year}-01-01`;
+        periodeEnd = sem.tanggal_selesai ?? `${year}-12-31`;
         periodeLabel = sem.nama ?? "Semester";
       } else {
         periodeStart = `${year}-01-01`;
