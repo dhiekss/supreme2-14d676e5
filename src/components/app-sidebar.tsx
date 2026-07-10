@@ -65,6 +65,10 @@ const isGroup = (i: MenuItem): i is GroupItem => "children" in i;
 
 const items: MenuItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Dashboard Guru", url: "/dashboard-guru", icon: UserCheck },
+  { title: "Dashboard Murid", url: "/dashboard-murid", icon: GraduationCap },
+  { title: "Dashboard Kelas", url: "/dashboard-kelas", icon: School },
+  { title: "Dashboard Ka. Prog", url: "/dashboard-kaprog", icon: GraduationCap },
   { title: "Presensi", url: "/presensi", icon: CalendarCheck },
   { title: "Laporan Presensi", url: "/laporan-presensi", icon: FileBarChart },
   { title: "Revisi Presensi", url: "/revisi-presensi", icon: FileBarChart },
