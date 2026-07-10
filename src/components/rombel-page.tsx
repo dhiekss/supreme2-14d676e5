@@ -151,6 +151,16 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const delAll = useMutation({
+    mutationFn: () => delAllFn({ data: { khusus } }),
+    onSuccess: (r: any) => {
+      toast.success(`${r?.count ?? 0} rombel dihapus`);
+      qc.invalidateQueries({ queryKey: ["rombel"] });
+      setConfirmDelAll(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   async function handleExportRombel() {
     const rows: any[][] = [["name", "tingkat", "konsentrasi_keahlian", "wali_kelas_name", "wali_kelas_nip", "is_khusus"]];
     data.forEach((r) => rows.push([r.name, r.tingkat, r.konsentrasi_keahlian, r.wali_kelas_name, r.wali_kelas_nip, r.is_khusus ? "true" : "false"]));
