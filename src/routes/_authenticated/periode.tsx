@@ -65,7 +65,7 @@ function Page() {
         <p className="text-sm text-muted-foreground">Kelola tahun ajaran & semester aktif.</p>
       </div>
 
-      <Tabs defaultValue="tahun">
+      <Tabs defaultValue={tab}>
         <TabsList>
           <TabsTrigger value="tahun">Tahun Ajaran</TabsTrigger>
           <TabsTrigger value="semester">Semester</TabsTrigger>
