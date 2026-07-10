@@ -69,7 +69,7 @@ export function Page({ defaultTab = "tahun" }: { defaultTab?: "tahun" | "semeste
         <p className="text-sm text-muted-foreground">Kelola tahun ajaran & semester aktif.</p>
       </div>
 
-      <Tabs defaultValue={tab}>
+      <Tabs defaultValue={defaultTab}>
         <TabsList>
           <TabsTrigger value="tahun">Tahun Ajaran</TabsTrigger>
           <TabsTrigger value="semester">Semester</TabsTrigger>
