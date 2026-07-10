@@ -56,7 +56,18 @@ export const getAttendanceForDate = createServerFn({ method: "GET" })
     return { record: rec, details: details ?? [] };
   });
 
-const StatusEnum = z.enum(["H", "S", "I", "A"]);
+const StatusEnum = z.enum(["H", "S", "I", "A", "P"]);
+
+export const getMyProfile = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await context.supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .eq("id", context.userId)
+      .maybeSingle();
+    return data;
+  });
 
 export const saveAttendance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
