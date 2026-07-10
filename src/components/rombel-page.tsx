@@ -278,7 +278,9 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
               </Select>
               <Button size="sm" variant="outline" onClick={() => fileInputs.nisn.current?.click()}><Upload className="h-4 w-4 mr-1" />Import NISN</Button>
             </div>
+            <Button size="sm" variant="outline" onClick={handleTemplateMurid}><FileText className="h-4 w-4 mr-1" />Template Murid</Button>
             <Button size="sm" variant="outline" onClick={() => fileInputs.murid.current?.click()}><FileDown className="h-4 w-4 mr-1" />Bulk Import Murid</Button>
+            <Button size="sm" variant="outline" onClick={handleTemplateRombel}><FileText className="h-4 w-4 mr-1" />Template Rombel</Button>
             <Button size="sm" variant="outline" onClick={() => fileInputs.rombel.current?.click()}><Upload className="h-4 w-4 mr-1" />Import Rombel</Button>
           </div>
         }
