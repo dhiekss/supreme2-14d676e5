@@ -50,7 +50,8 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     }
     const perKonsentrasi: Record<string, { total: number }> = {};
     for (const s of students.data ?? []) {
-      const k = (s.rombel_id && konsentrasiByRombel[s.rombel_id]) || "Lainnya";
+      if (!s.rombel_id || !rombelById.has(s.rombel_id)) continue;
+      const k = konsentrasiByRombel[s.rombel_id] || "Lainnya";
       perKonsentrasi[k] = perKonsentrasi[k] || { total: 0 };
       perKonsentrasi[k].total++;
     }
