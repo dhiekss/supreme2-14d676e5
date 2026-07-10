@@ -146,14 +146,60 @@ export const exportBackup = createServerFn({ method: "GET" })
 
 export const importBackup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
-    z
+  .inputValidator((raw: unknown) => {
+    const parsed = z
       .object({
-        data: z.record(z.string(), z.array(z.record(z.string(), z.any()))),
+        data: z.any(),
         mode: z.enum(["upsert", "insert"]).optional().default("upsert"),
       })
-      .parse(data),
-  )
+      .parse(raw);
+
+    // Normalize incoming payload into Record<tableName, rows[]>.
+    // Supported shapes:
+    //   A) { [tableName]: rows[] }
+    //   B) { data: { [tableName]: rows[] } }         ← current export
+    //   C) { tables: { [tableName]: rows[] } }
+    //   D) { tables: Array<{ name, rows }> }         ← alt export
+    //   E) Array<{ name|table, rows|data }>
+    const src: any = parsed.data;
+    let normalized: Record<string, any[]> = {};
+
+    const fromArray = (arr: any[]) => {
+      const out: Record<string, any[]> = {};
+      for (const item of arr) {
+        if (!item || typeof item !== "object") continue;
+        const name = item.name ?? item.table ?? item.tableName;
+        const rows = item.rows ?? item.data ?? item.records;
+        if (typeof name === "string" && Array.isArray(rows)) out[name] = rows;
+      }
+      return out;
+    };
+
+    if (Array.isArray(src)) {
+      normalized = fromArray(src);
+    } else if (src && typeof src === "object") {
+      if (src.data && typeof src.data === "object" && !Array.isArray(src.data)) {
+        normalized = src.data;
+      } else if (Array.isArray(src.tables)) {
+        normalized = fromArray(src.tables);
+      } else if (src.tables && typeof src.tables === "object") {
+        normalized = src.tables;
+      } else {
+        // Assume shape A: pick keys whose values are arrays
+        for (const [k, v] of Object.entries(src)) {
+          if (Array.isArray(v)) normalized[k] = v as any[];
+        }
+      }
+    }
+
+    if (!normalized || typeof normalized !== "object" || Array.isArray(normalized)) {
+      throw new Error(
+        "Format backup tidak dikenali. Diharapkan objek { data: { namaTabel: [...] } } atau { tables: [...] }.",
+      );
+    }
+
+    return { data: normalized, mode: parsed.mode };
+  })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
