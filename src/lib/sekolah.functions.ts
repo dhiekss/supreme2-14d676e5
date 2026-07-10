@@ -52,6 +52,27 @@ export const deleteRombel = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const deleteAllRombel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ khusus: z.boolean().optional() }).parse)
+  .handler(async ({ context, data }) => {
+    const { data: rows, error: selErr } = await context.supabase
+      .from("rombel")
+      .select("id, is_khusus");
+    if (selErr) throw new Error(selErr.message);
+    const ids = (rows ?? [])
+      .filter((r: any) =>
+        data.khusus === true ? r.is_khusus === true
+        : data.khusus === false ? !r.is_khusus
+        : true,
+      )
+      .map((r: any) => r.id);
+    if (!ids.length) return { ok: true, count: 0 };
+    const { error } = await context.supabase.from("rombel").delete().in("id", ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: ids.length };
+  });
+
 // ============ KONSENTRASI KEAHLIAN ============
 export const listKonsentrasi = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

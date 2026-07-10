@@ -3,22 +3,16 @@ import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { CrudTable } from "@/components/crud-table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Download, Upload, FileDown, FileText, UserPlus, Trash2 } from "lucide-react";
-import { listRombel, saveRombel, deleteRombel } from "@/lib/sekolah.functions";
+import { Users, Download, Upload, FileDown, FileText, UserPlus, Trash2, AlertTriangle } from "lucide-react";
+import { listRombel, saveRombel, deleteRombel, deleteAllRombel } from "@/lib/sekolah.functions";
 import {
   listStudentsByRombel,
   listAllStudents,
@@ -120,6 +114,7 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
   const fetchFn = useServerFn(listRombel);
   const saveFn = useServerFn(saveRombel);
   const delFn = useServerFn(deleteRombel);
+  const delAllFn = useServerFn(deleteAllRombel);
   const allStudentsFn = useServerFn(listAllStudents);
   const bulkStudentsFn = useServerFn(bulkImportStudents);
   const bulkRombelFn = useServerFn(bulkImportRombel);
@@ -132,6 +127,7 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
 
   const [editing, setEditing] = useState<Partial<Row> | null>(null);
   const [membersOf, setMembersOf] = useState<Row | null>(null);
+  const [confirmDelAll, setConfirmDelAll] = useState(false);
   const [importNisnFor, setImportNisnFor] = useState<string>("");
   const fileInputs = {
     nisn: useRef<HTMLInputElement>(null),
@@ -152,6 +148,16 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
   const del = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
     onSuccess: () => { toast.success("Dihapus"); qc.invalidateQueries({ queryKey: ["rombel"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const delAll = useMutation({
+    mutationFn: () => delAllFn({ data: { khusus } }),
+    onSuccess: (r: any) => {
+      toast.success(`${r?.count ?? 0} rombel dihapus`);
+      qc.invalidateQueries({ queryKey: ["rombel"] });
+      setConfirmDelAll(false);
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -282,6 +288,9 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
             <Button size="sm" variant="outline" onClick={() => fileInputs.murid.current?.click()}><FileDown className="h-4 w-4 mr-1" />Bulk Import Murid</Button>
             <Button size="sm" variant="outline" onClick={handleTemplateRombel}><FileText className="h-4 w-4 mr-1" />Template Rombel</Button>
             <Button size="sm" variant="outline" onClick={() => fileInputs.rombel.current?.click()}><Upload className="h-4 w-4 mr-1" />Import Rombel</Button>
+            <Button size="sm" variant="destructive" onClick={() => setConfirmDelAll(true)} disabled={data.length === 0}>
+              <Trash2 className="h-4 w-4 mr-1" />Hapus Semua
+            </Button>
           </div>
         }
       />
@@ -325,6 +334,30 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
       </Dialog>
 
       <MembersDialog rombel={membersOf} onClose={() => setMembersOf(null)} />
+
+      <AlertDialog open={confirmDelAll} onOpenChange={setConfirmDelAll}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Hapus semua rombel?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini akan menghapus <strong>{data.length}</strong> rombel{khusus ? " khusus" : " reguler"} beserta relasi anggotanya. Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={delAll.isPending}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={delAll.isPending}
+              onClick={(e) => { e.preventDefault(); delAll.mutate(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {delAll.isPending ? "Menghapus…" : "Hapus Semua"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
