@@ -53,106 +53,109 @@ function AuthPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
-      style={{ background: `linear-gradient(135deg, ${d.bg_color} 0%, #ffffff 60%, ${d.bg_color} 100%)` }}
+      className="min-h-screen flex flex-col p-4 md:p-8"
+      style={{
+        background: `linear-gradient(120deg, #7c5cff 0%, #6a7dff 40%, ${d.bg_color} 100%)`,
+      }}
     >
-      {/* Header identitas */}
-      <header className="flex items-start gap-3 px-6 md:px-12 py-6">
-        {d.logo_url ? (
-          <img src={d.logo_url} alt="logo" className="h-14 w-14 object-contain" />
-        ) : (
-          <div className="h-14 w-14 rounded bg-white/60 flex items-center justify-center">
-            <ImageIcon className="h-6 w-6 text-primary/60" />
-          </div>
-        )}
-        <div className="leading-tight">
-          <div className="font-bold text-primary text-lg">{d.app_name}</div>
-          <div className="text-sm text-primary/80">{d.subtitle}</div>
-          <div className="text-sm text-primary/80">{d.instansi}</div>
-        </div>
-      </header>
-
-      {/* Konten utama */}
-      <main className="flex-1 flex items-center justify-center px-6 py-8">
-        <div className="w-full max-w-6xl grid gap-8 md:gap-12 md:grid-cols-2 items-center">
-          {/* Gambar */}
-          <div className="flex justify-center">
-            {d.bg_url ? (
-              <img
-                src={d.bg_url}
-                alt="Login illustration"
-                className="rounded-2xl w-full max-w-md aspect-[4/5] object-cover shadow-lg"
-              />
+      <main className="flex-1 flex items-center justify-center">
+        <div className="w-full max-w-6xl bg-white rounded-[2rem] shadow-2xl p-6 md:p-10">
+          {/* Header identitas — di dalam card */}
+          <header className="flex items-start gap-3 mb-6">
+            {d.logo_url ? (
+              <img src={d.logo_url} alt="logo" className="h-14 w-14 object-contain" />
             ) : (
-              <div
-                className="rounded-2xl w-full max-w-md aspect-[4/5] shadow-lg"
-                style={{ background: d.bg_color }}
-              />
+              <div className="h-14 w-14 rounded bg-muted flex items-center justify-center">
+                <ImageIcon className="h-6 w-6 text-primary/60" />
+              </div>
             )}
-          </div>
+            <div className="leading-tight">
+              <div className="font-bold text-primary text-lg">{d.app_name}</div>
+              <div className="text-sm font-semibold text-foreground">{d.subtitle}</div>
+              <div className="text-sm font-semibold text-foreground">{d.instansi}</div>
+            </div>
+          </header>
 
-          {/* Form */}
-          <div className="w-full max-w-md mx-auto space-y-6">
-            <div>
-              <h1 className="text-4xl font-bold text-primary leading-tight">
-                Halo!<br />Selamat Datang<br />Kembali!
-              </h1>
-              <p className="text-primary/80 mt-2">Silahkan Masuk dengan Akunmu</p>
+          <div className="grid gap-8 md:gap-10 md:grid-cols-2 items-center">
+            {/* Gambar */}
+            <div className="flex justify-center">
+              {d.bg_url ? (
+                <img
+                  src={d.bg_url}
+                  alt="Login illustration"
+                  className="rounded-2xl w-full aspect-square object-cover shadow-md"
+                />
+              ) : (
+                <div
+                  className="rounded-2xl w-full aspect-square shadow-md"
+                  style={{ background: d.bg_color }}
+                />
+              )}
             </div>
 
-            <form onSubmit={handleSignIn} className="space-y-4">
-              <div className="space-y-1">
-                <Label htmlFor="email" className="text-primary">Email / NIP / NIS</Label>
-                <Input
-                  id="email"
-                  type="text"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@sekolah.sch.id"
-                  className="rounded-full bg-white/80 h-11 px-5"
-                />
-                <p className="text-xs text-primary/70">Masukkan email, NIP (guru), atau NIS (murid)</p>
+            {/* Form */}
+            <div className="w-full space-y-5">
+              <div>
+                <h1 className="text-4xl md:text-5xl font-bold text-primary leading-tight">
+                  Halo!<br />Selamat Datang<br />Kembali!
+                </h1>
+                <p className="text-primary/80 mt-3">Silahkan Masuk dengan Akunmu</p>
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="password" className="text-primary">Password</Label>
-                <div className="relative">
+
+              <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-primary font-semibold">Email / NIP / NIS</Label>
                   <Input
-                    id="password"
-                    type={showPw ? "text" : "password"}
+                    id="email"
+                    type="text"
                     required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="rounded-full bg-white/80 h-11 px-5 pr-11"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="admin@sekolah.sch.id"
+                    className="rounded-full bg-secondary/60 h-11 px-5 border-0"
                   />
-                  <button type="button" onClick={() => setShowPw((v) => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-primary/60">
-                    {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                  <p className="text-xs text-primary/70">Masukkan email, NIP (guru), atau NIS (murid)</p>
                 </div>
-              </div>
-
-              <Button type="submit" className="w-full h-11 rounded-full" disabled={loading}>
-                {loading ? "Memproses..." : "Login"}
-              </Button>
-
-              <p className="text-sm text-primary/80">Tidak memiliki akun? Silahkan hubungi admin</p>
-
-              <div className="rounded-2xl border-2 border-primary/30 p-3 flex items-center gap-3 bg-white/50">
-                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
-                  <Megaphone className="h-5 w-5 text-primary-foreground" />
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="text-primary font-semibold">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPw ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="rounded-full bg-secondary/60 h-11 px-5 pr-11 border-0"
+                    />
+                    <button type="button" onClick={() => setShowPw((v) => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-primary/60">
+                      {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
-                <div className="text-sm leading-tight">
-                  <div className="font-semibold text-primary">Suara Publik</div>
-                  <div className="text-primary/70 text-xs">Sampaikan aspirasimu di sini →</div>
+
+                <Button type="submit" className="w-full h-11 rounded-full text-base" disabled={loading}>
+                  {loading ? "Memproses..." : "Login"}
+                </Button>
+
+                <p className="text-sm text-primary/80">Tidak memiliki akun? Silahkan hubungi admin</p>
+
+                <div className="rounded-2xl border-2 border-primary/30 p-3 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center shrink-0">
+                    <Megaphone className="h-5 w-5 text-primary-foreground" />
+                  </div>
+                  <div className="text-sm leading-tight">
+                    <div className="font-semibold text-primary">Suara Publik</div>
+                    <div className="text-primary/70 text-xs">Sampaikan aspirasimu di sini →</div>
+                  </div>
                 </div>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       </main>
 
-      <footer className="text-center text-xs text-primary/70 py-4 px-4">
+      <footer className="text-center text-xs text-white/90 pt-4">
         {d.footer}
       </footer>
     </div>

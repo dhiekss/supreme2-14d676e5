@@ -156,7 +156,7 @@ function BackgroundImageCard({ settings, onSave }: { settings: DisplaySettings; 
   const handleUpload = async (file: File) => {
     if (file.size > 5 * 1024 * 1024) return toast.error("Ukuran maksimal 5MB");
     try {
-      const dataUrl = await fileToDataUrl(file, { maxW: 1000, maxH: 1250, quality: 0.82 });
+      const dataUrl = await fileToDataUrl(file, { maxW: 1000, maxH: 1000, quality: 0.82 });
       setBg(dataUrl);
       await onSave({ key: "bg_url", value: dataUrl });
       toast.success("Gambar background disimpan");
