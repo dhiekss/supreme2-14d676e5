@@ -32,6 +32,7 @@ import { Route as AuthenticatedMapelRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedLaporanPresensiRouteImport } from './routes/_authenticated/laporan-presensi'
 import { Route as AuthenticatedKonsentrasiRouteImport } from './routes/_authenticated/konsentrasi'
 import { Route as AuthenticatedKeterlambatanRouteImport } from './routes/_authenticated/keterlambatan'
+import { Route as AuthenticatedKenaikanKelasRouteImport } from './routes/_authenticated/kenaikan-kelas'
 import { Route as AuthenticatedKbmRouteImport } from './routes/_authenticated/kbm'
 import { Route as AuthenticatedJadwalRouteImport } from './routes/_authenticated/jadwal'
 import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
@@ -168,6 +169,12 @@ const AuthenticatedKeterlambatanRoute =
     path: '/keterlambatan',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedKenaikanKelasRoute =
+  AuthenticatedKenaikanKelasRouteImport.update({
+    id: '/kenaikan-kelas',
+    path: '/kenaikan-kelas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedKbmRoute = AuthenticatedKbmRouteImport.update({
   id: '/kbm',
   path: '/kbm',
@@ -269,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/import': typeof AuthenticatedImportRoute
   '/jadwal': typeof AuthenticatedJadwalRoute
   '/kbm': typeof AuthenticatedKbmRoute
+  '/kenaikan-kelas': typeof AuthenticatedKenaikanKelasRoute
   '/keterlambatan': typeof AuthenticatedKeterlambatanRoute
   '/konsentrasi': typeof AuthenticatedKonsentrasiRoute
   '/laporan-presensi': typeof AuthenticatedLaporanPresensiRoute
@@ -309,6 +317,7 @@ export interface FileRoutesByTo {
   '/import': typeof AuthenticatedImportRoute
   '/jadwal': typeof AuthenticatedJadwalRoute
   '/kbm': typeof AuthenticatedKbmRoute
+  '/kenaikan-kelas': typeof AuthenticatedKenaikanKelasRoute
   '/keterlambatan': typeof AuthenticatedKeterlambatanRoute
   '/konsentrasi': typeof AuthenticatedKonsentrasiRoute
   '/laporan-presensi': typeof AuthenticatedLaporanPresensiRoute
@@ -351,6 +360,7 @@ export interface FileRoutesById {
   '/_authenticated/import': typeof AuthenticatedImportRoute
   '/_authenticated/jadwal': typeof AuthenticatedJadwalRoute
   '/_authenticated/kbm': typeof AuthenticatedKbmRoute
+  '/_authenticated/kenaikan-kelas': typeof AuthenticatedKenaikanKelasRoute
   '/_authenticated/keterlambatan': typeof AuthenticatedKeterlambatanRoute
   '/_authenticated/konsentrasi': typeof AuthenticatedKonsentrasiRoute
   '/_authenticated/laporan-presensi': typeof AuthenticatedLaporanPresensiRoute
@@ -393,6 +403,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/jadwal'
     | '/kbm'
+    | '/kenaikan-kelas'
     | '/keterlambatan'
     | '/konsentrasi'
     | '/laporan-presensi'
@@ -433,6 +444,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/jadwal'
     | '/kbm'
+    | '/kenaikan-kelas'
     | '/keterlambatan'
     | '/konsentrasi'
     | '/laporan-presensi'
@@ -474,6 +486,7 @@ export interface FileRouteTypes {
     | '/_authenticated/import'
     | '/_authenticated/jadwal'
     | '/_authenticated/kbm'
+    | '/_authenticated/kenaikan-kelas'
     | '/_authenticated/keterlambatan'
     | '/_authenticated/konsentrasi'
     | '/_authenticated/laporan-presensi'
@@ -671,6 +684,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKeterlambatanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/kenaikan-kelas': {
+      id: '/_authenticated/kenaikan-kelas'
+      path: '/kenaikan-kelas'
+      fullPath: '/kenaikan-kelas'
+      preLoaderRoute: typeof AuthenticatedKenaikanKelasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/kbm': {
       id: '/_authenticated/kbm'
       path: '/kbm'
@@ -797,6 +817,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedImportRoute: typeof AuthenticatedImportRoute
   AuthenticatedJadwalRoute: typeof AuthenticatedJadwalRoute
   AuthenticatedKbmRoute: typeof AuthenticatedKbmRoute
+  AuthenticatedKenaikanKelasRoute: typeof AuthenticatedKenaikanKelasRoute
   AuthenticatedKeterlambatanRoute: typeof AuthenticatedKeterlambatanRoute
   AuthenticatedKonsentrasiRoute: typeof AuthenticatedKonsentrasiRoute
   AuthenticatedLaporanPresensiRoute: typeof AuthenticatedLaporanPresensiRoute
@@ -836,6 +857,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedImportRoute: AuthenticatedImportRoute,
   AuthenticatedJadwalRoute: AuthenticatedJadwalRoute,
   AuthenticatedKbmRoute: AuthenticatedKbmRoute,
+  AuthenticatedKenaikanKelasRoute: AuthenticatedKenaikanKelasRoute,
   AuthenticatedKeterlambatanRoute: AuthenticatedKeterlambatanRoute,
   AuthenticatedKonsentrasiRoute: AuthenticatedKonsentrasiRoute,
   AuthenticatedLaporanPresensiRoute: AuthenticatedLaporanPresensiRoute,
