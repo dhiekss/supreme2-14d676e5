@@ -34,12 +34,18 @@ export const getMyMenuLayout = createServerFn({ method: "GET" })
       .select("role")
       .eq("user_id", context.userId);
     const roles: Role[] = (roleRows ?? []).map((r: any) => r.role);
-    // Priority: admin > moderator > user
-    const role: Role =
-      roles.find((r) => r === "admin") ??
-      roles.find((r) => r === "moderator") ??
-      roles.find((r) => r === "user") ??
-      "user";
+    // Priority: admin > wakasek > kaprog > admin_* > guru > murid
+    const priority: Role[] = [
+      "admin",
+      "wakasek",
+      "kaprog",
+      "admin_persuratan",
+      "admin_sarpras",
+      "admin_tpg",
+      "guru",
+      "murid",
+    ];
+    const role: Role = priority.find((p) => roles.includes(p)) ?? "guru";
 
     const { data } = await context.supabase
       .from("menu_layouts")
