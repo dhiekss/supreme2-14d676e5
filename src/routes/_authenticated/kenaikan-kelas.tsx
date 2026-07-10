@@ -306,8 +306,8 @@ function RiwayatTab({ batchesFn, undoFn, qc }: any) {
             </TableRow></TableHeader>
             <TableBody>
               {batches.map((b: any) => (
-                <>
-                  <TableRow key={b.batch_id}>
+                <Fragment key={b.batch_id}>
+                  <TableRow>
                     <TableCell>{b.tanggal_proses}</TableCell>
                     <TableCell className="font-medium">{b.rombel_asal_name ?? "—"}</TableCell>
                     <TableCell>
