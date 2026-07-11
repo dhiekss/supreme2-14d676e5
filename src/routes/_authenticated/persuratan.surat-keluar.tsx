@@ -511,7 +511,16 @@ function Page() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={rQ}
+              onChange={(e) => { setRQ(e.target.value); setRPage(1); }}
+              placeholder="Cari nomor urut / tanggal…"
+              className="pl-9"
+            />
+          </div>
           <div className="overflow-x-auto rounded-md border">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-muted-foreground">
@@ -523,7 +532,7 @@ function Page() {
                 </tr>
               </thead>
               <tbody>
-                {(reserved as any[]).filter((r) => r.status === "tersedia").map((r) => (
+                {reservedPageRows.map((r) => (
                   <tr key={r.id} className="border-t">
                     <td className="p-3 font-semibold">{r.nomor_urut}</td>
                     <td className="p-3">{fmtDate(r.tanggal_diamankan)}</td>
@@ -542,14 +551,40 @@ function Page() {
                     </td>
                   </tr>
                 ))}
-                {(reserved as any[]).filter((r) => r.status === "tersedia").length === 0 && (
+                {reservedPageRows.length === 0 && (
                   <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">Belum ada nomor yang diamankan.</td></tr>
                 )}
-
               </tbody>
             </table>
           </div>
+
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-sm">
+            <div className="flex items-center gap-2">
+              <span>Tampilkan:</span>
+              <Select
+                value={String(rPageSize)}
+                onValueChange={(v) => { setRPageSize(v === "all" ? "all" : Number(v)); setRPage(1); }}
+              >
+                <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["10", "25", "50", "100", "all"].map((n) => (
+                    <SelectItem key={n} value={n}>{n === "all" ? "Semua" : n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-muted-foreground">
+                {reservedFiltered.length === 0 ? 0 : (rCurrent - 1) * rSize + 1}
+                –{Math.min(rCurrent * rSize, reservedFiltered.length)} dari {reservedFiltered.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="sm" disabled={rCurrent <= 1} onClick={() => setRPage((p) => Math.max(1, p - 1))}>‹ Sebelumnya</Button>
+              <span className="px-2 text-muted-foreground">Hal. {rCurrent} / {rTotalPages}</span>
+              <Button variant="outline" size="sm" disabled={rCurrent >= rTotalPages} onClick={() => setRPage((p) => Math.min(rTotalPages, p + 1))}>Selanjutnya ›</Button>
+            </div>
+          </div>
         </CardContent>
+
       </Card>
 
       <SuratFormDialog
