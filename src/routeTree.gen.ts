@@ -23,7 +23,6 @@ import { Route as AuthenticatedRombelKhususRouteImport } from './routes/_authent
 import { Route as AuthenticatedRombelRouteImport } from './routes/_authenticated/rombel'
 import { Route as AuthenticatedRevisiPresensiRouteImport } from './routes/_authenticated/revisi-presensi'
 import { Route as AuthenticatedPresensiRouteImport } from './routes/_authenticated/presensi'
-import { Route as AuthenticatedPersuratanRouteImport } from './routes/_authenticated/persuratan'
 import { Route as AuthenticatedPerpusRouteImport } from './routes/_authenticated/perpus'
 import { Route as AuthenticatedPeriodeRouteImport } from './routes/_authenticated/periode'
 import { Route as AuthenticatedPengaturanRouteImport } from './routes/_authenticated/pengaturan'
@@ -132,11 +131,6 @@ const AuthenticatedRevisiPresensiRoute =
 const AuthenticatedPresensiRoute = AuthenticatedPresensiRouteImport.update({
   id: '/presensi',
   path: '/presensi',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedPersuratanRoute = AuthenticatedPersuratanRouteImport.update({
-  id: '/persuratan',
-  path: '/persuratan',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPerpusRoute = AuthenticatedPerpusRouteImport.update({
@@ -372,7 +366,6 @@ export interface FileRoutesByFullPath {
   '/pengaturan': typeof AuthenticatedPengaturanRouteWithChildren
   '/periode': typeof AuthenticatedPeriodeRoute
   '/perpus': typeof AuthenticatedPerpusRoute
-  '/persuratan': typeof AuthenticatedPersuratanRoute
   '/presensi': typeof AuthenticatedPresensiRoute
   '/revisi-presensi': typeof AuthenticatedRevisiPresensiRoute
   '/rombel': typeof AuthenticatedRombelRoute
@@ -425,7 +418,6 @@ export interface FileRoutesByTo {
   '/pengaturan': typeof AuthenticatedPengaturanRouteWithChildren
   '/periode': typeof AuthenticatedPeriodeRoute
   '/perpus': typeof AuthenticatedPerpusRoute
-  '/persuratan': typeof AuthenticatedPersuratanRoute
   '/presensi': typeof AuthenticatedPresensiRoute
   '/revisi-presensi': typeof AuthenticatedRevisiPresensiRoute
   '/rombel': typeof AuthenticatedRombelRoute
@@ -480,7 +472,6 @@ export interface FileRoutesById {
   '/_authenticated/pengaturan': typeof AuthenticatedPengaturanRouteWithChildren
   '/_authenticated/periode': typeof AuthenticatedPeriodeRoute
   '/_authenticated/perpus': typeof AuthenticatedPerpusRoute
-  '/_authenticated/persuratan': typeof AuthenticatedPersuratanRoute
   '/_authenticated/presensi': typeof AuthenticatedPresensiRoute
   '/_authenticated/revisi-presensi': typeof AuthenticatedRevisiPresensiRoute
   '/_authenticated/rombel': typeof AuthenticatedRombelRoute
@@ -535,7 +526,6 @@ export interface FileRouteTypes {
     | '/pengaturan'
     | '/periode'
     | '/perpus'
-    | '/persuratan'
     | '/presensi'
     | '/revisi-presensi'
     | '/rombel'
@@ -588,7 +578,6 @@ export interface FileRouteTypes {
     | '/pengaturan'
     | '/periode'
     | '/perpus'
-    | '/persuratan'
     | '/presensi'
     | '/revisi-presensi'
     | '/rombel'
@@ -642,7 +631,6 @@ export interface FileRouteTypes {
     | '/_authenticated/pengaturan'
     | '/_authenticated/periode'
     | '/_authenticated/perpus'
-    | '/_authenticated/persuratan'
     | '/_authenticated/presensi'
     | '/_authenticated/revisi-presensi'
     | '/_authenticated/rombel'
@@ -775,13 +763,6 @@ declare module '@tanstack/react-router' {
       path: '/presensi'
       fullPath: '/presensi'
       preLoaderRoute: typeof AuthenticatedPresensiRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/persuratan': {
-      id: '/_authenticated/persuratan'
-      path: '/persuratan'
-      fullPath: '/persuratan'
-      preLoaderRoute: typeof AuthenticatedPersuratanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/perpus': {
@@ -1092,7 +1073,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPengaturanRoute: typeof AuthenticatedPengaturanRouteWithChildren
   AuthenticatedPeriodeRoute: typeof AuthenticatedPeriodeRoute
   AuthenticatedPerpusRoute: typeof AuthenticatedPerpusRoute
-  AuthenticatedPersuratanRoute: typeof AuthenticatedPersuratanRoute
   AuthenticatedPresensiRoute: typeof AuthenticatedPresensiRoute
   AuthenticatedRevisiPresensiRoute: typeof AuthenticatedRevisiPresensiRoute
   AuthenticatedRombelRoute: typeof AuthenticatedRombelRoute
@@ -1139,7 +1119,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPengaturanRoute: AuthenticatedPengaturanRouteWithChildren,
   AuthenticatedPeriodeRoute: AuthenticatedPeriodeRoute,
   AuthenticatedPerpusRoute: AuthenticatedPerpusRoute,
-  AuthenticatedPersuratanRoute: AuthenticatedPersuratanRoute,
   AuthenticatedPresensiRoute: AuthenticatedPresensiRoute,
   AuthenticatedRevisiPresensiRoute: AuthenticatedRevisiPresensiRoute,
   AuthenticatedRombelRoute: AuthenticatedRombelRoute,
