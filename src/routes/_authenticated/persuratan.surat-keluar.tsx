@@ -145,6 +145,114 @@ function Page() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const fnDelAll = useServerFn(deleteAllSuratKeluar);
+  const fnBulk = useServerFn(bulkImportSuratKeluar);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [confirmDelAll, setConfirmDelAll] = useState(false);
+
+  const delAll = useMutation({
+    mutationFn: () => fnDelAll(),
+    onSuccess: (r: any) => {
+      toast.success(`${r?.deleted ?? 0} surat dihapus`);
+      setConfirmDelAll(false);
+      qc.invalidateQueries({ queryKey: ["surat-keluar"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const importMut = useMutation({
+    mutationFn: (rows: any[]) => fnBulk({ data: { rows } }),
+    onSuccess: (r: any) => {
+      toast.success(`${r?.inserted ?? 0} surat diimpor`);
+      qc.invalidateQueries({ queryKey: ["surat-keluar"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const downloadTemplate = () => {
+    const header = [
+      "Kode Surat", "No. Urut", "No. Surat", "Tanggal", "Tujuan", "Perihal", "Jenis", "Sifat", "Status",
+    ];
+    const sample = [
+      ["421.5", 661, "421.5/661/SMKN1.PN-CADISDIK.WIL.IV/2026", "2026-07-30", "SMK NU GHOFARONA", "Surat keterangan pindah sekolah", "Surat Keterangan", "Biasa", "draft"],
+      ["805", 729, "805/729/SMKN1.PN-CADISDIK.WIL.IV/2026", "2026-07-09", "SMK Negeri 1 Purwakarta", "Menghadiri Undangan Sosialisasi", "Surat Tugas & SPPD", "Biasa", "aktif"],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet([header, ...sample]);
+    ws["!cols"] = [{ wch: 10 }, { wch: 9 }, { wch: 40 }, { wch: 12 }, { wch: 30 }, { wch: 40 }, { wch: 20 }, { wch: 12 }, { wch: 10 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Surat Keluar");
+    XLSX.writeFile(wb, `template-surat-keluar.xlsx`);
+  };
+
+  const parseTanggal = (v: any): string => {
+    if (v == null || v === "") return "";
+    if (v instanceof Date) return v.toISOString().slice(0, 10);
+    if (typeof v === "number") {
+      // Excel serial date
+      const d = XLSX.SSF ? new Date(Math.round((v - 25569) * 86400 * 1000)) : new Date(v);
+      return d.toISOString().slice(0, 10);
+    }
+    const s = String(v).trim();
+    // dd-MMM-yy or dd-MM-yyyy or yyyy-mm-dd
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    const m1 = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})$/);
+    if (m1) {
+      const [, d, mo, y] = m1;
+      const yr = y.length === 2 ? `20${y}` : y;
+      return `${yr}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
+    }
+    const m2 = s.match(/^(\d{1,2})[-\s]([A-Za-z]{3,})[-\s](\d{2,4})$/);
+    if (m2) {
+      const [, d, mon, y] = m2;
+      const months: Record<string, string> = {
+        jan: "01", feb: "02", mar: "03", apr: "04", may: "05", mei: "05", jun: "06",
+        jul: "07", aug: "08", agu: "08", sep: "09", oct: "10", okt: "10", nov: "11", dec: "12", des: "12",
+      };
+      const mm = months[mon.slice(0, 3).toLowerCase()];
+      if (mm) {
+        const yr = y.length === 2 ? `20${y}` : y;
+        return `${yr}-${mm}-${d.padStart(2, "0")}`;
+      }
+    }
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    return "";
+  };
+
+  const handleImportFile = async (file: File) => {
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array", cellDates: true });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw: any[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
+      if (raw.length === 0) return toast.error("File kosong");
+      const rows = raw.map((r: any, i: number) => {
+        const kode = String(r["Kode Surat"] ?? r["kode_surat"] ?? "").trim();
+        const nomor = Number(r["No. Urut"] ?? r["nomor_urut"] ?? 0);
+        const nomorSurat = String(r["No. Surat"] ?? r["nomor_surat"] ?? "").trim();
+        const tanggal = parseTanggal(r["Tanggal"] ?? r["tanggal_surat"]);
+        const tujuan = String(r["Tujuan"] ?? r["tujuan"] ?? "").trim();
+        const perihal = String(r["Perihal"] ?? r["perihal"] ?? "").trim();
+        const jenis = String(r["Jenis"] ?? r["jenis_surat"] ?? "").trim();
+        const sifat = String(r["Sifat"] ?? r["sifat_surat"] ?? "Biasa").trim() || "Biasa";
+        const status = String(r["Status"] ?? r["status"] ?? "draft").trim().toLowerCase() || "draft";
+        if (!kode || !nomor || !nomorSurat || !tanggal || !tujuan || !perihal || !jenis) {
+          throw new Error(`Baris ${i + 2}: data belum lengkap`);
+        }
+        return {
+          kode_surat: kode, nomor_urut: nomor, nomor_surat: nomorSurat,
+          tanggal_surat: tanggal, tujuan, perihal, jenis_surat: jenis,
+          sifat_surat: sifat, status,
+        };
+      });
+      importMut.mutate(rows);
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal membaca file");
+    } finally {
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
   const openCreate = () => { setEditing(null); setPrefill(null); setOpenForm(true); };
   const openEdit = (r: any) => { setEditing(r); setPrefill(null); setOpenForm(true); };
   const useReserved = (r: any) => {
@@ -160,11 +268,42 @@ function Page() {
         <p className="text-sm text-muted-foreground mt-1">Kelola surat keluar yang dikirim</p>
       </div>
 
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".xlsx,.xls,.csv"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleImportFile(f);
+        }}
+      />
+
       {/* Daftar */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
           <CardTitle className="text-base">Daftar Surat Keluar</CardTitle>
-          <Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Buat Surat Keluar</Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={downloadTemplate}>
+              <Download className="h-4 w-4 mr-1" /> Unduh Template
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => fileRef.current?.click()}
+              disabled={importMut.isPending}
+            >
+              {importMut.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
+              Import Data
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => setConfirmDelAll(true)}
+              disabled={!(rows?.length)}
+            >
+              <Trash2 className="h-4 w-4 mr-1" /> Hapus Semua
+            </Button>
+            <Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Buat Surat Keluar</Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-4">
