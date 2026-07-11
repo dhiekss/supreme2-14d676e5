@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Plus, Eye, Pencil, Trash2, Search, Download, FileSpreadsheet, MapPin,
-  Users, ArrowUpDown, ArrowUp, ArrowDown, FileText,
+  Users, ArrowUpDown, ArrowUp, ArrowDown, FileText, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
