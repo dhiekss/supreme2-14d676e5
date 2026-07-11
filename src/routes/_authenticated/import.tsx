@@ -17,6 +17,7 @@ import { Upload, Database, Loader2, CheckCircle2, AlertTriangle, FileSpreadsheet
 import { toast } from "sonner";
 import { exportBackup, importBackup } from "@/lib/backup.functions";
 import * as XLSX from "xlsx";
+import { todayStamp } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/import")({
   head: () => ({ meta: [{ title: "Impor & Backup — SUPREME XPOES" }] }),
@@ -70,7 +71,7 @@ function ImportBackupPage() {
     URL.revokeObjectURL(url);
   };
 
-  const stamp = () => new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const stamp = () => todayStamp();
 
   const handleExportJson = async () => {
     setLoadingFormat("json");

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { withDateSuffix } from "@/lib/utils";
 import {
   FileText, CalendarClock, Users, FileCheck2, FileX2, CheckCircle2, TrendingUp,
   Hourglass, AlertTriangle, FileClock, Pencil, ChevronLeft, ChevronRight,
@@ -140,7 +141,7 @@ function AdministrasiPage() {
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Administrasi");
-    XLSX.writeFile(wb, "administrasi-pembelajaran.xlsx");
+    XLSX.writeFile(wb, withDateSuffix("administrasi-pembelajaran.xlsx"));
   };
 
   return (

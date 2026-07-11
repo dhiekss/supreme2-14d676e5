@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { listLaporanKbm, listLaporanKbmOptions, deleteLaporanKbm } from "@/lib/lapor-kbm.functions";
+import { todayStamp } from "@/lib/utils";
 import {
   ClipboardList, Trash2, Download, Printer, RefreshCw, BookOpen, CheckCircle2, AlertCircle, XCircle, Eye,
 } from "lucide-react";
@@ -217,7 +218,7 @@ function RekapKbmPage() {
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `rekap-kbm-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    a.href = url; a.download = `rekap-kbm-${todayStamp()}.csv`; a.click();
     URL.revokeObjectURL(url);
   };
 

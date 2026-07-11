@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { presensiDashboard } from "@/lib/presensi-report.functions";
+import { todayStamp } from "@/lib/utils";
 import {
   Download, Users, GraduationCap, School, CalendarCheck, CheckCircle2,
   Thermometer, FileText, XCircle, Briefcase, ClipboardList, AlertTriangle,
@@ -70,7 +71,7 @@ function LaporanPresensi() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `laporan-presensi-${from}-${to}.csv`;
+    a.download = `laporan-presensi-${from}-${to}-${todayStamp()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
