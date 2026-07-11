@@ -60,6 +60,29 @@ export const saveSuratKeluar = createServerFn({ method: "POST" })
       const { data: ins, error } = await context.supabase.from("surat_keluar").insert(payload).select("id").single();
       if (error) throw new Error(error.message);
       suratId = ins?.id;
+      // Sync counter di Pengaturan Format Nomor (jenis "surat_keluar")
+      const tahun = new Date(data.tanggal_surat).getFullYear();
+      const { data: setting } = await context.supabase
+        .from("persuratan_nomor_surat")
+        .select("id, counter, format_nomor, prefix")
+        .eq("jenis_surat", "surat_keluar")
+        .eq("tahun", tahun)
+        .maybeSingle();
+      if (setting?.id && data.nomor_urut > (setting.counter ?? 0)) {
+        const padded = String(data.nomor_urut).padStart(3, "0");
+        const contoh = (setting.format_nomor ?? "")
+          .replaceAll("{KODE}", data.kode_surat)
+          .replaceAll("{NOMOR}", padded)
+          .replaceAll("{TAHUN}", String(tahun))
+          .replaceAll("{kode}", data.kode_surat)
+          .replaceAll("{counter}", padded)
+          .replaceAll("{prefix}", setting.prefix ?? "")
+          .replaceAll("{tahun}", String(tahun));
+        await context.supabase
+          .from("persuratan_nomor_surat")
+          .update({ counter: data.nomor_urut, contoh_hasil: contoh })
+          .eq("id", setting.id);
+      }
     }
     if (data.reserved_id && suratId) {
       await context.supabase
