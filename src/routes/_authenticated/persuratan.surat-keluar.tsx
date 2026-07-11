@@ -211,20 +211,8 @@ function Page() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const fnDelAll = useServerFn(deleteAllSuratKeluar);
   const fnBulk = useServerFn(bulkImportSuratKeluar);
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const [confirmDelAll, setConfirmDelAll] = useState(false);
-
-  const delAll = useMutation({
-    mutationFn: () => fnDelAll(),
-    onSuccess: (r: any) => {
-      toast.success(`${r?.deleted ?? 0} surat dihapus`);
-      setConfirmDelAll(false);
-      qc.invalidateQueries({ queryKey: ["surat-keluar"] });
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
 
   const importMut = useMutation({
     mutationFn: (rows: any[]) => fnBulk({ data: { rows } }),
