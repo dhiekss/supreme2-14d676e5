@@ -20,18 +20,28 @@ export const listStudentsByRombel = createServerFn({ method: "GET" })
 export const listAllStudents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const [s, r] = await Promise.all([
-      context.supabase.from("students").select("id, name, nis, nisn, gender, rombel_id").order("name").range(0, 99999),
-      context.supabase.from("rombel").select("id, name, wali_kelas_name").range(0, 9999),
+    const fetchAll = async <T = any>(build: (from: number, to: number) => any, pageSize = 1000): Promise<T[]> => {
+      const out: T[] = [];
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await build(from, from + pageSize - 1);
+        if (error) throw new Error(error.message);
+        const rows = (data ?? []) as T[];
+        out.push(...rows);
+        if (rows.length < pageSize) break;
+      }
+      return out;
+    };
+    const [studentsData, rombelData] = await Promise.all([
+      fetchAll((f, t) => context.supabase.from("students").select("id, name, nis, nisn, gender, rombel_id").order("name").range(f, t)),
+      fetchAll((f, t) => context.supabase.from("rombel").select("id, name, wali_kelas_name").range(f, t)),
     ]);
-    if (s.error) throw new Error(s.error.message);
-    if (r.error) throw new Error(r.error.message);
-    const rMap = new Map((r.data ?? []).map((x: any) => [x.id, x]));
-    return (s.data ?? []).map((x: any) => {
+    const rMap = new Map((rombelData ?? []).map((x: any) => [x.id, x]));
+    return (studentsData ?? []).map((x: any) => {
       const rb: any = x.rombel_id ? rMap.get(x.rombel_id) : null;
       return { ...x, rombel_nama: rb?.name ?? "—", wali_kelas_name: rb?.wali_kelas_name ?? "—" };
     });
   });
+
 
 
 const StudentInput = z.object({
