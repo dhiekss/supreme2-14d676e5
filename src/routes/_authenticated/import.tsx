@@ -70,7 +70,7 @@ function ImportBackupPage() {
     URL.revokeObjectURL(url);
   };
 
-  const stamp = () => new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const stamp = () => todayStamp();
 
   const handleExportJson = async () => {
     setLoadingFormat("json");
