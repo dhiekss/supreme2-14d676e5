@@ -78,13 +78,22 @@ function Page() {
   const qc = useQueryClient();
   const fnList = useServerFn(listSuratKeluar);
   const fnKode = useServerFn(listKode);
+  const fnNomor = useServerFn(listNomor);
   const fnReserved = useServerFn(listNomorDiamankan);
   const fnDel = useServerFn(deleteSuratKeluar);
   const fnDelReserved = useServerFn(deleteNomorDiamankan);
 
   const { data: rows } = useSuspenseQuery({ queryKey: ["surat-keluar"], queryFn: () => fnList() });
   const { data: kodeList = [] } = useQuery({ queryKey: ["kode-surat"], queryFn: () => fnKode() });
+  const { data: nomorList = [] } = useQuery({ queryKey: ["persuratan-nomor"], queryFn: () => fnNomor() });
   const { data: reserved = [] } = useQuery({ queryKey: ["nomor-diamankan"], queryFn: () => fnReserved() });
+
+  const formatSuratKeluar = useMemo(() => {
+    const row = (nomorList as any[]).find(
+      (n) => n.jenis_surat === "surat_keluar" && n.is_active !== false,
+    ) ?? (nomorList as any[]).find((n) => n.jenis_surat === "surat_keluar");
+    return row?.format_nomor ?? "{KODE}/{NOMOR}/SMKN1.PN-CADISDIK.WIL.IV/{TAHUN}";
+  }, [nomorList]);
 
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
