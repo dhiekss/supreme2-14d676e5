@@ -414,13 +414,6 @@ function Page() {
               {importMut.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
               Import Data
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => setConfirmDelAll(true)}
-              disabled={!(rows?.length)}
-            >
-              <Trash2 className="h-4 w-4 mr-1" /> Hapus Semua
-            </Button>
             <Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Buat Surat Keluar</Button>
           </div>
         </CardHeader>
