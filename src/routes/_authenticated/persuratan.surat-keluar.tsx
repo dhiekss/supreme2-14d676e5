@@ -435,7 +435,7 @@ function Page() {
             <Input type="date" value={dari} onChange={(e) => setDari(e.target.value)} className="w-40" />
             <span>Sampai:</span>
             <Input type="date" value={sampai} onChange={(e) => setSampai(e.target.value)} className="w-40" />
-            <div className="ml-auto text-muted-foreground">{filtered.length} data ditemukan</div>
+            <div className="ml-auto text-muted-foreground">{sortedFiltered.length} data ditemukan</div>
           </div>
 
           <div className="overflow-x-auto rounded-md border">
