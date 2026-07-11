@@ -442,14 +442,14 @@ function Page() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-muted-foreground">
                 <tr>
-                  <th className="text-left p-3 whitespace-nowrap">Kode Surat</th>
-                  <th className="text-left p-3 whitespace-nowrap">No. Urut</th>
-                  <th className="text-left p-3 whitespace-nowrap">No. Surat</th>
-                  <th className="text-left p-3 whitespace-nowrap">Tanggal</th>
-                  <th className="text-left p-3">Tujuan</th>
-                  <th className="text-left p-3">Perihal</th>
-                  <th className="text-left p-3 whitespace-nowrap">Jenis</th>
-                  <th className="text-left p-3 whitespace-nowrap">Status</th>
+                  <SortTh label="Kode Surat" field="kode_surat" sort={sort} setSort={setSort} />
+                  <SortTh label="No. Urut" field="nomor_urut" sort={sort} setSort={setSort} />
+                  <SortTh label="No. Surat" field="nomor_surat" sort={sort} setSort={setSort} />
+                  <SortTh label="Tanggal" field="tanggal_surat" sort={sort} setSort={setSort} />
+                  <SortTh label="Tujuan" field="tujuan" sort={sort} setSort={setSort} />
+                  <SortTh label="Perihal" field="perihal" sort={sort} setSort={setSort} />
+                  <SortTh label="Jenis" field="jenis_surat" sort={sort} setSort={setSort} />
+                  <SortTh label="Status" field="status" sort={sort} setSort={setSort} />
                   <th className="text-right p-3 whitespace-nowrap">Aksi</th>
                 </tr>
               </thead>
