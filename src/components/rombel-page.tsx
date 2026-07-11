@@ -64,7 +64,7 @@ function downloadXLSX(filename: string, rows: (string | number | null | undefine
   }
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-  XLSX.writeFile(wb, filename);
+  XLSX.writeFile(wb, withDateSuffix(filename));
 }
 
 async function parseXLSX(file: File): Promise<string[][]> {
