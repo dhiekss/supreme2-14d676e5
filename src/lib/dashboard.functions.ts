@@ -20,11 +20,18 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     const { supabase } = context;
     const today = new Date().toISOString().slice(0, 10);
 
+    const { data: todayRecords, error: trErr } = await supabase
+      .from("attendance_records").select("id").eq("date", today);
+    if (trErr) throw new Error(trErr.message);
+    const todayRecordIds = (todayRecords ?? []).map((r: any) => r.id);
+
     const [guru, rombel, studentsAll, presensiTodayAll, lateToday, spActive, loans, rombelAll] = await Promise.all([
       supabase.from("guru").select("*", { count: "exact", head: true }),
       supabase.from("rombel").select("*", { count: "exact", head: true }),
       fetchAll((from, to) => supabase.from("students").select("id, gender, rombel_id").range(from, to)),
-      fetchAll((from, to) => supabase.from("attendance_details").select("status, attendance_records!inner(date)").eq("attendance_records.date", today).range(from, to)),
+      todayRecordIds.length
+        ? fetchAll((from, to) => supabase.from("attendance_details").select("status").in("attendance_record_id", todayRecordIds).range(from, to))
+        : Promise.resolve([] as any[]),
       supabase.from("late_records").select("*", { count: "exact", head: true }).eq("record_date", today),
       supabase.from("sp_records").select("*", { count: "exact", head: true }),
       supabase.from("book_loans").select("*", { count: "exact", head: true }).eq("status", "dipinjam"),
@@ -34,6 +41,7 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     const students = { data: studentsAll };
     const presensiToday = { data: presensiTodayAll };
     const rombelRows = { data: rombelAll };
+
 
 
     const rombelById = new Map((rombelRows.data ?? []).map((r: any) => [r.id, r]));
