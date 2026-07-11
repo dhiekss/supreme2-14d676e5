@@ -79,6 +79,61 @@ export const deleteSuratKeluar = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const deleteAllSuratKeluar = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const isAdmin = await context.supabase.rpc("is_admin", { _user_id: context.userId });
+    if (isAdmin.error) throw new Error(isAdmin.error.message);
+    if (!isAdmin.data) throw new Error("Hanya admin yang bisa menghapus seluruh data");
+    const { error, count } = await context.supabase
+      .from("surat_keluar")
+      .delete({ count: "exact" })
+      .not("id", "is", null);
+    if (error) throw new Error(error.message);
+    return { ok: true, deleted: count ?? 0 };
+  });
+
+const BulkRow = z.object({
+  kode_surat: z.string().trim().min(1).max(50),
+  nomor_urut: z.number().int().min(1).max(999999),
+  nomor_surat: z.string().trim().min(1).max(255),
+  tanggal_surat: z.string().min(1),
+  tujuan: z.string().trim().min(1).max(255),
+  perihal: z.string().trim().min(1).max(500),
+  jenis_surat: z.string().trim().min(1).max(100),
+  sifat_surat: z.string().trim().max(50).optional().nullable(),
+  status: z.string().trim().max(30).optional().nullable(),
+});
+
+export const bulkImportSuratKeluar = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ rows: z.array(BulkRow).min(1).max(5000) }).parse)
+  .handler(async ({ context, data }) => {
+    const payloads = data.rows.map((r) => ({
+      kode_surat: r.kode_surat,
+      nomor_urut: r.nomor_urut,
+      nomor_surat: r.nomor_surat,
+      tanggal_surat: r.tanggal_surat,
+      tujuan: r.tujuan,
+      perihal: r.perihal,
+      jenis_surat: r.jenis_surat,
+      sifat_surat: r.sifat_surat || "Biasa",
+      status: (r.status || "draft").toLowerCase(),
+      pembuat_id: context.userId,
+    }));
+    // chunk 500 rows per insert
+    let inserted = 0;
+    for (let i = 0; i < payloads.length; i += 500) {
+      const slice = payloads.slice(i, i + 500);
+      const { error, count } = await context.supabase
+        .from("surat_keluar")
+        .insert(slice, { count: "exact" });
+      if (error) throw new Error(`Baris ${i + 1}: ${error.message}`);
+      inserted += count ?? slice.length;
+    }
+    return { ok: true, inserted };
+  });
+
 // ============ Nomor Diamankan ============
 export const listNomorDiamankan = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
