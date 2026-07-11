@@ -234,7 +234,7 @@ function Page() {
                 </tr>
               </thead>
               <tbody>
-                {sortedFiltered.map((r: any) => (
+                {pageRows.map((r: any) => (
                   <tr key={r.id} className="border-t hover:bg-muted/30">
                     <td className="p-3 font-mono text-xs whitespace-nowrap">{r.nomor_surat ?? "—"}</td>
                     <td className="p-3 max-w-xs">
@@ -272,15 +272,39 @@ function Page() {
                     </td>
                   </tr>
                 ))}
-                {sortedFiltered.length === 0 && (
+                {pageRows.length === 0 && (
                   <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Tidak ada data.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
 
-          <div className="text-xs text-muted-foreground">
-            {sortedFiltered.length} surat tugas ditemukan
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm">
+            <div className="flex items-center gap-2">
+              <span>Tampilkan:</span>
+              <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(v === "all" ? "all" : Number(v)); setPage(1); }}>
+                <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[10, 25, 50, 100].map((n) => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                  <SelectItem value="all">Semua</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-muted-foreground">dari {sortedFiltered.length} data</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage((p) => p - 1)}>
+                <ChevronLeft className="h-4 w-4 mr-1" /> Sebelumnya
+              </Button>
+              {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                const n = i + 1;
+                return (
+                  <Button key={n} variant={currentPage === n ? "default" : "outline"} size="sm" onClick={() => setPage(n)}>{n}</Button>
+                );
+              })}
+              <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage((p) => p + 1)}>
+                Selanjutnya <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
