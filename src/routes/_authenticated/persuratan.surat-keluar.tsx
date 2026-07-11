@@ -134,6 +134,22 @@ function Page() {
   const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
   const totalReservedTersedia = (reserved ?? []).filter((r: any) => r.status === "tersedia").length;
 
+  // Reserved table pagination + search
+  const [rQ, setRQ] = useState("");
+  const [rPageSize, setRPageSize] = useState<number | "all">(10);
+  const [rPage, setRPage] = useState(1);
+  const reservedFiltered = useMemo(() => {
+    const s = rQ.trim().toLowerCase();
+    return (reserved as any[])
+      .filter((r) => r.status === "tersedia")
+      .filter((r) => !s || `${r.nomor_urut} ${r.kode_surat ?? ""} ${r.tanggal_diamankan ?? ""}`.toLowerCase().includes(s));
+  }, [reserved, rQ]);
+  const rSize = rPageSize === "all" ? Math.max(1, reservedFiltered.length) : rPageSize;
+  const rTotalPages = Math.max(1, Math.ceil(reservedFiltered.length / rSize));
+  const rCurrent = Math.min(rPage, rTotalPages);
+  const reservedPageRows = rPageSize === "all" ? reservedFiltered : reservedFiltered.slice((rCurrent - 1) * rSize, rCurrent * rSize);
+
+
   const del = useMutation({
     mutationFn: (id: string) => fnDel({ data: { id } }),
     onSuccess: () => { toast.success("Surat dihapus"); qc.invalidateQueries({ queryKey: ["surat-keluar"] }); },
