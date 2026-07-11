@@ -171,7 +171,7 @@ function PengaturanPembelajaranPage() {
     ws["!cols"] = [{ wch: 24 }, { wch: 32 }, { wch: 28 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Template");
-    XLSX.writeFile(wb, "template-rombel-mata-pelajaran.xlsx");
+    XLSX.writeFile(wb, withDateSuffix("template-rombel-mata-pelajaran.xlsx"));
     toast.success("Template diunduh");
   };
 
