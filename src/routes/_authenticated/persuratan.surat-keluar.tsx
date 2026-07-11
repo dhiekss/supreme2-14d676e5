@@ -131,8 +131,31 @@ function Page() {
     });
   }, [rows, q, status, kode, bulan, dari, sampai]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const sortedFiltered = useMemo(() => {
+    if (!sort?.key) return filtered;
+    const dir = sort.dir === "asc" ? 1 : -1;
+    const key = sort.key;
+    return [...filtered].sort((a: any, b: any) => {
+      let av = a[key];
+      let bv = b[key];
+      if (key === "nomor_urut") {
+        av = Number(av) || 0;
+        bv = Number(bv) || 0;
+      } else if (key === "tanggal_surat") {
+        av = av ? new Date(av).getTime() : 0;
+        bv = bv ? new Date(bv).getTime() : 0;
+      } else {
+        av = String(av ?? "").toLowerCase();
+        bv = String(bv ?? "").toLowerCase();
+      }
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+  }, [filtered, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedFiltered.length / pageSize));
+  const pageRows = sortedFiltered.slice((page - 1) * pageSize, page * pageSize);
   const totalReservedTersedia = (reserved ?? []).filter((r: any) => r.status === "tersedia").length;
 
   // Reserved table pagination + search
