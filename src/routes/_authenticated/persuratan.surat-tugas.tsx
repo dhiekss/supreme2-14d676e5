@@ -111,8 +111,12 @@ function Page() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>({ key: "tanggal_mulai", dir: "desc" });
+  const [pageSize, setPageSize] = useState<number | "all">(10);
+  const [page, setPage] = useState(1);
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
+
+  useEffect(() => { setPage(1); }, [q, status, pageSize]);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
