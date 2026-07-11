@@ -25,7 +25,7 @@ import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import {
   listSuratKeluar, saveSuratKeluar, deleteSuratKeluar, deleteAllSuratKeluar, bulkImportSuratKeluar,
-  listNomorDiamankan, amankanNomor, deleteNomorDiamankan, nextNomorUrut,
+  listNomorDiamankan, amankanNomor, deleteNomorDiamankan, nextNomorUrut, bulkImportNomorDiamankan,
 } from "@/lib/surat-keluar.functions";
 import { listKode, listNomor } from "@/lib/persuratan.functions";
 
