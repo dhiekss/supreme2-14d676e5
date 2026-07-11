@@ -147,6 +147,11 @@ function Page() {
     });
   }, [filtered, sort]);
 
+  const size = pageSize === "all" ? Math.max(1, sortedFiltered.length) : pageSize;
+  const totalPages = Math.max(1, Math.ceil(sortedFiltered.length / size));
+  const currentPage = Math.min(page, totalPages);
+  const pageRows = pageSize === "all" ? sortedFiltered : sortedFiltered.slice((currentPage - 1) * size, currentPage * size);
+
   const del = useMutation({
     mutationFn: (id: string) => fnDel({ data: { id } }),
     onSuccess: () => {
