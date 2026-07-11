@@ -25,7 +25,7 @@ import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import {
   listSuratKeluar, saveSuratKeluar, deleteSuratKeluar, deleteAllSuratKeluar, bulkImportSuratKeluar,
-  listNomorDiamankan, amankanNomor, deleteNomorDiamankan, nextNomorUrut,
+  listNomorDiamankan, amankanNomor, deleteNomorDiamankan, nextNomorUrut, bulkImportNomorDiamankan,
 } from "@/lib/surat-keluar.functions";
 import { listKode, listNomor } from "@/lib/persuratan.functions";
 
@@ -253,6 +253,59 @@ function Page() {
     }
   };
 
+  const fnBulkReserved = useServerFn(bulkImportNomorDiamankan);
+  const reservedFileRef = useRef<HTMLInputElement | null>(null);
+  const importReservedMut = useMutation({
+    mutationFn: (rows: any[]) => fnBulkReserved({ data: { rows } }),
+    onSuccess: (r: any) => {
+      toast.success(`${r?.inserted ?? 0} nomor diamankan diimpor`);
+      qc.invalidateQueries({ queryKey: ["nomor-diamankan"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const downloadTemplateReserved = () => {
+    const header = ["Kode Surat", "Nomor Urut", "Tanggal Diamankan", "Status"];
+    const sample = [
+      ["000", 102, "2026-02-24", "tersedia"],
+      ["000", 103, "2026-02-24", "tersedia"],
+      ["000", 104, "2026-02-24", "tersedia"],
+      ["000", 119, "2026-02-26", "tersedia"],
+      ["000", 120, "2026-02-26", "tersedia"],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet([header, ...sample]);
+    ws["!cols"] = [{ wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 12 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Nomor Diamankan");
+    XLSX.writeFile(wb, `template-nomor-diamankan.xlsx`);
+  };
+
+  const handleImportReservedFile = async (file: File) => {
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array", cellDates: true });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw: any[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
+      if (raw.length === 0) return toast.error("File kosong");
+      const rows = raw.map((r: any, i: number) => {
+        const kode = String(r["Kode Surat"] ?? r["kode_surat"] ?? "").trim();
+        const nomor = Number(r["Nomor Urut"] ?? r["No. Urut"] ?? r["nomor_urut"] ?? 0);
+        const tanggal = parseTanggal(r["Tanggal Diamankan"] ?? r["Tanggal"] ?? r["tanggal_diamankan"]);
+        const status = String(r["Status"] ?? r["status"] ?? "tersedia").trim().toLowerCase() || "tersedia";
+        if (!nomor || !tanggal) {
+          throw new Error(`Baris ${i + 2}: Nomor Urut & Tanggal wajib diisi`);
+        }
+        return { kode_surat: kode || "000", nomor_urut: nomor, tanggal_diamankan: tanggal, status };
+      });
+      importReservedMut.mutate(rows);
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal membaca file");
+    } finally {
+      if (reservedFileRef.current) reservedFileRef.current.value = "";
+    }
+  };
+
+
   const openCreate = () => { setEditing(null); setPrefill(null); setOpenForm(true); };
   const openEdit = (r: any) => { setEditing(r); setPrefill(null); setOpenForm(true); };
   const useReserved = (r: any) => {
@@ -418,10 +471,29 @@ function Page() {
       {/* Nomor Diamankan */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><Lock className="h-4 w-4" /> Nomor Urut Tersedia (Diamankan) — {totalReservedTersedia}</CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">
-            Setiap pergantian hari, 3 nomor urut otomatis diamankan dari hari sebelumnya. Gunakan tombol "Gunakan" untuk membuat surat dengan nomor tersebut.
-          </p>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-base"><Lock className="h-4 w-4" /> Nomor Urut Tersedia (Diamankan) — {totalReservedTersedia}</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Setiap pergantian hari, 3 nomor urut otomatis diamankan dari hari sebelumnya. Gunakan tombol "Gunakan" untuk membuat surat dengan nomor tersebut.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={downloadTemplateReserved}>
+                <Download className="h-4 w-4 mr-2" /> Unduh Template
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => reservedFileRef.current?.click()} disabled={importReservedMut.isPending}>
+                {importReservedMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />} Import Data
+              </Button>
+              <input
+                ref={reservedFileRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImportReservedFile(f); }}
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-md border">

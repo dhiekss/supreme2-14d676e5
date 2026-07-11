@@ -165,6 +165,36 @@ export const amankanNomor = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const BulkReservedRow = z.object({
+  kode_surat: z.string().trim().max(50).optional().nullable(),
+  nomor_urut: z.number().int().min(1).max(999999),
+  tanggal_diamankan: z.string().min(1),
+  status: z.string().trim().max(30).optional().nullable(),
+});
+
+export const bulkImportNomorDiamankan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ rows: z.array(BulkReservedRow).min(1).max(5000) }).parse)
+  .handler(async ({ context, data }) => {
+    const payloads = data.rows.map((r) => ({
+      kode_surat: (r.kode_surat && r.kode_surat.length > 0) ? r.kode_surat : "000",
+      nomor_urut: r.nomor_urut,
+      tanggal_diamankan: r.tanggal_diamankan,
+      status: (r.status || "tersedia").toLowerCase(),
+      created_by: context.userId,
+    }));
+    let inserted = 0;
+    for (let i = 0; i < payloads.length; i += 500) {
+      const slice = payloads.slice(i, i + 500);
+      const { error, count } = await context.supabase
+        .from("persuratan_nomor_diamankan")
+        .insert(slice, { count: "exact" });
+      if (error) throw new Error(`Baris ${i + 1}: ${error.message}`);
+      inserted += count ?? slice.length;
+    }
+    return { ok: true, inserted };
+  });
+
 export const deleteNomorDiamankan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ id: z.string().uuid() }).parse)
