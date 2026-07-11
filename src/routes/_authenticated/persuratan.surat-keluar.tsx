@@ -418,10 +418,29 @@ function Page() {
       {/* Nomor Diamankan */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><Lock className="h-4 w-4" /> Nomor Urut Tersedia (Diamankan) — {totalReservedTersedia}</CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">
-            Setiap pergantian hari, 3 nomor urut otomatis diamankan dari hari sebelumnya. Gunakan tombol "Gunakan" untuk membuat surat dengan nomor tersebut.
-          </p>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-base"><Lock className="h-4 w-4" /> Nomor Urut Tersedia (Diamankan) — {totalReservedTersedia}</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Setiap pergantian hari, 3 nomor urut otomatis diamankan dari hari sebelumnya. Gunakan tombol "Gunakan" untuk membuat surat dengan nomor tersebut.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={downloadTemplateReserved}>
+                <Download className="h-4 w-4 mr-2" /> Unduh Template
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => reservedFileRef.current?.click()} disabled={importReservedMut.isPending}>
+                {importReservedMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />} Import Data
+              </Button>
+              <input
+                ref={reservedFileRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImportReservedFile(f); }}
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
