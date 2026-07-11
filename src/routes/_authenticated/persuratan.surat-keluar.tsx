@@ -24,7 +24,7 @@ import * as XLSX from "xlsx";
 
 import { supabase } from "@/integrations/supabase/client";
 import {
-  listSuratKeluar, saveSuratKeluar, deleteSuratKeluar, deleteAllSuratKeluar, bulkImportSuratKeluar,
+  listSuratKeluar, saveSuratKeluar, deleteSuratKeluar, bulkImportSuratKeluar,
   listNomorDiamankan, amankanNomor, deleteNomorDiamankan, nextNomorUrut, bulkImportNomorDiamankan,
 } from "@/lib/surat-keluar.functions";
 import { listKode, listNomor } from "@/lib/persuratan.functions";
@@ -211,20 +211,8 @@ function Page() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const fnDelAll = useServerFn(deleteAllSuratKeluar);
   const fnBulk = useServerFn(bulkImportSuratKeluar);
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const [confirmDelAll, setConfirmDelAll] = useState(false);
-
-  const delAll = useMutation({
-    mutationFn: () => fnDelAll(),
-    onSuccess: (r: any) => {
-      toast.success(`${r?.deleted ?? 0} surat dihapus`);
-      setConfirmDelAll(false);
-      qc.invalidateQueries({ queryKey: ["surat-keluar"] });
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
 
   const importMut = useMutation({
     mutationFn: (rows: any[]) => fnBulk({ data: { rows } }),
@@ -413,13 +401,6 @@ function Page() {
             >
               {importMut.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
               Import Data
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => setConfirmDelAll(true)}
-              disabled={!(rows?.length)}
-            >
-              <Trash2 className="h-4 w-4 mr-1" /> Hapus Semua
             </Button>
             <Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Buat Surat Keluar</Button>
           </div>
@@ -652,27 +633,6 @@ function Page() {
         }}
       />
 
-      <AlertDialog open={confirmDelAll} onOpenChange={setConfirmDelAll}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hapus SEMUA data Surat Keluar?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tindakan ini akan menghapus seluruh {rows?.length ?? 0} data surat keluar dan tidak dapat dibatalkan.
-              Hanya admin yang dapat melakukan ini.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={(e) => { e.preventDefault(); delAll.mutate(); }}
-              disabled={delAll.isPending}
-            >
-              {delAll.isPending ? "Menghapus..." : "Ya, Hapus Semua"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
