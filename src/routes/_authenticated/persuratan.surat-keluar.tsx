@@ -456,8 +456,8 @@ function SuratFormDialog({
   const nomorPreview = useMemo(() => {
     if (!form.kode_surat || !form.nomor_urut) return "";
     const year = form.tanggal_surat ? new Date(form.tanggal_surat).getFullYear() : new Date().getFullYear();
-    return `${form.kode_surat}/${form.nomor_urut}/SMKN1.PN-CADISDIK.WIL.IV/${year}`;
-  }, [form.kode_surat, form.nomor_urut, form.tanggal_surat]);
+    return applyFormatNomor(formatNomor, form.kode_surat, form.nomor_urut, year);
+  }, [form.kode_surat, form.nomor_urut, form.tanggal_surat, formatNomor]);
 
   const save = useMutation({
     mutationFn: async () => {
