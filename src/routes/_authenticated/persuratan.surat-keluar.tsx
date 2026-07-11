@@ -109,6 +109,7 @@ function Page() {
   const [sampai, setSampai] = useState("");
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>({ key: "tanggal_surat", dir: "desc" });
 
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
