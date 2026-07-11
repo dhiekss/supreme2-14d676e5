@@ -18,7 +18,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Eye, Pencil, Trash2, Lock, LockOpen, Search, Upload, Download, Loader2 } from "lucide-react";
+import { Plus, Eye, Pencil, Trash2, Lock, LockOpen, Search, Upload, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
@@ -80,6 +80,32 @@ function jenisBadge(j?: string | null) {
   return <Badge variant="outline" className="border-slate-200 text-slate-700">{j || "—"}</Badge>;
 }
 
+function SortTh({
+  label, field, sort, setSort,
+}: {
+  label: string; field: string;
+  sort: { key: string; dir: "asc" | "desc" } | null;
+  setSort: (s: { key: string; dir: "asc" | "desc" } | null) => void;
+}) {
+  const active = sort?.key === field;
+  const icon = active ? (sort.dir === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />)
+    : <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />;
+  return (
+    <th
+      className="text-left p-3 whitespace-nowrap cursor-pointer select-none hover:bg-muted transition-colors"
+      onClick={() => {
+        if (active && sort.dir === "desc") setSort(null);
+        else setSort({ key: field, dir: active ? "desc" : "asc" });
+      }}
+    >
+      <div className="flex items-center gap-1">
+        {label}
+        {icon}
+      </div>
+    </th>
+  );
+}
+
 function Page() {
   const qc = useQueryClient();
   const fnList = useServerFn(listSuratKeluar);
@@ -109,6 +135,7 @@ function Page() {
   const [sampai, setSampai] = useState("");
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>({ key: "tanggal_surat", dir: "desc" });
 
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
@@ -130,8 +157,31 @@ function Page() {
     });
   }, [rows, q, status, kode, bulan, dari, sampai]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const sortedFiltered = useMemo(() => {
+    if (!sort?.key) return filtered;
+    const dir = sort.dir === "asc" ? 1 : -1;
+    const key = sort.key;
+    return [...filtered].sort((a: any, b: any) => {
+      let av = a[key];
+      let bv = b[key];
+      if (key === "nomor_urut") {
+        av = Number(av) || 0;
+        bv = Number(bv) || 0;
+      } else if (key === "tanggal_surat") {
+        av = av ? new Date(av).getTime() : 0;
+        bv = bv ? new Date(bv).getTime() : 0;
+      } else {
+        av = String(av ?? "").toLowerCase();
+        bv = String(bv ?? "").toLowerCase();
+      }
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+  }, [filtered, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedFiltered.length / pageSize));
+  const pageRows = sortedFiltered.slice((page - 1) * pageSize, page * pageSize);
   const totalReservedTersedia = (reserved ?? []).filter((r: any) => r.status === "tersedia").length;
 
   // Reserved table pagination + search
@@ -411,21 +461,21 @@ function Page() {
             <Input type="date" value={dari} onChange={(e) => setDari(e.target.value)} className="w-40" />
             <span>Sampai:</span>
             <Input type="date" value={sampai} onChange={(e) => setSampai(e.target.value)} className="w-40" />
-            <div className="ml-auto text-muted-foreground">{filtered.length} data ditemukan</div>
+            <div className="ml-auto text-muted-foreground">{sortedFiltered.length} data ditemukan</div>
           </div>
 
           <div className="overflow-x-auto rounded-md border">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-muted-foreground">
                 <tr>
-                  <th className="text-left p-3 whitespace-nowrap">Kode Surat</th>
-                  <th className="text-left p-3 whitespace-nowrap">No. Urut</th>
-                  <th className="text-left p-3 whitespace-nowrap">No. Surat</th>
-                  <th className="text-left p-3 whitespace-nowrap">Tanggal</th>
-                  <th className="text-left p-3">Tujuan</th>
-                  <th className="text-left p-3">Perihal</th>
-                  <th className="text-left p-3 whitespace-nowrap">Jenis</th>
-                  <th className="text-left p-3 whitespace-nowrap">Status</th>
+                  <SortTh label="Kode Surat" field="kode_surat" sort={sort} setSort={setSort} />
+                  <SortTh label="No. Urut" field="nomor_urut" sort={sort} setSort={setSort} />
+                  <SortTh label="No. Surat" field="nomor_surat" sort={sort} setSort={setSort} />
+                  <SortTh label="Tanggal" field="tanggal_surat" sort={sort} setSort={setSort} />
+                  <SortTh label="Tujuan" field="tujuan" sort={sort} setSort={setSort} />
+                  <SortTh label="Perihal" field="perihal" sort={sort} setSort={setSort} />
+                  <SortTh label="Jenis" field="jenis_surat" sort={sort} setSort={setSort} />
+                  <SortTh label="Status" field="status" sort={sort} setSort={setSort} />
                   <th className="text-right p-3 whitespace-nowrap">Aksi</th>
                 </tr>
               </thead>
