@@ -21,7 +21,19 @@ import {
   listSuratKeluar, saveSuratKeluar, deleteSuratKeluar,
   listNomorDiamankan, amankanNomor, deleteNomorDiamankan, nextNomorUrut,
 } from "@/lib/surat-keluar.functions";
-import { listKode } from "@/lib/persuratan.functions";
+import { listKode, listNomor } from "@/lib/persuratan.functions";
+
+function applyFormatNomor(format: string, kode: string, nomor: number | string, tahun: number) {
+  const n = Number(nomor) || 0;
+  const padded = n > 0 ? String(n).padStart(3, "0") : "";
+  return (format || "")
+    .replaceAll("{KODE}", kode || "")
+    .replaceAll("{NOMOR}", padded)
+    .replaceAll("{TAHUN}", String(tahun))
+    .replaceAll("{kode}", kode || "")
+    .replaceAll("{counter}", padded)
+    .replaceAll("{tahun}", String(tahun));
+}
 
 export const Route = createFileRoute("/_authenticated/persuratan/surat-keluar")({
   head: () => ({ meta: [{ title: "Surat Keluar — SUPREME XPOES" }] }),
@@ -66,13 +78,22 @@ function Page() {
   const qc = useQueryClient();
   const fnList = useServerFn(listSuratKeluar);
   const fnKode = useServerFn(listKode);
+  const fnNomor = useServerFn(listNomor);
   const fnReserved = useServerFn(listNomorDiamankan);
   const fnDel = useServerFn(deleteSuratKeluar);
   const fnDelReserved = useServerFn(deleteNomorDiamankan);
 
   const { data: rows } = useSuspenseQuery({ queryKey: ["surat-keluar"], queryFn: () => fnList() });
   const { data: kodeList = [] } = useQuery({ queryKey: ["kode-surat"], queryFn: () => fnKode() });
+  const { data: nomorList = [] } = useQuery({ queryKey: ["persuratan-nomor"], queryFn: () => fnNomor() });
   const { data: reserved = [] } = useQuery({ queryKey: ["nomor-diamankan"], queryFn: () => fnReserved() });
+
+  const formatSuratKeluar = useMemo(() => {
+    const row = (nomorList as any[]).find(
+      (n) => n.jenis_surat === "surat_keluar" && n.is_active !== false,
+    ) ?? (nomorList as any[]).find((n) => n.jenis_surat === "surat_keluar");
+    return row?.format_nomor ?? "{KODE}/{NOMOR}/SMKN1.PN-CADISDIK.WIL.IV/{TAHUN}";
+  }, [nomorList]);
 
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
@@ -312,6 +333,7 @@ function Page() {
         kodeList={kodeList as any[]}
         reservedCount={totalReservedTersedia}
         reserved={reserved as any[]}
+        formatNomor={formatSuratKeluar}
         onSaved={() => {
           qc.invalidateQueries({ queryKey: ["surat-keluar"] });
           qc.invalidateQueries({ queryKey: ["nomor-diamankan"] });
@@ -362,7 +384,7 @@ function AmankanForm({ kodeList, onSaved }: { kodeList: any[]; onSaved: () => vo
 }
 
 function SuratFormDialog({
-  open, onOpenChange, editing, prefill, kodeList, reservedCount, reserved, onSaved,
+  open, onOpenChange, editing, prefill, kodeList, reservedCount, reserved, formatNomor, onSaved,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -371,6 +393,7 @@ function SuratFormDialog({
   kodeList: any[];
   reservedCount: number;
   reserved: any[];
+  formatNomor: string;
   onSaved: () => void;
 }) {
   const [form, setForm] = useState<any>({});
@@ -433,8 +456,8 @@ function SuratFormDialog({
   const nomorPreview = useMemo(() => {
     if (!form.kode_surat || !form.nomor_urut) return "";
     const year = form.tanggal_surat ? new Date(form.tanggal_surat).getFullYear() : new Date().getFullYear();
-    return `${form.kode_surat}/${form.nomor_urut}/SMKN1.PN-CADISDIK.WIL.IV/${year}`;
-  }, [form.kode_surat, form.nomor_urut, form.tanggal_surat]);
+    return applyFormatNomor(formatNomor, form.kode_surat, form.nomor_urut, year);
+  }, [form.kode_surat, form.nomor_urut, form.tanggal_surat, formatNomor]);
 
   const save = useMutation({
     mutationFn: async () => {
