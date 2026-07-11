@@ -80,6 +80,32 @@ function jenisBadge(j?: string | null) {
   return <Badge variant="outline" className="border-slate-200 text-slate-700">{j || "—"}</Badge>;
 }
 
+function SortTh({
+  label, field, sort, setSort,
+}: {
+  label: string; field: string;
+  sort: { key: string; dir: "asc" | "desc" } | null;
+  setSort: (s: { key: string; dir: "asc" | "desc" } | null) => void;
+}) {
+  const active = sort?.key === field;
+  const icon = active ? (sort.dir === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />)
+    : <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/50" />;
+  return (
+    <th
+      className="text-left p-3 whitespace-nowrap cursor-pointer select-none hover:bg-muted transition-colors"
+      onClick={() => {
+        if (active && sort.dir === "desc") setSort(null);
+        else setSort({ key: field, dir: active ? "desc" : "asc" });
+      }}
+    >
+      <div className="flex items-center gap-1">
+        {label}
+        {icon}
+      </div>
+    </th>
+  );
+}
+
 function Page() {
   const qc = useQueryClient();
   const fnList = useServerFn(listSuratKeluar);
