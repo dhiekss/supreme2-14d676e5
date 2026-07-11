@@ -420,16 +420,14 @@ function Page() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base"><Lock className="h-4 w-4" /> Nomor Urut Tersedia (Diamankan) — {totalReservedTersedia}</CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Amankan nomor urut untuk kode tertentu. Gunakan tombol "Gunakan" untuk membuat surat dengan nomor tersebut.
+            Setiap pergantian hari, 3 nomor urut otomatis diamankan dari hari sebelumnya. Gunakan tombol "Gunakan" untuk membuat surat dengan nomor tersebut.
           </p>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <AmankanForm kodeList={kodeList as any[]} onSaved={() => qc.invalidateQueries({ queryKey: ["nomor-diamankan"] })} />
+        <CardContent>
           <div className="overflow-x-auto rounded-md border">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-muted-foreground">
                 <tr>
-                  <th className="text-left p-3">Kode</th>
                   <th className="text-left p-3">Nomor Urut</th>
                   <th className="text-left p-3">Tanggal Diamankan</th>
                   <th className="text-left p-3">Status</th>
@@ -437,23 +435,18 @@ function Page() {
                 </tr>
               </thead>
               <tbody>
-                {(reserved as any[]).map((r) => (
+                {(reserved as any[]).filter((r) => r.status === "tersedia").map((r) => (
                   <tr key={r.id} className="border-t">
-                    <td className="p-3 font-mono text-xs">{r.kode_surat}</td>
                     <td className="p-3 font-semibold">{r.nomor_urut}</td>
                     <td className="p-3">{fmtDate(r.tanggal_diamankan)}</td>
                     <td className="p-3">
-                      {r.status === "tersedia"
-                        ? <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50"><Lock className="h-3 w-3 mr-1" /> Tersedia</Badge>
-                        : <Badge variant="outline" className="border-slate-200 text-slate-600">{r.status}</Badge>}
+                      <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50"><Lock className="h-3 w-3 mr-1" /> Tersedia</Badge>
                     </td>
                     <td className="p-3 text-right">
                       <div className="inline-flex gap-2 justify-end">
-                        {r.status === "tersedia" && (
-                          <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => useReserved(r)}>
-                            <LockOpen className="h-4 w-4 mr-1" /> Gunakan
-                          </Button>
-                        )}
+                        <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => useReserved(r)}>
+                          <LockOpen className="h-4 w-4 mr-1" /> Gunakan
+                        </Button>
                         <Button size="icon" variant="destructive" onClick={() => { if (confirm("Hapus nomor diamankan?")) delReserved.mutate(r.id); }}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -461,9 +454,10 @@ function Page() {
                     </td>
                   </tr>
                 ))}
-                {(reserved as any[]).length === 0 && (
-                  <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Belum ada nomor yang diamankan.</td></tr>
+                {(reserved as any[]).filter((r) => r.status === "tersedia").length === 0 && (
+                  <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">Belum ada nomor yang diamankan.</td></tr>
                 )}
+
               </tbody>
             </table>
           </div>
