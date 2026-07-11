@@ -140,7 +140,7 @@ function AdministrasiPage() {
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Administrasi");
-    XLSX.writeFile(wb, "administrasi-pembelajaran.xlsx");
+    XLSX.writeFile(wb, withDateSuffix("administrasi-pembelajaran.xlsx"));
   };
 
   return (
