@@ -333,6 +333,7 @@ function Page() {
         kodeList={kodeList as any[]}
         reservedCount={totalReservedTersedia}
         reserved={reserved as any[]}
+        formatNomor={formatSuratKeluar}
         onSaved={() => {
           qc.invalidateQueries({ queryKey: ["surat-keluar"] });
           qc.invalidateQueries({ queryKey: ["nomor-diamankan"] });
