@@ -2035,6 +2035,7 @@ export type Database = {
           pembuat_id: string | null
           perihal_dasar_surat: string | null
           status: string | null
+          surat_keluar_id: string | null
           tanggal_dasar_surat: string | null
           tanggal_mulai: string | null
           tanggal_selesai: string | null
@@ -2059,6 +2060,7 @@ export type Database = {
           pembuat_id?: string | null
           perihal_dasar_surat?: string | null
           status?: string | null
+          surat_keluar_id?: string | null
           tanggal_dasar_surat?: string | null
           tanggal_mulai?: string | null
           tanggal_selesai?: string | null
@@ -2083,6 +2085,7 @@ export type Database = {
           pembuat_id?: string | null
           perihal_dasar_surat?: string | null
           status?: string | null
+          surat_keluar_id?: string | null
           tanggal_dasar_surat?: string | null
           tanggal_mulai?: string | null
           tanggal_selesai?: string | null
@@ -2090,7 +2093,15 @@ export type Database = {
           updated_at?: string | null
           waktu_berangkat?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "surat_tugas_surat_keluar_id_fkey"
+            columns: ["surat_keluar_id"]
+            isOneToOne: true
+            referencedRelation: "surat_keluar"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       surat_tugas_peserta: {
         Row: {
