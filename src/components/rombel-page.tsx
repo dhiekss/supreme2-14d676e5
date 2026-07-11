@@ -169,8 +169,16 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
 
   async function handleExportMurid() {
     const all = (await allStudentsFn({})) as any[];
-    const rows: any[][] = [["name", "nis", "nisn", "gender", "rombel_name"]];
-    all.forEach((s) => rows.push([s.name, s.nis, s.nisn, s.gender, s.rombel_nama]));
+    const rows: any[][] = [["No", "Nama Murid", "JK", "NIS", "NISN", "Rombel", "Nama Wali Kelas"]];
+    all.forEach((s, i) => rows.push([
+      i + 1,
+      s.name ?? "",
+      s.gender === "L" ? "Laki-laki" : s.gender === "P" ? "Perempuan" : "",
+      s.nis ?? "",
+      s.nisn ?? "",
+      s.rombel_nama ?? "",
+      s.wali_kelas_name ?? "",
+    ]));
     downloadXLSX("daftar-murid.xlsx", rows);
   }
 
