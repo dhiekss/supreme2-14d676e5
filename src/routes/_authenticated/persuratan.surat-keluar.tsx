@@ -21,7 +21,19 @@ import {
   listSuratKeluar, saveSuratKeluar, deleteSuratKeluar,
   listNomorDiamankan, amankanNomor, deleteNomorDiamankan, nextNomorUrut,
 } from "@/lib/surat-keluar.functions";
-import { listKode } from "@/lib/persuratan.functions";
+import { listKode, listNomor } from "@/lib/persuratan.functions";
+
+function applyFormatNomor(format: string, kode: string, nomor: number | string, tahun: number) {
+  const n = Number(nomor) || 0;
+  const padded = n > 0 ? String(n).padStart(3, "0") : "";
+  return (format || "")
+    .replaceAll("{KODE}", kode || "")
+    .replaceAll("{NOMOR}", padded)
+    .replaceAll("{TAHUN}", String(tahun))
+    .replaceAll("{kode}", kode || "")
+    .replaceAll("{counter}", padded)
+    .replaceAll("{tahun}", String(tahun));
+}
 
 export const Route = createFileRoute("/_authenticated/persuratan/surat-keluar")({
   head: () => ({ meta: [{ title: "Surat Keluar — SUPREME XPOES" }] }),
