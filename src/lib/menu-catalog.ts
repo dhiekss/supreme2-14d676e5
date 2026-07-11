@@ -53,7 +53,14 @@ export const MENU_CATALOG: MenuGroup[] = [
     items: [
       { key: "guru-izin", label: "Izin Guru" },
       { key: "perpus", label: "Perpustakaan" },
-      { key: "persuratan", label: "Persuratan" },
+      { key: "persuratan/dashboard", label: "Dashboard Persuratan" },
+      { key: "persuratan/surat-masuk", label: "Surat Masuk" },
+      { key: "persuratan/surat-keluar", label: "Surat Keluar" },
+      { key: "persuratan/surat-tugas", label: "Surat Tugas" },
+      { key: "persuratan/disposisi", label: "Disposisi" },
+      { key: "persuratan/arsip", label: "Arsip Surat" },
+      { key: "persuratan/pengaturan", label: "Pengaturan Persuratan" },
+
       { key: "sarpras", label: "Sarpras" },
       { key: "tpg", label: "TPG" },
       { key: "verval", label: "Verval Siswa" },
