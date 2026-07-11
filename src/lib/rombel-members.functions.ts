@@ -22,12 +22,15 @@ export const listAllStudents = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const [s, r] = await Promise.all([
       context.supabase.from("students").select("id, name, nis, nisn, gender, rombel_id").order("name").range(0, 99999),
-      context.supabase.from("rombel").select("id, name").range(0, 9999),
+      context.supabase.from("rombel").select("id, name, wali_kelas_name").range(0, 9999),
     ]);
     if (s.error) throw new Error(s.error.message);
     if (r.error) throw new Error(r.error.message);
-    const rMap = new Map((r.data ?? []).map((x: any) => [x.id, x.name]));
-    return (s.data ?? []).map((x: any) => ({ ...x, rombel_nama: x.rombel_id ? rMap.get(x.rombel_id) ?? "—" : "—" }));
+    const rMap = new Map((r.data ?? []).map((x: any) => [x.id, x]));
+    return (s.data ?? []).map((x: any) => {
+      const rb: any = x.rombel_id ? rMap.get(x.rombel_id) : null;
+      return { ...x, rombel_nama: rb?.name ?? "—", wali_kelas_name: rb?.wali_kelas_name ?? "—" };
+    });
   });
 
 
