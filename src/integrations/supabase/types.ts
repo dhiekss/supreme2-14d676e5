@@ -1222,6 +1222,42 @@ export type Database = {
         }
         Relationships: []
       }
+      persuratan_nomor_diamankan: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          kode_surat: string
+          nomor_urut: number
+          status: string
+          tanggal_diamankan: string
+          updated_at: string
+          used_by_surat_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kode_surat: string
+          nomor_urut: number
+          status?: string
+          tanggal_diamankan?: string
+          updated_at?: string
+          used_by_surat_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kode_surat?: string
+          nomor_urut?: number
+          status?: string
+          tanggal_diamankan?: string
+          updated_at?: string
+          used_by_surat_id?: string | null
+        }
+        Relationships: []
+      }
       persuratan_nomor_surat: {
         Row: {
           contoh_hasil: string | null
@@ -1931,7 +1967,9 @@ export type Database = {
           id: string
           isi_ringkas: string | null
           jenis_surat: string | null
+          kode_surat: string | null
           nomor_surat: string | null
+          nomor_urut: number | null
           pembuat_id: string | null
           penandatangan_id: string | null
           perihal: string | null
@@ -1947,7 +1985,9 @@ export type Database = {
           id?: string
           isi_ringkas?: string | null
           jenis_surat?: string | null
+          kode_surat?: string | null
           nomor_surat?: string | null
+          nomor_urut?: number | null
           pembuat_id?: string | null
           penandatangan_id?: string | null
           perihal?: string | null
@@ -1963,7 +2003,9 @@ export type Database = {
           id?: string
           isi_ringkas?: string | null
           jenis_surat?: string | null
+          kode_surat?: string | null
           nomor_surat?: string | null
+          nomor_urut?: number | null
           pembuat_id?: string | null
           penandatangan_id?: string | null
           perihal?: string | null
