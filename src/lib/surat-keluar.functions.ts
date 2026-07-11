@@ -60,6 +60,29 @@ export const saveSuratKeluar = createServerFn({ method: "POST" })
       const { data: ins, error } = await context.supabase.from("surat_keluar").insert(payload).select("id").single();
       if (error) throw new Error(error.message);
       suratId = ins?.id;
+      // Sync counter di Pengaturan Format Nomor (jenis "surat_keluar")
+      const tahun = new Date(data.tanggal_surat).getFullYear();
+      const { data: setting } = await context.supabase
+        .from("persuratan_nomor_surat")
+        .select("id, counter, format_nomor, prefix")
+        .eq("jenis_surat", "surat_keluar")
+        .eq("tahun", tahun)
+        .maybeSingle();
+      if (setting?.id && data.nomor_urut > (setting.counter ?? 0)) {
+        const padded = String(data.nomor_urut).padStart(3, "0");
+        const contoh = (setting.format_nomor ?? "")
+          .replaceAll("{KODE}", data.kode_surat)
+          .replaceAll("{NOMOR}", padded)
+          .replaceAll("{TAHUN}", String(tahun))
+          .replaceAll("{kode}", data.kode_surat)
+          .replaceAll("{counter}", padded)
+          .replaceAll("{prefix}", setting.prefix ?? "")
+          .replaceAll("{tahun}", String(tahun));
+        await context.supabase
+          .from("persuratan_nomor_surat")
+          .update({ counter: data.nomor_urut, contoh_hasil: contoh })
+          .eq("id", setting.id);
+      }
     }
     if (data.reserved_id && suratId) {
       await context.supabase
@@ -204,16 +227,19 @@ export const deleteNomorDiamankan = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// Suggest next nomor_urut for a given kode_surat
+// Suggest next nomor_urut for a given kode_surat (sinkron dgn counter di Pengaturan)
 export const nextNomorUrut = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ kode_surat: z.string().min(1).max(50) }).parse)
   .handler(async ({ context, data }) => {
-    const [{ data: sk }, { data: nd }] = await Promise.all([
+    const tahun = new Date().getFullYear();
+    const [{ data: sk }, { data: nd }, { data: setting }] = await Promise.all([
       context.supabase.from("surat_keluar").select("nomor_urut").eq("kode_surat", data.kode_surat).order("nomor_urut", { ascending: false, nullsFirst: false }).limit(1),
       context.supabase.from("persuratan_nomor_diamankan").select("nomor_urut").eq("kode_surat", data.kode_surat).order("nomor_urut", { ascending: false }).limit(1),
+      context.supabase.from("persuratan_nomor_surat").select("counter").eq("jenis_surat", "surat_keluar").eq("tahun", tahun).maybeSingle(),
     ]);
     const a = sk?.[0]?.nomor_urut ?? 0;
     const b = nd?.[0]?.nomor_urut ?? 0;
-    return { next: Math.max(a, b) + 1 };
+    const c = setting?.counter ?? 0;
+    return { next: Math.max(a, b, c) + 1 };
   });
