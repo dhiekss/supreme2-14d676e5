@@ -227,16 +227,19 @@ export const deleteNomorDiamankan = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// Suggest next nomor_urut for a given kode_surat
+// Suggest next nomor_urut for a given kode_surat (sinkron dgn counter di Pengaturan)
 export const nextNomorUrut = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ kode_surat: z.string().min(1).max(50) }).parse)
   .handler(async ({ context, data }) => {
-    const [{ data: sk }, { data: nd }] = await Promise.all([
+    const tahun = new Date().getFullYear();
+    const [{ data: sk }, { data: nd }, { data: setting }] = await Promise.all([
       context.supabase.from("surat_keluar").select("nomor_urut").eq("kode_surat", data.kode_surat).order("nomor_urut", { ascending: false, nullsFirst: false }).limit(1),
       context.supabase.from("persuratan_nomor_diamankan").select("nomor_urut").eq("kode_surat", data.kode_surat).order("nomor_urut", { ascending: false }).limit(1),
+      context.supabase.from("persuratan_nomor_surat").select("counter").eq("jenis_surat", "surat_keluar").eq("tahun", tahun).maybeSingle(),
     ]);
     const a = sk?.[0]?.nomor_urut ?? 0;
     const b = nd?.[0]?.nomor_urut ?? 0;
-    return { next: Math.max(a, b) + 1 };
+    const c = setting?.counter ?? 0;
+    return { next: Math.max(a, b, c) + 1 };
   });
