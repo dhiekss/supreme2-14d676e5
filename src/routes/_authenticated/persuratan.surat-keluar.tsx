@@ -384,7 +384,7 @@ function AmankanForm({ kodeList, onSaved }: { kodeList: any[]; onSaved: () => vo
 }
 
 function SuratFormDialog({
-  open, onOpenChange, editing, prefill, kodeList, reservedCount, reserved, onSaved,
+  open, onOpenChange, editing, prefill, kodeList, reservedCount, reserved, formatNomor, onSaved,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -393,6 +393,7 @@ function SuratFormDialog({
   kodeList: any[];
   reservedCount: number;
   reserved: any[];
+  formatNomor: string;
   onSaved: () => void;
 }) {
   const [form, setForm] = useState<any>({});
