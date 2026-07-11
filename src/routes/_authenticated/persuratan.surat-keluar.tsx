@@ -14,11 +14,17 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Eye, Pencil, Trash2, Lock, LockOpen, Search } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Eye, Pencil, Trash2, Lock, LockOpen, Search, Upload, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
+import { useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  listSuratKeluar, saveSuratKeluar, deleteSuratKeluar,
+  listSuratKeluar, saveSuratKeluar, deleteSuratKeluar, deleteAllSuratKeluar, bulkImportSuratKeluar,
   listNomorDiamankan, amankanNomor, deleteNomorDiamankan, nextNomorUrut,
 } from "@/lib/surat-keluar.functions";
 import { listKode, listNomor } from "@/lib/persuratan.functions";
