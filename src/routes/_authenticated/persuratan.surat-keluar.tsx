@@ -484,6 +484,28 @@ function Page() {
           qc.invalidateQueries({ queryKey: ["nomor-diamankan"] });
         }}
       />
+
+      <AlertDialog open={confirmDelAll} onOpenChange={setConfirmDelAll}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus SEMUA data Surat Keluar?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini akan menghapus seluruh {rows?.length ?? 0} data surat keluar dan tidak dapat dibatalkan.
+              Hanya admin yang dapat melakukan ini.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => { e.preventDefault(); delAll.mutate(); }}
+              disabled={delAll.isPending}
+            >
+              {delAll.isPending ? "Menghapus..." : "Ya, Hapus Semua"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
