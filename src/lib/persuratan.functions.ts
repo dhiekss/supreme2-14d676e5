@@ -184,3 +184,51 @@ export const deleteKop = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ===== Pengaturan Umum =====
+export const listPengaturanUmum = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("persuratan_pengaturan_umum")
+      .select("id, key, value, deskripsi, updated_at")
+      .order("key", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const savePengaturanUmum = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      items: z.array(
+        z.object({
+          key: z.string().min(1).max(100),
+          value: z.string().max(2000).nullable().optional(),
+          deskripsi: z.string().max(255).optional(),
+        }),
+      ),
+    }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    for (const it of data.items) {
+      const { data: existing } = await context.supabase
+        .from("persuratan_pengaturan_umum")
+        .select("id")
+        .eq("key", it.key)
+        .maybeSingle();
+      if (existing?.id) {
+        const { error } = await context.supabase
+          .from("persuratan_pengaturan_umum")
+          .update({ value: it.value ?? null, deskripsi: it.deskripsi ?? null, updated_at: new Date().toISOString() })
+          .eq("id", existing.id);
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await context.supabase
+          .from("persuratan_pengaturan_umum")
+          .insert({ key: it.key, value: it.value ?? null, deskripsi: it.deskripsi ?? null });
+        if (error) throw new Error(error.message);
+      }
+    }
+    return { ok: true };
+  });
