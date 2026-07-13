@@ -210,7 +210,9 @@ export const upsertTransferOut = createServerFn({ method: "POST" })
       delete payload.id;
       const { error } = await supabase.from("student_transfers_out").insert(payload);
       if (error) throw new Error(error.message);
+    }
     if (data.student_id) {
+
       await supabase.from("students").update({ rombel_id: null }).eq("id", data.student_id);
     }
     return { ok: true };
