@@ -97,39 +97,31 @@ export async function addHtmlPageToPdf(
   const wPx = pageWPx - marginLeft - marginRight;
   const hPx = pageHPx - marginTop - marginBottom;
 
-  // Render inside an isolated iframe so the app's Tailwind v4 CSS
+  // Render inside an isolated off-screen div so the app's Tailwind v4 CSS
   // (which uses oklch()/lab() color functions unsupported by html2canvas)
-  // doesn't leak into the capture target.
-  const iframe = document.createElement("iframe");
-  iframe.style.position = "fixed";
-  iframe.style.left = "0";
-  iframe.style.top = "0";
-  iframe.style.width = `${wPx}px`;
-  iframe.style.height = `${hPx}px`;
-  iframe.style.border = "0";
-  iframe.style.opacity = "0";
-  iframe.style.pointerEvents = "none";
-  iframe.style.zIndex = "-1";
-  iframe.setAttribute("aria-hidden", "true");
-  iframe.setAttribute("scrolling", "no");
-  iframe.setAttribute("width", `${wPx}`);
-  iframe.setAttribute("height", `${hPx}`);
-  document.body.appendChild(iframe);
+  // does not leak into the capture target. The div is sized exactly to the
+  // content area; the built-in styles reset the typography and colors.
+  const container = document.createElement("div");
+  container.style.position = "fixed";
+  container.style.left = "-10000px";
+  container.style.top = "0";
+  container.style.width = `${wPx}px`;
+  container.style.height = `${hPx}px`;
+  container.style.overflow = "hidden";
+  container.style.opacity = "0";
+  container.style.pointerEvents = "none";
+  container.setAttribute("aria-hidden", "true");
+  document.body.appendChild(container);
 
   try {
-    const doc = iframe.contentDocument!;
-    doc.open();
-    doc.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=${wPx}, initial-scale=1"><style>
-      html,body{margin:0;padding:0;background:#ffffff;color:#000000;
-        font-family: Arial, Helvetica, sans-serif; width:${wPx}px; height:${hPx}px; overflow:hidden;}
+    container.innerHTML = `<!doctype html><div style="width:100%; height:100%; background:#ffffff; color:#000000; font-family:Arial,Helvetica,sans-serif; overflow:hidden; box-sizing:border-box;"><style>
       *{box-sizing:border-box;}
       #pdf-page{width:100%; height:100%; overflow:hidden; position:relative;}
       table{max-width:100%;}
-    </style></head><body><div id="pdf-page">${html}</div></body></html>`);
-    doc.close();
+    </style><div id="pdf-page">${html}</div></div>`;
 
     // Wait for images (logo) to load
-    const imgs = Array.from(doc.images);
+    const imgs = Array.from(container.querySelectorAll("img"));
     await Promise.all(
       imgs.map((img) =>
         img.complete
@@ -141,7 +133,7 @@ export async function addHtmlPageToPdf(
       ),
     );
 
-    const target = doc.getElementById("pdf-page")!;
+    const target = container.querySelector("#pdf-page")!;
     const canvas = await html2canvas(target, {
       scale: 2,
       backgroundColor: "#ffffff",
@@ -152,6 +144,6 @@ export async function addHtmlPageToPdf(
     if (!isFirstPage) pdf.addPage("a4", orientation);
     pdf.addImage(imgData, "JPEG", marginLeft, marginTop, wPx, hPx, undefined, "FAST");
   } finally {
-    iframe.remove();
+    container.remove();
   }
 }
