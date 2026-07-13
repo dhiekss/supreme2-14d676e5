@@ -42,7 +42,7 @@ function kop(logo: string): string {
         <div style="font-size:14px;">PEMERINTAH DAERAH PROVINSI JAWA BARAT</div>
         <div style="font-size:14px;">DINAS PENDIDIKAN</div>
         <div style="font-size:14px;">CABANG DINAS PENDIDIKAN WILAYAH IV</div>
-        <div style="font-size:18px; font-weight:bold; margin-top:0;">SMK NEGERI 1 PUSAKANAGARA</div>
+        <div style="font-size:18px; font-weight:bold; margin-top:3px; margin-bottom:3px;">SMK NEGERI 1 PUSAKANAGARA</div>
         <div style="font-size:11px;">Jalan Raya Pusakanagara No.154 Telp. (0260) 7544240</div>
         <div style="font-size:11px;">Website : smknpusakanagara.sch.id | Email : smknpusakanagara@gmail.com</div>
         <div style="font-size:11px;">SUBANG - 41255</div>
