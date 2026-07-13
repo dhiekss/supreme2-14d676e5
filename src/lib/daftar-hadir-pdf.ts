@@ -92,10 +92,10 @@ function buildAttendanceTable(
     days.push({ d, dow, isWeekend, isLibur, iso });
   }
 
-  const th = `padding:5px 1px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:8.5px; background:#fff; line-height:1.3; font-weight:bold;`;
-  const thWide = `padding:5px 2px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:9px; background:#fff; line-height:1.2;`;
-  const td = `padding:4px 3px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:9px; height:22px; line-height:1.2;`;
-  const tdDay = `padding:4px 1px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:8.5px; height:22px; line-height:1.1;`;
+  const th = `padding:0 1px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:8.5px; background:#fff; line-height:22px; font-weight:bold;`;
+  const thWide = `padding:0 2px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:9px; background:#fff; line-height:22px; font-weight:bold;`;
+  const td = `padding:0 3px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:9px; height:22px; line-height:22px;`;
+  const tdDay = `padding:0 1px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:8.5px; height:22px; line-height:22px;`;
 
   // colgroup — fix widths so NIS & NAMA fit text and date columns stay compact
   let colgroup = `<colgroup>
@@ -169,8 +169,8 @@ function buildAttendanceTable(
     }
     body += `<tr>
       <td style="${td}">${idx + 1}</td>
-      <td style="${td} white-space:nowrap; font-size:8.5px; padding-left:4px; padding-right:4px;">${escapeHtml(s.nis ?? "")}</td>
-      <td style="${td} text-align:left; padding-left:5px; padding-right:5px; white-space:normal; word-break:break-word; line-height:1.2; font-size:9px;">${escapeHtml(s.name)}</td>
+      <td style="${td} white-space:nowrap; font-size:8.5px; line-height:22px;">${escapeHtml(s.nis ?? "")}</td>
+      <td style="${td} text-align:left; padding:0 5px; white-space:normal; word-break:break-word; line-height:22px; font-size:9px;">${escapeHtml(s.name)}</td>
       <td style="${td}">${escapeHtml((s.gender ?? "").toString().toUpperCase().startsWith("P") ? "P" : (s.gender ? "L" : ""))}</td>
       ${cells}
       <td style="${td}">${kosong ? "" : h || ""}</td>
@@ -209,20 +209,20 @@ function footerHtml(r: DaftarHadirRombelData, month: number, year: number, overr
             <col style="width:124px;">
           </colgroup>
           <tr>
-            <td style="border:1px solid #000; padding:5px 0; text-align:center; vertical-align:middle; font-weight:bold; height:22px; line-height:1;">H</td>
-            <td style="border:1px solid #000; padding:5px 10px; vertical-align:middle; height:22px; line-height:1;">Hadir</td>
+            <td style="border:1px solid #000; padding:0; text-align:center; vertical-align:middle; font-weight:bold; height:22px; line-height:22px;">H</td>
+            <td style="border:1px solid #000; padding:0 10px; vertical-align:middle; height:22px; line-height:22px;">Hadir</td>
           </tr>
           <tr>
-            <td style="border:1px solid #000; padding:5px 0; text-align:center; vertical-align:middle; font-weight:bold; height:22px; line-height:1;">S</td>
-            <td style="border:1px solid #000; padding:5px 10px; vertical-align:middle; height:22px; line-height:1;">Sakit</td>
+            <td style="border:1px solid #000; padding:0; text-align:center; vertical-align:middle; font-weight:bold; height:22px; line-height:22px;">S</td>
+            <td style="border:1px solid #000; padding:0 10px; vertical-align:middle; height:22px; line-height:22px;">Sakit</td>
           </tr>
           <tr>
-            <td style="border:1px solid #000; padding:5px 0; text-align:center; vertical-align:middle; font-weight:bold; height:22px; line-height:1;">I</td>
-            <td style="border:1px solid #000; padding:5px 10px; vertical-align:middle; height:22px; line-height:1;">Izin</td>
+            <td style="border:1px solid #000; padding:0; text-align:center; vertical-align:middle; font-weight:bold; height:22px; line-height:22px;">I</td>
+            <td style="border:1px solid #000; padding:0 10px; vertical-align:middle; height:22px; line-height:22px;">Izin</td>
           </tr>
           <tr>
-            <td style="border:1px solid #000; padding:5px 0; text-align:center; vertical-align:middle; font-weight:bold; height:22px; line-height:1;">A</td>
-            <td style="border:1px solid #000; padding:5px 10px; vertical-align:middle; height:22px; line-height:1;">Alpa</td>
+            <td style="border:1px solid #000; padding:0; text-align:center; vertical-align:middle; font-weight:bold; height:22px; line-height:22px;">A</td>
+            <td style="border:1px solid #000; padding:0 10px; vertical-align:middle; height:22px; line-height:22px;">Alpa</td>
           </tr>
         </table>
         <table style="color:#c81e1e; font-weight:bold; font-size:11px; border-collapse:collapse; line-height:1.4;">
