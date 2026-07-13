@@ -29,7 +29,7 @@ import {
   Download, Users, GraduationCap, School, CalendarCheck, CheckCircle2,
   Thermometer, FileText, XCircle, Briefcase, ClipboardList, AlertTriangle,
   TrendingUp, PieChart as PieIcon, BarChart3, Upload, FileSpreadsheet, Loader2,
-  Eye, Pencil, Trash2, Filter, FileDown,
+  Eye, Pencil, Trash2, Filter, FileDown, Search,
 } from "lucide-react";
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RTooltip, Legend,
@@ -670,6 +670,7 @@ function DetailPresensiCard() {
   const [date, setDate] = useState<string>("");
   const [rombelId, setRombelId] = useState<string>("__all");
   const [officer, setOfficer] = useState<string>("__all");
+  const [search, setSearch] = useState<string>("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [viewId, setViewId] = useState<string | null>(null);
@@ -697,15 +698,25 @@ function DetailPresensiCard() {
       }),
   });
   const rows = listQuery.data ?? [];
-  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const filteredRows = (() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((r: any) =>
+      [r.officer_name, r.rombel, r.walikelas]
+        .filter(Boolean)
+        .some((v: string) => String(v).toLowerCase().includes(q))
+    );
+  })();
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const curPage = Math.min(page, totalPages);
   const start = (curPage - 1) * pageSize;
-  const pageRows = rows.slice(start, start + pageSize);
+  const pageRows = filteredRows.slice(start, start + pageSize);
 
   const resetFilter = () => {
     setDate("");
     setRombelId("__all");
     setOfficer("__all");
+    setSearch("");
     setPage(1);
   };
 
@@ -810,6 +821,16 @@ function DetailPresensiCard() {
           <Button variant="outline" onClick={resetFilter} className="h-9">Reset Filter</Button>
         </div>
 
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            placeholder="Cari cepat: nama petugas, rombel, atau wali kelas..."
+            className="h-9 pl-9 bg-background"
+          />
+        </div>
+
         <div className="overflow-x-auto rounded-lg border">
           <Table>
             <TableHeader>
@@ -857,14 +878,14 @@ function DetailPresensiCard() {
                   </TableCell>
                 </TableRow>
               ))}
-              {!listQuery.isFetching && rows.length === 0 && (
-                <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-6">Belum ada catatan presensi.</TableCell></TableRow>
+              {!listQuery.isFetching && filteredRows.length === 0 && (
+                <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-6">{rows.length === 0 ? "Belum ada catatan presensi." : "Tidak ada hasil untuk pencarian ini."}</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
         </div>
 
-        {rows.length > 0 && (
+        {filteredRows.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span>Tampilkan</span>
@@ -874,7 +895,7 @@ function DetailPresensiCard() {
                   {[10, 25, 50, 100].map((n) => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <span>dari {rows.length} data</span>
+              <span>dari {filteredRows.length}{search.trim() ? ` (dari total ${rows.length})` : ""} data</span>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <Button variant="outline" size="sm" disabled={curPage <= 1} onClick={() => setPage(curPage - 1)}>‹</Button>
