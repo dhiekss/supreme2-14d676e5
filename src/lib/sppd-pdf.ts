@@ -46,10 +46,10 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
         <td style="${tdBase}"></td>
         <td style="${tdBase}">${i + 1}. ${escapeHtml(p?.nama_peserta)}</td>
         <td style="${tdBase}; padding:0;">
-          <table style="width:100%; height:100%; border-collapse:collapse;">
+          <table style="width:100%; height:100%; border-collapse:collapse; table-layout:fixed;">
             <tr>
-              <td style="width:50%; border-right:1px solid #000; padding:5px 8px; vertical-align:middle;">${escapeHtml(p?.nip)}</td>
-              <td style="padding:5px 8px; vertical-align:middle;">${escapeHtml(p?.jabatan)}</td>
+              <td style="${tdInner}; width:50%; border-right:1px solid #000;">${escapeHtml(p?.nip)}</td>
+              <td style="${tdInner}">${escapeHtml(p?.jabatan)}</td>
             </tr>
           </table>
         </td>
@@ -58,14 +58,14 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
   }).join("");
 
   const kv = (label: string, value: string) =>
-    `<div style="display:flex; margin-bottom:2px;">
+    `<div style="display:flex; margin-bottom:0; line-height:1.15;">
       <div style="width:110px; flex-shrink:0;">${label}</div>
       <div style="width:8px; flex-shrink:0;">:</div>
       <div style="flex:1;">${value}</div>
     </div>`;
 
   return `
-  <div style="width:1123px; height:794px; padding:10px 16px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:10.5px; color:#000; line-height:1.25;">
+  <div style="width:1123px; height:794px; padding:10px 16px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:10.5px; color:#000; line-height:1.15;">
     <table style="width:100%; height:100%; border-collapse:collapse;">
       <tr>
         <!-- LEFT -->
@@ -90,11 +90,11 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
           <div style="border-top:3px solid #000; border-bottom:1px solid #000; height:3px; margin-top:2px; margin-bottom:10px;"></div>
 
           <!-- Info block -->
-          <table style="border-collapse:collapse; font-size:11px;">
-            <tr><td style="width:110px; padding:1px 0; text-align:left;">Lembar Ke</td><td style="width:10px; text-align:left;">:</td><td style="text-align:left;">2 (dua)</td></tr>
-            <tr><td style="padding:1px 0; text-align:left;">Kode Rekening</td><td style="text-align:left;">:</td><td style="text-align:left;">${escapeHtml(row.kode_ring)}</td></tr>
-            <tr><td style="padding:1px 0; text-align:left;">Kode Kegiatan</td><td style="text-align:left;">:</td><td style="text-align:left;">${escapeHtml(row.kode_kegiatan)}</td></tr>
-            <tr><td style="padding:1px 0; text-align:left;">Nomor</td><td style="text-align:left;">:</td><td style="text-align:left;">${escapeHtml(row.nomor_surat)}</td></tr>
+          <table style="border-collapse:collapse; font-size:11px; line-height:1.15;">
+            <tr><td style="width:110px; padding:0; text-align:left; vertical-align:middle;">Lembar Ke</td><td style="width:10px; padding:0; text-align:left; vertical-align:middle;">:</td><td style="padding:0; text-align:left; vertical-align:middle;">2 (dua)</td></tr>
+            <tr><td style="padding:0; text-align:left; vertical-align:middle;">Kode Rekening</td><td style="padding:0; text-align:left; vertical-align:middle;">:</td><td style="padding:0; text-align:left; vertical-align:middle;">${escapeHtml(row.kode_ring)}</td></tr>
+            <tr><td style="padding:0; text-align:left; vertical-align:middle;">Kode Kegiatan</td><td style="padding:0; text-align:left; vertical-align:middle;">:</td><td style="padding:0; text-align:left; vertical-align:middle;">${escapeHtml(row.kode_kegiatan)}</td></tr>
+            <tr><td style="padding:0; text-align:left; vertical-align:middle;">Nomor</td><td style="padding:0; text-align:left; vertical-align:middle;">:</td><td style="padding:0; text-align:left; vertical-align:middle;">${escapeHtml(row.nomor_surat)}</td></tr>
           </table>
 
           <div style="text-align:center; margin:6px 0 4px 0;">
@@ -102,7 +102,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
           </div>
 
           <!-- MAIN TABLE -->
-          <table style="width:100%; border-collapse:collapse; font-size:10.5px;">
+          <table style="width:100%; border-collapse:collapse; font-size:10.5px; line-height:1.15; table-layout:fixed;">
             <colgroup>
               <col style="width:22px;" />
               <col style="width:190px;" />
@@ -172,10 +172,10 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
               <td style="${tdBase}; text-align:center;">8</td>
               <td style="${tdBase}">Pengikut : Nama</td>
               <td style="${tdBase}; padding:0;">
-                <table style="width:100%; height:100%; border-collapse:collapse;">
+                <table style="width:100%; height:100%; border-collapse:collapse; table-layout:fixed;">
                   <tr>
-                    <td style="width:50%; border-right:1px solid #000; padding:5px 8px; vertical-align:middle;">NIP/Tanggal Lahir</td>
-                    <td style="padding:5px 8px; vertical-align:middle;">Keterangan</td>
+                    <td style="${tdInner}; width:50%; border-right:1px solid #000;">NIP/Tanggal Lahir</td>
+                    <td style="${tdInner}">Keterangan</td>
                   </tr>
                 </table>
               </td>
@@ -217,21 +217,21 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
 
         <!-- RIGHT -->
         <td style="width:50%; vertical-align:top; padding-left:10px;">
-          <table style="border-collapse:collapse; font-size:11px; margin-bottom:8px;">
-            <tr><td style="width:80px; padding:1px 0;">Lampiran</td><td style="width:8px;">:</td><td>Surat Perjalanan Dinas</td></tr>
-            <tr><td style="padding:1px 0;">Nomor</td><td>:</td><td>${escapeHtml(row.nomor_surat)}</td></tr>
-            <tr><td style="padding:1px 0;">Tanggal</td><td>:</td><td>${fmtTanggalId(row.tanggal_mulai)}</td></tr>
+          <table style="border-collapse:collapse; font-size:11px; line-height:1.15; margin-bottom:8px;">
+            <tr><td style="width:80px; padding:0; vertical-align:middle;">Lampiran</td><td style="width:8px; padding:0; vertical-align:middle;">:</td><td style="padding:0; vertical-align:middle;">Surat Perjalanan Dinas</td></tr>
+            <tr><td style="padding:0; vertical-align:middle;">Nomor</td><td style="padding:0; vertical-align:middle;">:</td><td style="padding:0; vertical-align:middle;">${escapeHtml(row.nomor_surat)}</td></tr>
+            <tr><td style="padding:0; vertical-align:middle;">Tanggal</td><td style="padding:0; vertical-align:middle;">:</td><td style="padding:0; vertical-align:middle;">${fmtTanggalId(row.tanggal_mulai)}</td></tr>
           </table>
 
-          <table style="width:100%; border-collapse:collapse; font-size:10.5px;">
+          <table style="width:100%; border-collapse:collapse; font-size:10.5px; line-height:1.15; table-layout:fixed;">
             <colgroup>
               <col style="width:50%;" />
               <col style="width:50%;" />
             </colgroup>
             <!-- Row 0: kiri kosong, kanan Berangkat awal + TTD -->
             <tr>
-              <td style="${tdBase}; height:110px; vertical-align:top;">&nbsp;</td>
-              <td style="${tdBase}; vertical-align:top;">
+              <td style="${tdBase}; height:110px;">&nbsp;</td>
+              <td style="${tdBase}">
                 ${kv("Berangkat dari", INSTANSI)}
                 ${kv("Ke", escapeHtml(row.tujuan_lokasi ?? ""))}
                 ${kv("Pada Tanggal", fmtTanggalId(row.tanggal_mulai))}
@@ -243,12 +243,12 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
             </tr>
             ${["I", "II", "III"].map((r) => `
               <tr>
-                <td style="${tdBase}; height:66px; vertical-align:top;">
+                <td style="${tdBase}; height:66px;">
                   ${kv(`${r}. Tiba di`, "")}
                   ${kv("Pada Tanggal", "")}
                   ${kv("Kepala", "")}
                 </td>
-                <td style="${tdBase}; vertical-align:top;">
+                <td style="${tdBase}">
                   ${kv("Berangkat dari", "")}
                   ${kv("Ke", "")}
                   ${kv("Pada Tanggal", "")}
@@ -257,7 +257,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
               </tr>
             `).join("")}
             <tr>
-              <td style="${tdBase}; vertical-align:top; height:110px;">
+              <td style="${tdBase}; height:110px;">
                 <div>IV. Tiba kembali di :</div>
                 <div>${INSTANSI}</div>
                 <div>Pada Tanggal : ${fmtTanggalId(row.tanggal_selesai)}</div>
@@ -266,8 +266,8 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
                 <div>${KPA_PANGKAT}</div>
                 <div>NIP. ${KPA_NIP}</div>
               </td>
-              <td style="${tdBase}; vertical-align:top;">
-                <div style="font-size:10px; line-height:1.35;">
+              <td style="${tdBase}">
+                <div style="font-size:10px; line-height:1.15;">
                   Telah diperiksa dengan keterangan bahwa perjalanan tersebut atas perintahnya
                   dan semata-mata untuk kepentingan jabatan dalam waktu sesingkat-singkatnya
                 </div>
@@ -291,7 +291,8 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
   `;
 }
 
-const tdBase = "border:1px solid #000; padding:5px 8px; vertical-align:middle; line-height:1.3;";
+const tdBase = "border:1px solid #000; padding:3px 6px; vertical-align:middle; line-height:1.15; text-align:left; overflow-wrap:break-word; word-break:normal;";
+const tdInner = "padding:3px 6px; vertical-align:middle; line-height:1.15; text-align:left; overflow-wrap:break-word; word-break:normal;";
 
 export function sppdPdfFilename(row: SppdPdfData, prefix = "SPPD"): string {
   const nomor = (row.nomor_surat ?? "").replace(/[\\/:*?"<>|\s]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
