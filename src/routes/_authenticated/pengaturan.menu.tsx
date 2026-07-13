@@ -65,9 +65,11 @@ export const Route = createFileRoute("/_authenticated/pengaturan/menu")({
 });
 
 const ROLE_LABEL: Record<Role, string> = {
+  superadmin: "Superadmin",
   admin: "Admin",
   wakasek: "Wakasek",
   kakonli: "Kakonli",
+  walas: "Walas",
   guru: "Guru",
   murid: "Murid",
   admin_persuratan: "Admin Persuratan",
