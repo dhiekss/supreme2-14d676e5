@@ -489,49 +489,8 @@ function LaporanPresensi() {
       </Card>
 
       {/* Detail presensi */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" /> Detail Presensi
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">100 catatan terbaru dalam rentang tanggal.</p>
-        </CardHeader>
-        <CardContent className="p-0 overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tanggal</TableHead>
-                <TableHead>Rombel</TableHead>
-                <TableHead>Wali Kelas</TableHead>
-                <TableHead className="text-center">H</TableHead>
-                <TableHead className="text-center">S</TableHead>
-                <TableHead className="text-center">I</TableHead>
-                <TableHead className="text-center">A</TableHead>
-                <TableHead className="text-center">P</TableHead>
-                <TableHead className="text-center">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(data?.detailRows ?? []).map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell className="whitespace-nowrap">{r.date}</TableCell>
-                  <TableCell className="font-medium">{r.rombel}</TableCell>
-                  <TableCell>{r.walikelas}</TableCell>
-                  <TableCell className="text-center text-emerald-600 font-medium">{r.H}</TableCell>
-                  <TableCell className="text-center text-amber-600">{r.S}</TableCell>
-                  <TableCell className="text-center text-sky-600">{r.I}</TableCell>
-                  <TableCell className="text-center text-rose-600 font-medium">{r.A}</TableCell>
-                  <TableCell className="text-center text-violet-600">{r.P}</TableCell>
-                  <TableCell className="text-center font-semibold">{r.total}</TableCell>
-                </TableRow>
-              ))}
-              {data && data.detailRows.length === 0 && (
-                <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">Belum ada catatan presensi.</TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <DetailPresensiCard />
+
 
       {isFetching && <p className="text-xs text-muted-foreground text-center">Memuat data...</p>}
     </div>
