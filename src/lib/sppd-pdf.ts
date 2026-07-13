@@ -231,17 +231,18 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
             </colgroup>
             <!-- Row 0: kiri kosong, kanan Berangkat awal + TTD -->
             <tr>
-              <td style="${tdBase}; height:126px;">&nbsp;</td>
-              <td style="${tdBase}; height:126px;">
+              <td style="${tdBase}; height:170px;">&nbsp;</td>
+              <td style="${tdBase}; height:170px;">
                 ${kv("Berangkat dari", INSTANSI)}
                 ${kv("Ke", escapeHtml(row.tujuan_lokasi ?? ""))}
                 ${kv("Pada Tanggal", fmtTanggalId(row.tanggal_mulai))}
-                <div style="height:14px;"></div>
+                <div style="height:60px;"></div>
                 <div style="font-weight:bold;">${KPA_NAMA}</div>
                 <div>${KPA_PANGKAT}</div>
                 <div>NIP. ${KPA_NIP}</div>
               </td>
             </tr>
+
             ${["I", "II", "III"].map((r) => `
               <tr>
                 <td style="${tdBase}; height:56px;">
