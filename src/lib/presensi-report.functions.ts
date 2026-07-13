@@ -121,24 +121,20 @@ export const presensiDashboard = createServerFn({ method: "GET" })
     const students = (studentsRes.data ?? []).filter((s: any) => s.rombel_id && rombelIds.has(s.rombel_id));
     const studentById = new Map(students.map((s: any) => [s.id, s]));
 
-    const { data: records } = await supabase
-      .from("attendance_records")
-      .select("id, date, rombel_id")
-      .gte("date", data.from)
-      .lte("date", data.to)
-      .range(0, 99999);
+    const records = await fetchAllPaged((from, to) =>
+      supabase
+        .from("attendance_records")
+        .select("id, date, rombel_id")
+        .gte("date", data.from)
+        .lte("date", data.to)
+        .range(from, to),
+    );
     const recs = (records ?? []).filter((r: any) => r.rombel_id && rombelIds.has(r.rombel_id));
     const recIds = recs.map((r: any) => r.id);
     const recById = new Map(recs.map((r: any) => [r.id, r]));
 
-    const { data: details } = recIds.length
-      ? await supabase
-          .from("attendance_details")
-          .select("attendance_record_id, student_id, status")
-          .in("attendance_record_id", recIds)
-          .range(0, 999999)
-      : { data: [] as any[] };
-    const dets = details ?? [];
+    const dets = await fetchDetailsByRecordIds(supabase, recIds);
+
 
     // totals
     const totals = { H: 0, S: 0, I: 0, A: 0, P: 0 };
