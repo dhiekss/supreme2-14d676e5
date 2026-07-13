@@ -648,8 +648,11 @@ function TransferOutTab({ onChange }: { onChange: () => void }) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editRow, setEditRow] = useState<any>(null);
+  const [sort, setSort] = useState<{ field: string; dir: SortDir }>({ field: "", dir: null });
   const listFn = useServerFn(listTransfersOut);
   const delFn = useServerFn(deleteTransferOut);
+  const saveFn = useServerFn(upsertTransferOut);
+  const qc = useQueryClient();
   const { data } = useSuspenseQuery({
     queryKey: ["mutasi-out", search],
     queryFn: () => listFn({ data: { search: search || undefined } }),
@@ -658,6 +661,33 @@ function TransferOutTab({ onChange }: { onChange: () => void }) {
     mutationFn: (id: string) => delFn({ data: { id } }),
     onSuccess: () => { toast.success("Dihapus"); onChange(); },
     onError: (e: any) => toast.error(e.message),
+  });
+  const inlineUpdate = useMutation({
+    mutationFn: (payload: { row: any; patch: any }) =>
+      saveFn({ data: {
+        id: payload.row.id,
+        student_id: payload.row.student_id,
+        rombel_id: payload.row.rombel_id,
+        student_name: payload.row.student_name,
+        student_nis: payload.row.student_nis,
+        sekolah_tujuan: payload.row.sekolah_tujuan,
+        tanggal_surat_pindah: payload.row.tanggal_surat_pindah,
+        tanggal_diterima_tujuan: payload.row.tanggal_diterima_tujuan,
+        file_surat: payload.row.file_surat,
+        ...payload.patch,
+      } }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["mutasi-out"] }); qc.invalidateQueries({ queryKey: ["mutasi-sum"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const sorted = useSortedRows(data as any[], sort, {
+    nama: (r) => r.students?.name ?? r.student_name ?? "",
+    nis: (r) => r.students?.nis ?? r.student_nis ?? "",
+    rombel_asal: (r) => r.rombel?.name ?? "",
+    sekolah_tujuan: (r) => r.sekolah_tujuan ?? "",
+    tanggal_pindah: (r) => r.tanggal_surat_pindah ?? "",
+    dapodik_status: (r) => (r.dapodik_status ?? "belum"),
+    dapodik_tanggal: (r) => r.dapodik_tanggal ?? "",
   });
 
   return (
@@ -668,36 +698,47 @@ function TransferOutTab({ onChange }: { onChange: () => void }) {
           <Button onClick={() => { setEditRow(null); setOpen(true); }}><Plus className="h-4 w-4 mr-2" />Tambah</Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Tgl Surat</TableHead>
-              <TableHead>Siswa</TableHead>
-              <TableHead>Rombel</TableHead>
-              <TableHead>Sekolah Tujuan</TableHead>
-              <TableHead>Diterima</TableHead>
-              <TableHead>Dapodik</TableHead>
+              <SortTh label="Nama Murid" field="nama" sort={sort} setSort={setSort} />
+              <SortTh label="NIS" field="nis" sort={sort} setSort={setSort} />
+              <SortTh label="Rombel Asal" field="rombel_asal" sort={sort} setSort={setSort} />
+              <SortTh label="Sekolah Tujuan" field="sekolah_tujuan" sort={sort} setSort={setSort} />
+              <SortTh label="Tanggal Pindah" field="tanggal_pindah" sort={sort} setSort={setSort} />
+              <SortTh label="Proses Dapodik" field="dapodik_status" sort={sort} setSort={setSort} />
+              <SortTh label="Tgl Proses Dapodik" field="dapodik_tanggal" sort={sort} setSort={setSort} />
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
+            {sorted.length === 0 && (
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
             )}
-            {data.map((r: any) => (
+            {sorted.map((r: any) => (
               <TableRow key={r.id}>
-                <TableCell className="text-xs">{r.tanggal_surat_pindah ?? "—"}</TableCell>
-                <TableCell>
-                  <div className="font-medium">{r.students?.name ?? r.student_name ?? "—"}</div>
-                  <div className="text-xs text-muted-foreground">{r.students?.nis ?? r.student_nis ?? ""}</div>
-                </TableCell>
-                <TableCell>{r.rombel?.name ?? "—"}</TableCell>
+                <TableCell className="font-medium">{r.students?.name ?? r.student_name ?? "—"}</TableCell>
+                <TableCell className="text-muted-foreground">{r.students?.nis ?? r.student_nis ?? "—"}</TableCell>
+                <TableCell><RombelPill name={r.rombel?.name} /></TableCell>
                 <TableCell className="max-w-xs truncate">{r.sekolah_tujuan ?? "—"}</TableCell>
-                <TableCell className="text-xs">{r.tanggal_diterima_tujuan ?? "—"}</TableCell>
-                <TableCell><Badge variant={r.dapodik_status === "sinkron" ? "default" : "secondary"}>{r.dapodik_status ?? "belum"}</Badge></TableCell>
-                <TableCell className="text-right">
-                  <Button size="sm" variant="ghost" onClick={() => { setEditRow(r); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                <TableCell className="text-sm">{fmtDateID(r.tanggal_surat_pindah)}</TableCell>
+                <TableCell>
+                  <DapodikSelect
+                    value={r.dapodik_status}
+                    disabled={inlineUpdate.isPending}
+                    onChange={(v) => inlineUpdate.mutate({ row: r, patch: { dapodik_status: v } })}
+                  />
+                </TableCell>
+                <TableCell>
+                  <DapodikDate
+                    value={r.dapodik_tanggal}
+                    disabled={inlineUpdate.isPending}
+                    onChange={(v) => inlineUpdate.mutate({ row: r, patch: { dapodik_tanggal: v } })}
+                  />
+                </TableCell>
+                <TableCell className="text-right whitespace-nowrap">
+                  <Button size="sm" variant="ghost" onClick={() => { setEditRow(r); setOpen(true); }}><Eye className="h-4 w-4 text-primary" /></Button>
                   <Button size="sm" variant="ghost" onClick={() => { if (confirm("Hapus?")) del.mutate(r.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </TableCell>
               </TableRow>
@@ -709,6 +750,7 @@ function TransferOutTab({ onChange }: { onChange: () => void }) {
     </Card>
   );
 }
+
 
 function OutDialog({ open, setOpen, row, onSaved }: any) {
   const email = useCurrentEmail();
