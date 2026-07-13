@@ -569,7 +569,7 @@ function SuratTugasFormDialog({
             <div className="flex items-center justify-between mb-2">
               <Label className="flex items-center gap-2"><Users className="h-4 w-4" /> Peserta (Maks. 3)</Label>
               <Button type="button" variant="outline" size="sm" disabled={peserta.length >= 3}
-                onClick={() => setPeserta((p) => [...p, { nama_peserta: "", nip: "", jabatan: "", pangkat_golongan: "" }])}>
+                onClick={() => setPeserta((p) => [...p, { nama_peserta: "", nip: "", jabatan: "", pangkat_golongan: "", mode: "database" }])}>
                 <Plus className="h-4 w-4 mr-1" /> Tambah Pengikut
               </Button>
             </div>
