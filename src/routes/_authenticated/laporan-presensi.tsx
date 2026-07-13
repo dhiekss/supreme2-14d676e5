@@ -821,6 +821,16 @@ function DetailPresensiCard() {
           <Button variant="outline" onClick={resetFilter} className="h-9">Reset Filter</Button>
         </div>
 
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            placeholder="Cari cepat: nama petugas, rombel, atau wali kelas..."
+            className="h-9 pl-9 bg-background"
+          />
+        </div>
+
         <div className="overflow-x-auto rounded-lg border">
           <Table>
             <TableHeader>
