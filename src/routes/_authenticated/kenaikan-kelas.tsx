@@ -273,7 +273,7 @@ function Page() {
         </TabsContent>
 
         <TabsContent value="riwayat">
-          <RiwayatTab batchesFn={batchesFn} undoFn={undoFn} qc={qc} />
+          <RiwayatTab batchesFn={batchesFn} undoFn={undoFn} undoStudentFn={undoStudentFn} qc={qc} />
         </TabsContent>
       </Tabs>
     </div>
