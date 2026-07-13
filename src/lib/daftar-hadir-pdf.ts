@@ -109,13 +109,13 @@ function buildAttendanceTable(
 
   // Header row 1
   let head = `<tr>
-    <th style="${th}" rowspan="3">NO</th>
-    <th style="${th}" rowspan="3">NIS</th>
-    <th style="${th}" rowspan="3">NAMA SISWA</th>
-    <th style="${th}" rowspan="3">L/P</th>
-    <th style="${th}" colspan="${lastDay}">TANGGAL / BULAN ${BULAN_ID[month - 1].toUpperCase()}</th>
-    <th style="${th}" colspan="4">JUMLAH</th>
-    <th style="${th}" rowspan="3">KET</th>
+    <th style="${thWide}" rowspan="3">NO</th>
+    <th style="${thWide}" rowspan="3">NIS</th>
+    <th style="${thWide}" rowspan="3">NAMA SISWA</th>
+    <th style="${thWide}" rowspan="3">L/P</th>
+    <th style="${thWide}" colspan="${lastDay}">TANGGAL / BULAN ${BULAN_ID[month - 1].toUpperCase()}</th>
+    <th style="${thWide}" colspan="4">JUMLAH</th>
+    <th style="${thWide}" rowspan="3">KET</th>
   </tr>`;
 
   // Header row 2 (hari letter)
@@ -125,7 +125,7 @@ function buildAttendanceTable(
     const color = day.isWeekend || day.isLibur ? COLOR_HEADER_RED : "#000";
     head += `<th style="${th} background:${bg}; color:${color};">${HARI_LETTER[day.dow]}</th>`;
   }
-  head += `<th style="${th}" rowspan="2">H</th><th style="${th}" rowspan="2">S</th><th style="${th}" rowspan="2">I</th><th style="${th}" rowspan="2">A</th>`;
+  head += `<th style="${thWide}" rowspan="2">H</th><th style="${thWide}" rowspan="2">S</th><th style="${thWide}" rowspan="2">I</th><th style="${thWide}" rowspan="2">A</th>`;
   head += `</tr>`;
 
   // Header row 3 (date number)
