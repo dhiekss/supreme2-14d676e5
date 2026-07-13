@@ -92,8 +92,9 @@ function buildAttendanceTable(
     days.push({ d, dow, isWeekend, isLibur, iso });
   }
 
-  const th = `padding:0 1px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:8.5px; background:#fff; line-height:22px; font-weight:bold;`;
-  const thWide = `padding:0 2px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:9px; background:#fff; line-height:22px; font-weight:bold;`;
+  const thBase = `padding:0 1px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:8.5px; line-height:22px; font-weight:bold;`;
+  const thWideBase = `padding:0 2px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:9px; line-height:22px; font-weight:bold;`;
+  const thWide = `${thWideBase} background:#fff; color:#000;`;
   const td = `padding:0 3px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:9px; height:22px; line-height:22px;`;
   const tdDay = `padding:0 1px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:8.5px; height:22px; line-height:22px;`;
 
@@ -118,19 +119,16 @@ function buildAttendanceTable(
     <th style="${thWide}" rowspan="3">KET</th>
   </tr>`;
 
+  const headerCellStyle = (day: { isWeekend: boolean; isLibur: boolean }) => {
+    if (day.isWeekend) return `${thBase} background:${COLOR_WEEKEND_BG}; color:${COLOR_HEADER_RED};`;
+    if (day.isLibur) return `${thBase} background:${COLOR_LIBUR_BG}; color:${COLOR_LIBUR_TEXT};`;
+    return `${thBase} background:#ffffff; color:#000000;`;
+  };
+
   // Header row 2 (hari letter)
   head += `<tr>`;
   for (const day of days) {
-    let bg = "#fff";
-    let color = "#000";
-    if (day.isWeekend) {
-      bg = COLOR_WEEKEND_BG;
-      color = COLOR_HEADER_RED;
-    } else if (day.isLibur) {
-      bg = COLOR_LIBUR_BG;
-      color = COLOR_LIBUR_TEXT;
-    }
-    head += `<th style="${th} background:${bg}; color:${color};">${HARI_LETTER[day.dow]}</th>`;
+    head += `<th style="${headerCellStyle(day)}">${HARI_LETTER[day.dow]}</th>`;
   }
   head += `<th style="${thWide}" rowspan="2">H</th><th style="${thWide}" rowspan="2">S</th><th style="${thWide}" rowspan="2">I</th><th style="${thWide}" rowspan="2">A</th>`;
   head += `</tr>`;
@@ -138,18 +136,10 @@ function buildAttendanceTable(
   // Header row 3 (date number)
   head += `<tr>`;
   for (const day of days) {
-    let bg = "#fff";
-    let color = "#000";
-    if (day.isWeekend) {
-      bg = COLOR_WEEKEND_BG;
-      color = COLOR_HEADER_RED;
-    } else if (day.isLibur) {
-      bg = COLOR_LIBUR_BG;
-      color = COLOR_LIBUR_TEXT;
-    }
-    head += `<th style="${th} background:${bg}; color:${color};">${day.d}</th>`;
+    head += `<th style="${headerCellStyle(day)}">${day.d}</th>`;
   }
   head += `</tr>`;
+
 
   // Body
   let body = "";
