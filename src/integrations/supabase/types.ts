@@ -1792,8 +1792,12 @@ export type Database = {
           dapodik_tanggal: string | null
           id: string
           rombel_asal_id: string | null
+          rombel_asal_name: string | null
           rombel_tujuan_id: string | null
+          rombel_tujuan_name: string | null
           student_id: string | null
+          student_name: string | null
+          student_nis: string | null
           tanggal_pindah: string | null
         }
         Insert: {
@@ -1804,8 +1808,12 @@ export type Database = {
           dapodik_tanggal?: string | null
           id?: string
           rombel_asal_id?: string | null
+          rombel_asal_name?: string | null
           rombel_tujuan_id?: string | null
+          rombel_tujuan_name?: string | null
           student_id?: string | null
+          student_name?: string | null
+          student_nis?: string | null
           tanggal_pindah?: string | null
         }
         Update: {
@@ -1816,8 +1824,12 @@ export type Database = {
           dapodik_tanggal?: string | null
           id?: string
           rombel_asal_id?: string | null
+          rombel_asal_name?: string | null
           rombel_tujuan_id?: string | null
+          rombel_tujuan_name?: string | null
           student_id?: string | null
+          student_name?: string | null
+          student_nis?: string | null
           tanggal_pindah?: string | null
         }
         Relationships: []
