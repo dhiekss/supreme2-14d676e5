@@ -33,7 +33,7 @@ export type LaporanSppdPdfData = {
 
 function kop(logo: string): string {
   return `
-  <table style="width:100%; border-collapse:collapse; margin-bottom:6px; font-family:'Times New Roman', Times, serif;">
+  <table style="width:100%; border-collapse:collapse; margin-bottom:6px; font-family:Arial,Helvetica,sans-serif;">
     <tr>
       <td style="width:110px; vertical-align:middle; text-align:center;">
         <img src="${logo}" style="width:95px; height:auto;" />
@@ -84,7 +84,7 @@ export function buildLaporanSppdHtml(row: LaporanSppdPdfData, logo: string): str
   <div style="width:794px; height:1123px; padding:50px 60px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#000; line-height:1.15;">
     ${kop(logo)}
     <div style="text-align:center; margin-bottom:2px;">
-      <span style="font-size:14px; font-weight:bold; border-bottom:1.5px solid #000; padding-bottom:1px;">LAPORAN PERJALANAN DINAS</span>
+      <span style="font-size:14px; font-weight:bold; text-decoration:underline;">LAPORAN PERJALANAN DINAS</span>
     </div>
     <div style="text-align:center; margin-bottom:16px;">Nomor: ${escapeHtml(row.nomor_surat)}</div>
 
