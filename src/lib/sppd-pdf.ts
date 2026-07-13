@@ -198,7 +198,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
           </table>
 
           <!-- TTD LEFT -->
-          <div style="margin-top:14px; margin-left:52%;">
+          <div style="margin-top:8px; margin-left:52%;">
             <div>Dikeluarkan di&nbsp;&nbsp;: ${KOTA}</div>
             <div>Tanggal&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${fmtTanggalId(row.tanggal_mulai)}</div>
             <div>Kuasa Pengguna Anggaran</div>
