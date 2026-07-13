@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import { addHtmlPageToPdf, loadLogoDataUrl, escapeHtml } from "./pdf-html-common";
+import { addHtmlPageToPdf, loadLogoDataUrl, escapeHtml, type PdfMargins } from "./pdf-html-common";
 import { fetchDisplaySettings } from "./display-settings";
 import type { DaftarHadirData, DaftarHadirRombelData } from "./daftar-hadir.functions";
 
@@ -98,14 +98,21 @@ function buildAttendanceTable(
   const tdDay = `padding:4px 1px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:8.5px; height:22px; line-height:1.1;`;
 
   // colgroup — fix widths so NIS & NAMA fit text and date columns stay compact
+  const DATE_COL_WIDTH = 18;
+  const NO_WIDTH = 24;
+  const NIS_WIDTH = 72;
+  const NAMA_WIDTH = 165;
+  const LP_WIDTH = 24;
+  const JUMLAH_COL_WIDTH = 24;
+  const totalWidth = NO_WIDTH + NIS_WIDTH + NAMA_WIDTH + LP_WIDTH + (lastDay * DATE_COL_WIDTH) + (JUMLAH_COL_WIDTH * 4);
+
   let colgroup = `<colgroup>
-    <col style="width:24px;">
-    <col style="width:72px;">
-    <col style="width:170px;">
-    <col style="width:24px;">`;
-  for (let i = 0; i < lastDay; i++) colgroup += `<col style="width:20px;">`;
-  colgroup += `<col style="width:24px;"><col style="width:24px;"><col style="width:24px;"><col style="width:24px;">`;
-  colgroup += `<col style="width:56px;"></colgroup>`;
+    <col style="width:${NO_WIDTH}px;">
+    <col style="width:${NIS_WIDTH}px;">
+    <col style="width:${NAMA_WIDTH}px;">
+    <col style="width:${LP_WIDTH}px;">`;
+  for (let i = 0; i < lastDay; i++) colgroup += `<col style="width:${DATE_COL_WIDTH}px;">`;
+  colgroup += `<col style="width:${JUMLAH_COL_WIDTH}px;"><col style="width:${JUMLAH_COL_WIDTH}px;"><col style="width:${JUMLAH_COL_WIDTH}px;"><col style="width:${JUMLAH_COL_WIDTH}px;"></colgroup>`;
 
   // Header row 1
   let head = `<tr>
@@ -115,7 +122,6 @@ function buildAttendanceTable(
     <th style="${thWide}" rowspan="3">L/P</th>
     <th style="${thWide}" colspan="${lastDay}">TANGGAL / BULAN ${BULAN_ID[month - 1].toUpperCase()}</th>
     <th style="${thWide}" colspan="4">JUMLAH</th>
-    <th style="${thWide}" rowspan="3">KET</th>
   </tr>`;
 
   // Header row 2 (hari letter)
@@ -177,12 +183,11 @@ function buildAttendanceTable(
       <td style="${td}">${kosong ? "" : sc || ""}</td>
       <td style="${td}">${kosong ? "" : i || ""}</td>
       <td style="${td}">${kosong ? "" : a || ""}</td>
-      <td style="${td}"></td>
     </tr>`;
   });
 
   return `
-  <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-family:Arial,Helvetica,sans-serif;">
+  <table style="width:100%; border-collapse:collapse; font-family:Arial,Helvetica,sans-serif;">
     ${colgroup}
     <thead>${head}</thead>
     <tbody>${body}</tbody>
@@ -243,6 +248,15 @@ function chunkStudents<T>(arr: T[], size: number): T[][] {
   return out || [[]];
 }
 
+const CM_TO_PX = 96 / 2.54;
+
+const PDF_MARGINS: PdfMargins = {
+  top: Math.round(3 * CM_TO_PX),
+  right: Math.round(2 * CM_TO_PX),
+  bottom: Math.round(4 * CM_TO_PX),
+  left: Math.round(2 * CM_TO_PX),
+};
+
 export async function exportDaftarHadirPdf(data: DaftarHadirData, opts: PdfOptions = {}): Promise<void> {
   const logoJabar = await loadLogoDataUrl();
   const logoSekolah = await schoolLogoDataUrl();
@@ -250,7 +264,7 @@ export async function exportDaftarHadirPdf(data: DaftarHadirData, opts: PdfOptio
   const pdf = new jsPDF({ orientation: "landscape", unit: "px", format: "a4" });
   let first = true;
 
-  const PER_PAGE = 19; // students per page based on sample
+  const PER_PAGE = 8; // students per page with print margins
 
   for (const r of data.rombels) {
     const chunks = chunkStudents(r.students, PER_PAGE);
@@ -265,7 +279,7 @@ export async function exportDaftarHadirPdf(data: DaftarHadirData, opts: PdfOptio
         ${buildAttendanceTable(pageRombel, data.month, data.year, liburSet, !!opts.kosong)}
         ${isLast ? footerHtml(r, data.month, data.year, opts.overrideWaliName, opts.overrideWaliNip) : ""}
       `;
-      await addHtmlPageToPdf(pdf, html, "landscape", first);
+      await addHtmlPageToPdf(pdf, html, "landscape", first, PDF_MARGINS);
       first = false;
     }
   }
