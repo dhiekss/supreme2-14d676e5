@@ -71,13 +71,13 @@ async function loadLogoDataUrl(): Promise<string | null> {
   }
 }
 
-export async function generateLaporanSppdPdf(row: LaporanSppdPdfData): Promise<jsPDF> {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+export async function renderLaporanSppd(doc: jsPDF, row: LaporanSppdPdfData): Promise<void> {
   const pageW = doc.internal.pageSize.getWidth();
   const marginL = 20;
   const marginR = 20;
   const contentW = pageW - marginL - marginR;
   let y = 15;
+
 
   // ===== LOGO =====
   const logo = await loadLogoDataUrl();
