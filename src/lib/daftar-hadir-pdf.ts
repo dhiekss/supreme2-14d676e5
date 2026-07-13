@@ -187,7 +187,7 @@ function buildAttendanceTable(
   });
 
   return `
-  <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-family:Arial,Helvetica,sans-serif;">
+  <table style="width:100%; border-collapse:collapse; font-family:Arial,Helvetica,sans-serif;">
     ${colgroup}
     <thead>${head}</thead>
     <tbody>${body}</tbody>
