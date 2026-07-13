@@ -2,6 +2,43 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
+// PostgREST caps a single response (~1000 rows). Page through until we get everything.
+const PAGE = 1000;
+async function fetchAllPaged<T = any>(builder: (from: number, to: number) => any): Promise<T[]> {
+  const out: T[] = [];
+  let from = 0;
+  // safety cap ~500k rows
+  for (let i = 0; i < 500; i++) {
+    const { data, error } = await builder(from, from + PAGE - 1);
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as T[];
+    out.push(...rows);
+    if (rows.length < PAGE) break;
+    from += PAGE;
+  }
+  return out;
+}
+
+async function fetchDetailsByRecordIds(supabase: any, recIds: string[]): Promise<any[]> {
+  if (!recIds.length) return [];
+  const out: any[] = [];
+  // chunk IN() to avoid URL length issues and page each chunk
+  const CHUNK = 200;
+  for (let i = 0; i < recIds.length; i += CHUNK) {
+    const slice = recIds.slice(i, i + CHUNK);
+    const rows = await fetchAllPaged((from, to) =>
+      supabase
+        .from("attendance_details")
+        .select("attendance_record_id, student_id, status")
+        .in("attendance_record_id", slice)
+        .range(from, to),
+    );
+    out.push(...rows);
+  }
+  return out;
+}
+
+
 export const presensiReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
