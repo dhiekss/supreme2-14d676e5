@@ -283,8 +283,19 @@ function LaporanPresensi() {
                 />
                 {parseError && <p className="text-sm text-destructive">{parseError}</p>}
                 {parsedRows && !importResult && (
-                  <div className="text-sm rounded-md border p-3 bg-muted/30">
-                    Siap diimpor: <b>{parsedRows.length}</b> baris. Data pada tanggal & rombel yang sama akan menimpa record yang ada.
+                  <div className="text-sm rounded-md border p-3 bg-muted/30 space-y-1">
+                    <div>Siap diimpor: <b>{parsedRows.length.toLocaleString("id-ID")}</b> baris.</div>
+                    <div className="text-xs text-muted-foreground">
+                      Akan dikirim dalam <b>{buildBatches(parsedRows).length}</b> batch (maks {CHUNK_SIZE.toLocaleString("id-ID")} baris/batch). Data pada tanggal & rombel yang sama akan menimpa record yang ada.
+                    </div>
+                    {importProgress && (
+                      <div className="mt-2">
+                        <div className="text-xs mb-1">Memproses batch {importProgress.done} / {importProgress.total}…</div>
+                        <div className="h-2 w-full bg-muted rounded overflow-hidden">
+                          <div className="h-full bg-primary transition-all" style={{ width: `${(importProgress.done / importProgress.total) * 100}%` }} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 {importResult && (
