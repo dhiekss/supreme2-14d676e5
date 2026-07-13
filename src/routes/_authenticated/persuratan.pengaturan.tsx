@@ -602,24 +602,21 @@ function DiamankanTab() {
               <Label>Aktifkan Pengamanan Otomatis</Label>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Jumlah Nomor per Hari</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={50}
-                  value={count}
-                  onChange={(e) => setCount(Number(e.target.value))}
-                />
-                <p className="text-xs text-muted-foreground">Banyaknya nomor yang diamankan setiap hari aktif.</p>
-              </div>
-              <div className="space-y-2">
-                <Label>Kode Surat</Label>
-                <Input value={kode} onChange={(e) => setKode(e.target.value)} placeholder="000" />
-                <p className="text-xs text-muted-foreground">Kode klasifikasi yang akan diamankan (mis. 000).</p>
-              </div>
+            <div className="space-y-2">
+              <Label>Jumlah Nomor per Hari</Label>
+              <Input
+                type="number"
+                min={0}
+                max={50}
+                value={count}
+                onChange={(e) => setCount(Number(e.target.value))}
+                className="max-w-xs"
+              />
+              <p className="text-xs text-muted-foreground">
+                Banyaknya nomor yang diamankan setiap hari aktif. Nomor ini berlaku untuk semua kode surat.
+              </p>
             </div>
+
 
             <div className="space-y-2">
               <Label>Hari Pengamanan</Label>
