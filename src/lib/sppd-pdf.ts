@@ -59,7 +59,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
     </div>`;
 
   return `
-  <div style="width:1123px; height:794px; padding:16px 20px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:11px; color:#000; line-height:1.3;">
+  <div style="width:1123px; height:794px; padding:10px 16px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:10.5px; color:#000; line-height:1.25;">
     <table style="width:100%; height:100%; border-collapse:collapse;">
       <tr>
         <!-- LEFT -->
