@@ -30,13 +30,15 @@ export const Route = createFileRoute("/_authenticated/users")({
   errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal: {error.message}</div>,
 });
 
-const ROLES = ["admin", "wakasek", "kakonli", "guru", "murid", "admin_sarpras", "admin_persuratan", "admin_tpg"] as const;
+const ROLES = ["superadmin", "admin", "wakasek", "kakonli", "walas", "guru", "murid", "admin_sarpras", "admin_persuratan", "admin_tpg"] as const;
 type Role = typeof ROLES[number];
 
 const ROLE_LABEL: Record<string, string> = {
+  superadmin: "Superadmin",
   admin: "Admin",
   wakasek: "Waka",
   kakonli: "Kakonli",
+  walas: "Walas",
   guru: "Guru",
   murid: "Murid",
   admin_sarpras: "Admin Sarpras",
@@ -45,11 +47,13 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 const ROLE_BADGE: Record<string, string> = {
+  superadmin: "bg-red-500/10 text-red-700 border-red-500/20",
   admin: "bg-blue-500/10 text-blue-700 border-blue-500/20",
   guru: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
   murid: "bg-orange-500/10 text-orange-700 border-orange-500/20",
   wakasek: "bg-violet-500/10 text-violet-700 border-violet-500/20",
   kakonli: "bg-pink-500/10 text-pink-700 border-pink-500/20",
+  walas: "bg-indigo-500/10 text-indigo-700 border-indigo-500/20",
   admin_sarpras: "bg-amber-500/10 text-amber-700 border-amber-500/20",
   admin_persuratan: "bg-cyan-500/10 text-cyan-700 border-cyan-500/20",
   admin_tpg: "bg-teal-500/10 text-teal-700 border-teal-500/20",
