@@ -206,6 +206,7 @@ function UsersPage() {
               <Button size="sm" className="bg-blue-600 hover:bg-blue-700"><Plus className="h-4 w-4 mr-2" />Tambah User</Button>
             </DialogTrigger>
             <UserFormDialog
+              key={edit?.id ?? "new"}
               edit={edit}
               onSubmit={(v) => edit ? upd.mutate({ ...v, id: edit.id }) : create.mutate(v)}
               loading={create.isPending || upd.isPending}
@@ -476,7 +477,7 @@ function UsersPage() {
                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setResetFor(u)} title="Reset password">
                           <KeyRound className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setEdit(u); setOpen(true); }} title="Edit">
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { console.log("[EditClick] u=", u); setEdit(u); setOpen(true); }} title="Edit">
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive"
@@ -656,6 +657,7 @@ function ActivityLogCard() {
 
 // ====================== Dialogs ======================
 function UserFormDialog({ edit, onSubmit, loading }: { edit: any; onSubmit: (v: any) => void; loading: boolean }) {
+  console.log("[UserFormDialog] mount, edit=", edit);
   const [form, setForm] = useState<any>(() => ({
     email: edit?.email ?? "",
     password: "",
