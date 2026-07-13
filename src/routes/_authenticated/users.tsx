@@ -206,6 +206,7 @@ function UsersPage() {
               <Button size="sm" className="bg-blue-600 hover:bg-blue-700"><Plus className="h-4 w-4 mr-2" />Tambah User</Button>
             </DialogTrigger>
             <UserFormDialog
+              key={edit?.id ?? "new"}
               edit={edit}
               onSubmit={(v) => edit ? upd.mutate({ ...v, id: edit.id }) : create.mutate(v)}
               loading={create.isPending || upd.isPending}
