@@ -207,6 +207,37 @@ export function SelectContent({
   emptyText = "Tidak ada hasil",
   hideSearch = false,
 }: SelectContentProps) {
+  const ctx = useSel();
+
+  // Pre-register labels for all SelectItem descendants so the trigger can
+  // display the selected option's label even before the popover has ever
+  // been opened (Radix Popover only mounts its content when open).
+  React.useEffect(() => {
+    const collected: Array<{ value: string; label: React.ReactNode }> = [];
+    const walk = (node: React.ReactNode): void => {
+      if (node == null || typeof node === "boolean") return;
+      if (Array.isArray(node)) {
+        node.forEach(walk);
+        return;
+      }
+      if (!React.isValidElement(node)) return;
+      const el = node as React.ReactElement<any>;
+      if (el.type === SelectItem) {
+        const { value, children, textValue } = el.props as SelectItemProps;
+        if (typeof value === "string") {
+          collected.push({ value, label: textValue ?? children });
+        }
+        return;
+      }
+      walk(el.props?.children);
+    };
+    walk(children);
+    collected.forEach((c) => ctx.register(c.value, c.label));
+    return () => {
+      collected.forEach((c) => ctx.unregister(c.value));
+    };
+  }, [children, ctx]);
+
   return (
     <PopoverContent
       align={align}
@@ -217,7 +248,6 @@ export function SelectContent({
         className,
       )}
       onOpenAutoFocus={(e) => {
-        // let CommandInput autofocus itself
         if (hideSearch) e.preventDefault();
       }}
     >
