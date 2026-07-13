@@ -55,7 +55,7 @@ function AuthPage() {
     <div
       className="min-h-screen flex flex-col p-4 md:p-8"
       style={{
-        background: `linear-gradient(120deg, #7c5cff 0%, #6a7dff 40%, ${d.bg_color} 100%)`,
+        background: `linear-gradient(120deg, #27391C 0%, #4B5A35 40%, #6B7B3A 100%)`,
       }}
     >
       <main className="flex-1 flex items-center justify-center">
