@@ -428,7 +428,7 @@ function SuratTugasFormDialog({
       setTanggalMulai(today); setTanggalSelesai(today);
       setKendaraan("Roda 4"); setStatus("aktif");
       setTujuan([{ nama: "", kabupaten: "", alamat: "" }]);
-      setPeserta([{ nama_peserta: "", nip: "", jabatan: "", pangkat_golongan: "" }]);
+      setPeserta([{ nama_peserta: "", nip: "", jabatan: "", pangkat_golongan: "", mode: "database" }]);
       // auto next nomor urut
       fnNext({ data: { kode_surat: "805" } })
         .then((r: any) => setNomorUrut(r.next))
