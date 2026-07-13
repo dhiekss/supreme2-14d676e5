@@ -121,7 +121,7 @@ export async function addHtmlPageToPdf(
     doc.open();
     doc.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=${wPx}, initial-scale=1"><style>
       html,body{margin:0;padding:0;background:#ffffff;color:#000000;
-        font-family: Arial, Helvetica, sans-serif; width:100%; height:100%; overflow:hidden; box-sizing:border-box;}
+        font-family: Arial, Helvetica, sans-serif; width:${wPx}px; height:${hPx}px; overflow:hidden;}
       *{box-sizing:border-box;}
       #pdf-page{width:100%; height:100%; overflow:hidden; position:relative;}
       table{max-width:100%;}
