@@ -492,6 +492,11 @@ function LaporanPresensi() {
       {/* Detail presensi */}
       <DetailPresensiCard />
 
+      {/* Ekspor PDF Daftar Hadir Murid */}
+      <DaftarHadirExportCards />
+
+
+
 
       {isFetching && <p className="text-xs text-muted-foreground text-center">Memuat data...</p>}
     </div>
