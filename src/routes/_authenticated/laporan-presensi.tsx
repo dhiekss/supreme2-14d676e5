@@ -698,15 +698,25 @@ function DetailPresensiCard() {
       }),
   });
   const rows = listQuery.data ?? [];
-  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const filteredRows = (() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((r: any) =>
+      [r.officer_name, r.rombel, r.walikelas]
+        .filter(Boolean)
+        .some((v: string) => String(v).toLowerCase().includes(q))
+    );
+  })();
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const curPage = Math.min(page, totalPages);
   const start = (curPage - 1) * pageSize;
-  const pageRows = rows.slice(start, start + pageSize);
+  const pageRows = filteredRows.slice(start, start + pageSize);
 
   const resetFilter = () => {
     setDate("");
     setRombelId("__all");
     setOfficer("__all");
+    setSearch("");
     setPage(1);
   };
 
