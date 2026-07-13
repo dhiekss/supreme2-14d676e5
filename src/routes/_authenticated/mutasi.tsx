@@ -248,8 +248,11 @@ function RombelTransferTab({ onChange }: { onChange: () => void }) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editRow, setEditRow] = useState<any>(null);
+  const [sort, setSort] = useState<{ field: string; dir: SortDir }>({ field: "", dir: null });
   const listFn = useServerFn(listRombelTransfers);
   const delFn = useServerFn(deleteRombelTransfer);
+  const saveFn = useServerFn(upsertRombelTransfer);
+  const qc = useQueryClient();
   const { data } = useSuspenseQuery({
     queryKey: ["mutasi-rombel", search],
     queryFn: () => listFn({ data: { search: search || undefined } }),
@@ -258,6 +261,30 @@ function RombelTransferTab({ onChange }: { onChange: () => void }) {
     mutationFn: (id: string) => delFn({ data: { id } }),
     onSuccess: () => { toast.success("Dihapus"); onChange(); },
     onError: (e: any) => toast.error(e.message),
+  });
+  const inlineUpdate = useMutation({
+    mutationFn: (payload: { row: any; patch: any }) =>
+      saveFn({ data: {
+        id: payload.row.id,
+        student_id: payload.row.student_id,
+        rombel_asal_id: payload.row.rombel_asal_id,
+        rombel_tujuan_id: payload.row.rombel_tujuan_id,
+        tanggal_pindah: payload.row.tanggal_pindah,
+        alasan: payload.row.alasan,
+        ...payload.patch,
+      } }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["mutasi-rombel"] }); qc.invalidateQueries({ queryKey: ["mutasi-sum"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const sorted = useSortedRows(data as any[], sort, {
+    nama: (r) => r.students?.name ?? "",
+    nis: (r) => r.students?.nis ?? "",
+    rombel_asal: (r) => r.asal?.name ?? "",
+    rombel_tujuan: (r) => r.tujuan?.name ?? "",
+    tanggal_pindah: (r) => r.tanggal_pindah ?? "",
+    dapodik_status: (r) => (r.dapodik_status ?? "belum"),
+    dapodik_tanggal: (r) => r.dapodik_tanggal ?? "",
   });
 
   return (
@@ -268,36 +295,47 @@ function RombelTransferTab({ onChange }: { onChange: () => void }) {
           <Button onClick={() => { setEditRow(null); setOpen(true); }}><Plus className="h-4 w-4 mr-2" />Tambah</Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Tanggal</TableHead>
-              <TableHead>Siswa</TableHead>
-              <TableHead>Asal</TableHead>
-              <TableHead>Tujuan</TableHead>
-              <TableHead>Alasan</TableHead>
-              <TableHead>Dapodik</TableHead>
+              <SortTh label="Nama Murid" field="nama" sort={sort} setSort={setSort} />
+              <SortTh label="NIS" field="nis" sort={sort} setSort={setSort} />
+              <SortTh label="Rombel Asal" field="rombel_asal" sort={sort} setSort={setSort} />
+              <SortTh label="Rombel Tujuan" field="rombel_tujuan" sort={sort} setSort={setSort} />
+              <SortTh label="Tanggal Pindah" field="tanggal_pindah" sort={sort} setSort={setSort} />
+              <SortTh label="Proses Dapodik" field="dapodik_status" sort={sort} setSort={setSort} />
+              <SortTh label="Tgl Proses Dapodik" field="dapodik_tanggal" sort={sort} setSort={setSort} />
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
+            {sorted.length === 0 && (
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
             )}
-            {data.map((r: any) => (
+            {sorted.map((r: any) => (
               <TableRow key={r.id}>
-                <TableCell className="text-xs">{r.tanggal_pindah ?? "—"}</TableCell>
+                <TableCell className="font-medium">{r.students?.name ?? "—"}</TableCell>
+                <TableCell className="text-muted-foreground">{r.students?.nis ?? "—"}</TableCell>
+                <TableCell><RombelPill name={r.asal?.name} /></TableCell>
+                <TableCell><RombelPill name={r.tujuan?.name} /></TableCell>
+                <TableCell className="text-sm">{fmtDateID(r.tanggal_pindah)}</TableCell>
                 <TableCell>
-                  <div className="font-medium">{r.students?.name ?? "—"}</div>
-                  <div className="text-xs text-muted-foreground">{r.students?.nis ?? ""}</div>
+                  <DapodikSelect
+                    value={r.dapodik_status}
+                    disabled={inlineUpdate.isPending}
+                    onChange={(v) => inlineUpdate.mutate({ row: r, patch: { dapodik_status: v } })}
+                  />
                 </TableCell>
-                <TableCell>{r.asal?.name ?? "—"}</TableCell>
-                <TableCell>{r.tujuan?.name ?? "—"}</TableCell>
-                <TableCell className="max-w-xs truncate">{r.alasan ?? "—"}</TableCell>
-                <TableCell><Badge variant={r.dapodik_status === "sinkron" ? "default" : "secondary"}>{r.dapodik_status ?? "belum"}</Badge></TableCell>
-                <TableCell className="text-right">
-                  <Button size="sm" variant="ghost" onClick={() => { setEditRow(r); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                <TableCell>
+                  <DapodikDate
+                    value={r.dapodik_tanggal}
+                    disabled={inlineUpdate.isPending}
+                    onChange={(v) => inlineUpdate.mutate({ row: r, patch: { dapodik_tanggal: v } })}
+                  />
+                </TableCell>
+                <TableCell className="text-right whitespace-nowrap">
+                  <Button size="sm" variant="ghost" onClick={() => { setEditRow(r); setOpen(true); }}><Eye className="h-4 w-4 text-primary" /></Button>
                   <Button size="sm" variant="ghost" onClick={() => { if (confirm("Hapus?")) del.mutate(r.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </TableCell>
               </TableRow>
@@ -309,6 +347,7 @@ function RombelTransferTab({ onChange }: { onChange: () => void }) {
     </Card>
   );
 }
+
 
 function RombelDialog({ open, setOpen, row, onSaved }: any) {
   const email = useCurrentEmail();
