@@ -9,13 +9,30 @@ export const listKenaikanRefs = createServerFn({ method: "GET" })
       supabase.from("rombel").select("id, name, tingkat, is_khusus").order("name"),
       supabase.from("tahun_ajaran").select("id, nama, is_active").order("nama"),
       supabase.from("semester").select("id, nama, tahun_ajaran_id, is_active").order("nama"),
-      supabase.from("students").select("rombel_id"),
+      (async () => {
+        // Paginate to bypass PostgREST default 1000-row cap
+        const counts: Record<string, number> = {};
+        const pageSize = 1000;
+        let from = 0;
+        while (true) {
+          const { data, error } = await supabase
+            .from("students")
+            .select("rombel_id")
+            .range(from, from + pageSize - 1);
+          if (error) throw new Error(error.message);
+          const rows = data ?? [];
+          for (const s of rows as any[]) {
+            if (s.rombel_id) counts[s.rombel_id] = (counts[s.rombel_id] ?? 0) + 1;
+          }
+          if (rows.length < pageSize) break;
+          from += pageSize;
+        }
+        return counts;
+      })(),
     ]);
     if (rombel.error) throw new Error(rombel.error.message);
-    const counts: Record<string, number> = {};
-    (students.data ?? []).forEach((s: any) => {
-      if (s.rombel_id) counts[s.rombel_id] = (counts[s.rombel_id] ?? 0) + 1;
-    });
+    const counts = students as Record<string, number>;
+
     return {
       rombel: (rombel.data ?? []).map((r: any) => ({ ...r, siswa_count: counts[r.id] ?? 0 })),
       tahun: tahun.data ?? [],
