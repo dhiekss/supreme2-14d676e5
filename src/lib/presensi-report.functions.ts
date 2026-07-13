@@ -2,6 +2,43 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
+// PostgREST caps a single response (~1000 rows). Page through until we get everything.
+const PAGE = 1000;
+async function fetchAllPaged<T = any>(builder: (from: number, to: number) => any): Promise<T[]> {
+  const out: T[] = [];
+  let from = 0;
+  // safety cap ~500k rows
+  for (let i = 0; i < 500; i++) {
+    const { data, error } = await builder(from, from + PAGE - 1);
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as T[];
+    out.push(...rows);
+    if (rows.length < PAGE) break;
+    from += PAGE;
+  }
+  return out;
+}
+
+async function fetchDetailsByRecordIds(supabase: any, recIds: string[]): Promise<any[]> {
+  if (!recIds.length) return [];
+  const out: any[] = [];
+  // chunk IN() to avoid URL length issues and page each chunk
+  const CHUNK = 200;
+  for (let i = 0; i < recIds.length; i += CHUNK) {
+    const slice = recIds.slice(i, i + CHUNK);
+    const rows = await fetchAllPaged((from, to) =>
+      supabase
+        .from("attendance_details")
+        .select("attendance_record_id, student_id, status")
+        .in("attendance_record_id", slice)
+        .range(from, to),
+    );
+    out.push(...rows);
+  }
+  return out;
+}
+
+
 export const presensiReport = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
@@ -70,38 +107,34 @@ export const presensiDashboard = createServerFn({ method: "GET" })
   .handler(async ({ context, data }) => {
     const { supabase } = context;
 
-    const [rombelRes, guruRes, studentsRes] = await Promise.all([
-      supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian, wali_kelas_name").range(0, 9999),
+    const [rombelAll, guruRes, studentsAll] = await Promise.all([
+      fetchAllPaged((f, t) => supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian, wali_kelas_name").range(f, t)),
       supabase.from("guru").select("*", { count: "exact", head: true }),
-      supabase.from("students").select("id, nis, name, rombel_id").range(0, 99999),
+      fetchAllPaged((f, t) => supabase.from("students").select("id, nis, name, rombel_id").range(f, t)),
     ]);
-    const allRombel = rombelRes.data ?? [];
+    const allRombel = rombelAll;
     const rombel = data.konsentrasi && data.konsentrasi !== "__all"
       ? allRombel.filter((r: any) => r.konsentrasi_keahlian === data.konsentrasi)
       : allRombel;
     const rombelIds = new Set(rombel.map((r: any) => r.id));
     const rombelById = new Map(allRombel.map((r: any) => [r.id, r]));
-    const students = (studentsRes.data ?? []).filter((s: any) => s.rombel_id && rombelIds.has(s.rombel_id));
+    const students = studentsAll.filter((s: any) => s.rombel_id && rombelIds.has(s.rombel_id));
     const studentById = new Map(students.map((s: any) => [s.id, s]));
 
-    const { data: records } = await supabase
-      .from("attendance_records")
-      .select("id, date, rombel_id")
-      .gte("date", data.from)
-      .lte("date", data.to)
-      .range(0, 99999);
+    const records = await fetchAllPaged((from, to) =>
+      supabase
+        .from("attendance_records")
+        .select("id, date, rombel_id")
+        .gte("date", data.from)
+        .lte("date", data.to)
+        .range(from, to),
+    );
     const recs = (records ?? []).filter((r: any) => r.rombel_id && rombelIds.has(r.rombel_id));
     const recIds = recs.map((r: any) => r.id);
     const recById = new Map(recs.map((r: any) => [r.id, r]));
 
-    const { data: details } = recIds.length
-      ? await supabase
-          .from("attendance_details")
-          .select("attendance_record_id, student_id, status")
-          .in("attendance_record_id", recIds)
-          .range(0, 999999)
-      : { data: [] as any[] };
-    const dets = details ?? [];
+    const dets = await fetchDetailsByRecordIds(supabase, recIds);
+
 
     // totals
     const totals = { H: 0, S: 0, I: 0, A: 0, P: 0 };
@@ -214,18 +247,17 @@ export const rombelBelumInputByDate = createServerFn({ method: "GET" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const [rombelRes, studentsRes, recordsRes] = await Promise.all([
-      supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian, wali_kelas_name").range(0, 9999),
-      supabase.from("students").select("id, rombel_id").range(0, 99999),
-      supabase.from("attendance_records").select("rombel_id").eq("date", data.date).range(0, 9999),
+    const [allRombel, allStudents, records] = await Promise.all([
+      fetchAllPaged((f, t) => supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian, wali_kelas_name").range(f, t)),
+      fetchAllPaged((f, t) => supabase.from("students").select("id, rombel_id").range(f, t)),
+      fetchAllPaged((f, t) => supabase.from("attendance_records").select("rombel_id").eq("date", data.date).range(f, t)),
     ]);
-    const allRombel = rombelRes.data ?? [];
     const filtered = data.tingkat && data.tingkat !== "__all"
       ? allRombel.filter((r: any) => String(r.tingkat) === String(data.tingkat))
       : allRombel;
-    const hasRec = new Set((recordsRes.data ?? []).map((r: any) => r.rombel_id));
+    const hasRec = new Set(records.map((r: any) => r.rombel_id));
     const countByRombel = new Map<string, number>();
-    for (const s of studentsRes.data ?? []) {
+    for (const s of allStudents) {
       if (!s.rombel_id) continue;
       countByRombel.set(s.rombel_id, (countByRombel.get(s.rombel_id) ?? 0) + 1);
     }
@@ -256,47 +288,46 @@ export const attendanceDetailList = createServerFn({ method: "GET" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    let q = supabase
-      .from("attendance_records")
-      .select("id, date, rombel_id, officer_name")
-      .order("date", { ascending: false })
-      .range(0, 9999);
-    if (data.date) q = q.eq("date", data.date);
-    if (data.rombelId) q = q.eq("rombel_id", data.rombelId);
-    if (data.officer) q = q.eq("officer_name", data.officer);
-    if (data.from) q = q.gte("date", data.from);
-    if (data.to) q = q.lte("date", data.to);
-    const { data: recs, error } = await q;
-    if (error) throw new Error(error.message);
+    const recs = await fetchAllPaged<any>((f, t) => {
+      let q = supabase
+        .from("attendance_records")
+        .select("id, date, rombel_id, officer_name")
+        .order("date", { ascending: false })
+        .range(f, t);
+      if (data.date) q = q.eq("date", data.date);
+      if (data.rombelId) q = q.eq("rombel_id", data.rombelId);
+      if (data.officer) q = q.eq("officer_name", data.officer);
+      if (data.from) q = q.gte("date", data.from);
+      if (data.to) q = q.lte("date", data.to);
+      return q;
+    });
 
-    const rombelIds = [...new Set((recs ?? []).map((r) => r.rombel_id).filter(Boolean) as string[])];
-    const recIds = (recs ?? []).map((r) => r.id);
-    const [rombelRes, studentsRes, detailsRes] = await Promise.all([
+    const rombelIds = [...new Set(recs.map((r: any) => r.rombel_id).filter(Boolean) as string[])];
+    const recIds = recs.map((r: any) => r.id);
+    const [rombelRes, students, details] = await Promise.all([
       rombelIds.length
         ? supabase.from("rombel").select("id, name, wali_kelas_name").in("id", rombelIds)
         : Promise.resolve({ data: [] as any[] }),
       rombelIds.length
-        ? supabase.from("students").select("id, rombel_id").in("rombel_id", rombelIds).range(0, 99999)
-        : Promise.resolve({ data: [] as any[] }),
-      recIds.length
-        ? supabase.from("attendance_details").select("attendance_record_id, status").in("attendance_record_id", recIds).range(0, 999999)
-        : Promise.resolve({ data: [] as any[] }),
+        ? fetchAllPaged((f, t) => supabase.from("students").select("id, rombel_id").in("rombel_id", rombelIds).range(f, t))
+        : Promise.resolve([] as any[]),
+      fetchDetailsByRecordIds(supabase, recIds),
     ]);
     const rMap = new Map((rombelRes.data ?? []).map((r: any) => [r.id, r]));
     const countByRombel = new Map<string, number>();
-    for (const s of studentsRes.data ?? []) {
+    for (const s of students as any[]) {
       if (!s.rombel_id) continue;
       countByRombel.set(s.rombel_id, (countByRombel.get(s.rombel_id) ?? 0) + 1);
     }
     const perRec = new Map<string, { H: number; S: number; I: number; A: number; P: number }>();
-    for (const d of detailsRes.data ?? []) {
+    for (const d of details as any[]) {
       const key = d.attendance_record_id as string;
       if (!perRec.has(key)) perRec.set(key, { H: 0, S: 0, I: 0, A: 0, P: 0 });
       const r = perRec.get(key)!;
       const st = d.status as keyof typeof r;
       if (st in r) r[st]++;
     }
-    return (recs ?? []).map((r) => {
+    return recs.map((r: any) => {
       const rb: any = r.rombel_id ? rMap.get(r.rombel_id) : null;
       const c = perRec.get(r.id) ?? { H: 0, S: 0, I: 0, A: 0, P: 0 };
       return {
@@ -367,13 +398,15 @@ export const deleteAttendanceRecord = createServerFn({ method: "POST" })
 export const listOfficers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await context.supabase
-      .from("attendance_records")
-      .select("officer_name")
-      .not("officer_name", "is", null)
-      .range(0, 9999);
+    const rows = await fetchAllPaged<any>((f, t) =>
+      context.supabase
+        .from("attendance_records")
+        .select("officer_name")
+        .not("officer_name", "is", null)
+        .range(f, t),
+    );
     const set = new Set<string>();
-    for (const r of data ?? []) {
+    for (const r of rows) {
       const n = String(r.officer_name ?? "").trim();
       if (n) set.add(n);
     }
