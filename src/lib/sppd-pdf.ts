@@ -65,7 +65,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
     </div>`;
 
   return `
-  <div style="width:1123px; height:794px; padding:8px 14px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:10px; color:#000; line-height:1.18;">
+  <div style="width:1123px; height:794px; padding:8px 14px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:9.8px; color:#000; line-height:1.18;">
     <table style="width:100%; height:100%; border-collapse:collapse;">
       <tr>
         <!-- LEFT -->
@@ -102,7 +102,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
           </div>
 
           <!-- MAIN TABLE -->
-          <table style="width:100%; border-collapse:collapse; font-size:9.4px; line-height:1.2; table-layout:fixed;">
+          <table style="width:100%; border-collapse:separate; border-spacing:0; border-left:1px solid #000; border-top:1px solid #000; font-size:9px; line-height:1.22; table-layout:fixed;">
             <colgroup>
               <col style="width:20px;" />
               <col style="width:182px;" />
@@ -223,19 +223,19 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
             <tr><td style="padding:0; vertical-align:middle;">Tanggal</td><td style="padding:0; vertical-align:middle;">:</td><td style="padding:0; vertical-align:middle;">${fmtTanggalId(row.tanggal_mulai)}</td></tr>
           </table>
 
-          <table style="width:100%; border-collapse:collapse; font-size:9.8px; line-height:1.18; table-layout:fixed;">
+          <table style="width:100%; border-collapse:separate; border-spacing:0; border-left:1px solid #000; border-top:1px solid #000; font-size:9.4px; line-height:1.18; table-layout:fixed;">
             <colgroup>
               <col style="width:50%;" />
               <col style="width:50%;" />
             </colgroup>
             <!-- Row 0: kiri kosong, kanan Berangkat awal + TTD -->
             <tr>
-              <td style="${tdBase}; height:110px;">&nbsp;</td>
-              <td style="${tdBase}">
+              <td style="${tdBase}; height:126px;">&nbsp;</td>
+              <td style="${tdBase}; height:126px;">
                 ${kv("Berangkat dari", INSTANSI)}
                 ${kv("Ke", escapeHtml(row.tujuan_lokasi ?? ""))}
                 ${kv("Pada Tanggal", fmtTanggalId(row.tanggal_mulai))}
-                <div style="height:26px;"></div>
+                <div style="height:14px;"></div>
                 <div style="font-weight:bold;">${KPA_NAMA}</div>
                 <div>${KPA_PANGKAT}</div>
                 <div>NIP. ${KPA_NIP}</div>
@@ -243,7 +243,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
             </tr>
             ${["I", "II", "III"].map((r) => `
               <tr>
-                <td style="${tdBase}; height:66px;">
+                <td style="${tdBase}; height:56px;">
                   ${kv(`${r}. Tiba di`, "")}
                   ${kv("Pada Tanggal", "")}
                   ${kv("Kepala", "")}
@@ -257,22 +257,22 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
               </tr>
             `).join("")}
             <tr>
-              <td style="${tdBase}; height:110px;">
+              <td style="${tdBase}; height:98px;">
                 <div>IV. Tiba kembali di :</div>
                 <div>${INSTANSI}</div>
                 <div>Pada Tanggal : ${fmtTanggalId(row.tanggal_selesai)}</div>
-                <div style="height:26px;"></div>
+                <div style="height:14px;"></div>
                 <div style="font-weight:bold;">${KPA_NAMA}</div>
                 <div>${KPA_PANGKAT}</div>
                 <div>NIP. ${KPA_NIP}</div>
               </td>
-              <td style="${tdBase}">
+              <td style="${tdBase}; height:98px;">
                 <div style="font-size:9.4px; line-height:1.18;">
                   Telah diperiksa dengan keterangan bahwa perjalanan tersebut atas perintahnya
                   dan semata-mata untuk kepentingan jabatan dalam waktu sesingkat-singkatnya
                 </div>
                 <div style="margin-top:6px;">Kuasa Pengguna Anggaran</div>
-                <div style="height:26px;"></div>
+                <div style="height:14px;"></div>
                 <div style="font-weight:bold;">${KPA_NAMA}</div>
                 <div>${KPA_PANGKAT}</div>
                 <div>NIP. ${KPA_NIP}</div>
@@ -291,7 +291,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
   `;
 }
 
-const tdBase = "border:1px solid #000; padding:4px 6px; vertical-align:middle; line-height:1.2; text-align:left; overflow-wrap:break-word; word-break:normal;";
+const tdBase = "border-right:1px solid #000; border-bottom:1px solid #000; padding:4px 6px; vertical-align:middle; line-height:1.22; text-align:left; overflow-wrap:break-word; word-break:normal;";
 const tdInner = "padding:4px 6px; vertical-align:middle; line-height:1.2; text-align:left; overflow-wrap:break-word; word-break:normal;";
 
 export function sppdPdfFilename(row: SppdPdfData, prefix = "SPPD"): string {
