@@ -256,7 +256,7 @@ function UsersPage() {
                 <li><span className="font-semibold">Guru:</span> Akun khusus untuk guru dengan akses menu dan rombel yang ditentukan.</li>
                 <li><span className="font-semibold">Murid:</span> Akun khusus untuk murid dengan akses menu dan rombel yang ditentukan.</li>
                 <li><span className="font-semibold">Waka:</span> Wakil Kepala Sekolah dengan akses menu dan rombel yang ditentukan.</li>
-                <li><span className="font-semibold">Kaprog:</span> Kepala Program Keahlian dengan akses menu dan rombel yang ditentukan.</li>
+                <li><span className="font-semibold">Kakonli:</span> Ketua Konsentrasi Keahlian dengan akses menu dan rombel yang ditentukan.</li>
               </ul>
             </div>
           </div>
