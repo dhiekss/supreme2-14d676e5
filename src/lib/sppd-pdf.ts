@@ -90,11 +90,11 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
           <div style="border-top:3px solid #000; border-bottom:1px solid #000; height:3px; margin-top:2px; margin-bottom:10px;"></div>
 
           <!-- Info block -->
-          <table style="border-collapse:collapse; margin-left:120px; font-size:11px;">
-            <tr><td style="width:110px; padding:1px 0;">Lembar Ke</td><td style="width:10px;">:</td><td>2 (dua)</td></tr>
-            <tr><td style="padding:1px 0;">Kode Rekening</td><td>:</td><td>${escapeHtml(row.kode_ring)}</td></tr>
-            <tr><td style="padding:1px 0;">Kode Kegiatan</td><td>:</td><td>${escapeHtml(row.kode_kegiatan)}</td></tr>
-            <tr><td style="padding:1px 0;">Nomor</td><td>:</td><td>${escapeHtml(row.nomor_surat)}</td></tr>
+          <table style="border-collapse:collapse; font-size:11px;">
+            <tr><td style="width:110px; padding:1px 0; text-align:left;">Lembar Ke</td><td style="width:10px; text-align:left;">:</td><td style="text-align:left;">2 (dua)</td></tr>
+            <tr><td style="padding:1px 0; text-align:left;">Kode Rekening</td><td style="text-align:left;">:</td><td style="text-align:left;">${escapeHtml(row.kode_ring)}</td></tr>
+            <tr><td style="padding:1px 0; text-align:left;">Kode Kegiatan</td><td style="text-align:left;">:</td><td style="text-align:left;">${escapeHtml(row.kode_kegiatan)}</td></tr>
+            <tr><td style="padding:1px 0; text-align:left;">Nomor</td><td style="text-align:left;">:</td><td style="text-align:left;">${escapeHtml(row.nomor_surat)}</td></tr>
           </table>
 
           <div style="text-align:center; margin:6px 0 4px 0;">
