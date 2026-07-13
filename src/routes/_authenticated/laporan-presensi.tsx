@@ -186,14 +186,67 @@ function LaporanPresensi() {
     }
   };
 
+  const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null);
+
+  const CHUNK_SIZE = 2000;
+
+  const buildBatches = (rows: any[]): any[][] => {
+    // Group rows by (rombel|tanggal) so we never split a group across batches
+    // (the server deletes existing details when re-importing the same group).
+    const groups = new Map<string, any[]>();
+    for (const r of rows) {
+      const k = `${r.rombel_name}|${r.tanggal}`;
+      const arr = groups.get(k) ?? [];
+      arr.push(r);
+      groups.set(k, arr);
+    }
+    const batches: any[][] = [];
+    let cur: any[] = [];
+    for (const g of groups.values()) {
+      if (cur.length + g.length > CHUNK_SIZE && cur.length > 0) {
+        batches.push(cur);
+        cur = [];
+      }
+      // If a single group is larger than CHUNK_SIZE, still send it whole
+      // (bounded by server max of 10000 rows).
+      cur.push(...g);
+    }
+    if (cur.length) batches.push(cur);
+    return batches;
+  };
+
   const importMut = useMutation({
-    mutationFn: () => importFn({ data: { rows: parsedRows! } }),
+    mutationFn: async () => {
+      const batches = buildBatches(parsedRows!);
+      setImportProgress({ done: 0, total: batches.length });
+      const agg = {
+        ok: true,
+        recordsCreated: 0,
+        recordsUpdated: 0,
+        detailsInserted: 0,
+        totalGroups: 0,
+        totalRows: 0,
+        errors: [] as Array<{ row: number; reason: string }>,
+      };
+      for (let i = 0; i < batches.length; i++) {
+        const res: any = await importFn({ data: { rows: batches[i] } });
+        agg.recordsCreated += res.recordsCreated ?? 0;
+        agg.recordsUpdated += res.recordsUpdated ?? 0;
+        agg.detailsInserted += res.detailsInserted ?? 0;
+        agg.totalGroups += res.totalGroups ?? 0;
+        agg.totalRows += res.totalRows ?? 0;
+        if (Array.isArray(res.errors)) agg.errors.push(...res.errors);
+        setImportProgress({ done: i + 1, total: batches.length });
+      }
+      return agg;
+    },
     onSuccess: (res: any) => {
       setImportResult(res);
+      setImportProgress(null);
       toast.success(`Berhasil: ${res.recordsCreated} record baru, ${res.recordsUpdated} diperbarui, ${res.detailsInserted} detail.`);
       qc.invalidateQueries({ queryKey: ["presensi-dashboard"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => { setImportProgress(null); toast.error(e.message); },
   });
 
   return (
