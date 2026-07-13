@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import logoJabarAsset from "@/assets/logo-jabar.png.asset.json";
 
 const BULAN_ID = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -51,8 +52,28 @@ export type SuratTugasPdfData = {
 };
 
 const URUTAN_LABEL = ["Pertama", "Kedua", "Ketiga", "Keempat", "Kelima"];
+const FONT = "helvetica"; // jsPDF built-in yang serupa Arial
 
-export function generateSuratTugasPdf(row: SuratTugasPdfData): jsPDF {
+let logoCache: string | null = null;
+async function loadLogoDataUrl(): Promise<string | null> {
+  if (logoCache) return logoCache;
+  try {
+    const res = await fetch(logoJabarAsset.url);
+    const blob = await res.blob();
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result as string);
+      fr.onerror = () => reject(fr.error);
+      fr.readAsDataURL(blob);
+    });
+    logoCache = dataUrl;
+    return dataUrl;
+  } catch {
+    return null;
+  }
+}
+
+export async function generateSuratTugasPdf(row: SuratTugasPdfData): Promise<jsPDF> {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const marginL = 20;
@@ -60,26 +81,34 @@ export function generateSuratTugasPdf(row: SuratTugasPdfData): jsPDF {
   const contentW = pageW - marginL - marginR;
   let y = 15;
 
-  // ===== KOP =====
-  doc.setFont("times", "normal");
+  // ===== LOGO =====
+  const logo = await loadLogoDataUrl();
+  if (logo) {
+    // Logo di kiri kop, ukuran ~25mm
+    doc.addImage(logo, "PNG", marginL + 2, y - 2, 25, 28);
+  }
+
+  // ===== KOP (text di kanan logo, tetap terpusat pada area teks) =====
+  const kopCenterX = pageW / 2 + 8;
+  doc.setFont(FONT, "normal");
   doc.setFontSize(12);
-  doc.text("PEMERINTAH DAERAH PROVINSI JAWA BARAT", pageW / 2 + 8, y, { align: "center" });
+  doc.text("PEMERINTAH DAERAH PROVINSI JAWA BARAT", kopCenterX, y, { align: "center" });
   y += 5;
-  doc.text("DINAS PENDIDIKAN", pageW / 2 + 8, y, { align: "center" });
+  doc.text("DINAS PENDIDIKAN", kopCenterX, y, { align: "center" });
   y += 5;
-  doc.text("CABANG DINAS PENDIDIKAN WILAYAH IV", pageW / 2 + 8, y, { align: "center" });
+  doc.text("CABANG DINAS PENDIDIKAN WILAYAH IV", kopCenterX, y, { align: "center" });
   y += 6;
-  doc.setFont("times", "bold");
+  doc.setFont(FONT, "bold");
   doc.setFontSize(16);
-  doc.text("SMK NEGERI 1 PUSAKANAGARA", pageW / 2 + 8, y, { align: "center" });
+  doc.text("SMK NEGERI 1 PUSAKANAGARA", kopCenterX, y, { align: "center" });
   y += 5;
-  doc.setFont("times", "normal");
+  doc.setFont(FONT, "normal");
   doc.setFontSize(10);
-  doc.text("Jalan Raya Pusakanagara No.154 Telp. (0260) 7544240", pageW / 2 + 8, y, { align: "center" });
+  doc.text("Jalan Raya Pusakanagara No.154 Telp. (0260) 7544240", kopCenterX, y, { align: "center" });
   y += 4;
-  doc.text("Website : smknpusakanagara.sch.id | Email : smknpusakanagara@gmail.com", pageW / 2 + 8, y, { align: "center" });
+  doc.text("Website : smknpusakanagara.sch.id | Email : smknpusakanagara@gmail.com", kopCenterX, y, { align: "center" });
   y += 4;
-  doc.text("SUBANG - 41255", pageW / 2 + 8, y, { align: "center" });
+  doc.text("SUBANG - 41255", kopCenterX, y, { align: "center" });
   y += 3;
 
   // Garis pemisah kop (double line)
@@ -91,7 +120,7 @@ export function generateSuratTugasPdf(row: SuratTugasPdfData): jsPDF {
   y += 8;
 
   // ===== JUDUL =====
-  doc.setFont("times", "bold");
+  doc.setFont(FONT, "bold");
   doc.setFontSize(13);
   const judul = "SURAT PERINTAH TUGAS";
   doc.text(judul, pageW / 2, y, { align: "center" });
@@ -99,7 +128,7 @@ export function generateSuratTugasPdf(row: SuratTugasPdfData): jsPDF {
   doc.setLineWidth(0.4);
   doc.line((pageW - jw) / 2, y + 0.8, (pageW + jw) / 2, y + 0.8);
   y += 5;
-  doc.setFont("times", "normal");
+  doc.setFont(FONT, "normal");
   doc.setFontSize(11);
   doc.text(`Nomor: ${row.nomor_surat ?? ""}`, pageW / 2, y, { align: "center" });
   y += 8;
@@ -137,9 +166,9 @@ export function generateSuratTugasPdf(row: SuratTugasPdfData): jsPDF {
   const peserta = (row.peserta ?? []).slice().sort((a, b) => (a.urutan ?? 0) - (b.urutan ?? 0));
   peserta.forEach((p, i) => {
     const label = URUTAN_LABEL[i] ?? `Ke-${i + 1}`;
-    doc.setFont("times", "bold");
+    doc.setFont(FONT, "bold");
     doc.text(`${i + 1}. ${label}`, marginL, y);
-    doc.setFont("times", "normal");
+    doc.setFont(FONT, "normal");
     y += lineH;
     drawLabelValue("Nama", p.nama_peserta ?? "", 28, 4);
     drawLabelValue("NIP", p.nip ?? "", 28, 4);
@@ -156,19 +185,16 @@ export function generateSuratTugasPdf(row: SuratTugasPdfData): jsPDF {
   doc.text("Melaksanakan / Mengikuti / Menghadiri Kegiatan :", marginL + 23, y);
   y += lineH;
   const keperluanLines = doc.splitTextToSize(row.keperluan ?? "", contentW - 27);
-  doc.setFont("times", "bold");
+  doc.setFont(FONT, "bold");
   doc.text(keperluanLines, marginL + 23, y);
-  doc.setFont("times", "normal");
+  doc.setFont(FONT, "normal");
   y += lineH * keperluanLines.length + 3;
 
   // ===== Waktu =====
   doc.text("Yang akan dilaksanakan pada :", marginL + 6, y);
   y += lineH;
-  const oldMargin = marginL;
-  const savedY = y;
-  y = savedY;
   const drawIndent = (label: string, value: string) => {
-    const x = oldMargin + 10;
+    const x = marginL + 10;
     doc.text(label, x, y);
     doc.text(":", x + 28, y);
     const lines = doc.splitTextToSize(value ?? "", contentW - 42);
@@ -193,10 +219,10 @@ export function generateSuratTugasPdf(row: SuratTugasPdfData): jsPDF {
   y += lineH;
   doc.text("KEPALA SEKOLAH,", ttdX, y);
   y += lineH * 5;
-  doc.setFont("times", "bold");
+  doc.setFont(FONT, "bold");
   doc.text("ABDUL ROSID, S.T.", ttdX, y);
   y += lineH;
-  doc.setFont("times", "normal");
+  doc.setFont(FONT, "normal");
   doc.text("PENATA, III/c", ttdX, y);
   y += lineH;
   doc.text("NIP. 19811122 200902 1 003", ttdX, y);
@@ -214,7 +240,7 @@ export function suratTugasPdfFilename(row: SuratTugasPdfData, prefix = "Surat-Tu
   return `${parts.join("_")}.pdf`;
 }
 
-export function downloadSuratTugasPdf(row: SuratTugasPdfData) {
-  const doc = generateSuratTugasPdf(row);
+export async function downloadSuratTugasPdf(row: SuratTugasPdfData) {
+  const doc = await generateSuratTugasPdf(row);
   doc.save(suratTugasPdfFilename(row));
 }
