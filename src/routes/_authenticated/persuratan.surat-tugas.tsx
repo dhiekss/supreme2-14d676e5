@@ -384,8 +384,8 @@ function SuratTugasFormDialog({
   const [tujuan, setTujuan] = useState<Array<{ nama: string; kabupaten: string; alamat: string }>>([
     { nama: "", kabupaten: "", alamat: "" },
   ]);
-  const [peserta, setPeserta] = useState<Array<{ guru_id?: string; nama_peserta: string; nip: string; jabatan: string; pangkat_golongan: string }>>([
-    { nama_peserta: "", nip: "", jabatan: "", pangkat_golongan: "" },
+  const [peserta, setPeserta] = useState<Array<{ guru_id?: string; nama_peserta: string; nip: string; jabatan: string; pangkat_golongan: string; mode?: "database" | "manual" }>>([
+    { nama_peserta: "", nip: "", jabatan: "", pangkat_golongan: "", mode: "database" },
   ]);
 
   useEffect(() => {
