@@ -71,7 +71,7 @@ function titleHtml(tahunAjaran: string | null, rombelName: string): string {
     <div>SMKN 1 PUSAKANAGARA</div>
     <div>TAHUN PELAJARAN ${escapeHtml(tahunAjaran || "-")}</div>
   </div>
-  <div style="margin:6px 0 4px 6px; font-size:11px;">Kelas : <b>${escapeHtml(rombelName)}</b></div>
+  <div style="margin:6px 0 10px 6px; font-size:11px;">Kelas : <b>${escapeHtml(rombelName)}</b></div>
   `;
 }
 
