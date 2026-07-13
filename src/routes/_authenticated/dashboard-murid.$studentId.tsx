@@ -169,7 +169,7 @@ function Page() {
               <div className="text-sm text-muted-foreground text-center py-6">Belum ada data mata pelajaran.</div>
             ) : (
               <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
-                {mapel.map((m, i) => (
+                {mapel.map((m: any, i: number) => (
                   <div key={i} className="flex items-start justify-between gap-3 p-3 rounded-lg border">
                     <div className="flex items-start gap-3 min-w-0">
                       <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
