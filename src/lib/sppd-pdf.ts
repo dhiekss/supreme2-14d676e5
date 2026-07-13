@@ -291,7 +291,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
   `;
 }
 
-const tdBase = "border:1px solid #000; padding:2px 5px; vertical-align:top;";
+const tdBase = "border:1px solid #000; padding:5px 8px; vertical-align:middle; line-height:1.3;";
 
 export function sppdPdfFilename(row: SppdPdfData, prefix = "SPPD"): string {
   const nomor = (row.nomor_surat ?? "").replace(/[\\/:*?"<>|\s]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
