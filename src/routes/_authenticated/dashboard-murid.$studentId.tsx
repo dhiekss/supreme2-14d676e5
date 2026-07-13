@@ -36,7 +36,7 @@ function Page() {
   if (error) return <div className="text-sm text-destructive">{(error as Error).message}</div>;
   if (!data) return null;
 
-  const { student, rombel, presensi, mapel, sp, teman, periode, semesterOptions } = data;
+  const { student, rombel, presensi, mapel, sp, teman, periode, semesterOptions, riwayatKelas } = data as any;
   const progressSp1 = Math.min(100, Math.round(((sp.alfaTotal / 3 + sp.terlambatTotal / 5) / 2) * 100));
   const layakSp1 = sp.alfaTotal > 3 || sp.terlambatTotal > 5;
   const spLabel = sp.currentLevel === 0 ? "Tidak Ada SP" : `SP${sp.currentLevel}`;
@@ -169,7 +169,7 @@ function Page() {
               <div className="text-sm text-muted-foreground text-center py-6">Belum ada data mata pelajaran.</div>
             ) : (
               <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
-                {mapel.map((m, i) => (
+                {mapel.map((m: any, i: number) => (
                   <div key={i} className="flex items-start justify-between gap-3 p-3 rounded-lg border">
                     <div className="flex items-start gap-3 min-w-0">
                       <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -207,7 +207,7 @@ function Page() {
               </div>
             ) : (
               <div className="space-y-1 max-h-96 overflow-y-auto pr-2">
-                {presensi.riwayat.map((r, i) => (
+                {presensi.riwayat.map((r: any, i: number) => (
                   <div key={i} className="flex items-center justify-between px-3 py-2 rounded border text-sm">
                     <span>{new Date(r.date).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" })}</span>
                     <StatusBadge status={r.status} />
@@ -284,7 +284,7 @@ function Page() {
             <div className="text-sm text-muted-foreground text-center py-6">Tidak ada teman sekelas.</div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 max-h-80 overflow-y-auto pr-2">
-              {teman.map((t) => (
+              {teman.map((t: any) => (
                 <div key={t.id} className="flex items-center gap-2 p-2 rounded border">
                   <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0">
                     <User className="h-4 w-4 text-muted-foreground" />
@@ -295,6 +295,54 @@ function Page() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Riwayat Kelas */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <GraduationCap className="h-5 w-5" /> Riwayat Kelas
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">Perpindahan rombel dan kenaikan kelas murid.</p>
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          {(!riwayatKelas || riwayatKelas.length === 0) ? (
+            <div className="text-sm text-muted-foreground text-center py-6">Belum ada riwayat kelas.</div>
+          ) : (
+            <div className="relative pl-4 space-y-3 max-h-96 overflow-y-auto pr-2">
+              {riwayatKelas.map((r: any) => {
+                const toneMap: Record<string, string> = {
+                  naik: "bg-emerald-100 text-emerald-700 border-emerald-200",
+                  tinggal: "bg-amber-100 text-amber-700 border-amber-200",
+                  lulus: "bg-blue-100 text-blue-700 border-blue-200",
+                  keluar: "bg-red-100 text-red-700 border-red-200",
+                  pindah: "bg-violet-100 text-violet-700 border-violet-200",
+                };
+                const tone = toneMap[r.status] ?? "bg-muted";
+                return (
+                  <div key={r.id} className="border rounded-lg p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-xs px-2 py-0.5 rounded border ${tone}`}>{r.jenis}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {r.tanggal ? new Date(r.tanggal).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "—"}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-sm truncate">
+                        <span className="font-medium">{r.rombel_asal}</span>
+                        <span className="mx-2 text-muted-foreground">→</span>
+                        <span className="font-medium">{r.rombel_tujuan}</span>
+                      </div>
+                      {r.catatan && (
+                        <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{r.catatan}</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>

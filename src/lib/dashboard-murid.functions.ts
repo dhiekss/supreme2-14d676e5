@@ -227,6 +227,40 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
       teman = (mates ?? []).map((s: any) => ({ id: s.id, name: s.name ?? "—", nis: s.nis ?? "—" }));
     }
 
+    // Riwayat kelas: gabungan kenaikan/tinggal/lulus/keluar + perpindahan rombel
+    const [promoRes, trfRes] = await Promise.all([
+      supabase
+        .from("student_promotions")
+        .select("id, status, tanggal_proses, created_at, rombel_asal_name, rombel_tujuan_name, catatan")
+        .eq("student_id", data.studentId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("student_rombel_transfers")
+        .select("id, tanggal_pindah, created_at, rombel_asal_name, rombel_tujuan_name, alasan")
+        .eq("student_id", data.studentId)
+        .order("created_at", { ascending: false }),
+    ]);
+    const riwayatKelas = [
+      ...((promoRes.data ?? []) as any[]).map((r) => ({
+        id: `p-${r.id}`,
+        jenis: (r.status === "naik" ? "Kenaikan" : r.status === "tinggal" ? "Tinggal Kelas" : r.status === "lulus" ? "Lulus" : "Keluar") as string,
+        status: r.status as string,
+        tanggal: (r.tanggal_proses ?? r.created_at) as string,
+        rombel_asal: r.rombel_asal_name ?? "—",
+        rombel_tujuan: r.rombel_tujuan_name ?? "—",
+        catatan: r.catatan ?? null,
+      })),
+      ...((trfRes.data ?? []) as any[]).map((r) => ({
+        id: `t-${r.id}`,
+        jenis: "Pindah Rombel",
+        status: "pindah",
+        tanggal: (r.tanggal_pindah ?? r.created_at) as string,
+        rombel_asal: r.rombel_asal_name ?? "—",
+        rombel_tujuan: r.rombel_tujuan_name ?? "—",
+        catatan: r.alasan ?? null,
+      })),
+    ].sort((a, b) => (a.tanggal < b.tanggal ? 1 : -1));
+
     return {
       isStaff: staff,
       student: {
@@ -258,5 +292,6 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
         list: spList.slice(0, 10),
       },
       teman,
+      riwayatKelas,
     };
   });
