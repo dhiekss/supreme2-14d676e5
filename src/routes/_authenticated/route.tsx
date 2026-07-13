@@ -25,6 +25,7 @@ function AuthedLayout() {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
+        <ActivityTracker />
         <AppSidebar />
         <div className="flex-1 flex flex-col">
           <header className="h-14 flex items-center border-b bg-card px-4 gap-3">
