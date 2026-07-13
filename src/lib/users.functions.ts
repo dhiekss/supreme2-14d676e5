@@ -150,6 +150,11 @@ export const updateUser = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
+    await assertCanTouchTarget(context.supabase, context.userId, data.id);
+    const callerSuper = await isSuperadmin(context.supabase, context.userId);
+    if (data.roles.includes("superadmin") && !callerSuper) {
+      throw new Error("Forbidden: hanya superadmin yang dapat memberi role superadmin");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error: perr } = await supabaseAdmin.from("profiles").update({
       full_name: data.full_name,
