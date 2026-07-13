@@ -79,22 +79,50 @@ export async function addHtmlPageToPdf(
   const wPx = isPortrait ? 794 : 1123;
   const hPx = isPortrait ? 1123 : 794;
 
-  const host = document.createElement("div");
-  host.style.position = "fixed";
-  host.style.left = "-10000px";
-  host.style.top = "0";
-  host.style.width = `${wPx}px`;
-  host.style.height = `${hPx}px`;
-  host.style.background = "#ffffff";
-  host.style.zIndex = "-1";
-  host.innerHTML = html;
-  document.body.appendChild(host);
+  // Render inside an isolated iframe so the app's Tailwind v4 CSS
+  // (which uses oklch()/lab() color functions unsupported by html2canvas)
+  // doesn't leak into the capture target.
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "fixed";
+  iframe.style.left = "-10000px";
+  iframe.style.top = "0";
+  iframe.style.width = `${wPx}px`;
+  iframe.style.height = `${hPx}px`;
+  iframe.style.border = "0";
+  iframe.setAttribute("aria-hidden", "true");
+  document.body.appendChild(iframe);
+
   try {
-    const canvas = await html2canvas(host, {
+    const doc = iframe.contentDocument!;
+    doc.open();
+    doc.write(`<!doctype html><html><head><meta charset="utf-8"><style>
+      html,body{margin:0;padding:0;background:#ffffff;color:#000000;
+        font-family: Arial, Helvetica, sans-serif;}
+      *{box-sizing:border-box;}
+    </style></head><body>${html}</body></html>`);
+    doc.close();
+
+    // Wait for images (logo) to load
+    const imgs = Array.from(doc.images);
+    await Promise.all(
+      imgs.map((img) =>
+        img.complete
+          ? Promise.resolve()
+          : new Promise<void>((res) => {
+              img.onload = () => res();
+              img.onerror = () => res();
+            }),
+      ),
+    );
+
+    const target = doc.body;
+    const canvas = await html2canvas(target, {
       scale: 2,
       backgroundColor: "#ffffff",
       useCORS: true,
       logging: false,
+      width: wPx,
+      height: hPx,
       windowWidth: wPx,
       windowHeight: hPx,
     });
@@ -104,6 +132,6 @@ export async function addHtmlPageToPdf(
     const pageH = pdf.internal.pageSize.getHeight();
     pdf.addImage(imgData, "JPEG", 0, 0, pageW, pageH, undefined, "FAST");
   } finally {
-    host.remove();
+    iframe.remove();
   }
 }
