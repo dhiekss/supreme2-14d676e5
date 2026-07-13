@@ -3,9 +3,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { LayoutNode } from "@/lib/sidebar-menu";
 
 export const ROLES = [
+  "superadmin",
   "admin",
   "wakasek",
   "kakonli",
+  "walas",
   "guru",
   "murid",
   "admin_sarpras",
