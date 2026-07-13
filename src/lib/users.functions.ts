@@ -194,11 +194,18 @@ export const bulkSetAllActive = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ is_active: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
+    const callerSuper = await isSuperadmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Non-superadmin caller: exclude superadmin accounts from bulk toggle
+    let excludeIds: string[] = [context.userId];
+    if (!callerSuper) {
+      const { data: sup } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "superadmin");
+      excludeIds = Array.from(new Set([...excludeIds, ...((sup ?? []).map((r: any) => r.user_id))]));
+    }
     const { error, count } = await supabaseAdmin
       .from("profiles")
       .update({ is_active: data.is_active, updated_at: new Date().toISOString() }, { count: "exact" })
-      .neq("id", context.userId);
+      .not("id", "in", `(${excludeIds.map((id) => `"${id}"`).join(",")})`);
     if (error) throw new Error(error.message);
     return { ok: true, affected: count ?? 0 };
   });
