@@ -166,7 +166,7 @@ export const undoPromotionBatch = createServerFn({ method: "POST" })
   .inputValidator((d: { batch_id: string }) => d)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+    const { data: isAdmin } = await supabase.rpc("is_admin", { _user_id: userId });
     if (!isAdmin) throw new Error("Hanya admin yang dapat membatalkan batch.");
 
     const { data: rows, error } = await supabase
