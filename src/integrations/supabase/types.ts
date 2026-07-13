@@ -2510,6 +2510,8 @@ export type Database = {
         | "admin_sarpras"
         | "admin_persuratan"
         | "admin_tpg"
+        | "superadmin"
+        | "walas"
       promotion_status: "naik" | "tinggal" | "lulus" | "keluar"
     }
     CompositeTypes: {
@@ -2647,6 +2649,8 @@ export const Constants = {
         "admin_sarpras",
         "admin_persuratan",
         "admin_tpg",
+        "superadmin",
+        "walas",
       ],
       promotion_status: ["naik", "tinggal", "lulus", "keluar"],
     },
