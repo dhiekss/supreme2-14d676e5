@@ -214,12 +214,19 @@ export const forceLogoutAll = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
+    const callerSuper = await isSuperadmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let superIds = new Set<string>();
+    if (!callerSuper) {
+      const { data: sup } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "superadmin");
+      superIds = new Set((sup ?? []).map((r: any) => r.user_id));
+    }
     const { data: profiles } = await supabaseAdmin.from("profiles").select("id");
     let count = 0;
     for (const p of profiles ?? []) {
       const uid = (p as any).id;
       if (uid === context.userId) continue;
+      if (superIds.has(uid)) continue;
       try {
         // @ts-ignore - signOut by user id may exist in newer SDK
         await supabaseAdmin.auth.admin.signOut(uid, "global");
@@ -242,6 +249,7 @@ export const resetPassword = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid(), password: z.string().min(6) }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
+    await assertCanTouchTarget(context.supabase, context.userId, data.id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.id, { password: data.password });
     if (error) throw new Error(error.message);
