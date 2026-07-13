@@ -228,9 +228,14 @@ export async function renderLaporanSppd(doc: jsPDF, row: LaporanSppdPdfData): Pr
   y += lineH;
   doc.setFont(FONT, "normal");
   doc.text(`NIP. ${pelapor?.nip ?? ""}`, ttdX, y);
+}
 
+export async function generateLaporanSppdPdf(row: LaporanSppdPdfData): Promise<jsPDF> {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  await renderLaporanSppd(doc, row);
   return doc;
 }
+
 
 export function laporanSppdPdfFilename(row: LaporanSppdPdfData, prefix = "Laporan-SPPD"): string {
   const nomor = (row.nomor_surat ?? "")
