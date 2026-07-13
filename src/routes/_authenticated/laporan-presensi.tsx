@@ -670,6 +670,7 @@ function DetailPresensiCard() {
   const [date, setDate] = useState<string>("");
   const [rombelId, setRombelId] = useState<string>("__all");
   const [officer, setOfficer] = useState<string>("__all");
+  const [search, setSearch] = useState<string>("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [viewId, setViewId] = useState<string | null>(null);
