@@ -97,9 +97,10 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
             <tr><td style="padding:0; text-align:left; vertical-align:middle;">Nomor</td><td style="padding:0; text-align:left; vertical-align:middle;">:</td><td style="padding:0; text-align:left; vertical-align:middle;">${escapeHtml(row.nomor_surat)}</td></tr>
           </table>
 
-          <div style="text-align:center; margin:6px 0 4px 0;">
+          <div style="text-align:center; margin:10px 0 8px 0;">
             <span style="font-weight:bold; text-decoration:underline; font-size:12px;">SURAT PERINTAH PERJALANAN DINAS (SPPD)</span>
           </div>
+
 
           <!-- MAIN TABLE -->
           <table style="width:100%; border-collapse:separate; border-spacing:0; border-left:1px solid #000; border-top:1px solid #000; font-size:9px; line-height:1.22; table-layout:fixed;">
@@ -208,7 +209,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
             <div>Dikeluarkan di&nbsp;&nbsp;: ${KOTA}</div>
             <div>Tanggal&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${fmtTanggalId(row.tanggal_mulai)}</div>
             <div>Kuasa Pengguna Anggaran</div>
-            <div style="height:26px;"></div>
+            <div style="height:60px;"></div>
             <div style="font-weight:bold; text-decoration:underline;">${KPA_NAMA}</div>
             <div>${KPA_PANGKAT}</div>
             <div>NIP. ${KPA_NIP}</div>
