@@ -261,7 +261,7 @@ function LaporanPresensi() {
           <Button variant="outline" onClick={downloadTemplate} className="gap-2">
             <FileSpreadsheet className="h-4 w-4" /> Unduh Template
           </Button>
-          <Dialog open={importOpen} onOpenChange={(o) => { setImportOpen(o); if (!o) { setParsedRows(null); setParseError(null); setImportResult(null); } }}>
+          <Dialog open={importOpen} onOpenChange={(o) => { setImportOpen(o); if (!o) { setParsedRows(null); setParseError(null); setImportResult(null); setImportProgress(null); } }}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2"><Upload className="h-4 w-4" /> Import Record</Button>
             </DialogTrigger>
