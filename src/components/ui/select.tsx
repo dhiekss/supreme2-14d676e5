@@ -207,11 +207,14 @@ export function SelectContent({
   emptyText = "Tidak ada hasil",
   hideSearch = false,
 }: SelectContentProps) {
-  const ctx = useSel();
+  const { register, unregister } = useSel();
 
   // Pre-register labels for all SelectItem descendants so the trigger can
   // display the selected option's label even before the popover has ever
   // been opened (Radix Popover only mounts its content when open).
+  // NOTE: depend ONLY on `children` — register/unregister are stable
+  // useCallbacks; depending on the whole ctx object would loop because ctx
+  // is a new reference whenever labels change.
   React.useEffect(() => {
     const collected: Array<{ value: string; label: React.ReactNode }> = [];
     const walk = (node: React.ReactNode): void => {
@@ -223,20 +226,21 @@ export function SelectContent({
       if (!React.isValidElement(node)) return;
       const el = node as React.ReactElement<any>;
       if (el.type === SelectItem) {
-        const { value, children, textValue } = el.props as SelectItemProps;
+        const { value, children: itemChildren, textValue } = el.props as SelectItemProps;
         if (typeof value === "string") {
-          collected.push({ value, label: textValue ?? children });
+          collected.push({ value, label: textValue ?? itemChildren });
         }
         return;
       }
-      walk(el.props?.children);
+      walk((el.props as { children?: React.ReactNode })?.children);
     };
     walk(children);
-    collected.forEach((c) => ctx.register(c.value, c.label));
+    collected.forEach((c) => register(c.value, c.label));
     return () => {
-      collected.forEach((c) => ctx.unregister(c.value));
+      collected.forEach((c) => unregister(c.value));
     };
-  }, [children, ctx]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [children]);
 
   return (
     <PopoverContent
