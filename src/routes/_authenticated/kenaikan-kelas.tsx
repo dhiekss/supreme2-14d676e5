@@ -357,6 +357,7 @@ function RiwayatTab({ batchesFn, undoFn, undoStudentFn, qc }: any) {
                           <TableHeader><TableRow>
                             <TableHead>Nama</TableHead><TableHead>NIS</TableHead>
                             <TableHead>Status</TableHead><TableHead>Rombel Tujuan</TableHead>
+                            <TableHead className="text-right">Aksi</TableHead>
                           </TableRow></TableHeader>
                           <TableBody>
                             {b.items.map((it: any) => (
@@ -365,6 +366,27 @@ function RiwayatTab({ batchesFn, undoFn, undoStudentFn, qc }: any) {
                                 <TableCell>{it.student_nis ?? "—"}</TableCell>
                                 <TableCell><Badge variant="outline">{it.status}</Badge></TableCell>
                                 <TableCell>{it.rombel_tujuan_name ?? "—"}</TableCell>
+                                <TableCell className="text-right">
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button size="sm" variant="ghost" disabled={undoStudent.isPending}>
+                                        <Undo2 className="h-4 w-4 mr-1" /> Kembalikan
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Kembalikan siswa ini?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          {it.student_name} akan dikembalikan ke rombel asal ({it.rombel_asal_name ?? "—"}) dan baris riwayat ini dihapus. Hanya admin yang dapat melakukan ini.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => undoStudent.mutate(it.id)}>Ya, Kembalikan</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
