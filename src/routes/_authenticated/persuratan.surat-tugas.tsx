@@ -254,13 +254,39 @@ function Page() {
                         <Button variant="ghost" size="icon" onClick={() => openEdit(r)} title="Edit">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        {r.file_surat_tugas_url && (
-                          <Button variant="ghost" size="icon" asChild title="Unduh">
-                            <a href={r.file_surat_tugas_url} target="_blank" rel="noreferrer">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" title="Download PDF">
                               <Download className="h-4 w-4" />
-                            </a>
-                          </Button>
-                        )}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuLabel>Download PDF</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => toast.info("Download semua dokumen — segera hadir")}>
+                              <Download className="h-4 w-4 mr-2" />
+                              Download Semua (3 Dokumen)
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => {
+                                if (r.file_surat_tugas_url) window.open(r.file_surat_tugas_url, "_blank");
+                                else toast.info("Surat Tugas — segera hadir");
+                              }}
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              Surat Tugas
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => toast.info("SPPD — segera hadir")}>
+                              <FileText className="h-4 w-4 mr-2" />
+                              SPPD
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => toast.info("Laporan SPPD — segera hadir")}>
+                              <FileText className="h-4 w-4 mr-2" />
+                              Laporan SPPD
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                         <Button variant="ghost" size="icon" title="SPPD">
                           <FileText className="h-4 w-4 text-blue-600" />
                         </Button>
