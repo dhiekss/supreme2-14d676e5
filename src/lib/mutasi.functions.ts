@@ -148,8 +148,12 @@ export const upsertResignation = createServerFn({ method: "POST" })
       const { error } = await supabase.from("student_resignations").insert(payload);
       if (error) throw new Error(error.message);
     }
+    if (data.student_id) {
+      await supabase.from("students").update({ rombel_id: null }).eq("id", data.student_id);
+    }
     return { ok: true };
   });
+
 
 export const deleteResignation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
