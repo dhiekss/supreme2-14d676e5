@@ -202,18 +202,18 @@ function footerHtml(r: DaftarHadirRombelData, month: number, year: number, overr
   <table style="width:100%; border-collapse:collapse; margin-top:10px; font-family:Arial,Helvetica,sans-serif; font-size:11px;">
     <tr>
       <td style="width:30%; vertical-align:top;">
-        <table style="border-collapse:collapse; font-size:10px; margin-bottom:6px;">
-          <tr><td colspan="2" style="border:1px solid #000; padding:2px 6px; text-align:center; font-weight:bold;">Keterangan</td></tr>
-          <tr><td style="border:1px solid #000; padding:1px 6px; width:22px; text-align:center;">H</td><td style="border:1px solid #000; padding:1px 8px;">Hadir</td></tr>
-          <tr><td style="border:1px solid #000; padding:1px 6px; text-align:center;">S</td><td style="border:1px solid #000; padding:1px 8px;">Sakit</td></tr>
-          <tr><td style="border:1px solid #000; padding:1px 6px; text-align:center;">I</td><td style="border:1px solid #000; padding:1px 8px;">Izin</td></tr>
-          <tr><td style="border:1px solid #000; padding:1px 6px; text-align:center;">A</td><td style="border:1px solid #000; padding:1px 8px;">Alpa</td></tr>
+        <div style="font-weight:bold; font-size:11px; text-align:center; width:140px; margin-bottom:3px;">Keterangan</div>
+        <table style="border-collapse:collapse; font-size:10px; margin-bottom:8px; width:140px;">
+          <tr><td style="border:1px solid #000; padding:2px 0; width:28px; text-align:center; font-weight:bold;">H</td><td style="border:1px solid #000; padding:2px 8px;">Hadir</td></tr>
+          <tr><td style="border:1px solid #000; padding:2px 0; text-align:center; font-weight:bold;">S</td><td style="border:1px solid #000; padding:2px 8px;">Sakit</td></tr>
+          <tr><td style="border:1px solid #000; padding:2px 0; text-align:center; font-weight:bold;">I</td><td style="border:1px solid #000; padding:2px 8px;">Izin</td></tr>
+          <tr><td style="border:1px solid #000; padding:2px 0; text-align:center; font-weight:bold;">A</td><td style="border:1px solid #000; padding:2px 8px;">Alpa</td></tr>
         </table>
-        <div style="color:#1e3a8a; font-weight:bold; font-size:11px;">
-          <div>Laki-Laki&nbsp;&nbsp;&nbsp;&nbsp;: ${laki} Orang</div>
-          <div>Perempuan&nbsp;&nbsp;: ${perempuan} Orang</div>
-          <div>Jumlah&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${jumlah} Orang</div>
-        </div>
+        <table style="color:#c81e1e; font-weight:bold; font-size:11px; border-collapse:collapse;">
+          <tr><td style="padding:1px 0; width:80px;">Laki-Laki</td><td style="padding:1px 6px;">:</td><td style="padding:1px 0;">${laki} Orang</td></tr>
+          <tr><td style="padding:1px 0;">Perempuan</td><td style="padding:1px 6px;">:</td><td style="padding:1px 0;">${perempuan} Orang</td></tr>
+          <tr><td style="padding:1px 0;">Jumlah</td><td style="padding:1px 6px;">:</td><td style="padding:1px 0;">${jumlah} Orang</td></tr>
+        </table>
       </td>
       <td style="width:35%; vertical-align:top; text-align:center;">
         <div>Mengetahui,</div>
