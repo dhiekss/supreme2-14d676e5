@@ -168,7 +168,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
               <td style="${tdBase}; padding:0;">
                 <table style="width:100%; border-collapse:collapse;">
                   <tr>
-                    <td style="width:60%; border-right:1px solid #000; padding:3px 4px;">NIP/Tanggal Lahir</td>
+                    <td style="width:55%; border-right:1px solid #000; padding:2px 5px;">NIP/Tanggal Lahir</td>
                     <td style="padding:3px 4px;">Keterangan</td>
                   </tr>
                 </table>
