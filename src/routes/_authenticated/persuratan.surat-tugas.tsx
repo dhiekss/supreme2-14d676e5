@@ -31,6 +31,7 @@ import {
 import { listNomor } from "@/lib/persuratan.functions";
 import { nextNomorUrut } from "@/lib/surat-keluar.functions";
 import { downloadSuratTugasPdf } from "@/lib/surat-tugas-pdf";
+import { downloadLaporanSppdPdf } from "@/lib/laporan-sppd-pdf";
 
 export const Route = createFileRoute("/_authenticated/persuratan/surat-tugas")({
   head: () => ({ meta: [{ title: "Surat Tugas & SPPD — SUPREME XPOES" }] }),
@@ -265,9 +266,10 @@ function Page() {
                             <DropdownMenuLabel>Download PDF</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              onClick={() => {
-                                downloadSuratTugasPdf(r);
-                                toast.info("SPPD & Laporan SPPD — segera hadir");
+                              onClick={async () => {
+                                await downloadSuratTugasPdf(r);
+                                await downloadLaporanSppdPdf(r);
+                                toast.info("SPPD — segera hadir");
                               }}
                             >
                               <Download className="h-4 w-4 mr-2" />
@@ -282,7 +284,7 @@ function Page() {
                               <FileText className="h-4 w-4 mr-2" />
                               SPPD
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toast.info("Laporan SPPD — segera hadir")}>
+                            <DropdownMenuItem onClick={() => downloadLaporanSppdPdf(r)}>
                               <FileText className="h-4 w-4 mr-2" />
                               Laporan SPPD
                             </DropdownMenuItem>
