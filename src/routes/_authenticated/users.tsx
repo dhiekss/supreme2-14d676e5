@@ -657,7 +657,6 @@ function ActivityLogCard() {
 
 // ====================== Dialogs ======================
 function UserFormDialog({ edit, onSubmit, loading }: { edit: any; onSubmit: (v: any) => void; loading: boolean }) {
-  console.log("[UserFormDialog] mount, edit=", edit);
   const [form, setForm] = useState<any>(() => ({
     email: edit?.email ?? "",
     password: "",
