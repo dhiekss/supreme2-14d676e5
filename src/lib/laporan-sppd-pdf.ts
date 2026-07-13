@@ -33,26 +33,27 @@ export type LaporanSppdPdfData = {
 
 function kop(logo: string): string {
   return `
-  <table style="width:100%; border-collapse:collapse; margin-bottom:6px;">
+  <table style="width:100%; border-collapse:collapse; margin-bottom:6px; font-family:'Times New Roman', Times, serif;">
     <tr>
       <td style="width:110px; vertical-align:middle; text-align:center;">
         <img src="${logo}" style="width:95px; height:auto;" />
       </td>
       <td style="text-align:center; vertical-align:middle; line-height:1.35;">
-        <div style="font-size:13px;">PEMERINTAH DAERAH PROVINSI JAWA BARAT</div>
-        <div style="font-size:13px;">DINAS PENDIDIKAN</div>
-        <div style="font-size:13px;">CABANG DINAS PENDIDIKAN WILAYAH IV</div>
-        <div style="font-size:18px; font-weight:bold; margin-top:2px;">SMK NEGERI 1 PUSAKANAGARA</div>
-        <div style="font-size:10.5px;">Jalan Raya Pusakanagara No.154 Telp. (0260) 7544240</div>
-        <div style="font-size:10.5px;">Website : smknpusakanagara.sch.id | Email : smknpusakanagara@gmail.com</div>
-        <div style="font-size:10.5px;">SUBANG - 41255</div>
+        <div style="font-size:12px;">PEMERINTAH DAERAH PROVINSI JAWA BARAT</div>
+        <div style="font-size:12px;">DINAS PENDIDIKAN</div>
+        <div style="font-size:12px;">CABANG DINAS PENDIDIKAN WILAYAH IV</div>
+        <div style="font-size:16px; font-weight:bold; margin-top:2px;">SMK NEGERI 1 PUSAKANAGARA</div>
+        <div style="font-size:10px;">Jalan Raya Pusakanagara No.154 Telp. (0260) 7544240</div>
+        <div style="font-size:10px;">Website : smknpusakanagara.sch.id | Email : smknpusakanagara@gmail.com</div>
+        <div style="font-size:10px;">SUBANG - 41255</div>
       </td>
-      <td style="width:30px;"></td>
+      <td style="width:50px;"></td>
     </tr>
   </table>
   <div style="border-top:3px solid #000; border-bottom:1px solid #000; height:4px; margin-bottom:14px;"></div>
   `;
 }
+
 
 export function buildLaporanSppdHtml(row: LaporanSppdPdfData, logo: string): string {
   const peserta = (row.peserta ?? []).slice().sort((a, b) => (a.urutan ?? 0) - (b.urutan ?? 0));
