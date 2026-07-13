@@ -995,7 +995,7 @@ function EditDetailDialog({ recordId, onClose }: { recordId: string | null; onCl
   const [officerName, setOfficerName] = useState("");
   const [statuses, setStatuses] = useState<Record<string, string>>({});
 
-  useMemo(() => {
+  useEffect(() => {
     if (!data) return;
     setOfficerName(data.record.officer_name ?? "");
     const m: Record<string, string> = {};
