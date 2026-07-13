@@ -163,8 +163,38 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
   });
 
   async function handleExportRombel() {
-    const rows: any[][] = [["name", "tingkat", "konsentrasi_keahlian", "wali_kelas_name", "wali_kelas_nip", "is_khusus"]];
-    data.forEach((r) => rows.push([r.name, r.tingkat, r.konsentrasi_keahlian, r.wali_kelas_name, r.wali_kelas_nip, r.is_khusus ? "true" : "false"]));
+    // Hitung jumlah murid per rombel (L, P, dan yang belum diisi gendernya)
+    const all = (await allStudentsFn({})) as any[];
+    const counts = new Map<string, { total: number; L: number; P: number; belum: number }>();
+    for (const s of all) {
+      const key = String(s.rombel_nama ?? "").trim();
+      if (!key) continue;
+      const c = counts.get(key) ?? { total: 0, L: 0, P: 0, belum: 0 };
+      c.total += 1;
+      if (s.gender === "L") c.L += 1;
+      else if (s.gender === "P") c.P += 1;
+      else c.belum += 1;
+      counts.set(key, c);
+    }
+    const rows: any[][] = [[
+      "Nama Rombel", "Konsentrasi Keahlian", "Jumlah Murid",
+      "Laki-laki", "Perempuan", "Belum Diisi", "Wali Kelas", "NIP Wali Kelas",
+    ]];
+    // Urutkan berdasarkan nama rombel supaya rapi
+    const sorted = [...data].sort((a, b) => String(a.name ?? "").localeCompare(String(b.name ?? "")));
+    sorted.forEach((r) => {
+      const c = counts.get(String(r.name ?? "").trim()) ?? { total: 0, L: 0, P: 0, belum: 0 };
+      rows.push([
+        r.name ?? "",
+        r.konsentrasi_keahlian ?? "",
+        c.total,
+        c.L > 0 ? c.L : "-",
+        c.P > 0 ? c.P : "-",
+        c.belum > 0 ? c.belum : "-",
+        r.wali_kelas_name ?? "",
+        r.wali_kelas_nip ?? "",
+      ]);
+    });
     downloadXLSX("rombel.xlsx", rows);
   }
 
