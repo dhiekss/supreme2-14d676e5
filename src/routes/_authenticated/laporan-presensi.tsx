@@ -25,6 +25,7 @@ import {
 import { listRombel, saveAttendance } from "@/lib/presensi.functions";
 import { importAttendance } from "@/lib/presensi-import.functions";
 import { todayStamp } from "@/lib/utils";
+import { DaftarHadirExportCards } from "@/components/daftar-hadir-export";
 import {
   Download, Users, GraduationCap, School, CalendarCheck, CheckCircle2,
   Thermometer, FileText, XCircle, Briefcase, ClipboardList, AlertTriangle,
@@ -490,6 +491,11 @@ function LaporanPresensi() {
 
       {/* Detail presensi */}
       <DetailPresensiCard />
+
+      {/* Ekspor PDF Daftar Hadir Murid */}
+      <DaftarHadirExportCards />
+
+
 
 
       {isFetching && <p className="text-xs text-muted-foreground text-center">Memuat data...</p>}
