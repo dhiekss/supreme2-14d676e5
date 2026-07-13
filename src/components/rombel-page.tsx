@@ -200,8 +200,14 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
 
   async function handleExportMurid() {
     const all = (await allStudentsFn({})) as any[];
+    // Urutkan berdasarkan Rombel, lalu Nama Murid
+    const sorted = [...all].sort((a, b) => {
+      const ra = String(a.rombel_nama ?? "").localeCompare(String(b.rombel_nama ?? ""));
+      if (ra !== 0) return ra;
+      return String(a.name ?? "").localeCompare(String(b.name ?? ""));
+    });
     const rows: any[][] = [["No", "Nama Murid", "JK", "NIS", "NISN", "Rombel", "Nama Wali Kelas"]];
-    all.forEach((s, i) => rows.push([
+    sorted.forEach((s, i) => rows.push([
       i + 1,
       s.name ?? "",
       s.gender === "L" ? "Laki-laki" : s.gender === "P" ? "Perempuan" : "",
