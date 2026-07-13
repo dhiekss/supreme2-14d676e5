@@ -14,13 +14,22 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { presensiDashboard, rombelBelumInputByDate } from "@/lib/presensi-report.functions";
+import {
+  presensiDashboard,
+  rombelBelumInputByDate,
+  attendanceDetailList,
+  attendanceDetailView,
+  deleteAttendanceRecord,
+  listOfficers,
+} from "@/lib/presensi-report.functions";
+import { listRombel, saveAttendance } from "@/lib/presensi.functions";
 import { importAttendance } from "@/lib/presensi-import.functions";
 import { todayStamp } from "@/lib/utils";
 import {
   Download, Users, GraduationCap, School, CalendarCheck, CheckCircle2,
   Thermometer, FileText, XCircle, Briefcase, ClipboardList, AlertTriangle,
   TrendingUp, PieChart as PieIcon, BarChart3, Upload, FileSpreadsheet, Loader2,
+  Eye, Pencil, Trash2, Filter, FileDown,
 } from "lucide-react";
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RTooltip, Legend,
