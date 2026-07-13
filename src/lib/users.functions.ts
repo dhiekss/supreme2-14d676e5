@@ -56,12 +56,17 @@ export const listUsers = createServerFn({ method: "GET" })
     const presenceByUser = new Map<string, any>();
     for (const p of presence ?? []) presenceByUser.set((p as any).user_id, p);
     const now = Date.now();
+    const callerIsSuper = await isSuperadmin(context.supabase, context.userId);
     let rows = (profiles ?? []).map((p: any) => {
       const pr = presenceByUser.get(p.id);
       const lastSeen = pr?.last_seen_at ? new Date(pr.last_seen_at).getTime() : 0;
       const online = !!pr?.is_online && (now - lastSeen) < ONLINE_WINDOW_MS;
       return { ...p, roles: rolesByUser.get(p.id) ?? [], online, last_seen_at: pr?.last_seen_at ?? null };
     });
+    // Hide superadmin accounts from non-superadmin callers
+    if (!callerIsSuper) {
+      rows = rows.filter((r) => !r.roles.includes("superadmin"));
+    }
 
     if (data?.search) {
       const s = data.search.toLowerCase();
