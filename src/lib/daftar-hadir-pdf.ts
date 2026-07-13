@@ -92,20 +92,20 @@ function buildAttendanceTable(
     days.push({ d, dow, isWeekend, isLibur, iso });
   }
 
-  const th = `padding:0px 1px; border:1px solid #000; text-align:center; font-size:7.5px; background:#fff; line-height:1.1;`;
-  const thWide = `padding:1px 2px; border:1px solid #000; text-align:center; font-size:9px; background:#fff; line-height:1.15;`;
-  const td = `padding:1px 2px; border:1px solid #000; text-align:center; font-size:8.5px; height:14px;`;
-  const tdDay = `padding:0px 1px; border:1px solid #000; text-align:center; font-size:7.5px; height:14px; line-height:1;`;
+  const th = `padding:1px 1px; border:1px solid #000; text-align:center; font-size:7.5px; background:#fff; line-height:1.15;`;
+  const thWide = `padding:3px 2px; border:1px solid #000; text-align:center; font-size:9px; background:#fff; line-height:1.2;`;
+  const td = `padding:3px 3px; border:1px solid #000; text-align:center; font-size:9px; height:18px; line-height:1.2; vertical-align:middle;`;
+  const tdDay = `padding:1px 1px; border:1px solid #000; text-align:center; font-size:8px; height:18px; line-height:1.1; vertical-align:middle;`;
 
   // colgroup — fix widths so NIS & NAMA fit text and date columns stay compact
   let colgroup = `<colgroup>
-    <col style="width:22px;">
-    <col style="width:60px;">
-    <col style="width:150px;">
-    <col style="width:22px;">`;
+    <col style="width:24px;">
+    <col style="width:72px;">
+    <col style="width:170px;">
+    <col style="width:24px;">`;
   for (let i = 0; i < lastDay; i++) colgroup += `<col style="width:20px;">`;
-  colgroup += `<col style="width:22px;"><col style="width:22px;"><col style="width:22px;"><col style="width:22px;">`;
-  colgroup += `<col style="width:52px;"></colgroup>`;
+  colgroup += `<col style="width:24px;"><col style="width:24px;"><col style="width:24px;"><col style="width:24px;">`;
+  colgroup += `<col style="width:56px;"></colgroup>`;
 
   // Header row 1
   let head = `<tr>
