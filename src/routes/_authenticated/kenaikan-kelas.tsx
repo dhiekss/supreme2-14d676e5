@@ -19,7 +19,7 @@ import { GraduationCap, Undo2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   listKenaikanRefs, previewPromotion, commitPromotion,
-  listPromotionBatches, undoPromotionBatch,
+  listPromotionBatches, undoPromotionBatch, undoPromotionStudent,
 } from "@/lib/kenaikan.functions";
 
 export const Route = createFileRoute("/_authenticated/kenaikan-kelas")({
@@ -37,6 +37,7 @@ function Page() {
   const commitFn = useServerFn(commitPromotion);
   const batchesFn = useServerFn(listPromotionBatches);
   const undoFn = useServerFn(undoPromotionBatch);
+  const undoStudentFn = useServerFn(undoPromotionStudent);
 
   const { data: refs } = useQuery({ queryKey: ["kenaikan-refs"], queryFn: () => refsFn() });
   const rombelList = refs?.rombel ?? [];
@@ -272,22 +273,30 @@ function Page() {
         </TabsContent>
 
         <TabsContent value="riwayat">
-          <RiwayatTab batchesFn={batchesFn} undoFn={undoFn} qc={qc} />
+          <RiwayatTab batchesFn={batchesFn} undoFn={undoFn} undoStudentFn={undoStudentFn} qc={qc} />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function RiwayatTab({ batchesFn, undoFn, qc }: any) {
+function RiwayatTab({ batchesFn, undoFn, undoStudentFn, qc }: any) {
   const { data } = useQuery({ queryKey: ["kenaikan-batches"], queryFn: () => batchesFn() });
   const batches = data ?? [];
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["kenaikan-batches"] });
+    qc.invalidateQueries({ queryKey: ["kenaikan-refs"] });
+  };
   const undo = useMutation({
     mutationFn: (batch_id: string) => undoFn({ data: { batch_id } }),
-    onSuccess: () => {
-      toast.success("Batch dibatalkan");
-      qc.invalidateQueries({ queryKey: ["kenaikan-batches"] });
-      qc.invalidateQueries({ queryKey: ["kenaikan-refs"] });
+    onSuccess: () => { toast.success("Batch dibatalkan"); invalidateAll(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const undoStudent = useMutation({
+    mutationFn: (promotion_id: string) => undoStudentFn({ data: { promotion_id } }),
+    onSuccess: (r: any) => {
+      toast.success(`${r.student_name ?? "Siswa"} dikembalikan ke kelas asal`);
+      invalidateAll();
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -348,6 +357,7 @@ function RiwayatTab({ batchesFn, undoFn, qc }: any) {
                           <TableHeader><TableRow>
                             <TableHead>Nama</TableHead><TableHead>NIS</TableHead>
                             <TableHead>Status</TableHead><TableHead>Rombel Tujuan</TableHead>
+                            <TableHead className="text-right">Aksi</TableHead>
                           </TableRow></TableHeader>
                           <TableBody>
                             {b.items.map((it: any) => (
@@ -356,6 +366,27 @@ function RiwayatTab({ batchesFn, undoFn, qc }: any) {
                                 <TableCell>{it.student_nis ?? "—"}</TableCell>
                                 <TableCell><Badge variant="outline">{it.status}</Badge></TableCell>
                                 <TableCell>{it.rombel_tujuan_name ?? "—"}</TableCell>
+                                <TableCell className="text-right">
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button size="sm" variant="ghost" disabled={undoStudent.isPending}>
+                                        <Undo2 className="h-4 w-4 mr-1" /> Kembalikan
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Kembalikan siswa ini?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          {it.student_name} akan dikembalikan ke rombel asal ({it.rombel_asal_name ?? "—"}) dan baris riwayat ini dihapus. Hanya admin yang dapat melakukan ini.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => undoStudent.mutate(it.id)}>Ya, Kembalikan</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
