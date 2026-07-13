@@ -412,10 +412,12 @@ function SuratTugasFormDialog({
         return { nama: nama ?? "", kabupaten: kabupaten ?? "", alamat: "" };
       }) : [{ nama: "", kabupaten: "", alamat: "" }]);
       const ps = (editing.peserta ?? []).map((p: any) => ({
+        guru_id: p.guru_id ?? undefined,
         nama_peserta: p.nama_peserta ?? "", nip: p.nip ?? "",
         jabatan: p.jabatan ?? "", pangkat_golongan: p.pangkat_golongan ?? "",
+        mode: (p.guru_id ? "database" : "manual") as "database" | "manual",
       }));
-      setPeserta(ps.length ? ps : [{ nama_peserta: "", nip: "", jabatan: "", pangkat_golongan: "" }]);
+      setPeserta(ps.length ? ps : [{ nama_peserta: "", nip: "", jabatan: "", pangkat_golongan: "", mode: "database" }]);
     } else {
       const today = new Date().toISOString().slice(0, 10);
       setTanggalSurat(today);
