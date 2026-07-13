@@ -94,7 +94,7 @@ export const commitPromotion = createServerFn({ method: "POST" })
     for (const it of data.items) {
       let tujuanId: string | null = null;
       if (it.status === "naik") tujuanId = it.rombel_tujuan_override ?? data.rombel_tujuan_id ?? null;
-      else if (it.status === "tinggal") tujuanId = it.rombel_tujuan_override ?? null;
+      else if (it.status === "tinggal") tujuanId = it.rombel_tujuan_override ?? data.rombel_asal_id;
       // lulus / keluar → null
 
       const arr = updates.get(tujuanId) ?? [];
