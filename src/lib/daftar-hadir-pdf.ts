@@ -92,10 +92,10 @@ function buildAttendanceTable(
     days.push({ d, dow, isWeekend, isLibur, iso });
   }
 
-  const th = `padding:3px 1px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:8.5px; background:#fff; line-height:1.3; font-weight:bold;`;
-  const thWide = `padding:3px 2px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:9px; background:#fff; line-height:1.2;`;
-  const td = `padding:3px 3px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:9px; height:20px; line-height:1.2;`;
-  const tdDay = `padding:1px 1px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:8px; height:20px; line-height:1.1;`;
+  const th = `padding:5px 1px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:8.5px; background:#fff; line-height:1.3; font-weight:bold;`;
+  const thWide = `padding:5px 2px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:9px; background:#fff; line-height:1.2;`;
+  const td = `padding:4px 3px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:9px; height:22px; line-height:1.2;`;
+  const tdDay = `padding:4px 1px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:8.5px; height:22px; line-height:1.1;`;
 
   // colgroup — fix widths so NIS & NAMA fit text and date columns stay compact
   let colgroup = `<colgroup>
