@@ -202,7 +202,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
             <div>Dikeluarkan di&nbsp;&nbsp;: ${KOTA}</div>
             <div>Tanggal&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${fmtTanggalId(row.tanggal_mulai)}</div>
             <div>Kuasa Pengguna Anggaran</div>
-            <div style="height:44px;"></div>
+            <div style="height:34px;"></div>
             <div style="font-weight:bold; text-decoration:underline;">${KPA_NAMA}</div>
             <div>${KPA_PANGKAT}</div>
             <div>NIP. ${KPA_NIP}</div>
