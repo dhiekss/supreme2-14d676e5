@@ -566,6 +566,7 @@ function TransferOutTab({ onChange }: { onChange: () => void }) {
   const [editRow, setEditRow] = useState<any>(null);
   const listFn = useServerFn(listTransfersOut);
   const delFn = useServerFn(deleteTransferOut);
+  const saveOutFn = useServerFn(upsertTransferOut);
   const { data } = useSuspenseQuery({
     queryKey: ["mutasi-out", search],
     queryFn: () => listFn({ data: { search: search || undefined } }),
@@ -575,6 +576,20 @@ function TransferOutTab({ onChange }: { onChange: () => void }) {
     onSuccess: () => { toast.success("Dihapus"); onChange(); },
     onError: (e: any) => toast.error(e.message),
   });
+  const inlineSave = (row: any) => async (
+    patch: { dapodik_status?: string; dapodik_tanggal?: string | null },
+  ) => {
+    await saveOutFn({
+      data: {
+        id: row.id,
+        ...patch,
+        dapodik_tanggal: patch.dapodik_tanggal === undefined
+          ? (row.dapodik_tanggal ?? undefined)
+          : (patch.dapodik_tanggal ?? undefined),
+      },
+    });
+    onChange();
+  };
 
   return (
     <Card>
@@ -588,33 +603,31 @@ function TransferOutTab({ onChange }: { onChange: () => void }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Tgl Surat</TableHead>
-              <TableHead>Siswa</TableHead>
-              <TableHead>Rombel</TableHead>
+              <TableHead>Nama Murid</TableHead>
+              <TableHead>NIS</TableHead>
+              <TableHead>Rombel Asal</TableHead>
               <TableHead>Sekolah Tujuan</TableHead>
-              <TableHead>Diterima</TableHead>
-              <TableHead>Dapodik</TableHead>
+              <TableHead>Tanggal Pindah</TableHead>
+              <TableHead>Proses Dapodik</TableHead>
+              <TableHead>Tgl Proses Dapodik</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
             )}
             {data.map((r: any) => (
               <TableRow key={r.id}>
-                <TableCell className="text-xs">{r.tanggal_surat_pindah ?? "—"}</TableCell>
-                <TableCell>
-                  <div className="font-medium">{r.students?.name ?? r.student_name ?? "—"}</div>
-                  <div className="text-xs text-muted-foreground">{r.students?.nis ?? r.student_nis ?? ""}</div>
-                </TableCell>
-                <TableCell>{r.rombel?.name ?? "—"}</TableCell>
+                <TableCell className="font-medium">{r.students?.name ?? r.student_name ?? "—"}</TableCell>
+                <TableCell className="text-xs">{r.students?.nis ?? r.student_nis ?? "—"}</TableCell>
+                <TableCell>{r.rombel?.name ? <Badge variant="outline">{r.rombel.name}</Badge> : "—"}</TableCell>
                 <TableCell className="max-w-xs truncate">{r.sekolah_tujuan ?? "—"}</TableCell>
-                <TableCell className="text-xs">{r.tanggal_diterima_tujuan ?? "—"}</TableCell>
-                <TableCell><Badge variant={r.dapodik_status === "sinkron" ? "default" : "secondary"}>{r.dapodik_status ?? "belum"}</Badge></TableCell>
+                <TableCell className="text-xs">{r.tanggal_surat_pindah ? new Date(r.tanggal_surat_pindah).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</TableCell>
+                <InlineDapodik row={r} save={inlineSave(r)} />
                 <TableCell className="text-right">
-                  <Button size="sm" variant="ghost" onClick={() => { setEditRow(r); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => { if (confirm("Hapus?")) del.mutate(r.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setEditRow(r); setOpen(true); }} title="Lihat / Edit"><Eye className="h-4 w-4 text-blue-600" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => { if (confirm("Hapus?")) del.mutate(r.id); }} title="Hapus"><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </TableCell>
               </TableRow>
             ))}
