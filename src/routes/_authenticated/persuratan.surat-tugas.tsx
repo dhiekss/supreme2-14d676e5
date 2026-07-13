@@ -266,9 +266,10 @@ function Page() {
                             <DropdownMenuLabel>Download PDF</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              onClick={() => {
-                                downloadSuratTugasPdf(r);
-                                toast.info("SPPD & Laporan SPPD — segera hadir");
+                              onClick={async () => {
+                                await downloadSuratTugasPdf(r);
+                                await downloadLaporanSppdPdf(r);
+                                toast.info("SPPD — segera hadir");
                               }}
                             >
                               <Download className="h-4 w-4 mr-2" />
@@ -283,7 +284,7 @@ function Page() {
                               <FileText className="h-4 w-4 mr-2" />
                               SPPD
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toast.info("Laporan SPPD — segera hadir")}>
+                            <DropdownMenuItem onClick={() => downloadLaporanSppdPdf(r)}>
                               <FileText className="h-4 w-4 mr-2" />
                               Laporan SPPD
                             </DropdownMenuItem>
