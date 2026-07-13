@@ -5,8 +5,22 @@ import { z } from "zod";
 const ROLES = ["superadmin", "admin", "wakasek", "kakonli", "walas", "guru", "murid", "admin_sarpras", "admin_persuratan", "admin_tpg"] as const;
 
 async function assertAdmin(supabase: any, userId: string) {
-  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId).in("role", ["admin", "superadmin"]).limit(1).maybeSingle();
   if (!data) throw new Error("Forbidden: hanya admin yang dapat mengelola pengguna");
+}
+
+async function isSuperadmin(supabase: any, userId: string) {
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "superadmin").maybeSingle();
+  return !!data;
+}
+
+async function assertCanTouchTarget(supabase: any, callerId: string, targetId: string) {
+  if (callerId === targetId) return;
+  const caller = await isSuperadmin(supabase, callerId);
+  if (caller) return;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", targetId).eq("role", "superadmin").maybeSingle();
+  if (data) throw new Error("Forbidden: hanya superadmin yang dapat mengelola akun superadmin");
 }
 
 const ONLINE_WINDOW_MS = 5 * 60_000;
