@@ -5,7 +5,7 @@ import type { LayoutNode } from "@/lib/sidebar-menu";
 export const ROLES = [
   "admin",
   "wakasek",
-  "kaprog",
+  "kakonli",
   "guru",
   "murid",
   "admin_sarpras",
