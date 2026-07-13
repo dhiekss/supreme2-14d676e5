@@ -174,7 +174,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
                 </table>
               </td>
             </tr>
-            ${pengikutRows.replace(/<td style="\${tdBase}">\${escapeHtml\(p\?\.nip\)\}<\/td>\s*<td style="\${tdBase}">\${escapeHtml\(p\?\.jabatan\)\}<\/td>/g, '')}
+            ${pengikutRows}
             <tr>
               <td style="${tdBase}; text-align:center;">9</td>
               <td style="${tdBase}">Pembebanan Anggaran</td>
