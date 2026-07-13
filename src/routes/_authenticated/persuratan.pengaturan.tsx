@@ -23,6 +23,7 @@ import {
   listKode, upsertKode, deleteKode,
   listNomor, upsertNomor, deleteNomor,
   listPengaturanUmum, savePengaturanUmum,
+  runAutoReserveNow,
 } from "@/lib/persuratan.functions";
 
 export const Route = createFileRoute("/_authenticated/persuratan/pengaturan")({
