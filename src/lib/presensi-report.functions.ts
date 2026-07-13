@@ -107,18 +107,18 @@ export const presensiDashboard = createServerFn({ method: "GET" })
   .handler(async ({ context, data }) => {
     const { supabase } = context;
 
-    const [rombelRes, guruRes, studentsRes] = await Promise.all([
-      supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian, wali_kelas_name").range(0, 9999),
+    const [rombelAll, guruRes, studentsAll] = await Promise.all([
+      fetchAllPaged((f, t) => supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian, wali_kelas_name").range(f, t)),
       supabase.from("guru").select("*", { count: "exact", head: true }),
-      supabase.from("students").select("id, nis, name, rombel_id").range(0, 99999),
+      fetchAllPaged((f, t) => supabase.from("students").select("id, nis, name, rombel_id").range(f, t)),
     ]);
-    const allRombel = rombelRes.data ?? [];
+    const allRombel = rombelAll;
     const rombel = data.konsentrasi && data.konsentrasi !== "__all"
       ? allRombel.filter((r: any) => r.konsentrasi_keahlian === data.konsentrasi)
       : allRombel;
     const rombelIds = new Set(rombel.map((r: any) => r.id));
     const rombelById = new Map(allRombel.map((r: any) => [r.id, r]));
-    const students = (studentsRes.data ?? []).filter((s: any) => s.rombel_id && rombelIds.has(s.rombel_id));
+    const students = studentsAll.filter((s: any) => s.rombel_id && rombelIds.has(s.rombel_id));
     const studentById = new Map(students.map((s: any) => [s.id, s]));
 
     const records = await fetchAllPaged((from, to) =>
