@@ -65,41 +65,67 @@ export const KPA_NIP = "19811122 200902 1003";
 export const KPA_PANGKAT = "Penata / III-c";
 export const KEPSEK_JABATAN = "KEPALA SEKOLAH";
 
+export type PdfMargins = {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+};
+
 /**
  * Render an offscreen HTML page-sized element to canvas and add to jsPDF.
  * Element must be sized exactly to A4 (portrait: 794x1123 px, landscape: 1123x794 px).
+ * Optional margins in px; content is rendered inside the inner area and placed
+ * at the margin offsets on the PDF page.
  */
 export async function addHtmlPageToPdf(
   pdf: jsPDF,
   html: string,
   orientation: "portrait" | "landscape",
   isFirstPage: boolean,
+  margins?: PdfMargins,
 ): Promise<void> {
   const isPortrait = orientation === "portrait";
-  const wPx = isPortrait ? 794 : 1123;
-  const hPx = isPortrait ? 1123 : 794;
+  const pageWPx = isPortrait ? 794 : 1123;
+  const pageHPx = isPortrait ? 1123 : 794;
+
+  const marginLeft = margins?.left ?? 0;
+  const marginRight = margins?.right ?? 0;
+  const marginTop = margins?.top ?? 0;
+  const marginBottom = margins?.bottom ?? 0;
+
+  const wPx = pageWPx - marginLeft - marginRight;
+  const hPx = pageHPx - marginTop - marginBottom;
 
   // Render inside an isolated iframe so the app's Tailwind v4 CSS
   // (which uses oklch()/lab() color functions unsupported by html2canvas)
   // doesn't leak into the capture target.
   const iframe = document.createElement("iframe");
   iframe.style.position = "fixed";
-  iframe.style.left = "-10000px";
+  iframe.style.left = "0";
   iframe.style.top = "0";
   iframe.style.width = `${wPx}px`;
   iframe.style.height = `${hPx}px`;
   iframe.style.border = "0";
+  iframe.style.opacity = "0";
+  iframe.style.pointerEvents = "none";
+  iframe.style.zIndex = "-1";
   iframe.setAttribute("aria-hidden", "true");
+  iframe.setAttribute("scrolling", "no");
+  iframe.setAttribute("width", `${wPx}`);
+  iframe.setAttribute("height", `${hPx}`);
   document.body.appendChild(iframe);
 
   try {
     const doc = iframe.contentDocument!;
     doc.open();
-    doc.write(`<!doctype html><html><head><meta charset="utf-8"><style>
+    doc.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=${wPx}, initial-scale=1"><style>
       html,body{margin:0;padding:0;background:#ffffff;color:#000000;
-        font-family: Arial, Helvetica, sans-serif;}
+        font-family: Arial, Helvetica, sans-serif; width:100%; height:100%; overflow:hidden; box-sizing:border-box;}
       *{box-sizing:border-box;}
-    </style></head><body>${html}</body></html>`);
+      #pdf-page{width:100%; height:100%; overflow:hidden; position:relative;}
+      table{max-width:100%;}
+    </style></head><body><div id="pdf-page">${html}</div></body></html>`);
     doc.close();
 
     // Wait for images (logo) to load
@@ -128,9 +154,7 @@ export async function addHtmlPageToPdf(
     });
     const imgData = canvas.toDataURL("image/jpeg", 0.95);
     if (!isFirstPage) pdf.addPage("a4", orientation);
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    pdf.addImage(imgData, "JPEG", 0, 0, pageW, pageH, undefined, "FAST");
+    pdf.addImage(imgData, "JPEG", marginLeft, marginTop, wPx, hPx, undefined, "FAST");
   } finally {
     iframe.remove();
   }
