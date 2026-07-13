@@ -73,13 +73,13 @@ async function loadLogoDataUrl(): Promise<string | null> {
   }
 }
 
-export async function generateSuratTugasPdf(row: SuratTugasPdfData): Promise<jsPDF> {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+export async function renderSuratTugas(doc: jsPDF, row: SuratTugasPdfData): Promise<void> {
   const pageW = doc.internal.pageSize.getWidth();
   const marginL = 20;
   const marginR = 20;
   const contentW = pageW - marginL - marginR;
   let y = 15;
+
 
   // ===== LOGO =====
   const logo = await loadLogoDataUrl();
@@ -226,9 +226,14 @@ export async function generateSuratTugasPdf(row: SuratTugasPdfData): Promise<jsP
   doc.text("PENATA, III/c", ttdX, y);
   y += lineH;
   doc.text("NIP. 19811122 200902 1 003", ttdX, y);
+}
 
+export async function generateSuratTugasPdf(row: SuratTugasPdfData): Promise<jsPDF> {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  await renderSuratTugas(doc, row);
   return doc;
 }
+
 
 export function suratTugasPdfFilename(row: SuratTugasPdfData, prefix = "Surat-Tugas"): string {
   const nomor = (row.nomor_surat ?? "").replace(/[\\/:*?"<>|\s]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");

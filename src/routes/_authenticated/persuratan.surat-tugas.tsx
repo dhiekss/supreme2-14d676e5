@@ -33,6 +33,7 @@ import { nextNomorUrut } from "@/lib/surat-keluar.functions";
 import { downloadSuratTugasPdf } from "@/lib/surat-tugas-pdf";
 import { downloadLaporanSppdPdf } from "@/lib/laporan-sppd-pdf";
 import { downloadSppdPdf } from "@/lib/sppd-pdf";
+import { downloadSuratTugasBundlePdf } from "@/lib/surat-tugas-bundle-pdf";
 
 export const Route = createFileRoute("/_authenticated/persuratan/surat-tugas")({
   head: () => ({ meta: [{ title: "Surat Tugas & SPPD — SUPREME XPOES" }] }),
@@ -266,13 +267,7 @@ function Page() {
                           <DropdownMenuContent align="end" className="w-56">
                             <DropdownMenuLabel>Download PDF</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={async () => {
-                                await downloadSuratTugasPdf(r);
-                                await downloadSppdPdf(r);
-                                await downloadLaporanSppdPdf(r);
-                              }}
-                            >
+                            <DropdownMenuItem onClick={() => downloadSuratTugasBundlePdf(r)}>
                               <Download className="h-4 w-4 mr-2" />
                               Download Semua (3 Dokumen)
                             </DropdownMenuItem>
