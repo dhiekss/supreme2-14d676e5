@@ -242,3 +242,141 @@ export const rombelBelumInputByDate = createServerFn({ method: "GET" })
     const tingkatList = [...new Set(allRombel.map((r: any) => r.tingkat).filter(Boolean))].map(String).sort();
     return { rows, tingkatList };
   });
+
+export const attendanceDetailList = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      date: z.string().optional().nullable(),
+      rombelId: z.string().uuid().optional().nullable(),
+      officer: z.string().optional().nullable(),
+      from: z.string().optional().nullable(),
+      to: z.string().optional().nullable(),
+    }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    let q = supabase
+      .from("attendance_records")
+      .select("id, date, rombel_id, officer_name")
+      .order("date", { ascending: false })
+      .range(0, 9999);
+    if (data.date) q = q.eq("date", data.date);
+    if (data.rombelId) q = q.eq("rombel_id", data.rombelId);
+    if (data.officer) q = q.eq("officer_name", data.officer);
+    if (data.from) q = q.gte("date", data.from);
+    if (data.to) q = q.lte("date", data.to);
+    const { data: recs, error } = await q;
+    if (error) throw new Error(error.message);
+
+    const rombelIds = [...new Set((recs ?? []).map((r) => r.rombel_id).filter(Boolean) as string[])];
+    const recIds = (recs ?? []).map((r) => r.id);
+    const [rombelRes, studentsRes, detailsRes] = await Promise.all([
+      rombelIds.length
+        ? supabase.from("rombel").select("id, name, wali_kelas_name").in("id", rombelIds)
+        : Promise.resolve({ data: [] as any[] }),
+      rombelIds.length
+        ? supabase.from("students").select("id, rombel_id").in("rombel_id", rombelIds).range(0, 99999)
+        : Promise.resolve({ data: [] as any[] }),
+      recIds.length
+        ? supabase.from("attendance_details").select("attendance_record_id, status").in("attendance_record_id", recIds).range(0, 999999)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const rMap = new Map((rombelRes.data ?? []).map((r: any) => [r.id, r]));
+    const countByRombel = new Map<string, number>();
+    for (const s of studentsRes.data ?? []) {
+      if (!s.rombel_id) continue;
+      countByRombel.set(s.rombel_id, (countByRombel.get(s.rombel_id) ?? 0) + 1);
+    }
+    const perRec = new Map<string, { H: number; S: number; I: number; A: number; P: number }>();
+    for (const d of detailsRes.data ?? []) {
+      const key = d.attendance_record_id as string;
+      if (!perRec.has(key)) perRec.set(key, { H: 0, S: 0, I: 0, A: 0, P: 0 });
+      const r = perRec.get(key)!;
+      const st = d.status as keyof typeof r;
+      if (st in r) r[st]++;
+    }
+    return (recs ?? []).map((r) => {
+      const rb: any = r.rombel_id ? rMap.get(r.rombel_id) : null;
+      const c = perRec.get(r.id) ?? { H: 0, S: 0, I: 0, A: 0, P: 0 };
+      return {
+        id: r.id,
+        date: r.date,
+        rombel_id: r.rombel_id,
+        rombel: rb?.name ?? "-",
+        walikelas: rb?.wali_kelas_name ?? "-",
+        officer_name: r.officer_name ?? "-",
+        jumlahMurid: r.rombel_id ? countByRombel.get(r.rombel_id) ?? 0 : 0,
+        ...c,
+      };
+    });
+  });
+
+export const attendanceDetailView = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ recordId: z.string().uuid() }).parse)
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { data: rec, error } = await supabase
+      .from("attendance_records")
+      .select("id, date, rombel_id, officer_name")
+      .eq("id", data.recordId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!rec) throw new Error("Record tidak ditemukan");
+    const [rombelRes, studentsRes, detailsRes] = await Promise.all([
+      rec.rombel_id
+        ? supabase.from("rombel").select("id, name, wali_kelas_name").eq("id", rec.rombel_id).maybeSingle()
+        : Promise.resolve({ data: null as any }),
+      rec.rombel_id
+        ? supabase.from("students").select("id, nis, name").eq("rombel_id", rec.rombel_id).order("name")
+        : Promise.resolve({ data: [] as any[] }),
+      supabase.from("attendance_details").select("student_id, status").eq("attendance_record_id", rec.id),
+    ]);
+    const statusMap = new Map((detailsRes.data ?? []).map((d: any) => [d.student_id, d.status]));
+    const students = (studentsRes.data ?? []).map((s: any) => ({
+      id: s.id,
+      nis: s.nis,
+      name: s.name,
+      status: (statusMap.get(s.id) as string) ?? "H",
+    }));
+    return {
+      record: {
+        id: rec.id,
+        date: rec.date,
+        rombel_id: rec.rombel_id,
+        rombel_name: (rombelRes as any).data?.name ?? "-",
+        wali_kelas: (rombelRes as any).data?.wali_kelas_name ?? "-",
+        officer_name: rec.officer_name ?? "-",
+      },
+      students,
+    };
+  });
+
+export const deleteAttendanceRecord = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ recordId: z.string().uuid() }).parse)
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    await supabase.from("attendance_details").delete().eq("attendance_record_id", data.recordId);
+    const { error } = await supabase.from("attendance_records").delete().eq("id", data.recordId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const listOfficers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await context.supabase
+      .from("attendance_records")
+      .select("officer_name")
+      .not("officer_name", "is", null)
+      .range(0, 9999);
+    const set = new Set<string>();
+    for (const r of data ?? []) {
+      const n = String(r.officer_name ?? "").trim();
+      if (n) set.add(n);
+    }
+    return [...set].sort();
+  });
+

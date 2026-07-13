@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,13 +14,22 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { presensiDashboard, rombelBelumInputByDate } from "@/lib/presensi-report.functions";
+import {
+  presensiDashboard,
+  rombelBelumInputByDate,
+  attendanceDetailList,
+  attendanceDetailView,
+  deleteAttendanceRecord,
+  listOfficers,
+} from "@/lib/presensi-report.functions";
+import { listRombel, saveAttendance } from "@/lib/presensi.functions";
 import { importAttendance } from "@/lib/presensi-import.functions";
 import { todayStamp } from "@/lib/utils";
 import {
   Download, Users, GraduationCap, School, CalendarCheck, CheckCircle2,
   Thermometer, FileText, XCircle, Briefcase, ClipboardList, AlertTriangle,
   TrendingUp, PieChart as PieIcon, BarChart3, Upload, FileSpreadsheet, Loader2,
+  Eye, Pencil, Trash2, Filter, FileDown,
 } from "lucide-react";
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RTooltip, Legend,
@@ -480,49 +489,8 @@ function LaporanPresensi() {
       </Card>
 
       {/* Detail presensi */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" /> Detail Presensi
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">100 catatan terbaru dalam rentang tanggal.</p>
-        </CardHeader>
-        <CardContent className="p-0 overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tanggal</TableHead>
-                <TableHead>Rombel</TableHead>
-                <TableHead>Wali Kelas</TableHead>
-                <TableHead className="text-center">H</TableHead>
-                <TableHead className="text-center">S</TableHead>
-                <TableHead className="text-center">I</TableHead>
-                <TableHead className="text-center">A</TableHead>
-                <TableHead className="text-center">P</TableHead>
-                <TableHead className="text-center">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(data?.detailRows ?? []).map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell className="whitespace-nowrap">{r.date}</TableCell>
-                  <TableCell className="font-medium">{r.rombel}</TableCell>
-                  <TableCell>{r.walikelas}</TableCell>
-                  <TableCell className="text-center text-emerald-600 font-medium">{r.H}</TableCell>
-                  <TableCell className="text-center text-amber-600">{r.S}</TableCell>
-                  <TableCell className="text-center text-sky-600">{r.I}</TableCell>
-                  <TableCell className="text-center text-rose-600 font-medium">{r.A}</TableCell>
-                  <TableCell className="text-center text-violet-600">{r.P}</TableCell>
-                  <TableCell className="text-center font-semibold">{r.total}</TableCell>
-                </TableRow>
-              ))}
-              {data && data.detailRows.length === 0 && (
-                <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">Belum ada catatan presensi.</TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <DetailPresensiCard />
+
 
       {isFetching && <p className="text-xs text-muted-foreground text-center">Memuat data...</p>}
     </div>
@@ -680,3 +648,442 @@ function TrendChart({ title, data, dataKey, color }: { title: string; data: any[
     </Card>
   );
 }
+
+const STATUS_LABEL: Record<string, string> = { H: "Hadir", S: "Sakit", I: "Izin", A: "Alfa", P: "PKL" };
+const STATUS_BADGE: Record<string, string> = {
+  H: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  S: "bg-amber-50 text-amber-700 border-amber-200",
+  I: "bg-sky-50 text-sky-700 border-sky-200",
+  A: "bg-rose-50 text-rose-700 border-rose-200",
+  P: "bg-violet-50 text-violet-700 border-violet-200",
+};
+const DAYS_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const MONTHS_ID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+function formatDateLongID(iso: string) {
+  const [y, m, d] = String(iso).split("-").map(Number);
+  if (!y) return iso;
+  const dt = new Date(y, (m ?? 1) - 1, d ?? 1);
+  return `${DAYS_ID[dt.getDay()]}, ${dt.getDate()} ${MONTHS_ID[dt.getMonth()]} ${dt.getFullYear()}`;
+}
+
+function DetailPresensiCard() {
+  const [date, setDate] = useState<string>("");
+  const [rombelId, setRombelId] = useState<string>("__all");
+  const [officer, setOfficer] = useState<string>("__all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [viewId, setViewId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const qc = useQueryClient();
+  const fetchList = useServerFn(attendanceDetailList);
+  const fetchRombel = useServerFn(listRombel);
+  const fetchOfficers = useServerFn(listOfficers);
+  const delFn = useServerFn(deleteAttendanceRecord);
+
+  const rombelQuery = useQuery({ queryKey: ["rombel-list-detail"], queryFn: () => fetchRombel() });
+  const officersQuery = useQuery({ queryKey: ["officers-list"], queryFn: () => fetchOfficers() });
+
+  const listQuery = useQuery({
+    queryKey: ["detail-presensi", date, rombelId, officer],
+    queryFn: () =>
+      fetchList({
+        data: {
+          date: date || null,
+          rombelId: rombelId !== "__all" ? rombelId : null,
+          officer: officer !== "__all" ? officer : null,
+        },
+      }),
+  });
+  const rows = listQuery.data ?? [];
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const curPage = Math.min(page, totalPages);
+  const start = (curPage - 1) * pageSize;
+  const pageRows = rows.slice(start, start + pageSize);
+
+  const resetFilter = () => {
+    setDate("");
+    setRombelId("__all");
+    setOfficer("__all");
+    setPage(1);
+  };
+
+  const exportRecap = () => {
+    const header = ["Tanggal", "Rombel", "Wali Kelas", "Petugas Piket", "Hadir", "Sakit", "Izin", "Alfa", "PKL", "Jumlah Murid"];
+    const body = rows.map((r) => [r.date, r.rombel, r.walikelas, r.officer_name, r.H, r.S, r.I, r.A, r.P, r.jumlahMurid]);
+    const ws = XLSX.utils.aoa_to_sheet([header, ...body]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap");
+    XLSX.writeFile(wb, `rekap-presensi-${todayStamp()}.xlsx`);
+  };
+
+  const exportDetail = async () => {
+    if (rows.length === 0) {
+      toast.info("Tidak ada data untuk diekspor");
+      return;
+    }
+    toast.loading("Menyiapkan ekspor detail...", { id: "exp-detail" });
+    try {
+      const viewFn = attendanceDetailView;
+      const all: any[] = [];
+      for (const r of rows) {
+        const res: any = await viewFn({ data: { recordId: r.id } });
+        for (const s of res.students) {
+          all.push([r.date, r.rombel, r.walikelas, r.officer_name, s.nis ?? "-", s.name, STATUS_LABEL[s.status] ?? s.status]);
+        }
+      }
+      const header = ["Tanggal", "Rombel", "Wali Kelas", "Petugas Piket", "NIS", "Nama Murid", "Status"];
+      const ws = XLSX.utils.aoa_to_sheet([header, ...all]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Detail");
+      XLSX.writeFile(wb, `detail-presensi-${todayStamp()}.xlsx`);
+      toast.success("Ekspor detail selesai", { id: "exp-detail" });
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal ekspor detail", { id: "exp-detail" });
+    }
+  };
+
+  const doDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await delFn({ data: { recordId: deleteId } });
+      toast.success("Data presensi dihapus");
+      setDeleteId(null);
+      qc.invalidateQueries({ queryKey: ["detail-presensi"] });
+      qc.invalidateQueries({ queryKey: ["presensi-dashboard"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" /> Detail Presensi
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Riwayat presensi dalam periode yang dipilih</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={exportRecap} className="gap-2">
+              <FileDown className="h-4 w-4" /> Export Recap
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportDetail} className="gap-2">
+              <FileSpreadsheet className="h-4 w-4" /> Export Detail
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="rounded-lg border bg-muted/30 p-3 grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto] items-end">
+          <div className="space-y-1">
+            <Label className="text-xs flex items-center gap-1.5"><CalendarCheck className="h-3.5 w-3.5" /> Tanggal</Label>
+            <Input type="date" value={date} onChange={(e) => { setDate(e.target.value); setPage(1); }} className="h-9 bg-background" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Rombel</Label>
+            <Select value={rombelId} onValueChange={(v) => { setRombelId(v); setPage(1); }}>
+              <SelectTrigger className="h-9 bg-background"><SelectValue placeholder="Semua Rombel" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua Rombel</SelectItem>
+                {(rombelQuery.data ?? []).map((r: any) => (
+                  <SelectItem key={r.id} value={r.id}>{r.tingkat ? `${r.tingkat} — ` : ""}{r.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs flex items-center gap-1.5"><Filter className="h-3.5 w-3.5" /> Petugas Piket</Label>
+            <Select value={officer} onValueChange={(v) => { setOfficer(v); setPage(1); }}>
+              <SelectTrigger className="h-9 bg-background"><SelectValue placeholder="Semua Petugas" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua Petugas</SelectItem>
+                {(officersQuery.data ?? []).map((o: string) => (
+                  <SelectItem key={o} value={o}>{o}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button variant="outline" onClick={resetFilter} className="h-9">Reset Filter</Button>
+        </div>
+
+        <div className="overflow-x-auto rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tanggal</TableHead>
+                <TableHead>Rombel</TableHead>
+                <TableHead>Wali Kelas</TableHead>
+                <TableHead>Petugas Piket</TableHead>
+                <TableHead className="text-center">Hadir</TableHead>
+                <TableHead className="text-center">Sakit</TableHead>
+                <TableHead className="text-center">Izin</TableHead>
+                <TableHead className="text-center">Alfa</TableHead>
+                <TableHead className="text-center">PKL</TableHead>
+                <TableHead className="text-center">Jumlah Murid</TableHead>
+                <TableHead className="text-center">Aksi</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pageRows.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="whitespace-nowrap">{r.date}</TableCell>
+                  <TableCell className="font-medium">{r.rombel}</TableCell>
+                  <TableCell>{r.walikelas}</TableCell>
+                  <TableCell>{r.officer_name}</TableCell>
+                  <TableCell className="text-center text-emerald-600 font-medium">{r.H}</TableCell>
+                  <TableCell className="text-center text-amber-600">{r.S}</TableCell>
+                  <TableCell className="text-center text-sky-600">{r.I}</TableCell>
+                  <TableCell className="text-center text-rose-600 font-medium">{r.A}</TableCell>
+                  <TableCell className="text-center text-violet-600">{r.P}</TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant="secondary">{r.jumlahMurid} murid</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-center gap-1">
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-sky-600 hover:text-sky-700" onClick={() => setViewId(r.id)} title="Lihat Detail">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600 hover:text-blue-700" onClick={() => setEditId(r.id)} title="Edit">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-600 hover:text-rose-700" onClick={() => setDeleteId(r.id)} title="Hapus">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!listQuery.isFetching && rows.length === 0 && (
+                <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-6">Belum ada catatan presensi.</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {rows.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>Tampilkan</span>
+              <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+                <SelectTrigger className="h-8 w-[70px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[10, 25, 50, 100].map((n) => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <span>dari {rows.length} data</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <Button variant="outline" size="sm" disabled={curPage <= 1} onClick={() => setPage(curPage - 1)}>‹</Button>
+              <span className="text-muted-foreground">Halaman {curPage} dari {totalPages}</span>
+              <Button variant="outline" size="sm" disabled={curPage >= totalPages} onClick={() => setPage(curPage + 1)}>›</Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+
+      <ViewDetailDialog recordId={viewId} onClose={() => setViewId(null)} />
+      <EditDetailDialog recordId={editId} onClose={() => setEditId(null)} />
+
+      <Dialog open={!!deleteId} onOpenChange={(o) => { if (!o) setDeleteId(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Hapus Data Presensi</DialogTitle>
+            <DialogDescription>Data presensi ini akan dihapus permanen. Lanjutkan?</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteId(null)}>Batal</Button>
+            <Button variant="destructive" onClick={doDelete}>Hapus</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
+function ViewDetailDialog({ recordId, onClose }: { recordId: string | null; onClose: () => void }) {
+  const fetchFn = useServerFn(attendanceDetailView);
+  const { data, isFetching } = useQuery({
+    queryKey: ["attendance-view", recordId],
+    queryFn: () => fetchFn({ data: { recordId: recordId! } }),
+    enabled: !!recordId,
+  });
+  const counts = useMemo(() => {
+    const c = { H: 0, S: 0, I: 0, A: 0, P: 0 };
+    for (const s of data?.students ?? []) {
+      const k = s.status as keyof typeof c;
+      if (k in c) c[k]++;
+    }
+    return c;
+  }, [data]);
+
+  return (
+    <Dialog open={!!recordId} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Eye className="h-5 w-5 text-sky-600" /> Detail Presensi</DialogTitle>
+          <DialogDescription>
+            {data ? `${data.record.rombel_name} — ${formatDateLongID(String(data.record.date))}` : "Memuat..."}
+          </DialogDescription>
+        </DialogHeader>
+        {isFetching || !data ? (
+          <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Memuat...</div>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-[120px_1fr] gap-y-1 text-sm">
+              <div className="text-muted-foreground">Petugas Piket:</div>
+              <div className="font-medium">{data.record.officer_name}</div>
+              <div className="text-muted-foreground">Wali Kelas:</div>
+              <div className="font-medium">{data.record.wali_kelas}</div>
+            </div>
+            <div className="grid grid-cols-5 gap-2">
+              {(["H", "S", "I", "A", "P"] as const).map((k) => (
+                <div key={k} className={`rounded-lg border p-3 text-center ${STATUS_BADGE[k]}`}>
+                  <div className="text-2xl font-bold">{counts[k]}</div>
+                  <div className="text-xs">{STATUS_LABEL[k]}</div>
+                </div>
+              ))}
+            </div>
+            <div>
+              <div className="text-sm font-medium mb-2">Daftar Siswa:</div>
+              <div className="max-h-[360px] overflow-y-auto rounded-lg border">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-muted/60 backdrop-blur">
+                    <TableRow>
+                      <TableHead className="w-12">No</TableHead>
+                      <TableHead className="w-28">NIS</TableHead>
+                      <TableHead>Nama Siswa</TableHead>
+                      <TableHead className="text-right w-24">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.students.map((s, i) => (
+                      <TableRow key={s.id}>
+                        <TableCell>{i + 1}</TableCell>
+                        <TableCell className="font-mono text-xs">{s.nis ?? "-"}</TableCell>
+                        <TableCell className="uppercase">{s.name}</TableCell>
+                        <TableCell className="text-right">
+                          <span className={`inline-block rounded-md border px-2 py-0.5 text-xs ${STATUS_BADGE[s.status] ?? ""}`}>
+                            {STATUS_LABEL[s.status] ?? s.status}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditDetailDialog({ recordId, onClose }: { recordId: string | null; onClose: () => void }) {
+  const qc = useQueryClient();
+  const fetchFn = useServerFn(attendanceDetailView);
+  const saveFn = useServerFn(saveAttendance);
+  const { data, isFetching } = useQuery({
+    queryKey: ["attendance-edit", recordId],
+    queryFn: () => fetchFn({ data: { recordId: recordId! } }),
+    enabled: !!recordId,
+  });
+  const [officerName, setOfficerName] = useState("");
+  const [statuses, setStatuses] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!data) return;
+    setOfficerName(data.record.officer_name ?? "");
+    const m: Record<string, string> = {};
+    for (const s of data.students) m[s.id] = s.status;
+    setStatuses(m);
+  }, [data]);
+
+  const mut = useMutation({
+    mutationFn: () =>
+      saveFn({
+        data: {
+          rombelId: data!.record.rombel_id!,
+          date: String(data!.record.date),
+          officerName: officerName || "-",
+          entries: Object.entries(statuses).map(([studentId, status]) => ({ studentId, status: status as any })),
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Perubahan tersimpan");
+      qc.invalidateQueries({ queryKey: ["detail-presensi"] });
+      qc.invalidateQueries({ queryKey: ["presensi-dashboard"] });
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={!!recordId} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Edit Data Presensi</DialogTitle>
+          <DialogDescription>
+            {data ? `${formatDateLongID(String(data.record.date))} — ${data.record.rombel_name}` : "Memuat..."}
+          </DialogDescription>
+        </DialogHeader>
+        {isFetching || !data ? (
+          <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Memuat...</div>
+        ) : (
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <Label className="text-sm">Petugas Piket</Label>
+              <Input value={officerName} onChange={(e) => setOfficerName(e.target.value)} />
+            </div>
+            <div className="max-h-[420px] overflow-y-auto rounded-lg border">
+              <Table>
+                <TableHeader className="sticky top-0 bg-muted/60 backdrop-blur">
+                  <TableRow>
+                    <TableHead className="w-12">No</TableHead>
+                    <TableHead>Nama Murid</TableHead>
+                    <TableHead className="w-32">NIS</TableHead>
+                    <TableHead className="text-right w-32">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.students.map((s, i) => (
+                    <TableRow key={s.id}>
+                      <TableCell>{i + 1}</TableCell>
+                      <TableCell className="uppercase">{s.name}</TableCell>
+                      <TableCell className="font-mono text-xs">{s.nis ?? "-"}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={statuses[s.id] ?? "H"}
+                          onValueChange={(v) => setStatuses((p) => ({ ...p, [s.id]: v }))}
+                        >
+                          <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {(["H", "S", "I", "A", "P"] as const).map((k) => (
+                              <SelectItem key={k} value={k}>{STATUS_LABEL[k]}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Batal</Button>
+          <Button onClick={() => mut.mutate()} disabled={!data || mut.isPending}>
+            {mut.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+            Simpan Perubahan
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
