@@ -45,8 +45,14 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
       <tr>
         <td style="${tdBase}"></td>
         <td style="${tdBase}">${i + 1}. ${escapeHtml(p?.nama_peserta)}</td>
-        <td style="${tdBase}">${escapeHtml(p?.nip)}</td>
-        <td style="${tdBase}">${escapeHtml(p?.jabatan)}</td>
+        <td style="${tdBase}; padding:0;">
+          <table style="width:100%; border-collapse:collapse;">
+            <tr>
+              <td style="width:50%; border-right:1px solid #000; padding:2px 5px; vertical-align:top;">${escapeHtml(p?.nip)}</td>
+              <td style="padding:2px 5px; vertical-align:top;">${escapeHtml(p?.jabatan)}</td>
+            </tr>
+          </table>
+        </td>
       </tr>
     `;
   }).join("");
