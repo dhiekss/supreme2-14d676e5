@@ -88,9 +88,8 @@ function PengaturanMenuPage() {
         navigate({ to: "/auth" });
         return;
       }
-      const { data } = await supabase.rpc("has_role", {
+      const { data } = await supabase.rpc("is_admin", {
         _user_id: sess.user.id,
-        _role: "admin",
       });
       setIsAdmin(!!data);
       if (!data) {
