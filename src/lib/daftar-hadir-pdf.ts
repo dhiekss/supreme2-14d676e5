@@ -92,18 +92,30 @@ function buildAttendanceTable(
     days.push({ d, dow, isWeekend, isLibur, iso });
   }
 
-  const th = `padding:1px 2px; border:1px solid #000; text-align:center; font-size:9px; background:#fff;`;
+  const th = `padding:0px 1px; border:1px solid #000; text-align:center; font-size:7.5px; background:#fff; line-height:1.1;`;
+  const thWide = `padding:1px 2px; border:1px solid #000; text-align:center; font-size:9px; background:#fff; line-height:1.15;`;
   const td = `padding:1px 2px; border:1px solid #000; text-align:center; font-size:8.5px; height:14px;`;
+  const tdDay = `padding:0px 1px; border:1px solid #000; text-align:center; font-size:7.5px; height:14px; line-height:1;`;
+
+  // colgroup — fix widths so NIS & NAMA fit text and date columns stay compact
+  let colgroup = `<colgroup>
+    <col style="width:22px;">
+    <col style="width:60px;">
+    <col style="width:150px;">
+    <col style="width:22px;">`;
+  for (let i = 0; i < lastDay; i++) colgroup += `<col style="width:20px;">`;
+  colgroup += `<col style="width:22px;"><col style="width:22px;"><col style="width:22px;"><col style="width:22px;">`;
+  colgroup += `<col style="width:52px;"></colgroup>`;
 
   // Header row 1
   let head = `<tr>
-    <th style="${th}" rowspan="3">NO</th>
-    <th style="${th}" rowspan="3">NIS</th>
-    <th style="${th}" rowspan="3">NAMA SISWA</th>
-    <th style="${th}" rowspan="3">L/P</th>
-    <th style="${th}" colspan="${lastDay}">TANGGAL / BULAN ${BULAN_ID[month - 1].toUpperCase()}</th>
-    <th style="${th}" colspan="4">JUMLAH</th>
-    <th style="${th}" rowspan="3">KET</th>
+    <th style="${thWide}" rowspan="3">NO</th>
+    <th style="${thWide}" rowspan="3">NIS</th>
+    <th style="${thWide}" rowspan="3">NAMA SISWA</th>
+    <th style="${thWide}" rowspan="3">L/P</th>
+    <th style="${thWide}" colspan="${lastDay}">TANGGAL / BULAN ${BULAN_ID[month - 1].toUpperCase()}</th>
+    <th style="${thWide}" colspan="4">JUMLAH</th>
+    <th style="${thWide}" rowspan="3">KET</th>
   </tr>`;
 
   // Header row 2 (hari letter)
@@ -113,7 +125,7 @@ function buildAttendanceTable(
     const color = day.isWeekend || day.isLibur ? COLOR_HEADER_RED : "#000";
     head += `<th style="${th} background:${bg}; color:${color};">${HARI_LETTER[day.dow]}</th>`;
   }
-  head += `<th style="${th}" rowspan="2">H</th><th style="${th}" rowspan="2">S</th><th style="${th}" rowspan="2">I</th><th style="${th}" rowspan="2">A</th>`;
+  head += `<th style="${thWide}" rowspan="2">H</th><th style="${thWide}" rowspan="2">S</th><th style="${thWide}" rowspan="2">I</th><th style="${thWide}" rowspan="2">A</th>`;
   head += `</tr>`;
 
   // Header row 3 (date number)
@@ -153,12 +165,12 @@ function buildAttendanceTable(
         bg = COLOR_EMPTY_BG;
         text = "";
       }
-      cells += `<td style="${td} background:${bg}; color:${color};">${text}</td>`;
+      cells += `<td style="${tdDay} background:${bg}; color:${color};">${text}</td>`;
     }
     body += `<tr>
       <td style="${td}">${idx + 1}</td>
-      <td style="${td}">${escapeHtml(s.nis ?? "")}</td>
-      <td style="${td} text-align:left; padding-left:4px;">${escapeHtml(s.name)}</td>
+      <td style="${td} white-space:nowrap; font-size:8px;">${escapeHtml(s.nis ?? "")}</td>
+      <td style="${td} text-align:left; padding-left:4px; white-space:normal; word-break:break-word; line-height:1.15;">${escapeHtml(s.name)}</td>
       <td style="${td}">${escapeHtml((s.gender ?? "").toString().toUpperCase().startsWith("P") ? "P" : (s.gender ? "L" : ""))}</td>
       ${cells}
       <td style="${td}">${kosong ? "" : h || ""}</td>
@@ -171,6 +183,7 @@ function buildAttendanceTable(
 
   return `
   <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-family:Arial,Helvetica,sans-serif;">
+    ${colgroup}
     <thead>${head}</thead>
     <tbody>${body}</tbody>
   </table>
