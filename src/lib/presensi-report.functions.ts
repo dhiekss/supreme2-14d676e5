@@ -398,13 +398,15 @@ export const deleteAttendanceRecord = createServerFn({ method: "POST" })
 export const listOfficers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await context.supabase
-      .from("attendance_records")
-      .select("officer_name")
-      .not("officer_name", "is", null)
-      .range(0, 9999);
+    const rows = await fetchAllPaged<any>((f, t) =>
+      context.supabase
+        .from("attendance_records")
+        .select("officer_name")
+        .not("officer_name", "is", null)
+        .range(f, t),
+    );
     const set = new Set<string>();
-    for (const r of data ?? []) {
+    for (const r of rows) {
       const n = String(r.officer_name ?? "").trim();
       if (n) set.add(n);
     }
