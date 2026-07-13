@@ -5,8 +5,22 @@ import { z } from "zod";
 const ROLES = ["superadmin", "admin", "wakasek", "kakonli", "walas", "guru", "murid", "admin_sarpras", "admin_persuratan", "admin_tpg"] as const;
 
 async function assertAdmin(supabase: any, userId: string) {
-  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId).in("role", ["admin", "superadmin"]).limit(1).maybeSingle();
   if (!data) throw new Error("Forbidden: hanya admin yang dapat mengelola pengguna");
+}
+
+async function isSuperadmin(supabase: any, userId: string) {
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "superadmin").maybeSingle();
+  return !!data;
+}
+
+async function assertCanTouchTarget(supabase: any, callerId: string, targetId: string) {
+  if (callerId === targetId) return;
+  const caller = await isSuperadmin(supabase, callerId);
+  if (caller) return;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", targetId).eq("role", "superadmin").maybeSingle();
+  if (data) throw new Error("Forbidden: hanya superadmin yang dapat mengelola akun superadmin");
 }
 
 const ONLINE_WINDOW_MS = 5 * 60_000;
@@ -42,12 +56,17 @@ export const listUsers = createServerFn({ method: "GET" })
     const presenceByUser = new Map<string, any>();
     for (const p of presence ?? []) presenceByUser.set((p as any).user_id, p);
     const now = Date.now();
+    const callerIsSuper = await isSuperadmin(context.supabase, context.userId);
     let rows = (profiles ?? []).map((p: any) => {
       const pr = presenceByUser.get(p.id);
       const lastSeen = pr?.last_seen_at ? new Date(pr.last_seen_at).getTime() : 0;
       const online = !!pr?.is_online && (now - lastSeen) < ONLINE_WINDOW_MS;
       return { ...p, roles: rolesByUser.get(p.id) ?? [], online, last_seen_at: pr?.last_seen_at ?? null };
     });
+    // Hide superadmin accounts from non-superadmin callers
+    if (!callerIsSuper) {
+      rows = rows.filter((r) => !r.roles.includes("superadmin"));
+    }
 
     if (data?.search) {
       const s = data.search.toLowerCase();
@@ -95,6 +114,10 @@ export const createUser = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
+    if (data.roles.includes("superadmin")) {
+      const callerSuper = await isSuperadmin(context.supabase, context.userId);
+      if (!callerSuper) throw new Error("Forbidden: hanya superadmin yang dapat membuat akun superadmin");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
@@ -127,6 +150,11 @@ export const updateUser = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
+    await assertCanTouchTarget(context.supabase, context.userId, data.id);
+    const callerSuper = await isSuperadmin(context.supabase, context.userId);
+    if (data.roles.includes("superadmin") && !callerSuper) {
+      throw new Error("Forbidden: hanya superadmin yang dapat memberi role superadmin");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error: perr } = await supabaseAdmin.from("profiles").update({
       full_name: data.full_name,
@@ -151,6 +179,7 @@ export const toggleUserActive = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid(), is_active: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
+    await assertCanTouchTarget(context.supabase, context.userId, data.id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("profiles").update({
       is_active: data.is_active,
@@ -165,11 +194,18 @@ export const bulkSetAllActive = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ is_active: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
+    const callerSuper = await isSuperadmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Non-superadmin caller: exclude superadmin accounts from bulk toggle
+    let excludeIds: string[] = [context.userId];
+    if (!callerSuper) {
+      const { data: sup } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "superadmin");
+      excludeIds = Array.from(new Set([...excludeIds, ...((sup ?? []).map((r: any) => r.user_id))]));
+    }
     const { error, count } = await supabaseAdmin
       .from("profiles")
       .update({ is_active: data.is_active, updated_at: new Date().toISOString() }, { count: "exact" })
-      .neq("id", context.userId);
+      .not("id", "in", `(${excludeIds.map((id) => `"${id}"`).join(",")})`);
     if (error) throw new Error(error.message);
     return { ok: true, affected: count ?? 0 };
   });
@@ -178,12 +214,19 @@ export const forceLogoutAll = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
+    const callerSuper = await isSuperadmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let superIds = new Set<string>();
+    if (!callerSuper) {
+      const { data: sup } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "superadmin");
+      superIds = new Set((sup ?? []).map((r: any) => r.user_id));
+    }
     const { data: profiles } = await supabaseAdmin.from("profiles").select("id");
     let count = 0;
     for (const p of profiles ?? []) {
       const uid = (p as any).id;
       if (uid === context.userId) continue;
+      if (superIds.has(uid)) continue;
       try {
         // @ts-ignore - signOut by user id may exist in newer SDK
         await supabaseAdmin.auth.admin.signOut(uid, "global");
@@ -206,6 +249,7 @@ export const resetPassword = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid(), password: z.string().min(6) }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
+    await assertCanTouchTarget(context.supabase, context.userId, data.id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.id, { password: data.password });
     if (error) throw new Error(error.message);
@@ -218,6 +262,7 @@ export const deleteUser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     if (data.id === context.userId) throw new Error("Tidak dapat menghapus akun sendiri");
+    await assertCanTouchTarget(context.supabase, context.userId, data.id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("user_roles").delete().eq("user_id", data.id);
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.id);
