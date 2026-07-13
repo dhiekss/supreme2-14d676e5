@@ -288,40 +288,39 @@ export const attendanceDetailList = createServerFn({ method: "GET" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    let q = supabase
-      .from("attendance_records")
-      .select("id, date, rombel_id, officer_name")
-      .order("date", { ascending: false })
-      .range(0, 9999);
-    if (data.date) q = q.eq("date", data.date);
-    if (data.rombelId) q = q.eq("rombel_id", data.rombelId);
-    if (data.officer) q = q.eq("officer_name", data.officer);
-    if (data.from) q = q.gte("date", data.from);
-    if (data.to) q = q.lte("date", data.to);
-    const { data: recs, error } = await q;
-    if (error) throw new Error(error.message);
+    const recs = await fetchAllPaged<any>((f, t) => {
+      let q = supabase
+        .from("attendance_records")
+        .select("id, date, rombel_id, officer_name")
+        .order("date", { ascending: false })
+        .range(f, t);
+      if (data.date) q = q.eq("date", data.date);
+      if (data.rombelId) q = q.eq("rombel_id", data.rombelId);
+      if (data.officer) q = q.eq("officer_name", data.officer);
+      if (data.from) q = q.gte("date", data.from);
+      if (data.to) q = q.lte("date", data.to);
+      return q;
+    });
 
-    const rombelIds = [...new Set((recs ?? []).map((r) => r.rombel_id).filter(Boolean) as string[])];
-    const recIds = (recs ?? []).map((r) => r.id);
-    const [rombelRes, studentsRes, detailsRes] = await Promise.all([
+    const rombelIds = [...new Set(recs.map((r: any) => r.rombel_id).filter(Boolean) as string[])];
+    const recIds = recs.map((r: any) => r.id);
+    const [rombelRes, students, details] = await Promise.all([
       rombelIds.length
         ? supabase.from("rombel").select("id, name, wali_kelas_name").in("id", rombelIds)
         : Promise.resolve({ data: [] as any[] }),
       rombelIds.length
-        ? supabase.from("students").select("id, rombel_id").in("rombel_id", rombelIds).range(0, 99999)
-        : Promise.resolve({ data: [] as any[] }),
-      recIds.length
-        ? supabase.from("attendance_details").select("attendance_record_id, status").in("attendance_record_id", recIds).range(0, 999999)
-        : Promise.resolve({ data: [] as any[] }),
+        ? fetchAllPaged((f, t) => supabase.from("students").select("id, rombel_id").in("rombel_id", rombelIds).range(f, t))
+        : Promise.resolve([] as any[]),
+      fetchDetailsByRecordIds(supabase, recIds),
     ]);
     const rMap = new Map((rombelRes.data ?? []).map((r: any) => [r.id, r]));
     const countByRombel = new Map<string, number>();
-    for (const s of studentsRes.data ?? []) {
+    for (const s of students as any[]) {
       if (!s.rombel_id) continue;
       countByRombel.set(s.rombel_id, (countByRombel.get(s.rombel_id) ?? 0) + 1);
     }
     const perRec = new Map<string, { H: number; S: number; I: number; A: number; P: number }>();
-    for (const d of detailsRes.data ?? []) {
+    for (const d of details as any[]) {
       const key = d.attendance_record_id as string;
       if (!perRec.has(key)) perRec.set(key, { H: 0, S: 0, I: 0, A: 0, P: 0 });
       const r = perRec.get(key)!;
