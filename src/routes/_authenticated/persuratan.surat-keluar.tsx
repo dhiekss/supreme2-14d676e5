@@ -824,22 +824,35 @@ function SuratFormDialog({
               <DialogContent className="max-w-lg">
                 <DialogHeader><DialogTitle>Pilih Nomor Diamankan</DialogTitle></DialogHeader>
                 <div className="max-h-[60vh] overflow-y-auto space-y-1">
-                  {reserved.filter((r) => r.status === "tersedia").map((r) => (
-                    <button
-                      key={r.id}
-                      className="w-full flex items-center justify-between p-3 rounded border hover:bg-muted/40 text-left"
-                      onClick={() => {
-                        setForm((f: any) => ({ ...f, kode_surat: r.kode_surat, nomor_urut: r.nomor_urut, reserved_id: r.id }));
-                        setPickerOpen(false);
-                      }}
-                    >
-                      <div>
-                        <div className="font-semibold">{r.kode_surat} — Nomor {r.nomor_urut}</div>
-                        <div className="text-xs text-muted-foreground">Diamankan {fmtDate(r.tanggal_diamankan)}</div>
-                      </div>
-                      <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50">Tersedia</Badge>
-                    </button>
-                  ))}
+                  {reserved.filter((r) => r.status === "tersedia").map((r) => {
+                    const isWildcard = r.kode_surat === "*";
+                    return (
+                      <button
+                        key={r.id}
+                        className="w-full flex items-center justify-between p-3 rounded border hover:bg-muted/40 text-left"
+                        onClick={() => {
+                          setForm((f: any) => ({
+                            ...f,
+                            // Wildcard rows can be used with any kode — keep the user's selection
+                            kode_surat: isWildcard ? (f.kode_surat || "") : r.kode_surat,
+                            nomor_urut: r.nomor_urut,
+                            reserved_id: r.id,
+                          }));
+                          setPickerOpen(false);
+                        }}
+                      >
+                        <div>
+                          <div className="font-semibold">
+                            {isWildcard ? `Nomor ${r.nomor_urut}` : `${r.kode_surat} — Nomor ${r.nomor_urut}`}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {isWildcard ? "Untuk semua kode surat • " : ""}Diamankan {fmtDate(r.tanggal_diamankan)}
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50">Tersedia</Badge>
+                      </button>
+                    );
+                  })}
                   {reserved.filter((r) => r.status === "tersedia").length === 0 && (
                     <div className="p-6 text-center text-sm text-muted-foreground">Belum ada nomor tersedia.</div>
                   )}
