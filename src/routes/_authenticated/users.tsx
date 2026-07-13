@@ -255,12 +255,14 @@ function UsersPage() {
             <div className="text-sm">
               <div className="font-semibold text-sky-900 mb-2">Informasi Role &amp; Akses</div>
               <ul className="space-y-1 text-sky-900/90">
+                <li><span className="font-semibold">Superadmin:</span> Akses penuh tanpa batas, termasuk pengelolaan sistem tingkat lanjut.</li>
                 <li><span className="font-semibold">Admin:</span> Dapat mengakses semua fitur dan semua rombel.</li>
                 <li><span className="font-semibold">User:</span> Hanya dapat mengakses menu dan rombel yang ditentukan admin.</li>
                 <li><span className="font-semibold">Guru:</span> Akun khusus untuk guru dengan akses menu dan rombel yang ditentukan.</li>
                 <li><span className="font-semibold">Murid:</span> Akun khusus untuk murid dengan akses menu dan rombel yang ditentukan.</li>
                 <li><span className="font-semibold">Waka:</span> Wakil Kepala Sekolah dengan akses menu dan rombel yang ditentukan.</li>
                 <li><span className="font-semibold">Kakonli:</span> Ketua Konsentrasi Keahlian dengan akses menu dan rombel yang ditentukan.</li>
+                <li><span className="font-semibold">Walas:</span> Wali Kelas dengan akses menu dan rombel yang ditentukan.</li>
               </ul>
             </div>
           </div>
