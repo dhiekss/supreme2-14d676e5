@@ -1159,6 +1159,69 @@ export type Database = {
         }
         Relationships: []
       }
+      pengecualian_input: {
+        Row: {
+          aktif: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          keterangan: string | null
+          lingkup: string
+          modul: string
+          tanggal_mulai: string
+          tanggal_selesai: string
+          target_konsentrasi_id: string | null
+          target_rombel_id: string | null
+          target_tingkat: string | null
+          updated_at: string
+        }
+        Insert: {
+          aktif?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          keterangan?: string | null
+          lingkup: string
+          modul: string
+          tanggal_mulai: string
+          tanggal_selesai: string
+          target_konsentrasi_id?: string | null
+          target_rombel_id?: string | null
+          target_tingkat?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aktif?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          keterangan?: string | null
+          lingkup?: string
+          modul?: string
+          tanggal_mulai?: string
+          tanggal_selesai?: string
+          target_konsentrasi_id?: string | null
+          target_rombel_id?: string | null
+          target_tingkat?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pengecualian_input_target_konsentrasi_id_fkey"
+            columns: ["target_konsentrasi_id"]
+            isOneToOne: false
+            referencedRelation: "konsentrasi_keahlian"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pengecualian_input_target_rombel_id_fkey"
+            columns: ["target_rombel_id"]
+            isOneToOne: false
+            referencedRelation: "rombel"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       persuratan_kode_surat: {
         Row: {
           created_at: string | null
