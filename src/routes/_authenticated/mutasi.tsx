@@ -450,8 +450,11 @@ function ResignTab({ onChange }: { onChange: () => void }) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editRow, setEditRow] = useState<any>(null);
+  const [sort, setSort] = useState<{ field: string; dir: SortDir }>({ field: "", dir: null });
   const listFn = useServerFn(listResignations);
   const delFn = useServerFn(deleteResignation);
+  const saveFn = useServerFn(upsertResignation);
+  const qc = useQueryClient();
   const { data } = useSuspenseQuery({
     queryKey: ["mutasi-resign", search],
     queryFn: () => listFn({ data: { search: search || undefined } }),
@@ -460,6 +463,32 @@ function ResignTab({ onChange }: { onChange: () => void }) {
     mutationFn: (id: string) => delFn({ data: { id } }),
     onSuccess: () => { toast.success("Dihapus"); onChange(); },
     onError: (e: any) => toast.error(e.message),
+  });
+  const inlineUpdate = useMutation({
+    mutationFn: (payload: { row: any; patch: any }) =>
+      saveFn({ data: {
+        id: payload.row.id,
+        student_id: payload.row.student_id,
+        rombel_id: payload.row.rombel_id,
+        student_name: payload.row.student_name,
+        student_nis: payload.row.student_nis,
+        tanggal_surat: payload.row.tanggal_surat,
+        alasan: payload.row.alasan,
+        file_surat: payload.row.file_surat,
+        ...payload.patch,
+      } }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["mutasi-resign"] }); qc.invalidateQueries({ queryKey: ["mutasi-sum"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const sorted = useSortedRows(data as any[], sort, {
+    nama: (r) => r.students?.name ?? r.student_name ?? "",
+    nis: (r) => r.students?.nis ?? r.student_nis ?? "",
+    rombel_asal: (r) => r.rombel?.name ?? "",
+    alasan: (r) => r.alasan ?? "",
+    tanggal_surat: (r) => r.tanggal_surat ?? "",
+    dapodik_status: (r) => (r.dapodik_status ?? "belum"),
+    dapodik_tanggal: (r) => r.dapodik_tanggal ?? "",
   });
 
   return (
@@ -470,34 +499,47 @@ function ResignTab({ onChange }: { onChange: () => void }) {
           <Button onClick={() => { setEditRow(null); setOpen(true); }}><Plus className="h-4 w-4 mr-2" />Tambah</Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Tgl Surat</TableHead>
-              <TableHead>Siswa</TableHead>
-              <TableHead>Rombel</TableHead>
-              <TableHead>Alasan</TableHead>
-              <TableHead>Dapodik</TableHead>
+              <SortTh label="Nama Murid" field="nama" sort={sort} setSort={setSort} />
+              <SortTh label="NIS" field="nis" sort={sort} setSort={setSort} />
+              <SortTh label="Rombel Asal" field="rombel_asal" sort={sort} setSort={setSort} />
+              <SortTh label="Alasan" field="alasan" sort={sort} setSort={setSort} />
+              <SortTh label="Tgl Surat" field="tanggal_surat" sort={sort} setSort={setSort} />
+              <SortTh label="Proses Dapodik" field="dapodik_status" sort={sort} setSort={setSort} />
+              <SortTh label="Tgl Proses Dapodik" field="dapodik_tanggal" sort={sort} setSort={setSort} />
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.length === 0 && (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
+            {sorted.length === 0 && (
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
             )}
-            {data.map((r: any) => (
+            {sorted.map((r: any) => (
               <TableRow key={r.id}>
-                <TableCell className="text-xs">{r.tanggal_surat ?? "—"}</TableCell>
-                <TableCell>
-                  <div className="font-medium">{r.students?.name ?? r.student_name ?? "—"}</div>
-                  <div className="text-xs text-muted-foreground">{r.students?.nis ?? r.student_nis ?? ""}</div>
-                </TableCell>
-                <TableCell>{r.rombel?.name ?? "—"}</TableCell>
+                <TableCell className="font-medium">{r.students?.name ?? r.student_name ?? "—"}</TableCell>
+                <TableCell className="text-muted-foreground">{r.students?.nis ?? r.student_nis ?? "—"}</TableCell>
+                <TableCell><RombelPill name={r.rombel?.name} /></TableCell>
                 <TableCell className="max-w-xs truncate">{r.alasan ?? "—"}</TableCell>
-                <TableCell><Badge variant={r.dapodik_status === "sinkron" ? "default" : "secondary"}>{r.dapodik_status ?? "belum"}</Badge></TableCell>
-                <TableCell className="text-right">
-                  <Button size="sm" variant="ghost" onClick={() => { setEditRow(r); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                <TableCell className="text-sm">{fmtDateID(r.tanggal_surat)}</TableCell>
+                <TableCell>
+                  <DapodikSelect
+                    value={r.dapodik_status}
+                    disabled={inlineUpdate.isPending}
+                    onChange={(v) => inlineUpdate.mutate({ row: r, patch: { dapodik_status: v } })}
+                  />
+                </TableCell>
+                <TableCell>
+                  <DapodikDate
+                    value={r.dapodik_tanggal}
+                    disabled={inlineUpdate.isPending}
+                    onChange={(v) => inlineUpdate.mutate({ row: r, patch: { dapodik_tanggal: v } })}
+                  />
+                </TableCell>
+                <TableCell className="text-right whitespace-nowrap">
+                  <Button size="sm" variant="ghost" onClick={() => { setEditRow(r); setOpen(true); }}><Eye className="h-4 w-4 text-primary" /></Button>
                   <Button size="sm" variant="ghost" onClick={() => { if (confirm("Hapus?")) del.mutate(r.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </TableCell>
               </TableRow>
@@ -509,6 +551,7 @@ function ResignTab({ onChange }: { onChange: () => void }) {
     </Card>
   );
 }
+
 
 function ResignDialog({ open, setOpen, row, onSaved }: any) {
   const email = useCurrentEmail();
