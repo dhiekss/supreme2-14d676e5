@@ -207,7 +207,7 @@ function Page() {
               </div>
             ) : (
               <div className="space-y-1 max-h-96 overflow-y-auto pr-2">
-                {presensi.riwayat.map((r, i) => (
+                {presensi.riwayat.map((r: any, i: number) => (
                   <div key={i} className="flex items-center justify-between px-3 py-2 rounded border text-sm">
                     <span>{new Date(r.date).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" })}</span>
                     <StatusBadge status={r.status} />
