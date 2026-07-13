@@ -133,7 +133,7 @@ export async function addHtmlPageToPdf(
       ),
     );
 
-    const target = container.querySelector("#pdf-page")!;
+    const target = container.querySelector("#pdf-page")! as HTMLElement;
     const canvas = await html2canvas(target, {
       scale: 2,
       backgroundColor: "#ffffff",
