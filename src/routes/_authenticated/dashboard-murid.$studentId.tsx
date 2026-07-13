@@ -36,7 +36,7 @@ function Page() {
   if (error) return <div className="text-sm text-destructive">{(error as Error).message}</div>;
   if (!data) return null;
 
-  const { student, rombel, presensi, mapel, sp, teman, periode, semesterOptions } = data;
+  const { student, rombel, presensi, mapel, sp, teman, periode, semesterOptions, riwayatKelas } = data as any;
   const progressSp1 = Math.min(100, Math.round(((sp.alfaTotal / 3 + sp.terlambatTotal / 5) / 2) * 100));
   const layakSp1 = sp.alfaTotal > 3 || sp.terlambatTotal > 5;
   const spLabel = sp.currentLevel === 0 ? "Tidak Ada SP" : `SP${sp.currentLevel}`;
