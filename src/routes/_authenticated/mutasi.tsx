@@ -1,19 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Pencil, RefreshCw } from "lucide-react";
+import { Plus, Trash2, Pencil, RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   listRombelTransfers, upsertRombelTransfer, deleteRombelTransfer,
   listResignations, upsertResignation, deleteResignation,
@@ -27,6 +28,76 @@ export const Route = createFileRoute("/_authenticated/mutasi")({
   errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
 });
 
+const ALASAN_RESIGN = [
+  "Ekonomi",
+  "Menikah",
+  "Bekerja",
+  "Sakit",
+  "Pindah Domisili",
+  "Tidak Berminat Melanjutkan",
+  "Lainnya",
+];
+
+// ---------- shared hooks ----------
+function useCurrentEmail() {
+  const [email, setEmail] = useState<string>("");
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ""));
+  }, []);
+  return email;
+}
+
+async function uploadMutasiFile(file: File): Promise<string> {
+  const ext = file.name.split(".").pop() ?? "bin";
+  const key = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from("mutasi").upload(key, file, {
+    cacheControl: "3600",
+    upsert: false,
+    contentType: file.type || undefined,
+  });
+  if (error) throw new Error(error.message);
+  return key;
+}
+
+function FileUploadField({
+  value, onChange, disabled,
+}: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
+  const [uploading, setUploading] = useState(false);
+  return (
+    <div className="space-y-1">
+      <Input
+        type="file"
+        disabled={disabled || uploading}
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          try {
+            setUploading(true);
+            const key = await uploadMutasiFile(f);
+            onChange(key);
+            toast.success("File terunggah");
+          } catch (err: any) {
+            toast.error(err.message ?? "Gagal upload");
+          } finally {
+            setUploading(false);
+          }
+        }}
+      />
+      {uploading && <div className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Mengunggah…</div>}
+      {value && !uploading && <div className="text-xs text-muted-foreground truncate">Tersimpan: {value}</div>}
+    </div>
+  );
+}
+
+function DiinputOleh({ email }: { email: string }) {
+  return (
+    <div className="rounded-md bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
+      Diinput oleh: <span className="font-medium text-foreground">{email || "—"}</span>
+    </div>
+  );
+}
+
+// ============ Page ============
 function MutasiPage() {
   const qc = useQueryClient();
   const sumFn = useServerFn(mutasiSummary);
@@ -146,6 +217,7 @@ function RombelTransferTab({ onChange }: { onChange: () => void }) {
 }
 
 function RombelDialog({ open, setOpen, row, onSaved }: any) {
+  const email = useCurrentEmail();
   const studentsFn = useServerFn(listStudentsForMutasi);
   const rombelFn = useServerFn(listRombelForMutasi);
   const saveFn = useServerFn(upsertRombelTransfer);
@@ -153,79 +225,87 @@ function RombelDialog({ open, setOpen, row, onSaved }: any) {
   const { data: rombels = [] } = useQuery({ queryKey: ["mutasi-rombels"], queryFn: () => rombelFn() });
   const [f, setF] = useState({
     student_id: row?.student_id ?? "",
+    student_nis: row?.students?.nis ?? "",
     rombel_asal_id: row?.rombel_asal_id ?? "",
     rombel_tujuan_id: row?.rombel_tujuan_id ?? "",
     tanggal_pindah: row?.tanggal_pindah ?? new Date().toISOString().slice(0, 10),
     alasan: row?.alasan ?? "",
-    dapodik_status: row?.dapodik_status ?? "belum",
-    dapodik_tanggal: row?.dapodik_tanggal ?? "",
   });
+  const filteredStudents = useMemo(
+    () => (f.rombel_asal_id ? students.filter((s: any) => s.rombel_id === f.rombel_asal_id) : []),
+    [students, f.rombel_asal_id],
+  );
   const save = useMutation({
-    mutationFn: () => saveFn({ data: { id: row?.id, ...f } }),
+    mutationFn: () => saveFn({ data: {
+      id: row?.id,
+      student_id: f.student_id,
+      rombel_asal_id: f.rombel_asal_id,
+      rombel_tujuan_id: f.rombel_tujuan_id,
+      tanggal_pindah: f.tanggal_pindah,
+      alasan: f.alasan,
+    } }),
     onSuccess: () => { toast.success("Disimpan"); onSaved(); },
     onError: (e: any) => toast.error(e.message),
   });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>{row ? "Edit" : "Tambah"} Pindah Rombel</DialogTitle></DialogHeader>
-        <div className="space-y-3">
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Form Pindah Rombel</DialogTitle>
+          <DialogDescription>Murid yang dipindah akan otomatis masuk ke rombel tujuan</DialogDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label>Siswa</Label>
-            <Select value={f.student_id} onValueChange={(v) => {
-              const s: any = students.find((x: any) => x.id === v);
-              setF({ ...f, student_id: v, rombel_asal_id: s?.rombel_id ?? "" });
-            }}>
-              <SelectTrigger><SelectValue placeholder="Pilih siswa" /></SelectTrigger>
-              <SelectContent>{students.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name} {s.nis ? `(${s.nis})` : ""}</SelectItem>)}</SelectContent>
+            <Label>Rombel Asal <span className="text-destructive">*</span></Label>
+            <Select value={f.rombel_asal_id} onValueChange={(v) => setF({ ...f, rombel_asal_id: v, student_id: "", student_nis: "" })}>
+              <SelectTrigger><SelectValue placeholder="Pilih rombel asal" /></SelectTrigger>
+              <SelectContent>{rombels.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label>Rombel Asal</Label>
-              <Select value={f.rombel_asal_id} onValueChange={(v) => setF({ ...f, rombel_asal_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger>
-                <SelectContent>{rombels.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Rombel Tujuan</Label>
-              <Select value={f.rombel_tujuan_id} onValueChange={(v) => setF({ ...f, rombel_tujuan_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger>
-                <SelectContent>{rombels.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
+          <div>
+            <Label>Nama Murid <span className="text-destructive">*</span></Label>
+            <Select
+              value={f.student_id}
+              onValueChange={(v) => {
+                const s: any = filteredStudents.find((x: any) => x.id === v);
+                setF({ ...f, student_id: v, student_nis: s?.nis ?? "" });
+              }}
+              disabled={!f.rombel_asal_id}
+            >
+              <SelectTrigger><SelectValue placeholder={f.rombel_asal_id ? "Pilih murid" : "Pilih rombel terlebih dahulu"} /></SelectTrigger>
+              <SelectContent>{filteredStudents.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+            </Select>
           </div>
           <div>
-            <Label>Tanggal Pindah</Label>
+            <Label>NIS</Label>
+            <Input value={f.student_nis} readOnly className="bg-muted" />
+          </div>
+          <div>
+            <Label>Rombel Tujuan <span className="text-destructive">*</span></Label>
+            <Select value={f.rombel_tujuan_id} onValueChange={(v) => setF({ ...f, rombel_tujuan_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Pilih rombel tujuan" /></SelectTrigger>
+              <SelectContent>{rombels.filter((r: any) => r.id !== f.rombel_asal_id).map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Tanggal Pindah Rombel <span className="text-destructive">*</span></Label>
             <Input type="date" value={f.tanggal_pindah} onChange={(e) => setF({ ...f, tanggal_pindah: e.target.value })} />
           </div>
-          <div>
-            <Label>Alasan</Label>
-            <Textarea value={f.alasan} onChange={(e) => setF({ ...f, alasan: e.target.value })} />
+          <div className="md:col-span-2">
+            <Label>Alasan Pindah Rombel <span className="text-destructive">*</span></Label>
+            <Textarea placeholder="Masukkan alasan pindah rombel" value={f.alasan} onChange={(e) => setF({ ...f, alasan: e.target.value })} />
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label>Status Dapodik</Label>
-              <Select value={f.dapodik_status} onValueChange={(v) => setF({ ...f, dapodik_status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="belum">Belum</SelectItem>
-                  <SelectItem value="proses">Proses</SelectItem>
-                  <SelectItem value="sinkron">Sinkron</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Tgl Dapodik</Label>
-              <Input type="date" value={f.dapodik_tanggal} onChange={(e) => setF({ ...f, dapodik_tanggal: e.target.value })} />
-            </div>
-          </div>
+          <div className="md:col-span-2"><DiinputOleh email={email} /></div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Batal</Button>
-          <Button onClick={() => save.mutate()} disabled={!f.student_id || !f.rombel_tujuan_id || save.isPending}>Simpan</Button>
+          <Button
+            onClick={() => save.mutate()}
+            disabled={!f.student_id || !f.rombel_asal_id || !f.rombel_tujuan_id || !f.tanggal_pindah || !f.alasan || save.isPending}
+          >
+            Simpan Data Pindah Rombel
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -298,6 +378,7 @@ function ResignTab({ onChange }: { onChange: () => void }) {
 }
 
 function ResignDialog({ open, setOpen, row, onSaved }: any) {
+  const email = useCurrentEmail();
   const studentsFn = useServerFn(listStudentsForMutasi);
   const rombelFn = useServerFn(listRombelForMutasi);
   const saveFn = useServerFn(upsertResignation);
@@ -306,14 +387,16 @@ function ResignDialog({ open, setOpen, row, onSaved }: any) {
   const [f, setF] = useState({
     student_id: row?.student_id ?? "",
     rombel_id: row?.rombel_id ?? "",
-    student_name: row?.student_name ?? "",
-    student_nis: row?.student_nis ?? "",
+    student_name: row?.student_name ?? row?.students?.name ?? "",
+    student_nis: row?.student_nis ?? row?.students?.nis ?? "",
     tanggal_surat: row?.tanggal_surat ?? new Date().toISOString().slice(0, 10),
     alasan: row?.alasan ?? "",
     file_surat: row?.file_surat ?? "",
-    dapodik_status: row?.dapodik_status ?? "belum",
-    dapodik_tanggal: row?.dapodik_tanggal ?? "",
   });
+  const filteredStudents = useMemo(
+    () => (f.rombel_id ? students.filter((s: any) => s.rombel_id === f.rombel_id) : []),
+    [students, f.rombel_id],
+  );
   const save = useMutation({
     mutationFn: () => saveFn({ data: { id: row?.id, ...f } }),
     onSuccess: () => { toast.success("Disimpan"); onSaved(); },
@@ -322,56 +405,62 @@ function ResignDialog({ open, setOpen, row, onSaved }: any) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>{row ? "Edit" : "Tambah"} Resign / Keluar</DialogTitle></DialogHeader>
-        <div className="space-y-3">
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Form Pengunduran Diri</DialogTitle>
+          <DialogDescription>Murid yang dicatat akan otomatis dikeluarkan dari rombel</DialogDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label>Siswa</Label>
-            <Select value={f.student_id} onValueChange={(v) => {
-              const s: any = students.find((x: any) => x.id === v);
-              setF({ ...f, student_id: v, rombel_id: s?.rombel_id ?? "", student_name: s?.name ?? "", student_nis: s?.nis ?? "" });
-            }}>
-              <SelectTrigger><SelectValue placeholder="Pilih siswa" /></SelectTrigger>
-              <SelectContent>{students.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name} {s.nis ? `(${s.nis})` : ""}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label>Nama</Label><Input value={f.student_name} onChange={(e) => setF({ ...f, student_name: e.target.value })} /></div>
-            <div><Label>NIS</Label><Input value={f.student_nis} onChange={(e) => setF({ ...f, student_nis: e.target.value })} /></div>
-          </div>
-          <div>
-            <Label>Rombel</Label>
-            <Select value={f.rombel_id} onValueChange={(v) => setF({ ...f, rombel_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger>
+            <Label>Rombel <span className="text-destructive">*</span></Label>
+            <Select value={f.rombel_id} onValueChange={(v) => setF({ ...f, rombel_id: v, student_id: "", student_name: "", student_nis: "" })}>
+              <SelectTrigger><SelectValue placeholder="Pilih rombel" /></SelectTrigger>
               <SelectContent>{rombels.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label>Tgl Surat</Label><Input type="date" value={f.tanggal_surat} onChange={(e) => setF({ ...f, tanggal_surat: e.target.value })} /></div>
-            <div><Label>File Surat (URL)</Label><Input value={f.file_surat} onChange={(e) => setF({ ...f, file_surat: e.target.value })} /></div>
+          <div>
+            <Label>Nama Murid <span className="text-destructive">*</span></Label>
+            <Select
+              value={f.student_id}
+              onValueChange={(v) => {
+                const s: any = filteredStudents.find((x: any) => x.id === v);
+                setF({ ...f, student_id: v, student_name: s?.name ?? "", student_nis: s?.nis ?? "" });
+              }}
+              disabled={!f.rombel_id}
+            >
+              <SelectTrigger><SelectValue placeholder={f.rombel_id ? "Pilih murid" : "Pilih rombel terlebih dahulu"} /></SelectTrigger>
+              <SelectContent>{filteredStudents.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+            </Select>
           </div>
           <div>
-            <Label>Alasan</Label>
-            <Textarea value={f.alasan} onChange={(e) => setF({ ...f, alasan: e.target.value })} />
+            <Label>NIS</Label>
+            <Input value={f.student_nis} readOnly className="bg-muted" />
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label>Status Dapodik</Label>
-              <Select value={f.dapodik_status} onValueChange={(v) => setF({ ...f, dapodik_status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="belum">Belum</SelectItem>
-                  <SelectItem value="proses">Proses</SelectItem>
-                  <SelectItem value="sinkron">Sinkron</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div><Label>Tgl Dapodik</Label><Input type="date" value={f.dapodik_tanggal} onChange={(e) => setF({ ...f, dapodik_tanggal: e.target.value })} /></div>
+          <div>
+            <Label>Alasan <span className="text-destructive">*</span></Label>
+            <Select value={f.alasan} onValueChange={(v) => setF({ ...f, alasan: v })}>
+              <SelectTrigger><SelectValue placeholder="Pilih alasan" /></SelectTrigger>
+              <SelectContent>{ALASAN_RESIGN.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+            </Select>
           </div>
+          <div>
+            <Label>Tanggal Pada Surat <span className="text-destructive">*</span></Label>
+            <Input type="date" value={f.tanggal_surat} onChange={(e) => setF({ ...f, tanggal_surat: e.target.value })} />
+          </div>
+          <div>
+            <Label>Upload File Surat</Label>
+            <FileUploadField value={f.file_surat} onChange={(v) => setF({ ...f, file_surat: v })} />
+          </div>
+          <div className="md:col-span-2"><DiinputOleh email={email} /></div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Batal</Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending}>Simpan</Button>
+          <Button
+            onClick={() => save.mutate()}
+            disabled={!f.student_id || !f.rombel_id || !f.alasan || !f.tanggal_surat || save.isPending}
+          >
+            Simpan Data
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -446,6 +535,7 @@ function TransferOutTab({ onChange }: { onChange: () => void }) {
 }
 
 function OutDialog({ open, setOpen, row, onSaved }: any) {
+  const email = useCurrentEmail();
   const studentsFn = useServerFn(listStudentsForMutasi);
   const rombelFn = useServerFn(listRombelForMutasi);
   const saveFn = useServerFn(upsertTransferOut);
@@ -454,15 +544,17 @@ function OutDialog({ open, setOpen, row, onSaved }: any) {
   const [f, setF] = useState({
     student_id: row?.student_id ?? "",
     rombel_id: row?.rombel_id ?? "",
-    student_name: row?.student_name ?? "",
-    student_nis: row?.student_nis ?? "",
+    student_name: row?.student_name ?? row?.students?.name ?? "",
+    student_nis: row?.student_nis ?? row?.students?.nis ?? "",
     sekolah_tujuan: row?.sekolah_tujuan ?? "",
     tanggal_surat_pindah: row?.tanggal_surat_pindah ?? new Date().toISOString().slice(0, 10),
     tanggal_diterima_tujuan: row?.tanggal_diterima_tujuan ?? "",
     file_surat: row?.file_surat ?? "",
-    dapodik_status: row?.dapodik_status ?? "belum",
-    dapodik_tanggal: row?.dapodik_tanggal ?? "",
   });
+  const filteredStudents = useMemo(
+    () => (f.rombel_id ? students.filter((s: any) => s.rombel_id === f.rombel_id) : []),
+    [students, f.rombel_id],
+  );
   const save = useMutation({
     mutationFn: () => saveFn({ data: { id: row?.id, ...f } }),
     onSuccess: () => { toast.success("Disimpan"); onSaved(); },
@@ -471,57 +563,63 @@ function OutDialog({ open, setOpen, row, onSaved }: any) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>{row ? "Edit" : "Tambah"} Pindah Sekolah</DialogTitle></DialogHeader>
-        <div className="space-y-3">
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Form Pindah Sekolah</DialogTitle>
+          <DialogDescription>Murid yang dipindah akan otomatis dikeluarkan dari rombel</DialogDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label>Siswa</Label>
-            <Select value={f.student_id} onValueChange={(v) => {
-              const s: any = students.find((x: any) => x.id === v);
-              setF({ ...f, student_id: v, rombel_id: s?.rombel_id ?? "", student_name: s?.name ?? "", student_nis: s?.nis ?? "" });
-            }}>
-              <SelectTrigger><SelectValue placeholder="Pilih siswa" /></SelectTrigger>
-              <SelectContent>{students.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name} {s.nis ? `(${s.nis})` : ""}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label>Nama</Label><Input value={f.student_name} onChange={(e) => setF({ ...f, student_name: e.target.value })} /></div>
-            <div><Label>NIS</Label><Input value={f.student_nis} onChange={(e) => setF({ ...f, student_nis: e.target.value })} /></div>
-          </div>
-          <div>
-            <Label>Rombel</Label>
-            <Select value={f.rombel_id} onValueChange={(v) => setF({ ...f, rombel_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger>
+            <Label>Rombel <span className="text-destructive">*</span></Label>
+            <Select value={f.rombel_id} onValueChange={(v) => setF({ ...f, rombel_id: v, student_id: "", student_name: "", student_nis: "" })}>
+              <SelectTrigger><SelectValue placeholder="Pilih rombel" /></SelectTrigger>
               <SelectContent>{rombels.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div>
-            <Label>Sekolah Tujuan</Label>
-            <Input value={f.sekolah_tujuan} onChange={(e) => setF({ ...f, sekolah_tujuan: e.target.value })} />
+            <Label>Nama Murid <span className="text-destructive">*</span></Label>
+            <Select
+              value={f.student_id}
+              onValueChange={(v) => {
+                const s: any = filteredStudents.find((x: any) => x.id === v);
+                setF({ ...f, student_id: v, student_name: s?.name ?? "", student_nis: s?.nis ?? "" });
+              }}
+              disabled={!f.rombel_id}
+            >
+              <SelectTrigger><SelectValue placeholder={f.rombel_id ? "Pilih murid" : "Pilih rombel terlebih dahulu"} /></SelectTrigger>
+              <SelectContent>{filteredStudents.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+            </Select>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label>Tgl Surat Pindah</Label><Input type="date" value={f.tanggal_surat_pindah} onChange={(e) => setF({ ...f, tanggal_surat_pindah: e.target.value })} /></div>
-            <div><Label>Tgl Diterima</Label><Input type="date" value={f.tanggal_diterima_tujuan} onChange={(e) => setF({ ...f, tanggal_diterima_tujuan: e.target.value })} /></div>
+          <div>
+            <Label>NIS</Label>
+            <Input value={f.student_nis} readOnly className="bg-muted" />
           </div>
-          <div><Label>File Surat (URL)</Label><Input value={f.file_surat} onChange={(e) => setF({ ...f, file_surat: e.target.value })} /></div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label>Status Dapodik</Label>
-              <Select value={f.dapodik_status} onValueChange={(v) => setF({ ...f, dapodik_status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="belum">Belum</SelectItem>
-                  <SelectItem value="proses">Proses</SelectItem>
-                  <SelectItem value="sinkron">Sinkron</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div><Label>Tgl Dapodik</Label><Input type="date" value={f.dapodik_tanggal} onChange={(e) => setF({ ...f, dapodik_tanggal: e.target.value })} /></div>
+          <div>
+            <Label>Sekolah Tujuan <span className="text-destructive">*</span></Label>
+            <Input placeholder="Nama sekolah tujuan" value={f.sekolah_tujuan} onChange={(e) => setF({ ...f, sekolah_tujuan: e.target.value })} />
           </div>
+          <div>
+            <Label>Tanggal Surat Pindah <span className="text-destructive">*</span></Label>
+            <Input type="date" value={f.tanggal_surat_pindah} onChange={(e) => setF({ ...f, tanggal_surat_pindah: e.target.value })} />
+          </div>
+          <div>
+            <Label>Tanggal Diterima</Label>
+            <Input type="date" value={f.tanggal_diterima_tujuan} onChange={(e) => setF({ ...f, tanggal_diterima_tujuan: e.target.value })} />
+          </div>
+          <div className="md:col-span-2">
+            <Label>Upload File Surat</Label>
+            <FileUploadField value={f.file_surat} onChange={(v) => setF({ ...f, file_surat: v })} />
+          </div>
+          <div className="md:col-span-2"><DiinputOleh email={email} /></div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Batal</Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending}>Simpan</Button>
+          <Button
+            onClick={() => save.mutate()}
+            disabled={!f.student_id || !f.rombel_id || !f.sekolah_tujuan || !f.tanggal_surat_pindah || save.isPending}
+          >
+            Simpan Data
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
