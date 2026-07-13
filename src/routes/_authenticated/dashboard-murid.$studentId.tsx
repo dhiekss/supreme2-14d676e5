@@ -299,6 +299,54 @@ function Page() {
           )}
         </CardContent>
       </Card>
+
+      {/* Riwayat Kelas */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <GraduationCap className="h-5 w-5" /> Riwayat Kelas
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">Perpindahan rombel dan kenaikan kelas murid.</p>
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          {(!riwayatKelas || riwayatKelas.length === 0) ? (
+            <div className="text-sm text-muted-foreground text-center py-6">Belum ada riwayat kelas.</div>
+          ) : (
+            <div className="relative pl-4 space-y-3 max-h-96 overflow-y-auto pr-2">
+              {riwayatKelas.map((r: any) => {
+                const toneMap: Record<string, string> = {
+                  naik: "bg-emerald-100 text-emerald-700 border-emerald-200",
+                  tinggal: "bg-amber-100 text-amber-700 border-amber-200",
+                  lulus: "bg-blue-100 text-blue-700 border-blue-200",
+                  keluar: "bg-red-100 text-red-700 border-red-200",
+                  pindah: "bg-violet-100 text-violet-700 border-violet-200",
+                };
+                const tone = toneMap[r.status] ?? "bg-muted";
+                return (
+                  <div key={r.id} className="border rounded-lg p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-xs px-2 py-0.5 rounded border ${tone}`}>{r.jenis}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {r.tanggal ? new Date(r.tanggal).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "—"}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-sm truncate">
+                        <span className="font-medium">{r.rombel_asal}</span>
+                        <span className="mx-2 text-muted-foreground">→</span>
+                        <span className="font-medium">{r.rombel_tujuan}</span>
+                      </div>
+                      {r.catatan && (
+                        <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{r.catatan}</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
