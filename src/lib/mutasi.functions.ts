@@ -164,7 +164,21 @@ export const upsertResignation = createServerFn({ method: "POST" })
   }) => d)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const payload: any = { ...data, created_by: userId };
+    // Snapshot murid & rombel dari data induk agar riwayat tetap utuh
+    let snap: any = {};
+    if (data.student_id) {
+      const { data: s } = await supabase
+        .from("students")
+        .select("name, nis, rombel_id")
+        .eq("id", data.student_id)
+        .maybeSingle();
+      if (s) {
+        snap.student_name = data.student_name ?? (s as any).name ?? null;
+        snap.student_nis = data.student_nis ?? (s as any).nis ?? null;
+        snap.rombel_id = data.rombel_id ?? (s as any).rombel_id ?? null;
+      }
+    }
+    const payload: any = { ...data, ...snap, created_by: userId };
     if (data.id) {
       delete payload.created_by;
       const { error } = await supabase.from("student_resignations").update(payload).eq("id", data.id);
