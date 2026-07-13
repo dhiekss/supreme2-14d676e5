@@ -36,11 +36,13 @@ export const getMyMenuLayout = createServerFn({ method: "GET" })
       .select("role")
       .eq("user_id", context.userId);
     const roles: Role[] = (roleRows ?? []).map((r: any) => r.role);
-    // Priority: admin > wakasek > kakonli > admin_* > guru > murid
+    // Priority: superadmin > admin > wakasek > kakonli > walas > admin_* > guru > murid
     const priority: Role[] = [
+      "superadmin",
       "admin",
       "wakasek",
       "kakonli",
+      "walas",
       "admin_persuratan",
       "admin_sarpras",
       "admin_tpg",
