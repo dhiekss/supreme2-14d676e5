@@ -46,10 +46,10 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
         <td style="${tdBase}"></td>
         <td style="${tdBase}">${i + 1}. ${escapeHtml(p?.nama_peserta)}</td>
         <td style="${tdBase}; padding:0;">
-          <table style="width:100%; height:100%; border-collapse:collapse; table-layout:fixed;">
+          <table style="width:100%; height:100%; border-collapse:collapse; table-layout:fixed; line-height:1.2;">
             <tr>
-              <td style="${tdInner}; width:50%; border-right:1px solid #000;">${escapeHtml(p?.nip)}</td>
-              <td style="${tdInner}">${escapeHtml(p?.jabatan)}</td>
+              <td style="${tdInner}; width:50%; border-right:1px solid #000; min-height:18px;">${escapeHtml(p?.nip)}</td>
+              <td style="${tdInner}; min-height:18px;">${escapeHtml(p?.jabatan)}</td>
             </tr>
           </table>
         </td>
@@ -58,14 +58,14 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
   }).join("");
 
   const kv = (label: string, value: string) =>
-    `<div style="display:flex; margin-bottom:0; line-height:1.15;">
+    `<div style="display:flex; margin-bottom:0; line-height:1.18;">
       <div style="width:110px; flex-shrink:0;">${label}</div>
       <div style="width:8px; flex-shrink:0;">:</div>
       <div style="flex:1;">${value}</div>
     </div>`;
 
   return `
-  <div style="width:1123px; height:794px; padding:10px 16px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:10.5px; color:#000; line-height:1.15;">
+  <div style="width:1123px; height:794px; padding:8px 14px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:10px; color:#000; line-height:1.18;">
     <table style="width:100%; height:100%; border-collapse:collapse;">
       <tr>
         <!-- LEFT -->
@@ -102,10 +102,10 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
           </div>
 
           <!-- MAIN TABLE -->
-          <table style="width:100%; border-collapse:collapse; font-size:10.5px; line-height:1.15; table-layout:fixed;">
+          <table style="width:100%; border-collapse:collapse; font-size:9.4px; line-height:1.2; table-layout:fixed;">
             <colgroup>
-              <col style="width:22px;" />
-              <col style="width:190px;" />
+              <col style="width:20px;" />
+              <col style="width:182px;" />
               <col />
             </colgroup>
             <tr>
@@ -172,10 +172,10 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
               <td style="${tdBase}; text-align:center;">8</td>
               <td style="${tdBase}">Pengikut : Nama</td>
               <td style="${tdBase}; padding:0;">
-                <table style="width:100%; height:100%; border-collapse:collapse; table-layout:fixed;">
+                <table style="width:100%; height:100%; border-collapse:collapse; table-layout:fixed; line-height:1.2;">
                   <tr>
-                    <td style="${tdInner}; width:50%; border-right:1px solid #000;">NIP/Tanggal Lahir</td>
-                    <td style="${tdInner}">Keterangan</td>
+                    <td style="${tdInner}; width:50%; border-right:1px solid #000; min-height:18px;">NIP/Tanggal Lahir</td>
+                    <td style="${tdInner}; min-height:18px;">Keterangan</td>
                   </tr>
                 </table>
               </td>
@@ -223,7 +223,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
             <tr><td style="padding:0; vertical-align:middle;">Tanggal</td><td style="padding:0; vertical-align:middle;">:</td><td style="padding:0; vertical-align:middle;">${fmtTanggalId(row.tanggal_mulai)}</td></tr>
           </table>
 
-          <table style="width:100%; border-collapse:collapse; font-size:10.5px; line-height:1.15; table-layout:fixed;">
+          <table style="width:100%; border-collapse:collapse; font-size:9.8px; line-height:1.18; table-layout:fixed;">
             <colgroup>
               <col style="width:50%;" />
               <col style="width:50%;" />
@@ -267,7 +267,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
                 <div>NIP. ${KPA_NIP}</div>
               </td>
               <td style="${tdBase}">
-                <div style="font-size:10px; line-height:1.15;">
+                <div style="font-size:9.4px; line-height:1.18;">
                   Telah diperiksa dengan keterangan bahwa perjalanan tersebut atas perintahnya
                   dan semata-mata untuk kepentingan jabatan dalam waktu sesingkat-singkatnya
                 </div>
@@ -291,8 +291,8 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
   `;
 }
 
-const tdBase = "border:1px solid #000; padding:3px 6px; vertical-align:middle; line-height:1.15; text-align:left; overflow-wrap:break-word; word-break:normal;";
-const tdInner = "padding:3px 6px; vertical-align:middle; line-height:1.15; text-align:left; overflow-wrap:break-word; word-break:normal;";
+const tdBase = "border:1px solid #000; padding:4px 6px; vertical-align:middle; line-height:1.2; text-align:left; overflow-wrap:break-word; word-break:normal;";
+const tdInner = "padding:4px 6px; vertical-align:middle; line-height:1.2; text-align:left; overflow-wrap:break-word; word-break:normal;";
 
 export function sppdPdfFilename(row: SppdPdfData, prefix = "SPPD"): string {
   const nomor = (row.nomor_surat ?? "").replace(/[\\/:*?"<>|\s]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
