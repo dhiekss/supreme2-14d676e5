@@ -885,7 +885,7 @@ function DetailPresensiCard() {
           </Table>
         </div>
 
-        {rows.length > 0 && (
+        {filteredRows.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span>Tampilkan</span>
@@ -895,7 +895,7 @@ function DetailPresensiCard() {
                   {[10, 25, 50, 100].map((n) => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <span>dari {rows.length} data</span>
+              <span>dari {filteredRows.length}{search.trim() ? ` (dari total ${rows.length})` : ""} data</span>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <Button variant="outline" size="sm" disabled={curPage <= 1} onClick={() => setPage(curPage - 1)}>‹</Button>
