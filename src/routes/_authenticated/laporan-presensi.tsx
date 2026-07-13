@@ -82,6 +82,120 @@ function LaporanPresensi() {
     URL.revokeObjectURL(url);
   };
 
+  // ---- Template & Import ----
+  const qc = useQueryClient();
+  const importFn = useServerFn(importAttendance);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [parsedRows, setParsedRows] = useState<any[] | null>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
+
+  const downloadTemplate = () => {
+    const header = ["Tanggal", "Rombel", "Wali Kelas", "Petugas Piket", "Nama Murid", "NIS", "Status"];
+    const sample = [
+      ["22/06/2026", "X AGRITAN A", "Ahmad Zaeni, S.P., Gr", "Perwakilan X AGRITAN A", "ABDUL ROHMAT", "25.01.001", "HADIR"],
+      ["22/06/2026", "X AGRITAN A", "Ahmad Zaeni, S.P., Gr", "Perwakilan X AGRITAN A", "ABESTIAN NURISKI", "25.01.002", "SAKIT"],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet([header, ...sample]);
+    (ws as any)["!cols"] = [{ wch: 12 }, { wch: 16 }, { wch: 24 }, { wch: 24 }, { wch: 28 }, { wch: 14 }, { wch: 10 }];
+    const notes = XLSX.utils.aoa_to_sheet([
+      ["Petunjuk Pengisian"],
+      [""],
+      ["Kolom", "Keterangan"],
+      ["Tanggal", "Format DD/MM/YYYY atau YYYY-MM-DD"],
+      ["Rombel", "Nama rombel persis seperti di aplikasi (mis. X AGRITAN A)"],
+      ["Wali Kelas", "Opsional (tidak disimpan; hanya untuk referensi)"],
+      ["Petugas Piket", "Nama petugas piket yang menginput"],
+      ["Nama Murid", "Nama lengkap murid sesuai data"],
+      ["NIS", "NIS murid (disarankan diisi untuk kecocokan pasti)"],
+      ["Status", "HADIR / SAKIT / IZIN / ALFA / PKL (atau H, S, I, A, P)"],
+    ]);
+    (notes as any)["!cols"] = [{ wch: 18 }, { wch: 70 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Data");
+    XLSX.utils.book_append_sheet(wb, notes, "Petunjuk");
+    XLSX.writeFile(wb, `template-import-presensi.xlsx`);
+  };
+
+  const normalizeStatus = (s: string): "H" | "S" | "I" | "A" | "P" | null => {
+    const v = String(s ?? "").trim().toUpperCase();
+    if (["H", "HADIR"].includes(v)) return "H";
+    if (["S", "SAKIT"].includes(v)) return "S";
+    if (["I", "IZIN"].includes(v)) return "I";
+    if (["A", "ALFA", "ALPA", "ALPHA"].includes(v)) return "A";
+    if (["P", "PKL"].includes(v)) return "P";
+    return null;
+  };
+
+  const parseDate = (v: any): string | null => {
+    if (v == null || v === "") return null;
+    if (v instanceof Date) return v.toISOString().slice(0, 10);
+    if (typeof v === "number") {
+      // Excel serial date
+      const d = XLSX.SSF.parse_date_code(v);
+      if (!d) return null;
+      const iso = new Date(Date.UTC(d.y, d.m - 1, d.d)).toISOString().slice(0, 10);
+      return iso;
+    }
+    const s = String(v).trim();
+    // DD/MM/YYYY
+    const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m) {
+      const dd = m[1].padStart(2, "0"); const mm = m[2].padStart(2, "0"); const yy = m[3];
+      return `${yy}-${mm}-${dd}`;
+    }
+    // YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    return null;
+  };
+
+  const handleFile = async (file: File) => {
+    setParseError(null); setParsedRows(null); setImportResult(null);
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array", cellDates: true });
+      const wsName = wb.SheetNames.find((n) => n.toLowerCase().includes("data")) ?? wb.SheetNames[0];
+      const ws = wb.Sheets[wsName];
+      const json: any[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
+      const rows: any[] = [];
+      const bad: string[] = [];
+      json.forEach((r, i) => {
+        const rowNo = i + 2;
+        const tanggal = parseDate(r["Tanggal"] ?? r["tanggal"]);
+        const rombel_name = String(r["Rombel"] ?? r["rombel"] ?? "").trim();
+        const officer_name = String(r["Petugas Piket"] ?? r["petugas piket"] ?? r["Petugas"] ?? "").trim();
+        const student_name = String(r["Nama Murid"] ?? r["nama murid"] ?? r["Nama"] ?? "").trim();
+        const nis = String(r["NIS"] ?? r["nis"] ?? "").trim();
+        const status = normalizeStatus(r["Status"] ?? r["status"]);
+        if (!tanggal) { bad.push(`Baris ${rowNo}: Tanggal tidak valid`); return; }
+        if (!rombel_name) { bad.push(`Baris ${rowNo}: Rombel kosong`); return; }
+        if (!officer_name) { bad.push(`Baris ${rowNo}: Petugas Piket kosong`); return; }
+        if (!student_name) { bad.push(`Baris ${rowNo}: Nama Murid kosong`); return; }
+        if (!status) { bad.push(`Baris ${rowNo}: Status tidak dikenali`); return; }
+        rows.push({ tanggal, rombel_name, officer_name, student_name, nis: nis || null, status });
+      });
+      if (rows.length === 0) {
+        setParseError(bad.length ? bad.slice(0, 5).join("; ") : "File tidak berisi data.");
+        return;
+      }
+      setParsedRows(rows);
+      if (bad.length) toast.warning(`${bad.length} baris dilewati saat validasi lokal.`);
+    } catch (e: any) {
+      setParseError(e.message ?? "Gagal membaca file");
+    }
+  };
+
+  const importMut = useMutation({
+    mutationFn: () => importFn({ data: { rows: parsedRows! } }),
+    onSuccess: (res: any) => {
+      setImportResult(res);
+      toast.success(`Berhasil: ${res.recordsCreated} record baru, ${res.recordsUpdated} diperbarui, ${res.detailsInserted} detail.`);
+      qc.invalidateQueries({ queryKey: ["presensi-dashboard"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -90,10 +204,73 @@ function LaporanPresensi() {
           <h1 className="text-2xl font-bold tracking-tight">Laporan Presensi</h1>
           <p className="text-sm text-muted-foreground">Rekap kehadiran seluruh rombel dalam rentang tanggal.</p>
         </div>
-        <Button onClick={exportCsv} disabled={!data} className="gap-2">
-          <Download className="h-4 w-4" /> Ekspor Data CSV
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={downloadTemplate} className="gap-2">
+            <FileSpreadsheet className="h-4 w-4" /> Unduh Template
+          </Button>
+          <Dialog open={importOpen} onOpenChange={(o) => { setImportOpen(o); if (!o) { setParsedRows(null); setParseError(null); setImportResult(null); } }}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2"><Upload className="h-4 w-4" /> Import Record</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Import Record Presensi</DialogTitle>
+                <DialogDescription>
+                  Unggah berkas Excel/CSV sesuai template. Baris dengan Rombel/Murid tak dikenal akan dilewati dan dilaporkan.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <Input
+                  ref={fileRef}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]; if (f) handleFile(f);
+                  }}
+                />
+                {parseError && <p className="text-sm text-destructive">{parseError}</p>}
+                {parsedRows && !importResult && (
+                  <div className="text-sm rounded-md border p-3 bg-muted/30">
+                    Siap diimpor: <b>{parsedRows.length}</b> baris. Data pada tanggal & rombel yang sama akan menimpa record yang ada.
+                  </div>
+                )}
+                {importResult && (
+                  <div className="text-sm rounded-md border p-3 space-y-1">
+                    <div>Record baru: <b>{importResult.recordsCreated}</b></div>
+                    <div>Record diperbarui: <b>{importResult.recordsUpdated}</b></div>
+                    <div>Total detail tersimpan: <b>{importResult.detailsInserted}</b></div>
+                    {importResult.errors?.length > 0 && (
+                      <div className="mt-2">
+                        <div className="font-medium text-destructive">Peringatan ({importResult.errors.length}):</div>
+                        <ul className="list-disc pl-5 max-h-40 overflow-auto">
+                          {importResult.errors.slice(0, 50).map((e: any, i: number) => (
+                            <li key={i}>{e.row ? `Baris ${e.row}: ` : ""}{e.reason}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setImportOpen(false)}>Tutup</Button>
+                <Button
+                  onClick={() => importMut.mutate()}
+                  disabled={!parsedRows || importMut.isPending}
+                  className="gap-2"
+                >
+                  {importMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Import {parsedRows ? `(${parsedRows.length})` : ""}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <Button onClick={exportCsv} disabled={!data} className="gap-2">
+            <Download className="h-4 w-4" /> Ekspor Data CSV
+          </Button>
+        </div>
       </div>
+
 
       {/* Filters */}
       <Card>
