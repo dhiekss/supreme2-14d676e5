@@ -75,7 +75,33 @@ export const upsertRombelTransfer = createServerFn({ method: "POST" })
   }) => d)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const payload: any = { ...data, created_by: userId };
+
+    // Snapshot murid & rombel supaya riwayat tetap utuh
+    const [studentRes, asalRes, tujuanRes] = await Promise.all([
+      supabase.from("students").select("name, nis, rombel_id").eq("id", data.student_id).maybeSingle(),
+      data.rombel_asal_id
+        ? supabase.from("rombel").select("name").eq("id", data.rombel_asal_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      data.rombel_tujuan_id
+        ? supabase.from("rombel").select("name").eq("id", data.rombel_tujuan_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+    const rombelAsalId = data.rombel_asal_id ?? (studentRes.data as any)?.rombel_id ?? null;
+    let rombelAsalName: string | null = (asalRes.data as any)?.name ?? null;
+    if (!rombelAsalName && rombelAsalId) {
+      const { data: r } = await supabase.from("rombel").select("name").eq("id", rombelAsalId).maybeSingle();
+      rombelAsalName = (r as any)?.name ?? null;
+    }
+
+    const payload: any = {
+      ...data,
+      rombel_asal_id: rombelAsalId,
+      student_name: (studentRes.data as any)?.name ?? null,
+      student_nis: (studentRes.data as any)?.nis ?? null,
+      rombel_asal_name: rombelAsalName,
+      rombel_tujuan_name: (tujuanRes.data as any)?.name ?? null,
+      created_by: userId,
+    };
     if (data.id) {
       delete payload.created_by;
       const { error } = await supabase.from("student_rombel_transfers").update(payload).eq("id", data.id);
