@@ -5,12 +5,13 @@ import { z } from "zod";
 const ROLES = ["superadmin", "admin", "wakasek", "kakonli", "walas", "guru", "murid", "admin_sarpras", "admin_persuratan", "admin_tpg"] as const;
 
 async function assertAdmin(supabase: any, userId: string) {
-  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId).in("role", ["admin", "superadmin"]).limit(1).maybeSingle();
+  const { data, error } = await supabase.rpc("is_admin", { _user_id: userId });
+  if (error) throw new Error(`Forbidden: ${error.message}`);
   if (!data) throw new Error("Forbidden: hanya admin yang dapat mengelola pengguna");
 }
 
 async function isSuperadmin(supabase: any, userId: string) {
-  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "superadmin").maybeSingle();
+  const { data } = await supabase.rpc("is_superadmin", { _user_id: userId });
   return !!data;
 }
 
