@@ -262,6 +262,7 @@ export const deleteUser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     if (data.id === context.userId) throw new Error("Tidak dapat menghapus akun sendiri");
+    await assertCanTouchTarget(context.supabase, context.userId, data.id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("user_roles").delete().eq("user_id", data.id);
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.id);
