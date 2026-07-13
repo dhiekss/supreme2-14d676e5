@@ -247,18 +247,17 @@ export const rombelBelumInputByDate = createServerFn({ method: "GET" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const [rombelRes, studentsRes, recordsRes] = await Promise.all([
-      supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian, wali_kelas_name").range(0, 9999),
-      supabase.from("students").select("id, rombel_id").range(0, 99999),
-      supabase.from("attendance_records").select("rombel_id").eq("date", data.date).range(0, 9999),
+    const [allRombel, allStudents, records] = await Promise.all([
+      fetchAllPaged((f, t) => supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian, wali_kelas_name").range(f, t)),
+      fetchAllPaged((f, t) => supabase.from("students").select("id, rombel_id").range(f, t)),
+      fetchAllPaged((f, t) => supabase.from("attendance_records").select("rombel_id").eq("date", data.date).range(f, t)),
     ]);
-    const allRombel = rombelRes.data ?? [];
     const filtered = data.tingkat && data.tingkat !== "__all"
       ? allRombel.filter((r: any) => String(r.tingkat) === String(data.tingkat))
       : allRombel;
-    const hasRec = new Set((recordsRes.data ?? []).map((r: any) => r.rombel_id));
+    const hasRec = new Set(records.map((r: any) => r.rombel_id));
     const countByRombel = new Map<string, number>();
-    for (const s of studentsRes.data ?? []) {
+    for (const s of allStudents) {
       if (!s.rombel_id) continue;
       countByRombel.set(s.rombel_id, (countByRombel.get(s.rombel_id) ?? 0) + 1);
     }
