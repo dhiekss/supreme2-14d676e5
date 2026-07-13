@@ -179,6 +179,7 @@ export const toggleUserActive = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid(), is_active: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
+    await assertCanTouchTarget(context.supabase, context.userId, data.id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("profiles").update({
       is_active: data.is_active,
