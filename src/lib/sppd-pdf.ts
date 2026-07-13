@@ -259,22 +259,22 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
               </tr>
             `).join("")}
             <tr>
-              <td style="${tdBase}; height:98px;">
+              <td style="${tdBase}; height:160px;">
                 <div>IV. Tiba kembali di :</div>
                 <div>${INSTANSI}</div>
                 <div>Pada Tanggal : ${fmtTanggalId(row.tanggal_selesai)}</div>
-                <div style="height:14px;"></div>
+                <div style="height:55px;"></div>
                 <div style="font-weight:bold;">${KPA_NAMA}</div>
                 <div>${KPA_PANGKAT}</div>
                 <div>NIP. ${KPA_NIP}</div>
               </td>
-              <td style="${tdBase}; height:98px;">
+              <td style="${tdBase}; height:160px;">
                 <div style="font-size:9.4px; line-height:1.18;">
                   Telah diperiksa dengan keterangan bahwa perjalanan tersebut atas perintahnya
                   dan semata-mata untuk kepentingan jabatan dalam waktu sesingkat-singkatnya
                 </div>
                 <div style="margin-top:6px;">Kuasa Pengguna Anggaran</div>
-                <div style="height:14px;"></div>
+                <div style="height:55px;"></div>
                 <div style="font-weight:bold;">${KPA_NAMA}</div>
                 <div>${KPA_PANGKAT}</div>
                 <div>NIP. ${KPA_NIP}</div>
