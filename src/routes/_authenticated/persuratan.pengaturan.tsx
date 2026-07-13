@@ -535,7 +535,6 @@ function DiamankanTab() {
   const [active, setActive] = useState(true);
   const [count, setCount] = useState(3);
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]);
-  const [kode, setKode] = useState("000");
 
   useEffect(() => {
     const map: Record<string, string> = {};
@@ -546,7 +545,6 @@ function DiamankanTab() {
       const arr = JSON.parse(map["reserve_days"] ?? "[1,2,3,4,5]");
       if (Array.isArray(arr)) setDays(arr.map((n: any) => Number(n)).filter((n) => n >= 0 && n <= 6));
     } catch { /* ignore */ }
-    setKode(map["reserve_kode_surat"] ?? "000");
   }, [data]);
 
   const toggleDay = (d: number) => {
@@ -562,7 +560,6 @@ function DiamankanTab() {
             { key: "reserve_active", value: active ? "true" : "false", deskripsi: "Aktifkan pengamanan nomor surat otomatis" },
             { key: "reserve_count_per_day", value: String(count), deskripsi: "Jumlah nomor surat yang diamankan setiap hari" },
             { key: "reserve_days", value: JSON.stringify(days), deskripsi: "Hari aktif pengamanan nomor (0=Minggu ... 6=Sabtu)" },
-            { key: "reserve_kode_surat", value: kode.trim() || "000", deskripsi: "Kode surat default yang diamankan" },
           ],
         },
       });
