@@ -40,9 +40,10 @@ function Page() {
       </div>
 
       <Tabs defaultValue="format-nomor">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="format-nomor">Format Nomor</TabsTrigger>
           <TabsTrigger value="kode-surat">Kode Surat</TabsTrigger>
+          <TabsTrigger value="diamankan">Surat Diamankan</TabsTrigger>
           <TabsTrigger value="umum">Umum</TabsTrigger>
         </TabsList>
 
@@ -51,6 +52,9 @@ function Page() {
         </TabsContent>
         <TabsContent value="kode-surat" className="mt-4">
           <KodeSuratTab />
+        </TabsContent>
+        <TabsContent value="diamankan" className="mt-4">
+          <DiamankanTab />
         </TabsContent>
         <TabsContent value="umum" className="mt-4">
           <UmumTab />
