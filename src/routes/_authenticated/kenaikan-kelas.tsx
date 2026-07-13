@@ -37,6 +37,7 @@ function Page() {
   const commitFn = useServerFn(commitPromotion);
   const batchesFn = useServerFn(listPromotionBatches);
   const undoFn = useServerFn(undoPromotionBatch);
+  const undoStudentFn = useServerFn(undoPromotionStudent);
 
   const { data: refs } = useQuery({ queryKey: ["kenaikan-refs"], queryFn: () => refsFn() });
   const rombelList = refs?.rombel ?? [];
