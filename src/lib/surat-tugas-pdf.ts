@@ -46,11 +46,11 @@ function kopHtml(logo: string): string {
       <td style="width:110px; vertical-align:middle; text-align:center;">
         <img src="${logo}" style="width:95px; height:auto;" />
       </td>
-      <td style="text-align:center; vertical-align:middle; line-height:1.35;">
+      <td style="text-align:center; vertical-align:middle; line-height:1.2;">
         <div style="font-size:12px;">PEMERINTAH DAERAH PROVINSI JAWA BARAT</div>
         <div style="font-size:12px;">DINAS PENDIDIKAN</div>
         <div style="font-size:12px;">CABANG DINAS PENDIDIKAN WILAYAH IV</div>
-        <div style="font-size:16px; font-weight:bold; margin-top:2px;">SMK NEGERI 1 PUSAKANAGARA</div>
+        <div style="font-size:16px; font-weight:bold; margin-top:0;">SMK NEGERI 1 PUSAKANAGARA</div>
         <div style="font-size:10px;">Jalan Raya Pusakanagara No.154 Telp. (0260) 7544240</div>
         <div style="font-size:10px;">Website : smknpusakanagara.sch.id | Email : smknpusakanagara@gmail.com</div>
         <div style="font-size:10px;">SUBANG - 41255</div>
