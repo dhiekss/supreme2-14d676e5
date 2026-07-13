@@ -280,15 +280,23 @@ function Page() {
   );
 }
 
-function RiwayatTab({ batchesFn, undoFn, qc }: any) {
+function RiwayatTab({ batchesFn, undoFn, undoStudentFn, qc }: any) {
   const { data } = useQuery({ queryKey: ["kenaikan-batches"], queryFn: () => batchesFn() });
   const batches = data ?? [];
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["kenaikan-batches"] });
+    qc.invalidateQueries({ queryKey: ["kenaikan-refs"] });
+  };
   const undo = useMutation({
     mutationFn: (batch_id: string) => undoFn({ data: { batch_id } }),
-    onSuccess: () => {
-      toast.success("Batch dibatalkan");
-      qc.invalidateQueries({ queryKey: ["kenaikan-batches"] });
-      qc.invalidateQueries({ queryKey: ["kenaikan-refs"] });
+    onSuccess: () => { toast.success("Batch dibatalkan"); invalidateAll(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const undoStudent = useMutation({
+    mutationFn: (promotion_id: string) => undoStudentFn({ data: { promotion_id } }),
+    onSuccess: (r: any) => {
+      toast.success(`${r.student_name ?? "Siswa"} dikembalikan ke kelas asal`);
+      invalidateAll();
     },
     onError: (e: any) => toast.error(e.message),
   });
