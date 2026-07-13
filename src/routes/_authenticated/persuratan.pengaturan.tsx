@@ -513,3 +513,162 @@ function UmumTab() {
     </Card>
   );
 }
+
+/* ================= SURAT DIAMANKAN ================= */
+const HARI_OPTIONS: { value: number; label: string }[] = [
+  { value: 0, label: "Minggu" },
+  { value: 1, label: "Senin" },
+  { value: 2, label: "Selasa" },
+  { value: 3, label: "Rabu" },
+  { value: 4, label: "Kamis" },
+  { value: 5, label: "Jumat" },
+  { value: 6, label: "Sabtu" },
+];
+
+function DiamankanTab() {
+  const qc = useQueryClient();
+  const list = useServerFn(listPengaturanUmum);
+  const save = useServerFn(savePengaturanUmum);
+  const runNow = useServerFn(runAutoReserveNow);
+  const { data = [], isLoading } = useQuery({ queryKey: ["persuratan-umum"], queryFn: () => list() });
+
+  const [active, setActive] = useState(true);
+  const [count, setCount] = useState(3);
+  const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [kode, setKode] = useState("000");
+
+  useEffect(() => {
+    const map: Record<string, string> = {};
+    for (const r of data as any[]) map[r.key] = r.value ?? "";
+    setActive((map["reserve_active"] ?? "true") === "true");
+    setCount(Number(map["reserve_count_per_day"] ?? 3) || 0);
+    try {
+      const arr = JSON.parse(map["reserve_days"] ?? "[1,2,3,4,5]");
+      if (Array.isArray(arr)) setDays(arr.map((n: any) => Number(n)).filter((n) => n >= 0 && n <= 6));
+    } catch { /* ignore */ }
+    setKode(map["reserve_kode_surat"] ?? "000");
+  }, [data]);
+
+  const toggleDay = (d: number) => {
+    setDays((prev) => prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort());
+  };
+
+  const saveMut = useMutation({
+    mutationFn: async () => {
+      if (count < 0 || count > 50) throw new Error("Jumlah nomor per hari harus 0–50");
+      await save({
+        data: {
+          items: [
+            { key: "reserve_active", value: active ? "true" : "false", deskripsi: "Aktifkan pengamanan nomor surat otomatis" },
+            { key: "reserve_count_per_day", value: String(count), deskripsi: "Jumlah nomor surat yang diamankan setiap hari" },
+            { key: "reserve_days", value: JSON.stringify(days), deskripsi: "Hari aktif pengamanan nomor (0=Minggu ... 6=Sabtu)" },
+            { key: "reserve_kode_surat", value: kode.trim() || "000", deskripsi: "Kode surat default yang diamankan" },
+          ],
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Pengaturan pengamanan tersimpan");
+      qc.invalidateQueries({ queryKey: ["persuratan-umum"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Gagal menyimpan"),
+  });
+
+  const runMut = useMutation({
+    mutationFn: () => runNow(),
+    onSuccess: (r: any) => {
+      const res = r?.result ?? {};
+      if (res.skipped) toast.info(`Dilewati: ${res.skipped}`);
+      else toast.success(`${res.inserted ?? 0} nomor diamankan (mulai dari ${res.from ?? "-"})`);
+      qc.invalidateQueries({ queryKey: ["nomor-diamankan"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Gagal menjalankan"),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Pengamanan Nomor Surat Otomatis</CardTitle>
+        <CardDescription>
+          Sistem akan otomatis mengamankan sejumlah nomor surat setiap pergantian hari,
+          hanya pada hari-hari yang dipilih. Nomor yang diamankan tampil di halaman Surat Keluar
+          dan dapat langsung digunakan saat membuat surat.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {isLoading ? (
+          <div className="py-6 text-center text-muted-foreground">Memuat…</div>
+        ) : (
+          <>
+            <div className="flex items-center gap-3">
+              <Switch checked={active} onCheckedChange={setActive} />
+              <Label>Aktifkan Pengamanan Otomatis</Label>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Jumlah Nomor per Hari</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={50}
+                  value={count}
+                  onChange={(e) => setCount(Number(e.target.value))}
+                />
+                <p className="text-xs text-muted-foreground">Banyaknya nomor yang diamankan setiap hari aktif.</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Kode Surat</Label>
+                <Input value={kode} onChange={(e) => setKode(e.target.value)} placeholder="000" />
+                <p className="text-xs text-muted-foreground">Kode klasifikasi yang akan diamankan (mis. 000).</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Hari Pengamanan</Label>
+              <div className="flex flex-wrap gap-2">
+                {HARI_OPTIONS.map((h) => {
+                  const on = days.includes(h.value);
+                  return (
+                    <button
+                      key={h.value}
+                      type="button"
+                      onClick={() => toggleDay(h.value)}
+                      className={`px-3 py-1.5 rounded-md border text-sm transition-colors ${
+                        on
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background text-foreground border-input hover:bg-accent"
+                      }`}
+                    >
+                      {h.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Klik untuk memilih hari-hari saat sistem akan mengamankan nomor otomatis.
+              </p>
+            </div>
+
+            <div className="rounded-md border bg-muted/40 p-3 text-sm">
+              <div className="font-medium mb-1">Jadwal</div>
+              <div className="text-muted-foreground">
+                Otomatis dijalankan setiap hari pukul <span className="font-mono">00:05 WIB</span>.
+                Nomor hanya akan diamankan bila pengaturan aktif dan hari tersebut termasuk hari pengamanan.
+              </div>
+            </div>
+
+            <div className="flex justify-between gap-2">
+              <Button variant="outline" onClick={() => runMut.mutate()} disabled={runMut.isPending}>
+                Jalankan Sekarang
+              </Button>
+              <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+                Simpan Perubahan
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
