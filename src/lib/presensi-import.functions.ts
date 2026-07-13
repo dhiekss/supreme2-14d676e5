@@ -16,7 +16,7 @@ const RowSchema = z.object({
 export const importAttendance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    z.object({ rows: z.array(RowSchema).min(1).max(20000) }).parse,
+    z.object({ rows: z.array(RowSchema).min(1).max(10000) }).parse,
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;

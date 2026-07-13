@@ -186,14 +186,67 @@ function LaporanPresensi() {
     }
   };
 
+  const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null);
+
+  const CHUNK_SIZE = 2000;
+
+  const buildBatches = (rows: any[]): any[][] => {
+    // Group rows by (rombel|tanggal) so we never split a group across batches
+    // (the server deletes existing details when re-importing the same group).
+    const groups = new Map<string, any[]>();
+    for (const r of rows) {
+      const k = `${r.rombel_name}|${r.tanggal}`;
+      const arr = groups.get(k) ?? [];
+      arr.push(r);
+      groups.set(k, arr);
+    }
+    const batches: any[][] = [];
+    let cur: any[] = [];
+    for (const g of groups.values()) {
+      if (cur.length + g.length > CHUNK_SIZE && cur.length > 0) {
+        batches.push(cur);
+        cur = [];
+      }
+      // If a single group is larger than CHUNK_SIZE, still send it whole
+      // (bounded by server max of 10000 rows).
+      cur.push(...g);
+    }
+    if (cur.length) batches.push(cur);
+    return batches;
+  };
+
   const importMut = useMutation({
-    mutationFn: () => importFn({ data: { rows: parsedRows! } }),
+    mutationFn: async () => {
+      const batches = buildBatches(parsedRows!);
+      setImportProgress({ done: 0, total: batches.length });
+      const agg = {
+        ok: true,
+        recordsCreated: 0,
+        recordsUpdated: 0,
+        detailsInserted: 0,
+        totalGroups: 0,
+        totalRows: 0,
+        errors: [] as Array<{ row: number; reason: string }>,
+      };
+      for (let i = 0; i < batches.length; i++) {
+        const res: any = await importFn({ data: { rows: batches[i] } });
+        agg.recordsCreated += res.recordsCreated ?? 0;
+        agg.recordsUpdated += res.recordsUpdated ?? 0;
+        agg.detailsInserted += res.detailsInserted ?? 0;
+        agg.totalGroups += res.totalGroups ?? 0;
+        agg.totalRows += res.totalRows ?? 0;
+        if (Array.isArray(res.errors)) agg.errors.push(...res.errors);
+        setImportProgress({ done: i + 1, total: batches.length });
+      }
+      return agg;
+    },
     onSuccess: (res: any) => {
       setImportResult(res);
+      setImportProgress(null);
       toast.success(`Berhasil: ${res.recordsCreated} record baru, ${res.recordsUpdated} diperbarui, ${res.detailsInserted} detail.`);
       qc.invalidateQueries({ queryKey: ["presensi-dashboard"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => { setImportProgress(null); toast.error(e.message); },
   });
 
   return (
@@ -208,7 +261,7 @@ function LaporanPresensi() {
           <Button variant="outline" onClick={downloadTemplate} className="gap-2">
             <FileSpreadsheet className="h-4 w-4" /> Unduh Template
           </Button>
-          <Dialog open={importOpen} onOpenChange={(o) => { setImportOpen(o); if (!o) { setParsedRows(null); setParseError(null); setImportResult(null); } }}>
+          <Dialog open={importOpen} onOpenChange={(o) => { setImportOpen(o); if (!o) { setParsedRows(null); setParseError(null); setImportResult(null); setImportProgress(null); } }}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2"><Upload className="h-4 w-4" /> Import Record</Button>
             </DialogTrigger>
@@ -230,8 +283,19 @@ function LaporanPresensi() {
                 />
                 {parseError && <p className="text-sm text-destructive">{parseError}</p>}
                 {parsedRows && !importResult && (
-                  <div className="text-sm rounded-md border p-3 bg-muted/30">
-                    Siap diimpor: <b>{parsedRows.length}</b> baris. Data pada tanggal & rombel yang sama akan menimpa record yang ada.
+                  <div className="text-sm rounded-md border p-3 bg-muted/30 space-y-1">
+                    <div>Siap diimpor: <b>{parsedRows.length.toLocaleString("id-ID")}</b> baris.</div>
+                    <div className="text-xs text-muted-foreground">
+                      Akan dikirim dalam <b>{buildBatches(parsedRows).length}</b> batch (maks {CHUNK_SIZE.toLocaleString("id-ID")} baris/batch). Data pada tanggal & rombel yang sama akan menimpa record yang ada.
+                    </div>
+                    {importProgress && (
+                      <div className="mt-2">
+                        <div className="text-xs mb-1">Memproses batch {importProgress.done} / {importProgress.total}…</div>
+                        <div className="h-2 w-full bg-muted rounded overflow-hidden">
+                          <div className="h-full bg-primary transition-all" style={{ width: `${(importProgress.done / importProgress.total) * 100}%` }} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 {importResult && (
