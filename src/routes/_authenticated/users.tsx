@@ -477,7 +477,7 @@ function UsersPage() {
                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setResetFor(u)} title="Reset password">
                           <KeyRound className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { console.log("[EditClick] u=", u); setEdit(u); setOpen(true); }} title="Edit">
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setEdit(u); setOpen(true); }} title="Edit">
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive"
