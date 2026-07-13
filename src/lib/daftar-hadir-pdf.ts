@@ -165,12 +165,12 @@ function buildAttendanceTable(
         bg = COLOR_EMPTY_BG;
         text = "";
       }
-      cells += `<td style="${td} background:${bg}; color:${color};">${text}</td>`;
+      cells += `<td style="${tdDay} background:${bg}; color:${color};">${text}</td>`;
     }
     body += `<tr>
       <td style="${td}">${idx + 1}</td>
-      <td style="${td}">${escapeHtml(s.nis ?? "")}</td>
-      <td style="${td} text-align:left; padding-left:4px;">${escapeHtml(s.name)}</td>
+      <td style="${td} white-space:nowrap; font-size:8px;">${escapeHtml(s.nis ?? "")}</td>
+      <td style="${td} text-align:left; padding-left:4px; white-space:normal; word-break:break-word; line-height:1.15;">${escapeHtml(s.name)}</td>
       <td style="${td}">${escapeHtml((s.gender ?? "").toString().toUpperCase().startsWith("P") ? "P" : (s.gender ? "L" : ""))}</td>
       ${cells}
       <td style="${td}">${kosong ? "" : h || ""}</td>
@@ -183,6 +183,7 @@ function buildAttendanceTable(
 
   return `
   <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-family:Arial,Helvetica,sans-serif;">
+    ${colgroup}
     <thead>${head}</thead>
     <tbody>${body}</tbody>
   </table>
