@@ -1,31 +1,17 @@
 import { jsPDF } from "jspdf";
-import logoJabarAsset from "@/assets/logo-jabar.png.asset.json";
-
-const BULAN_ID = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-];
-const HARI_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-
-function fmtTanggalId(s?: string | null): string {
-  if (!s) return "";
-  const d = new Date(s);
-  if (isNaN(d.getTime())) return String(s);
-  return `${d.getDate()} ${BULAN_ID[d.getMonth()]} ${d.getFullYear()}`;
-}
-
-function fmtHariTanggalId(a?: string | null, b?: string | null): string {
-  if (!a) return "";
-  const da = new Date(a);
-  if (isNaN(da.getTime())) return String(a);
-  const hariA = HARI_ID[da.getDay()];
-  const fa = fmtTanggalId(a);
-  if (!b || a === b) return `${hariA}, ${fa}`;
-  const db = new Date(b);
-  if (isNaN(db.getTime())) return `${hariA}, ${fa}`;
-  const hariB = HARI_ID[db.getDay()];
-  return `${hariA}, ${fa} s.d. ${hariB}, ${fmtTanggalId(b)}`;
-}
+import {
+  addHtmlPageToPdf,
+  escapeHtml,
+  fmtHariTanggalId,
+  fmtTanggalId,
+  INSTANSI,
+  KEPSEK_JABATAN,
+  KOTA,
+  KPA_NAMA,
+  KPA_NIP,
+  KPA_PANGKAT,
+  loadLogoDataUrl,
+} from "./pdf-html-common";
 
 export type PesertaPdf = {
   nama_peserta?: string | null;
@@ -52,188 +38,112 @@ export type SuratTugasPdfData = {
 };
 
 const URUTAN_LABEL = ["Pertama", "Kedua", "Ketiga", "Keempat", "Kelima"];
-const FONT = "helvetica"; // jsPDF built-in yang serupa Arial
 
-let logoCache: string | null = null;
-async function loadLogoDataUrl(): Promise<string | null> {
-  if (logoCache) return logoCache;
-  try {
-    const res = await fetch(logoJabarAsset.url);
-    const blob = await res.blob();
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const fr = new FileReader();
-      fr.onload = () => resolve(fr.result as string);
-      fr.onerror = () => reject(fr.error);
-      fr.readAsDataURL(blob);
-    });
-    logoCache = dataUrl;
-    return dataUrl;
-  } catch {
-    return null;
-  }
+function kopHtml(logo: string): string {
+  return `
+  <table style="width:100%; border-collapse:collapse; margin-bottom:6px;">
+    <tr>
+      <td style="width:110px; vertical-align:middle; text-align:center;">
+        <img src="${logo}" style="width:95px; height:auto;" />
+      </td>
+      <td style="text-align:center; vertical-align:middle; line-height:1.35;">
+        <div style="font-size:13px;">PEMERINTAH DAERAH PROVINSI JAWA BARAT</div>
+        <div style="font-size:13px;">DINAS PENDIDIKAN</div>
+        <div style="font-size:13px;">CABANG DINAS PENDIDIKAN WILAYAH IV</div>
+        <div style="font-size:18px; font-weight:bold; margin-top:2px;">SMK NEGERI 1 PUSAKANAGARA</div>
+        <div style="font-size:10.5px;">Jalan Raya Pusakanagara No.154 Telp. (0260) 7544240</div>
+        <div style="font-size:10.5px;">Website : smknpusakanagara.sch.id | Email : smknpusakanagara@gmail.com</div>
+        <div style="font-size:10.5px;">SUBANG - 41255</div>
+      </td>
+      <td style="width:30px;"></td>
+    </tr>
+  </table>
+  <div style="border-top:3px solid #000; border-bottom:1px solid #000; height:4px; margin-bottom:14px;"></div>
+  `;
 }
 
-export async function renderSuratTugas(doc: jsPDF, row: SuratTugasPdfData): Promise<void> {
-  const pageW = doc.internal.pageSize.getWidth();
-  const marginL = 20;
-  const marginR = 20;
-  const contentW = pageW - marginL - marginR;
-  let y = 15;
+function pesertaBlockHtml(p: PesertaPdf, idx: number): string {
+  const label = URUTAN_LABEL[idx] ?? `Ke-${idx + 1}`;
+  const rowStyle = "vertical-align:top;";
+  const lbl = "width:110px; padding:1px 0;";
+  const sep = "width:10px; padding:1px 0;";
+  return `
+    <div style="margin:6px 0 4px 0;"><b>${idx + 1}. ${label}</b></div>
+    <table style="width:100%; border-collapse:collapse; font-size:12px; margin-left:16px;">
+      <tr style="${rowStyle}"><td style="${lbl}">Nama</td><td style="${sep}">:</td><td>${escapeHtml(p.nama_peserta)}</td></tr>
+      <tr style="${rowStyle}"><td style="${lbl}">NIP</td><td style="${sep}">:</td><td>${escapeHtml(p.nip)}</td></tr>
+      <tr style="${rowStyle}"><td style="${lbl}">Pangkat/Gol</td><td style="${sep}">:</td><td>${escapeHtml(p.pangkat_golongan)}</td></tr>
+      <tr style="${rowStyle}"><td style="${lbl}">Jabatan</td><td style="${sep}">:</td><td>${escapeHtml(p.jabatan)}</td></tr>
+      <tr style="${rowStyle}"><td style="${lbl}">Unit Kerja</td><td style="${sep}">:</td><td>${INSTANSI}</td></tr>
+    </table>
+  `;
+}
 
-
-  // ===== LOGO =====
-  const logo = await loadLogoDataUrl();
-  if (logo) {
-    // Logo di kiri kop, ukuran ~25mm
-    doc.addImage(logo, "PNG", marginL + 2, y - 2, 25, 28);
-  }
-
-  // ===== KOP (text di kanan logo, tetap terpusat pada area teks) =====
-  const kopCenterX = pageW / 2 + 8;
-  doc.setFont(FONT, "normal");
-  doc.setFontSize(12);
-  doc.text("PEMERINTAH DAERAH PROVINSI JAWA BARAT", kopCenterX, y, { align: "center" });
-  y += 5;
-  doc.text("DINAS PENDIDIKAN", kopCenterX, y, { align: "center" });
-  y += 5;
-  doc.text("CABANG DINAS PENDIDIKAN WILAYAH IV", kopCenterX, y, { align: "center" });
-  y += 6;
-  doc.setFont(FONT, "bold");
-  doc.setFontSize(16);
-  doc.text("SMK NEGERI 1 PUSAKANAGARA", kopCenterX, y, { align: "center" });
-  y += 5;
-  doc.setFont(FONT, "normal");
-  doc.setFontSize(10);
-  doc.text("Jalan Raya Pusakanagara No.154 Telp. (0260) 7544240", kopCenterX, y, { align: "center" });
-  y += 4;
-  doc.text("Website : smknpusakanagara.sch.id | Email : smknpusakanagara@gmail.com", kopCenterX, y, { align: "center" });
-  y += 4;
-  doc.text("SUBANG - 41255", kopCenterX, y, { align: "center" });
-  y += 3;
-
-  // Garis pemisah kop (double line)
-  doc.setLineWidth(0.8);
-  doc.line(marginL, y, pageW - marginR, y);
-  y += 1.2;
-  doc.setLineWidth(0.3);
-  doc.line(marginL, y, pageW - marginR, y);
-  y += 8;
-
-  // ===== JUDUL =====
-  doc.setFont(FONT, "bold");
-  doc.setFontSize(13);
-  const judul = "SURAT PERINTAH TUGAS";
-  doc.text(judul, pageW / 2, y, { align: "center" });
-  const jw = doc.getTextWidth(judul);
-  doc.setLineWidth(0.4);
-  doc.line((pageW - jw) / 2, y + 0.8, (pageW + jw) / 2, y + 0.8);
-  y += 5;
-  doc.setFont(FONT, "normal");
-  doc.setFontSize(11);
-  doc.text(`Nomor: ${row.nomor_surat ?? ""}`, pageW / 2, y, { align: "center" });
-  y += 8;
-
-  const lineH = 5;
-  const drawLabelValue = (label: string, value: string, labelW = 32, indent = 0) => {
-    const x = marginL + indent;
-    doc.text(label, x, y);
-    doc.text(":", x + labelW, y);
-    const lines = doc.splitTextToSize(value ?? "", contentW - labelW - 4 - indent);
-    doc.text(lines, x + labelW + 3, y);
-    y += lineH * lines.length;
-  };
-
-  // ===== DASAR SURAT (opsional) =====
-  if (row.dasar_surat_ada) {
-    doc.text("Berdasarkan surat yang kami terima dari :", marginL, y);
-    y += lineH;
-    drawLabelValue("Nomor", row.nomor_dasar_surat ?? "", 25, 6);
-    drawLabelValue("Tanggal", fmtTanggalId(row.tanggal_dasar_surat), 25, 6);
-    drawLabelValue("Perihal", row.perihal_dasar_surat ?? "", 25, 6);
-    if (row.instansi_dasar_surat) {
-      drawLabelValue("Instansi", row.instansi_dasar_surat, 25, 6);
-    }
-    y += 2;
-  }
-
-  // ===== Menugaskan =====
-  doc.text("Kepala SMKN 1 Pusakanagara, Menugaskan :", marginL, y);
-  y += lineH + 2;
-  doc.text("Kepada :", marginL, y);
-  y += lineH;
-
-  // ===== Peserta =====
+export function buildSuratTugasHtml(row: SuratTugasPdfData, logo: string): string {
   const peserta = (row.peserta ?? []).slice().sort((a, b) => (a.urutan ?? 0) - (b.urutan ?? 0));
-  peserta.forEach((p, i) => {
-    const label = URUTAN_LABEL[i] ?? `Ke-${i + 1}`;
-    doc.setFont(FONT, "bold");
-    doc.text(`${i + 1}. ${label}`, marginL, y);
-    doc.setFont(FONT, "normal");
-    y += lineH;
-    drawLabelValue("Nama", p.nama_peserta ?? "", 28, 4);
-    drawLabelValue("NIP", p.nip ?? "", 28, 4);
-    drawLabelValue("Pangkat/Gol", p.pangkat_golongan ?? "", 28, 4);
-    drawLabelValue("Jabatan", p.jabatan ?? "", 28, 4);
-    drawLabelValue("Unit Kerja", "SMK Negeri 1 Pusakanagara", 28, 4);
-    y += 2;
-  });
+  const dasarHtml = row.dasar_surat_ada
+    ? `
+      <div style="margin-top:6px;">Berdasarkan surat yang kami terima dari :</div>
+      <table style="border-collapse:collapse; font-size:12px; margin-left:18px; margin-top:2px;">
+        <tr><td style="width:80px;">Nomor</td><td style="width:10px;">:</td><td>${escapeHtml(row.nomor_dasar_surat)}</td></tr>
+        <tr><td>Tanggal</td><td>:</td><td>${fmtTanggalId(row.tanggal_dasar_surat)}</td></tr>
+        <tr><td>Perihal</td><td>:</td><td>${escapeHtml(row.perihal_dasar_surat)}</td></tr>
+        ${row.instansi_dasar_surat ? `<tr><td>Instansi</td><td>:</td><td>${escapeHtml(row.instansi_dasar_surat)}</td></tr>` : ""}
+      </table>
+    `
+    : "";
 
-  y += 2;
-  // ===== Untuk =====
-  doc.text("Untuk", marginL, y);
-  doc.text(":", marginL + 20, y);
-  doc.text("Melaksanakan / Mengikuti / Menghadiri Kegiatan :", marginL + 23, y);
-  y += lineH;
-  const keperluanLines = doc.splitTextToSize(row.keperluan ?? "", contentW - 27);
-  doc.setFont(FONT, "bold");
-  doc.text(keperluanLines, marginL + 23, y);
-  doc.setFont(FONT, "normal");
-  y += lineH * keperluanLines.length + 3;
+  const pesertaHtml = peserta.map((p, i) => pesertaBlockHtml(p, i)).join("");
+  const tglSurat = fmtTanggalId(row.tanggal_mulai);
 
-  // ===== Waktu =====
-  doc.text("Yang akan dilaksanakan pada :", marginL + 6, y);
-  y += lineH;
-  const drawIndent = (label: string, value: string) => {
-    const x = marginL + 10;
-    doc.text(label, x, y);
-    doc.text(":", x + 28, y);
-    const lines = doc.splitTextToSize(value ?? "", contentW - 42);
-    doc.text(lines, x + 31, y);
-    y += lineH * lines.length;
-  };
-  drawIndent("Hari, Tanggal", fmtHariTanggalId(row.tanggal_mulai, row.tanggal_selesai));
-  drawIndent("Waktu", row.waktu_berangkat ? `${row.waktu_berangkat} WIB` : "");
-  drawIndent("Tempat Tujuan", row.tujuan_lokasi ?? "");
-  y += 4;
+  return `
+  <div style="width:794px; height:1123px; padding:50px 60px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#000; line-height:1.35;">
+    ${kopHtml(logo)}
+    <div style="text-align:center; margin-bottom:2px;">
+      <span style="font-size:15px; font-weight:bold; border-bottom:1.5px solid #000; padding-bottom:1px;">SURAT PERINTAH TUGAS</span>
+    </div>
+    <div style="text-align:center; margin-bottom:14px;">Nomor: ${escapeHtml(row.nomor_surat)}</div>
 
-  // ===== Penutup =====
-  const penutup = "Demikian surat perintah tugas ini dibuat untuk dilaksanakan dengan sebaik-baiknya, dengan rasa tanggung jawab dan setelah selesai kegiatan agar menyampaikan laporan.";
-  const penutupLines = doc.splitTextToSize(penutup, contentW);
-  doc.text(penutupLines, marginL, y, { align: "justify", maxWidth: contentW });
-  y += lineH * penutupLines.length + 8;
+    ${dasarHtml}
 
-  // ===== TTD =====
-  const ttdX = pageW - marginR - 70;
-  const tglSurat = row.tanggal_mulai ? fmtTanggalId(row.tanggal_mulai) : "";
-  doc.text(`Subang, ${tglSurat}`, ttdX, y);
-  y += lineH;
-  doc.text("KEPALA SEKOLAH,", ttdX, y);
-  y += lineH * 5;
-  doc.setFont(FONT, "bold");
-  doc.text("ABDUL ROSID, S.T.", ttdX, y);
-  y += lineH;
-  doc.setFont(FONT, "normal");
-  doc.text("PENATA, III/c", ttdX, y);
-  y += lineH;
-  doc.text("NIP. 19811122 200902 1 003", ttdX, y);
+    <div style="margin-top:8px;">Kepala SMKN 1 Pusakanagara, Menugaskan :</div>
+    <div style="margin-top:6px;">Kepada :</div>
+
+    ${pesertaHtml}
+
+    <table style="border-collapse:collapse; margin-top:10px; font-size:12px;">
+      <tr style="vertical-align:top;">
+        <td style="width:60px;">Untuk</td>
+        <td style="width:10px;">:</td>
+        <td>
+          Melaksanakan / Mengikuti / Menghadiri Kegiatan :
+          <div style="font-weight:bold; margin-top:2px;">${escapeHtml(row.keperluan)}</div>
+        </td>
+      </tr>
+    </table>
+
+    <div style="margin-top:8px; margin-left:16px;">Yang akan dilaksanakan pada :</div>
+    <table style="border-collapse:collapse; margin-left:26px; font-size:12px;">
+      <tr style="vertical-align:top;"><td style="width:110px;">Hari, Tanggal</td><td style="width:10px;">:</td><td>${fmtHariTanggalId(row.tanggal_mulai, row.tanggal_selesai)}</td></tr>
+      <tr style="vertical-align:top;"><td>Waktu</td><td>:</td><td>${row.waktu_berangkat ? escapeHtml(row.waktu_berangkat) + " WIB" : ""}</td></tr>
+      <tr style="vertical-align:top;"><td>Tempat Tujuan</td><td>:</td><td>${escapeHtml(row.tujuan_lokasi)}</td></tr>
+    </table>
+
+    <div style="margin-top:14px; text-align:justify;">
+      Demikian surat perintah tugas ini dibuat untuk dilaksanakan dengan sebaik-baiknya, dengan rasa tanggung jawab dan setelah selesai kegiatan agar menyampaikan laporan.
+    </div>
+
+    <div style="margin-top:26px; margin-left:52%; font-size:12px;">
+      <div>${KOTA}, ${tglSurat}</div>
+      <div>${KEPSEK_JABATAN},</div>
+      <div style="height:70px;"></div>
+      <div style="font-weight:bold; text-decoration:underline;">${KPA_NAMA}</div>
+      <div>PENATA, III/c</div>
+      <div>NIP. ${KPA_NIP}</div>
+    </div>
+  </div>
+  `;
 }
-
-export async function generateSuratTugasPdf(row: SuratTugasPdfData): Promise<jsPDF> {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  await renderSuratTugas(doc, row);
-  return doc;
-}
-
 
 export function suratTugasPdfFilename(row: SuratTugasPdfData, prefix = "Surat-Tugas"): string {
   const nomor = (row.nomor_surat ?? "").replace(/[\\/:*?"<>|\s]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
@@ -246,6 +156,8 @@ export function suratTugasPdfFilename(row: SuratTugasPdfData, prefix = "Surat-Tu
 }
 
 export async function downloadSuratTugasPdf(row: SuratTugasPdfData) {
-  const doc = await generateSuratTugasPdf(row);
-  doc.save(suratTugasPdfFilename(row));
+  const logo = await loadLogoDataUrl();
+  const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+  await addHtmlPageToPdf(pdf, buildSuratTugasHtml(row, logo), "portrait", true);
+  pdf.save(suratTugasPdfFilename(row));
 }
