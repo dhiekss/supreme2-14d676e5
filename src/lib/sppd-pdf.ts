@@ -91,7 +91,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
             <tr><td style="padding:1px 0;">Nomor</td><td>:</td><td>${escapeHtml(row.nomor_surat)}</td></tr>
           </table>
 
-          <div style="text-align:center; margin:10px 0 6px 0;">
+          <div style="text-align:center; margin:6px 0 4px 0;">
             <span style="font-weight:bold; text-decoration:underline; font-size:12px;">SURAT PERINTAH PERJALANAN DINAS (SPPD)</span>
           </div>
 
