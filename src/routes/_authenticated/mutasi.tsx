@@ -215,6 +215,7 @@ function RombelTransferTab({ onChange }: { onChange: () => void }) {
   const [editRow, setEditRow] = useState<any>(null);
   const listFn = useServerFn(listRombelTransfers);
   const delFn = useServerFn(deleteRombelTransfer);
+  const saveFn = useServerFn(upsertRombelTransfer);
   const { data } = useSuspenseQuery({
     queryKey: ["mutasi-rombel", search],
     queryFn: () => listFn({ data: { search: search || undefined } }),
@@ -224,6 +225,25 @@ function RombelTransferTab({ onChange }: { onChange: () => void }) {
     onSuccess: () => { toast.success("Dihapus"); onChange(); },
     onError: (e: any) => toast.error(e.message),
   });
+  const inlineSave = (row: any) => async (
+    patch: { dapodik_status?: string; dapodik_tanggal?: string | null },
+  ) => {
+    await saveFn({
+      data: {
+        id: row.id,
+        student_id: row.student_id,
+        rombel_asal_id: row.rombel_asal_id,
+        rombel_tujuan_id: row.rombel_tujuan_id,
+        tanggal_pindah: row.tanggal_pindah,
+        alasan: row.alasan,
+        ...patch,
+        dapodik_tanggal: patch.dapodik_tanggal === undefined
+          ? (row.dapodik_tanggal ?? undefined)
+          : (patch.dapodik_tanggal ?? undefined),
+      },
+    });
+    onChange();
+  };
 
   return (
     <Card>
@@ -237,33 +257,31 @@ function RombelTransferTab({ onChange }: { onChange: () => void }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Tanggal</TableHead>
-              <TableHead>Siswa</TableHead>
-              <TableHead>Asal</TableHead>
-              <TableHead>Tujuan</TableHead>
-              <TableHead>Alasan</TableHead>
-              <TableHead>Dapodik</TableHead>
+              <TableHead>Nama Murid</TableHead>
+              <TableHead>NIS</TableHead>
+              <TableHead>Rombel Asal</TableHead>
+              <TableHead>Rombel Tujuan</TableHead>
+              <TableHead>Tanggal Pindah</TableHead>
+              <TableHead>Proses Dapodik</TableHead>
+              <TableHead>Tgl Proses Dapodik</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
             )}
             {data.map((r: any) => (
               <TableRow key={r.id}>
-                <TableCell className="text-xs">{r.tanggal_pindah ?? "—"}</TableCell>
-                <TableCell>
-                  <div className="font-medium">{r.students?.name ?? "—"}</div>
-                  <div className="text-xs text-muted-foreground">{r.students?.nis ?? ""}</div>
-                </TableCell>
-                <TableCell>{r.asal?.name ?? "—"}</TableCell>
-                <TableCell>{r.tujuan?.name ?? "—"}</TableCell>
-                <TableCell className="max-w-xs truncate">{r.alasan ?? "—"}</TableCell>
-                <TableCell><Badge variant={r.dapodik_status === "sinkron" ? "default" : "secondary"}>{r.dapodik_status ?? "belum"}</Badge></TableCell>
+                <TableCell className="font-medium">{r.students?.name ?? "—"}</TableCell>
+                <TableCell className="text-xs">{r.students?.nis ?? "—"}</TableCell>
+                <TableCell>{r.asal?.name ? <Badge variant="outline">{r.asal.name}</Badge> : "—"}</TableCell>
+                <TableCell>{r.tujuan?.name ? <Badge variant="outline">{r.tujuan.name}</Badge> : "—"}</TableCell>
+                <TableCell className="text-xs">{r.tanggal_pindah ? new Date(r.tanggal_pindah).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</TableCell>
+                <InlineDapodik row={r} save={inlineSave(r)} />
                 <TableCell className="text-right">
-                  <Button size="sm" variant="ghost" onClick={() => { setEditRow(r); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => { if (confirm("Hapus?")) del.mutate(r.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setEditRow(r); setOpen(true); }} title="Lihat / Edit"><Eye className="h-4 w-4 text-blue-600" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => { if (confirm("Hapus?")) del.mutate(r.id); }} title="Hapus"><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </TableCell>
               </TableRow>
             ))}
