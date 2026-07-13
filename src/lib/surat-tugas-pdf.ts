@@ -71,7 +71,7 @@ function pesertaBlockHtml(p: PesertaPdf, idx: number): string {
   const sep = `width:10px; ${cellStyle}`;
   return `
     <div style="margin:6px 0 4px 0;"><b>${idx + 1}. ${label}</b></div>
-    <table style="width:100%; border-collapse:collapse; font-size:11px; line-height:1.15; margin-left:16px; table-layout:fixed;">
+    <table style="width:100%; border-collapse:collapse; font-size:14px; line-height:1.15; margin-left:16px; table-layout:fixed;">
       <tr style="${rowStyle}"><td style="${lbl}">Nama</td><td style="${sep}">:</td><td style="${cellStyle}">${escapeHtml(p.nama_peserta)}</td></tr>
       <tr style="${rowStyle}"><td style="${lbl}">NIP</td><td style="${sep}">:</td><td style="${cellStyle}">${escapeHtml(p.nip)}</td></tr>
       <tr style="${rowStyle}"><td style="${lbl}">Pangkat/Gol</td><td style="${sep}">:</td><td style="${cellStyle}">${escapeHtml(p.pangkat_golongan)}</td></tr>
@@ -87,7 +87,7 @@ export function buildSuratTugasHtml(row: SuratTugasPdfData, logo: string): strin
   const dasarHtml = row.dasar_surat_ada
     ? `
       <div style="margin-top:6px;">Berdasarkan surat yang kami terima dari :</div>
-      <table style="border-collapse:collapse; font-size:11px; line-height:1.15; margin-left:18px; margin-top:2px; table-layout:fixed;">
+      <table style="border-collapse:collapse; font-size:14px; line-height:1.15; margin-left:18px; margin-top:2px; table-layout:fixed;">
         <tr><td style="width:80px; ${tableCell}">Nomor</td><td style="width:10px; ${tableCell}">:</td><td style="${tableCell}">${escapeHtml(row.nomor_dasar_surat)}</td></tr>
         <tr><td style="${tableCell}">Tanggal</td><td style="${tableCell}">:</td><td style="${tableCell}">${fmtTanggalId(row.tanggal_dasar_surat)}</td></tr>
         <tr><td style="${tableCell}">Perihal</td><td style="${tableCell}">:</td><td style="${tableCell}">${escapeHtml(row.perihal_dasar_surat)}</td></tr>
@@ -100,7 +100,7 @@ export function buildSuratTugasHtml(row: SuratTugasPdfData, logo: string): strin
   const tglSurat = fmtTanggalId(row.tanggal_mulai);
 
   return `
-  <div style="width:794px; height:1123px; padding:50px 60px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:11px; color:#000; line-height:1.15;">
+  <div style="width:794px; height:1123px; padding:50px 60px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#000; line-height:1.15;">
     ${kopHtml(logo)}
     <div style="text-align:center; margin-bottom:2px;">
       <span style="font-size:15px; font-weight:bold; text-decoration:underline;">SURAT PERINTAH TUGAS</span>
@@ -114,7 +114,7 @@ export function buildSuratTugasHtml(row: SuratTugasPdfData, logo: string): strin
 
     ${pesertaHtml}
 
-    <table style="border-collapse:collapse; margin-top:10px; font-size:11px; line-height:1.15; table-layout:fixed;">
+    <table style="border-collapse:collapse; margin-top:10px; font-size:14px; line-height:1.15; table-layout:fixed;">
       <tr style="vertical-align:middle;">
         <td style="width:60px; ${tableCell}">Untuk</td>
         <td style="width:10px; ${tableCell}">:</td>
@@ -126,7 +126,7 @@ export function buildSuratTugasHtml(row: SuratTugasPdfData, logo: string): strin
     </table>
 
     <div style="margin-top:8px; margin-left:16px;">Yang akan dilaksanakan pada :</div>
-    <table style="border-collapse:collapse; margin-left:26px; font-size:11px; line-height:1.15; table-layout:fixed;">
+    <table style="border-collapse:collapse; margin-left:26px; font-size:14px; line-height:1.15; table-layout:fixed;">
       <tr style="vertical-align:middle;"><td style="width:110px; ${tableCell}">Hari, Tanggal</td><td style="width:10px; ${tableCell}">:</td><td style="${tableCell}">${fmtHariTanggalId(row.tanggal_mulai, row.tanggal_selesai)}</td></tr>
       <tr style="vertical-align:middle;"><td style="${tableCell}">Waktu</td><td style="${tableCell}">:</td><td style="${tableCell}">${row.waktu_berangkat ? escapeHtml(row.waktu_berangkat) + " WIB" : ""}</td></tr>
       <tr style="vertical-align:middle;"><td style="${tableCell}">Tempat Tujuan</td><td style="${tableCell}">:</td><td style="${tableCell}">${escapeHtml(row.tujuan_lokasi)}</td></tr>
@@ -136,7 +136,7 @@ export function buildSuratTugasHtml(row: SuratTugasPdfData, logo: string): strin
       Demikian surat perintah tugas ini dibuat untuk dilaksanakan dengan sebaik-baiknya, dengan rasa tanggung jawab dan setelah selesai kegiatan agar menyampaikan laporan.
     </div>
 
-    <div style="margin-top:26px; margin-left:52%; font-size:11px;">
+    <div style="margin-top:26px; margin-left:52%; font-size:14px;">
       <div>${KOTA}, ${tglSurat}</div>
       <div>${KEPSEK_JABATAN},</div>
       <div style="height:70px;"></div>

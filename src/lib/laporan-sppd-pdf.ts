@@ -66,7 +66,7 @@ export function buildLaporanSppdHtml(row: LaporanSppdPdfData, logo: string): str
 
   const dasarHtml = row.dasar_surat_ada
     ? `
-      <table style="border-collapse:collapse; margin-left:22px; font-size:11px; line-height:1.15; table-layout:fixed;">
+      <table style="border-collapse:collapse; margin-left:22px; font-size:14px; line-height:1.15; table-layout:fixed;">
         <tr><td style="width:100px; ${tableCell}">a. Dasar Surat</td><td style="width:10px; ${tableCell}">:</td><td style="${tableCell}">${escapeHtml(row.perihal_dasar_surat)}</td></tr>
         <tr><td style="${tableCell}">b. Nomor</td><td style="${tableCell}">:</td><td style="${tableCell}">${escapeHtml(row.nomor_dasar_surat)}</td></tr>
         <tr><td style="${tableCell}">c. Tanggal</td><td style="${tableCell}">:</td><td style="${tableCell}">${fmtTanggalId(row.tanggal_dasar_surat)}</td></tr>
@@ -81,7 +81,7 @@ export function buildLaporanSppdHtml(row: LaporanSppdPdfData, logo: string): str
   const tglTtd = fmtTanggalId(row.tanggal_selesai ?? row.tanggal_mulai);
 
   return `
-  <div style="width:794px; height:1123px; padding:50px 60px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:11px; color:#000; line-height:1.15;">
+  <div style="width:794px; height:1123px; padding:50px 60px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#000; line-height:1.15;">
     ${kop(logo)}
     <div style="text-align:center; margin-bottom:2px;">
       <span style="font-size:14px; font-weight:bold; text-decoration:underline;">LAPORAN PERJALANAN DINAS</span>
@@ -107,7 +107,7 @@ export function buildLaporanSppdHtml(row: LaporanSppdPdfData, logo: string): str
     <div style="margin-bottom:6px;">Kesimpulan :</div>
     ${kesimpulanLines}
 
-    <div style="margin-top:22px; margin-left:52%; font-size:11px;">
+    <div style="margin-top:22px; margin-left:52%; font-size:14px;">
       <div>${KOTA}, ${tglTtd}</div>
       <div>Pelapor,</div>
       <div style="height:70px;"></div>
