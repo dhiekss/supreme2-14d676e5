@@ -30,13 +30,13 @@ export const Route = createFileRoute("/_authenticated/users")({
   errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal: {error.message}</div>,
 });
 
-const ROLES = ["admin", "wakasek", "kaprog", "guru", "murid", "admin_sarpras", "admin_persuratan", "admin_tpg"] as const;
+const ROLES = ["admin", "wakasek", "kakonli", "guru", "murid", "admin_sarpras", "admin_persuratan", "admin_tpg"] as const;
 type Role = typeof ROLES[number];
 
 const ROLE_LABEL: Record<string, string> = {
   admin: "Admin",
   wakasek: "Waka",
-  kaprog: "Kaprog",
+  kakonli: "Kakonli",
   guru: "Guru",
   murid: "Murid",
   admin_sarpras: "Admin Sarpras",
@@ -49,7 +49,7 @@ const ROLE_BADGE: Record<string, string> = {
   guru: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
   murid: "bg-orange-500/10 text-orange-700 border-orange-500/20",
   wakasek: "bg-violet-500/10 text-violet-700 border-violet-500/20",
-  kaprog: "bg-pink-500/10 text-pink-700 border-pink-500/20",
+  kakonli: "bg-pink-500/10 text-pink-700 border-pink-500/20",
   admin_sarpras: "bg-amber-500/10 text-amber-700 border-amber-500/20",
   admin_persuratan: "bg-cyan-500/10 text-cyan-700 border-cyan-500/20",
   admin_tpg: "bg-teal-500/10 text-teal-700 border-teal-500/20",
@@ -256,7 +256,7 @@ function UsersPage() {
                 <li><span className="font-semibold">Guru:</span> Akun khusus untuk guru dengan akses menu dan rombel yang ditentukan.</li>
                 <li><span className="font-semibold">Murid:</span> Akun khusus untuk murid dengan akses menu dan rombel yang ditentukan.</li>
                 <li><span className="font-semibold">Waka:</span> Wakil Kepala Sekolah dengan akses menu dan rombel yang ditentukan.</li>
-                <li><span className="font-semibold">Kaprog:</span> Kepala Program Keahlian dengan akses menu dan rombel yang ditentukan.</li>
+                <li><span className="font-semibold">Kakonli:</span> Ketua Konsentrasi Keahlian dengan akses menu dan rombel yang ditentukan.</li>
               </ul>
             </div>
           </div>

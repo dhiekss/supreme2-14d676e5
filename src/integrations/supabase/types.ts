@@ -2504,7 +2504,7 @@ export type Database = {
       app_role:
         | "admin"
         | "wakasek"
-        | "kaprog"
+        | "kakonli"
         | "guru"
         | "murid"
         | "admin_sarpras"
@@ -2641,7 +2641,7 @@ export const Constants = {
       app_role: [
         "admin",
         "wakasek",
-        "kaprog",
+        "kakonli",
         "guru",
         "murid",
         "admin_sarpras",

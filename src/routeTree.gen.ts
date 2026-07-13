@@ -41,7 +41,7 @@ import { Route as AuthenticatedGuruIzinRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedGuruRouteImport } from './routes/_authenticated/guru'
 import { Route as AuthenticatedDenahRouteImport } from './routes/_authenticated/denah'
 import { Route as AuthenticatedDashboardKelasRouteImport } from './routes/_authenticated/dashboard-kelas'
-import { Route as AuthenticatedDashboardKaprogRouteImport } from './routes/_authenticated/dashboard-kaprog'
+import { Route as AuthenticatedDashboardKakonliRouteImport } from './routes/_authenticated/dashboard-kakonli'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBerkasRouteImport } from './routes/_authenticated/berkas'
 import { Route as AuthenticatedAktivitasRouteImport } from './routes/_authenticated/aktivitas'
@@ -236,10 +236,10 @@ const AuthenticatedDashboardKelasRoute =
     path: '/dashboard-kelas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedDashboardKaprogRoute =
-  AuthenticatedDashboardKaprogRouteImport.update({
-    id: '/dashboard-kaprog',
-    path: '/dashboard-kaprog',
+const AuthenticatedDashboardKakonliRoute =
+  AuthenticatedDashboardKakonliRouteImport.update({
+    id: '/dashboard-kakonli',
+    path: '/dashboard-kakonli',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -396,7 +396,7 @@ export interface FileRoutesByFullPath {
   '/aktivitas': typeof AuthenticatedAktivitasRoute
   '/berkas': typeof AuthenticatedBerkasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/dashboard-kaprog': typeof AuthenticatedDashboardKaprogRoute
+  '/dashboard-kakonli': typeof AuthenticatedDashboardKakonliRoute
   '/dashboard-kelas': typeof AuthenticatedDashboardKelasRoute
   '/denah': typeof AuthenticatedDenahRoute
   '/guru': typeof AuthenticatedGuruRoute
@@ -455,7 +455,7 @@ export interface FileRoutesByTo {
   '/aktivitas': typeof AuthenticatedAktivitasRoute
   '/berkas': typeof AuthenticatedBerkasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/dashboard-kaprog': typeof AuthenticatedDashboardKaprogRoute
+  '/dashboard-kakonli': typeof AuthenticatedDashboardKakonliRoute
   '/dashboard-kelas': typeof AuthenticatedDashboardKelasRoute
   '/denah': typeof AuthenticatedDenahRoute
   '/guru': typeof AuthenticatedGuruRoute
@@ -516,7 +516,7 @@ export interface FileRoutesById {
   '/_authenticated/aktivitas': typeof AuthenticatedAktivitasRoute
   '/_authenticated/berkas': typeof AuthenticatedBerkasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/dashboard-kaprog': typeof AuthenticatedDashboardKaprogRoute
+  '/_authenticated/dashboard-kakonli': typeof AuthenticatedDashboardKakonliRoute
   '/_authenticated/dashboard-kelas': typeof AuthenticatedDashboardKelasRoute
   '/_authenticated/denah': typeof AuthenticatedDenahRoute
   '/_authenticated/guru': typeof AuthenticatedGuruRoute
@@ -577,7 +577,7 @@ export interface FileRouteTypes {
     | '/aktivitas'
     | '/berkas'
     | '/dashboard'
-    | '/dashboard-kaprog'
+    | '/dashboard-kakonli'
     | '/dashboard-kelas'
     | '/denah'
     | '/guru'
@@ -636,7 +636,7 @@ export interface FileRouteTypes {
     | '/aktivitas'
     | '/berkas'
     | '/dashboard'
-    | '/dashboard-kaprog'
+    | '/dashboard-kakonli'
     | '/dashboard-kelas'
     | '/denah'
     | '/guru'
@@ -696,7 +696,7 @@ export interface FileRouteTypes {
     | '/_authenticated/aktivitas'
     | '/_authenticated/berkas'
     | '/_authenticated/dashboard'
-    | '/_authenticated/dashboard-kaprog'
+    | '/_authenticated/dashboard-kakonli'
     | '/_authenticated/dashboard-kelas'
     | '/_authenticated/denah'
     | '/_authenticated/guru'
@@ -982,11 +982,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardKelasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/dashboard-kaprog': {
-      id: '/_authenticated/dashboard-kaprog'
-      path: '/dashboard-kaprog'
-      fullPath: '/dashboard-kaprog'
-      preLoaderRoute: typeof AuthenticatedDashboardKaprogRouteImport
+    '/_authenticated/dashboard-kakonli': {
+      id: '/_authenticated/dashboard-kakonli'
+      path: '/dashboard-kakonli'
+      fullPath: '/dashboard-kakonli'
+      preLoaderRoute: typeof AuthenticatedDashboardKakonliRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -1194,7 +1194,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAktivitasRoute: typeof AuthenticatedAktivitasRoute
   AuthenticatedBerkasRoute: typeof AuthenticatedBerkasRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedDashboardKaprogRoute: typeof AuthenticatedDashboardKaprogRoute
+  AuthenticatedDashboardKakonliRoute: typeof AuthenticatedDashboardKakonliRoute
   AuthenticatedDashboardKelasRoute: typeof AuthenticatedDashboardKelasRoute
   AuthenticatedDenahRoute: typeof AuthenticatedDenahRoute
   AuthenticatedGuruRoute: typeof AuthenticatedGuruRoute
@@ -1247,7 +1247,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAktivitasRoute: AuthenticatedAktivitasRoute,
   AuthenticatedBerkasRoute: AuthenticatedBerkasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedDashboardKaprogRoute: AuthenticatedDashboardKaprogRoute,
+  AuthenticatedDashboardKakonliRoute: AuthenticatedDashboardKakonliRoute,
   AuthenticatedDashboardKelasRoute: AuthenticatedDashboardKelasRoute,
   AuthenticatedDenahRoute: AuthenticatedDenahRoute,
   AuthenticatedGuruRoute: AuthenticatedGuruRoute,

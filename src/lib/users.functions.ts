@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
-const ROLES = ["admin", "wakasek", "kaprog", "guru", "murid", "admin_sarpras", "admin_persuratan", "admin_tpg"] as const;
+const ROLES = ["admin", "wakasek", "kakonli", "guru", "murid", "admin_sarpras", "admin_persuratan", "admin_tpg"] as const;
 
 async function assertAdmin(supabase: any, userId: string) {
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();

@@ -73,7 +73,7 @@ export const DEFAULT_SIDEBAR: DefaultNode[] = [
   { id: "dashboard-guru", title: "Dashboard Guru", url: "/dashboard-guru", icon: UserCheck },
   { id: "dashboard-murid", title: "Dashboard Murid", url: "/dashboard-murid", icon: GraduationCap },
   { id: "dashboard-kelas", title: "Dashboard Kelas", url: "/dashboard-kelas", icon: School },
-  { id: "dashboard-kaprog", title: "Dashboard Ka. Prog", url: "/dashboard-kaprog", icon: GraduationCap },
+  { id: "dashboard-kakonli", title: "Dashboard Kakonli", url: "/dashboard-kakonli", icon: GraduationCap },
   {
     id: "grp-presensi",
     title: "Presensi",
