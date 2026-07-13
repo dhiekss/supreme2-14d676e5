@@ -70,7 +70,7 @@ async function assertAdmin(supabase: any, userId: string) {
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
-    .eq("role", "admin")
+    .in("role", ["admin", "superadmin"])
     .maybeSingle();
   if (!data) throw new Error("Forbidden: hanya admin yang dapat membuat backup");
 }
