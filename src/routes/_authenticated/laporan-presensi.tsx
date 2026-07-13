@@ -878,8 +878,8 @@ function DetailPresensiCard() {
                   </TableCell>
                 </TableRow>
               ))}
-              {!listQuery.isFetching && rows.length === 0 && (
-                <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-6">Belum ada catatan presensi.</TableCell></TableRow>
+              {!listQuery.isFetching && filteredRows.length === 0 && (
+                <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-6">{rows.length === 0 ? "Belum ada catatan presensi." : "Tidak ada hasil untuk pencarian ini."}</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
