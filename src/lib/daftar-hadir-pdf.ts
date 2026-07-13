@@ -209,20 +209,20 @@ function footerHtml(r: DaftarHadirRombelData, month: number, year: number, overr
             <col style="width:124px;">
           </colgroup>
           <tr>
-            <td style="border:1px solid #000; padding:5px 0; text-align:center; vertical-align:middle; font-weight:bold; height:22px; line-height:1;">H</td>
-            <td style="border:1px solid #000; padding:5px 10px; vertical-align:middle; height:22px; line-height:1;">Hadir</td>
+            <td style="border:1px solid #000; padding:0; text-align:center; vertical-align:middle; font-weight:bold; height:22px; line-height:22px;">H</td>
+            <td style="border:1px solid #000; padding:0 10px; vertical-align:middle; height:22px; line-height:22px;">Hadir</td>
           </tr>
           <tr>
-            <td style="border:1px solid #000; padding:5px 0; text-align:center; vertical-align:middle; font-weight:bold; height:22px; line-height:1;">S</td>
-            <td style="border:1px solid #000; padding:5px 10px; vertical-align:middle; height:22px; line-height:1;">Sakit</td>
+            <td style="border:1px solid #000; padding:0; text-align:center; vertical-align:middle; font-weight:bold; height:22px; line-height:22px;">S</td>
+            <td style="border:1px solid #000; padding:0 10px; vertical-align:middle; height:22px; line-height:22px;">Sakit</td>
           </tr>
           <tr>
-            <td style="border:1px solid #000; padding:5px 0; text-align:center; vertical-align:middle; font-weight:bold; height:22px; line-height:1;">I</td>
-            <td style="border:1px solid #000; padding:5px 10px; vertical-align:middle; height:22px; line-height:1;">Izin</td>
+            <td style="border:1px solid #000; padding:0; text-align:center; vertical-align:middle; font-weight:bold; height:22px; line-height:22px;">I</td>
+            <td style="border:1px solid #000; padding:0 10px; vertical-align:middle; height:22px; line-height:22px;">Izin</td>
           </tr>
           <tr>
-            <td style="border:1px solid #000; padding:5px 0; text-align:center; vertical-align:middle; font-weight:bold; height:22px; line-height:1;">A</td>
-            <td style="border:1px solid #000; padding:5px 10px; vertical-align:middle; height:22px; line-height:1;">Alpa</td>
+            <td style="border:1px solid #000; padding:0; text-align:center; vertical-align:middle; font-weight:bold; height:22px; line-height:22px;">A</td>
+            <td style="border:1px solid #000; padding:0 10px; vertical-align:middle; height:22px; line-height:22px;">Alpa</td>
           </tr>
         </table>
         <table style="color:#c81e1e; font-weight:bold; font-size:11px; border-collapse:collapse; line-height:1.4;">
