@@ -327,7 +327,7 @@ export const attendanceDetailList = createServerFn({ method: "GET" })
       const st = d.status as keyof typeof r;
       if (st in r) r[st]++;
     }
-    return (recs ?? []).map((r) => {
+    return recs.map((r: any) => {
       const rb: any = r.rombel_id ? rMap.get(r.rombel_id) : null;
       const c = perRec.get(r.id) ?? { H: 0, S: 0, I: 0, A: 0, P: 0 };
       return {
