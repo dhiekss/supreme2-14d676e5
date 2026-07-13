@@ -64,31 +64,33 @@ function kopHtml(logo: string): string {
 
 function pesertaBlockHtml(p: PesertaPdf, idx: number): string {
   const label = URUTAN_LABEL[idx] ?? `Ke-${idx + 1}`;
-  const rowStyle = "vertical-align:top;";
-  const lbl = "width:110px; padding:1px 0;";
-  const sep = "width:10px; padding:1px 0;";
+  const rowStyle = "vertical-align:middle;";
+  const cellStyle = "padding:0; vertical-align:middle; line-height:1.15;";
+  const lbl = `width:110px; ${cellStyle}`;
+  const sep = `width:10px; ${cellStyle}`;
   return `
     <div style="margin:6px 0 4px 0;"><b>${idx + 1}. ${label}</b></div>
-    <table style="width:100%; border-collapse:collapse; font-size:12px; margin-left:16px;">
-      <tr style="${rowStyle}"><td style="${lbl}">Nama</td><td style="${sep}">:</td><td>${escapeHtml(p.nama_peserta)}</td></tr>
-      <tr style="${rowStyle}"><td style="${lbl}">NIP</td><td style="${sep}">:</td><td>${escapeHtml(p.nip)}</td></tr>
-      <tr style="${rowStyle}"><td style="${lbl}">Pangkat/Gol</td><td style="${sep}">:</td><td>${escapeHtml(p.pangkat_golongan)}</td></tr>
-      <tr style="${rowStyle}"><td style="${lbl}">Jabatan</td><td style="${sep}">:</td><td>${escapeHtml(p.jabatan)}</td></tr>
-      <tr style="${rowStyle}"><td style="${lbl}">Unit Kerja</td><td style="${sep}">:</td><td>${INSTANSI}</td></tr>
+    <table style="width:100%; border-collapse:collapse; font-size:12px; line-height:1.15; margin-left:16px; table-layout:fixed;">
+      <tr style="${rowStyle}"><td style="${lbl}">Nama</td><td style="${sep}">:</td><td style="${cellStyle}">${escapeHtml(p.nama_peserta)}</td></tr>
+      <tr style="${rowStyle}"><td style="${lbl}">NIP</td><td style="${sep}">:</td><td style="${cellStyle}">${escapeHtml(p.nip)}</td></tr>
+      <tr style="${rowStyle}"><td style="${lbl}">Pangkat/Gol</td><td style="${sep}">:</td><td style="${cellStyle}">${escapeHtml(p.pangkat_golongan)}</td></tr>
+      <tr style="${rowStyle}"><td style="${lbl}">Jabatan</td><td style="${sep}">:</td><td style="${cellStyle}">${escapeHtml(p.jabatan)}</td></tr>
+      <tr style="${rowStyle}"><td style="${lbl}">Unit Kerja</td><td style="${sep}">:</td><td style="${cellStyle}">${INSTANSI}</td></tr>
     </table>
   `;
 }
 
 export function buildSuratTugasHtml(row: SuratTugasPdfData, logo: string): string {
   const peserta = (row.peserta ?? []).slice().sort((a, b) => (a.urutan ?? 0) - (b.urutan ?? 0));
+  const tableCell = "padding:0; vertical-align:middle; line-height:1.15;";
   const dasarHtml = row.dasar_surat_ada
     ? `
       <div style="margin-top:6px;">Berdasarkan surat yang kami terima dari :</div>
-      <table style="border-collapse:collapse; font-size:12px; margin-left:18px; margin-top:2px;">
-        <tr><td style="width:80px;">Nomor</td><td style="width:10px;">:</td><td>${escapeHtml(row.nomor_dasar_surat)}</td></tr>
-        <tr><td>Tanggal</td><td>:</td><td>${fmtTanggalId(row.tanggal_dasar_surat)}</td></tr>
-        <tr><td>Perihal</td><td>:</td><td>${escapeHtml(row.perihal_dasar_surat)}</td></tr>
-        ${row.instansi_dasar_surat ? `<tr><td>Instansi</td><td>:</td><td>${escapeHtml(row.instansi_dasar_surat)}</td></tr>` : ""}
+      <table style="border-collapse:collapse; font-size:12px; line-height:1.15; margin-left:18px; margin-top:2px; table-layout:fixed;">
+        <tr><td style="width:80px; ${tableCell}">Nomor</td><td style="width:10px; ${tableCell}">:</td><td style="${tableCell}">${escapeHtml(row.nomor_dasar_surat)}</td></tr>
+        <tr><td style="${tableCell}">Tanggal</td><td style="${tableCell}">:</td><td style="${tableCell}">${fmtTanggalId(row.tanggal_dasar_surat)}</td></tr>
+        <tr><td style="${tableCell}">Perihal</td><td style="${tableCell}">:</td><td style="${tableCell}">${escapeHtml(row.perihal_dasar_surat)}</td></tr>
+        ${row.instansi_dasar_surat ? `<tr><td style="${tableCell}">Instansi</td><td style="${tableCell}">:</td><td style="${tableCell}">${escapeHtml(row.instansi_dasar_surat)}</td></tr>` : ""}
       </table>
     `
     : "";
@@ -97,7 +99,7 @@ export function buildSuratTugasHtml(row: SuratTugasPdfData, logo: string): strin
   const tglSurat = fmtTanggalId(row.tanggal_mulai);
 
   return `
-  <div style="width:794px; height:1123px; padding:50px 60px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#000; line-height:1.35;">
+  <div style="width:794px; height:1123px; padding:50px 60px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#000; line-height:1.15;">
     ${kopHtml(logo)}
     <div style="text-align:center; margin-bottom:2px;">
       <span style="font-size:15px; font-weight:bold; border-bottom:1.5px solid #000; padding-bottom:1px;">SURAT PERINTAH TUGAS</span>
@@ -111,11 +113,11 @@ export function buildSuratTugasHtml(row: SuratTugasPdfData, logo: string): strin
 
     ${pesertaHtml}
 
-    <table style="border-collapse:collapse; margin-top:10px; font-size:12px;">
-      <tr style="vertical-align:top;">
-        <td style="width:60px;">Untuk</td>
-        <td style="width:10px;">:</td>
-        <td>
+    <table style="border-collapse:collapse; margin-top:10px; font-size:12px; line-height:1.15; table-layout:fixed;">
+      <tr style="vertical-align:middle;">
+        <td style="width:60px; ${tableCell}">Untuk</td>
+        <td style="width:10px; ${tableCell}">:</td>
+        <td style="${tableCell}">
           Melaksanakan / Mengikuti / Menghadiri Kegiatan :
           <div style="font-weight:bold; margin-top:2px;">${escapeHtml(row.keperluan)}</div>
         </td>
@@ -123,10 +125,10 @@ export function buildSuratTugasHtml(row: SuratTugasPdfData, logo: string): strin
     </table>
 
     <div style="margin-top:8px; margin-left:16px;">Yang akan dilaksanakan pada :</div>
-    <table style="border-collapse:collapse; margin-left:26px; font-size:12px;">
-      <tr style="vertical-align:top;"><td style="width:110px;">Hari, Tanggal</td><td style="width:10px;">:</td><td>${fmtHariTanggalId(row.tanggal_mulai, row.tanggal_selesai)}</td></tr>
-      <tr style="vertical-align:top;"><td>Waktu</td><td>:</td><td>${row.waktu_berangkat ? escapeHtml(row.waktu_berangkat) + " WIB" : ""}</td></tr>
-      <tr style="vertical-align:top;"><td>Tempat Tujuan</td><td>:</td><td>${escapeHtml(row.tujuan_lokasi)}</td></tr>
+    <table style="border-collapse:collapse; margin-left:26px; font-size:12px; line-height:1.15; table-layout:fixed;">
+      <tr style="vertical-align:middle;"><td style="width:110px; ${tableCell}">Hari, Tanggal</td><td style="width:10px; ${tableCell}">:</td><td style="${tableCell}">${fmtHariTanggalId(row.tanggal_mulai, row.tanggal_selesai)}</td></tr>
+      <tr style="vertical-align:middle;"><td style="${tableCell}">Waktu</td><td style="${tableCell}">:</td><td style="${tableCell}">${row.waktu_berangkat ? escapeHtml(row.waktu_berangkat) + " WIB" : ""}</td></tr>
+      <tr style="vertical-align:middle;"><td style="${tableCell}">Tempat Tujuan</td><td style="${tableCell}">:</td><td style="${tableCell}">${escapeHtml(row.tujuan_lokasi)}</td></tr>
     </table>
 
     <div style="margin-top:14px; text-align:justify;">

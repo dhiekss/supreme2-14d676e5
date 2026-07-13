@@ -57,6 +57,7 @@ function kop(logo: string): string {
 export function buildLaporanSppdHtml(row: LaporanSppdPdfData, logo: string): string {
   const peserta = (row.peserta ?? []).slice().sort((a, b) => (a.urutan ?? 0) - (b.urutan ?? 0));
   const pelapor = peserta[0];
+  const tableCell = "padding:0; vertical-align:middle; line-height:1.15;";
   const tujuanArr = (row.tujuan_lokasi ?? "").split("|").map((s) => s.trim()).filter(Boolean);
   const tujuanList = (tujuanArr.length ? tujuanArr : [""])
     .map((t, i) => `<div style="margin-left:22px;">${i + 1}. ${escapeHtml(t)}</div>`)
@@ -64,10 +65,10 @@ export function buildLaporanSppdHtml(row: LaporanSppdPdfData, logo: string): str
 
   const dasarHtml = row.dasar_surat_ada
     ? `
-      <table style="border-collapse:collapse; margin-left:22px; font-size:12px;">
-        <tr><td style="width:100px;">a. Dasar Surat</td><td style="width:10px;">:</td><td>${escapeHtml(row.perihal_dasar_surat)}</td></tr>
-        <tr><td>b. Nomor</td><td>:</td><td>${escapeHtml(row.nomor_dasar_surat)}</td></tr>
-        <tr><td>c. Tanggal</td><td>:</td><td>${fmtTanggalId(row.tanggal_dasar_surat)}</td></tr>
+      <table style="border-collapse:collapse; margin-left:22px; font-size:12px; line-height:1.15; table-layout:fixed;">
+        <tr><td style="width:100px; ${tableCell}">a. Dasar Surat</td><td style="width:10px; ${tableCell}">:</td><td style="${tableCell}">${escapeHtml(row.perihal_dasar_surat)}</td></tr>
+        <tr><td style="${tableCell}">b. Nomor</td><td style="${tableCell}">:</td><td style="${tableCell}">${escapeHtml(row.nomor_dasar_surat)}</td></tr>
+        <tr><td style="${tableCell}">c. Tanggal</td><td style="${tableCell}">:</td><td style="${tableCell}">${fmtTanggalId(row.tanggal_dasar_surat)}</td></tr>
       </table>
     `
     : `<div style="margin-left:22px; font-style:italic;">Tidak ada dasar surat.</div>`;
@@ -79,7 +80,7 @@ export function buildLaporanSppdHtml(row: LaporanSppdPdfData, logo: string): str
   const tglTtd = fmtTanggalId(row.tanggal_selesai ?? row.tanggal_mulai);
 
   return `
-  <div style="width:794px; height:1123px; padding:50px 60px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#000; line-height:1.35;">
+  <div style="width:794px; height:1123px; padding:50px 60px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:12px; color:#000; line-height:1.15;">
     ${kop(logo)}
     <div style="text-align:center; margin-bottom:2px;">
       <span style="font-size:14px; font-weight:bold; border-bottom:1.5px solid #000; padding-bottom:1px;">LAPORAN PERJALANAN DINAS</span>
