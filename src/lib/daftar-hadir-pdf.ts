@@ -169,8 +169,8 @@ function buildAttendanceTable(
     }
     body += `<tr>
       <td style="${td}">${idx + 1}</td>
-      <td style="${td} white-space:nowrap; font-size:8.5px; padding-left:4px; padding-right:4px;">${escapeHtml(s.nis ?? "")}</td>
-      <td style="${td} text-align:left; padding-left:5px; padding-right:5px; white-space:normal; word-break:break-word; line-height:1.2; font-size:9px;">${escapeHtml(s.name)}</td>
+      <td style="${td} white-space:nowrap; font-size:8.5px; line-height:22px;">${escapeHtml(s.nis ?? "")}</td>
+      <td style="${td} text-align:left; padding:0 5px; white-space:normal; word-break:break-word; line-height:22px; font-size:9px;">${escapeHtml(s.name)}</td>
       <td style="${td}">${escapeHtml((s.gender ?? "").toString().toUpperCase().startsWith("P") ? "P" : (s.gender ? "L" : ""))}</td>
       ${cells}
       <td style="${td}">${kosong ? "" : h || ""}</td>
