@@ -208,3 +208,33 @@ export const undoPromotionBatch = createServerFn({ method: "POST" })
     if (del.error) throw new Error(del.error.message);
     return { ok: true };
   });
+
+export const undoPromotionStudent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { promotion_id: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: isAdmin } = await supabase.rpc("is_admin", { _user_id: userId });
+    if (!isAdmin) throw new Error("Hanya admin yang dapat mengembalikan siswa.");
+
+    const { data: row, error } = await supabase
+      .from("student_promotions")
+      .select("id, student_id, rombel_asal_id, student_name")
+      .eq("id", data.promotion_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Data riwayat tidak ditemukan.");
+    if (!row.student_id) throw new Error("Riwayat tidak memiliki referensi siswa.");
+
+    const upd = await supabase
+      .from("students")
+      .update({ rombel_id: row.rombel_asal_id })
+      .eq("id", row.student_id);
+    if (upd.error) throw new Error(upd.error.message);
+
+    const del = await supabase.from("student_promotions").delete().eq("id", row.id);
+    if (del.error) throw new Error(del.error.message);
+
+    return { ok: true, student_name: row.student_name };
+  });
+
