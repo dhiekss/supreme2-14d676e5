@@ -204,8 +204,17 @@ export function generateSuratTugasPdf(row: SuratTugasPdfData): jsPDF {
   return doc;
 }
 
+export function suratTugasPdfFilename(row: SuratTugasPdfData, prefix = "Surat-Tugas"): string {
+  const nomor = (row.nomor_surat ?? "").replace(/[\\/:*?"<>|\s]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  const d = row.tanggal_mulai ? new Date(row.tanggal_mulai) : null;
+  const tgl = d && !isNaN(d.getTime())
+    ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+    : "";
+  const parts = [prefix, nomor || "tanpa-nomor", tgl].filter(Boolean);
+  return `${parts.join("_")}.pdf`;
+}
+
 export function downloadSuratTugasPdf(row: SuratTugasPdfData) {
   const doc = generateSuratTugasPdf(row);
-  const nomor = (row.nomor_surat ?? "surat-tugas").replaceAll("/", "-").replaceAll(" ", "_");
-  doc.save(`Surat-Tugas_${nomor}.pdf`);
+  doc.save(suratTugasPdfFilename(row));
 }
