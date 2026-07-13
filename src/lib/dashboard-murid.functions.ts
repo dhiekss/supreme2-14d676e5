@@ -292,5 +292,6 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
         list: spList.slice(0, 10),
       },
       teman,
+      riwayatKelas,
     };
   });
