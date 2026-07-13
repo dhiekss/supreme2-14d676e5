@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { presensiDashboard } from "@/lib/presensi-report.functions";
+import { presensiDashboard, rombelBelumInputByDate } from "@/lib/presensi-report.functions";
 import { importAttendance } from "@/lib/presensi-import.functions";
 import { todayStamp } from "@/lib/utils";
 import {
