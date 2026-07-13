@@ -19,7 +19,7 @@ import { GraduationCap, Undo2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   listKenaikanRefs, previewPromotion, commitPromotion,
-  listPromotionBatches, undoPromotionBatch,
+  listPromotionBatches, undoPromotionBatch, undoPromotionStudent,
 } from "@/lib/kenaikan.functions";
 
 export const Route = createFileRoute("/_authenticated/kenaikan-kelas")({
