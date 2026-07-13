@@ -92,7 +92,7 @@ function buildAttendanceTable(
     days.push({ d, dow, isWeekend, isLibur, iso });
   }
 
-  const th = `padding:1px 1px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:7.5px; background:#fff; line-height:1.15;`;
+  const th = `padding:3px 1px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:8.5px; background:#fff; line-height:1.3; font-weight:bold;`;
   const thWide = `padding:3px 2px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:9px; background:#fff; line-height:1.2;`;
   const td = `padding:3px 3px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:9px; height:20px; line-height:1.2;`;
   const tdDay = `padding:1px 1px; border:1px solid #000; text-align:center; vertical-align:middle; font-size:8px; height:20px; line-height:1.1;`;
