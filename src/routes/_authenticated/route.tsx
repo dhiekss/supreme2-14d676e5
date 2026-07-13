@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { fetchDisplaySettings, DEFAULT_DISPLAY } from "@/lib/display-settings";
+import { ActivityTracker } from "@/components/activity-tracker";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
