@@ -20,9 +20,8 @@ async function assertAdmin(ctx: {
   supabase: any;
   userId: string;
 }) {
-  const { data, error } = await ctx.supabase.rpc("has_role", {
+  const { data, error } = await ctx.supabase.rpc("is_admin", {
     _user_id: ctx.userId,
-    _role: "admin",
   });
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Forbidden");
