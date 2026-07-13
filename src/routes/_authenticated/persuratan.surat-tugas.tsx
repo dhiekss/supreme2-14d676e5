@@ -384,8 +384,8 @@ function SuratTugasFormDialog({
   const [tujuan, setTujuan] = useState<Array<{ nama: string; kabupaten: string; alamat: string }>>([
     { nama: "", kabupaten: "", alamat: "" },
   ]);
-  const [peserta, setPeserta] = useState<Array<{ guru_id?: string; nama_peserta: string; nip: string; jabatan: string; pangkat_golongan: string }>>([
-    { nama_peserta: "", nip: "", jabatan: "", pangkat_golongan: "" },
+  const [peserta, setPeserta] = useState<Array<{ guru_id?: string; nama_peserta: string; nip: string; jabatan: string; pangkat_golongan: string; mode?: "database" | "manual" }>>([
+    { nama_peserta: "", nip: "", jabatan: "", pangkat_golongan: "", mode: "database" },
   ]);
 
   useEffect(() => {
@@ -412,10 +412,12 @@ function SuratTugasFormDialog({
         return { nama: nama ?? "", kabupaten: kabupaten ?? "", alamat: "" };
       }) : [{ nama: "", kabupaten: "", alamat: "" }]);
       const ps = (editing.peserta ?? []).map((p: any) => ({
+        guru_id: p.guru_id ?? undefined,
         nama_peserta: p.nama_peserta ?? "", nip: p.nip ?? "",
         jabatan: p.jabatan ?? "", pangkat_golongan: p.pangkat_golongan ?? "",
+        mode: (p.guru_id ? "database" : "manual") as "database" | "manual",
       }));
-      setPeserta(ps.length ? ps : [{ nama_peserta: "", nip: "", jabatan: "", pangkat_golongan: "" }]);
+      setPeserta(ps.length ? ps : [{ nama_peserta: "", nip: "", jabatan: "", pangkat_golongan: "", mode: "database" }]);
     } else {
       const today = new Date().toISOString().slice(0, 10);
       setTanggalSurat(today);
@@ -426,7 +428,7 @@ function SuratTugasFormDialog({
       setTanggalMulai(today); setTanggalSelesai(today);
       setKendaraan("Roda 4"); setStatus("aktif");
       setTujuan([{ nama: "", kabupaten: "", alamat: "" }]);
-      setPeserta([{ nama_peserta: "", nip: "", jabatan: "", pangkat_golongan: "" }]);
+      setPeserta([{ nama_peserta: "", nip: "", jabatan: "", pangkat_golongan: "", mode: "database" }]);
       // auto next nomor urut
       fnNext({ data: { kode_surat: "805" } })
         .then((r: any) => setNomorUrut(r.next))
@@ -567,7 +569,7 @@ function SuratTugasFormDialog({
             <div className="flex items-center justify-between mb-2">
               <Label className="flex items-center gap-2"><Users className="h-4 w-4" /> Peserta (Maks. 3)</Label>
               <Button type="button" variant="outline" size="sm" disabled={peserta.length >= 3}
-                onClick={() => setPeserta((p) => [...p, { nama_peserta: "", nip: "", jabatan: "", pangkat_golongan: "" }])}>
+                onClick={() => setPeserta((p) => [...p, { nama_peserta: "", nip: "", jabatan: "", pangkat_golongan: "", mode: "database" }])}>
                 <Plus className="h-4 w-4 mr-1" /> Tambah Pengikut
               </Button>
             </div>
@@ -584,26 +586,64 @@ function SuratTugasFormDialog({
                       </Button>
                     )}
                   </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs">Sumber Data:</Label>
+                    <Select
+                      value={p.mode ?? "database"}
+                      onValueChange={(v: "database" | "manual") =>
+                        setPeserta((prev) => prev.map((pp, idx) => idx === i ? {
+                          ...pp, mode: v,
+                          ...(v === "manual" ? { guru_id: undefined } : {}),
+                        } : pp))
+                      }
+                    >
+                      <SelectTrigger className="h-8 w-48"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="database">Dari Database Guru</SelectItem>
+                        <SelectItem value="manual">Input Manual</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="grid gap-2 md:grid-cols-2">
                     <div className="space-y-1">
                       <Label className="text-xs">Nama Peserta *</Label>
-                      <Select value={p.guru_id ?? ""} onValueChange={(v) => setPesertaFromGuru(i, v)}>
-                        <SelectTrigger><SelectValue placeholder="Pilih dari database guru" /></SelectTrigger>
-                        <SelectContent>
-                          {(guruList as any[]).map((g) => (
-                            <SelectItem key={g.id} value={g.id}>{g.nama}{g.nip ? ` — ${g.nip}` : ""}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {p.nama_peserta && <div className="text-xs text-muted-foreground">{p.nama_peserta}</div>}
+                      {(p.mode ?? "database") === "database" ? (
+                        <>
+                          <Select value={p.guru_id ?? ""} onValueChange={(v) => setPesertaFromGuru(i, v)}>
+                            <SelectTrigger><SelectValue placeholder="Pilih dari database guru" /></SelectTrigger>
+                            <SelectContent>
+                              {(guruList as any[]).map((g) => (
+                                <SelectItem key={g.id} value={g.id}>{g.nama}{g.nip ? ` — ${g.nip}` : ""}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {p.nama_peserta && <div className="text-xs text-muted-foreground">{p.nama_peserta}</div>}
+                        </>
+                      ) : (
+                        <Input
+                          value={p.nama_peserta}
+                          placeholder="Masukkan nama peserta"
+                          onChange={(e) => setPeserta((prev) => prev.map((pp, idx) => idx === i ? { ...pp, nama_peserta: e.target.value } : pp))}
+                        />
+                      )}
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">NIP</Label>
-                      <Input value={p.nip} placeholder="Otomatis" disabled />
+                      <Input
+                        value={p.nip}
+                        placeholder={(p.mode ?? "database") === "database" ? "Otomatis" : "Masukkan NIP"}
+                        disabled={(p.mode ?? "database") === "database"}
+                        onChange={(e) => setPeserta((prev) => prev.map((pp, idx) => idx === i ? { ...pp, nip: e.target.value } : pp))}
+                      />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Pangkat / Golongan</Label>
-                      <Input value={p.pangkat_golongan} placeholder="Otomatis dari referensi TPG" disabled />
+                      <Input
+                        value={p.pangkat_golongan}
+                        placeholder={(p.mode ?? "database") === "database" ? "Otomatis dari referensi TPG" : "Masukkan pangkat/golongan"}
+                        disabled={(p.mode ?? "database") === "database"}
+                        onChange={(e) => setPeserta((prev) => prev.map((pp, idx) => idx === i ? { ...pp, pangkat_golongan: e.target.value } : pp))}
+                      />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Jabatan</Label>
