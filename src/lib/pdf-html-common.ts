@@ -141,16 +141,12 @@ export async function addHtmlPageToPdf(
       ),
     );
 
-    const target = doc.body;
+    const target = doc.getElementById("pdf-page")!;
     const canvas = await html2canvas(target, {
       scale: 2,
       backgroundColor: "#ffffff",
       useCORS: true,
       logging: false,
-      width: wPx,
-      height: hPx,
-      windowWidth: wPx,
-      windowHeight: hPx,
     });
     const imgData = canvas.toDataURL("image/jpeg", 0.95);
     if (!isFirstPage) pdf.addPage("a4", orientation);
