@@ -535,7 +535,6 @@ function DiamankanTab() {
   const [active, setActive] = useState(true);
   const [count, setCount] = useState(3);
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]);
-  const [kode, setKode] = useState("000");
 
   useEffect(() => {
     const map: Record<string, string> = {};
@@ -546,7 +545,6 @@ function DiamankanTab() {
       const arr = JSON.parse(map["reserve_days"] ?? "[1,2,3,4,5]");
       if (Array.isArray(arr)) setDays(arr.map((n: any) => Number(n)).filter((n) => n >= 0 && n <= 6));
     } catch { /* ignore */ }
-    setKode(map["reserve_kode_surat"] ?? "000");
   }, [data]);
 
   const toggleDay = (d: number) => {
@@ -562,7 +560,6 @@ function DiamankanTab() {
             { key: "reserve_active", value: active ? "true" : "false", deskripsi: "Aktifkan pengamanan nomor surat otomatis" },
             { key: "reserve_count_per_day", value: String(count), deskripsi: "Jumlah nomor surat yang diamankan setiap hari" },
             { key: "reserve_days", value: JSON.stringify(days), deskripsi: "Hari aktif pengamanan nomor (0=Minggu ... 6=Sabtu)" },
-            { key: "reserve_kode_surat", value: kode.trim() || "000", deskripsi: "Kode surat default yang diamankan" },
           ],
         },
       });
@@ -605,24 +602,21 @@ function DiamankanTab() {
               <Label>Aktifkan Pengamanan Otomatis</Label>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Jumlah Nomor per Hari</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={50}
-                  value={count}
-                  onChange={(e) => setCount(Number(e.target.value))}
-                />
-                <p className="text-xs text-muted-foreground">Banyaknya nomor yang diamankan setiap hari aktif.</p>
-              </div>
-              <div className="space-y-2">
-                <Label>Kode Surat</Label>
-                <Input value={kode} onChange={(e) => setKode(e.target.value)} placeholder="000" />
-                <p className="text-xs text-muted-foreground">Kode klasifikasi yang akan diamankan (mis. 000).</p>
-              </div>
+            <div className="space-y-2">
+              <Label>Jumlah Nomor per Hari</Label>
+              <Input
+                type="number"
+                min={0}
+                max={50}
+                value={count}
+                onChange={(e) => setCount(Number(e.target.value))}
+                className="max-w-xs"
+              />
+              <p className="text-xs text-muted-foreground">
+                Banyaknya nomor yang diamankan setiap hari aktif. Nomor ini berlaku untuk semua kode surat.
+              </p>
             </div>
+
 
             <div className="space-y-2">
               <Label>Hari Pengamanan</Label>
