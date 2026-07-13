@@ -2489,6 +2489,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_reserve_nomor_surat: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
