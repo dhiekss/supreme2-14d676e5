@@ -436,42 +436,9 @@ function LaporanPresensi() {
       <TrendChart title="Tren Izin Harian" data={data?.trend ?? []} dataKey="I" color={STATUS_COLORS.I} />
       <TrendChart title="Tren PKL Harian" data={data?.trend ?? []} dataKey="P" color={STATUS_COLORS.P} />
 
-      {/* Rombel belum input */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-500" /> Rombel Belum Input Presensi
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">Daftar rombel tanpa catatan presensi pada rentang tanggal terpilih.</p>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-14">No</TableHead>
-                <TableHead>Nama Rombel</TableHead>
-                <TableHead>Wali Kelas</TableHead>
-                <TableHead className="text-right">Jumlah Hari</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(data?.rombelBelum ?? []).map((r, i) => (
-                <TableRow key={r.id}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell className="font-medium">{r.name}</TableCell>
-                  <TableCell>{r.walikelas ?? "-"}</TableCell>
-                  <TableCell className="text-right">
-                    <Badge variant="destructive">0 hari</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {data && data.rombelBelum.length === 0 && (
-                <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6">Semua rombel telah input presensi.</TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* Rombel belum input pada tanggal tertentu */}
+      <RombelBelumInputCard />
+
 
       {/* Alfa leaderboard */}
       <Card>
