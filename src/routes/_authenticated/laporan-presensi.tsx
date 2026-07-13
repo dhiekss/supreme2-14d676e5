@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { presensiDashboard } from "@/lib/presensi-report.functions";
+import { presensiDashboard, rombelBelumInputByDate } from "@/lib/presensi-report.functions";
 import { importAttendance } from "@/lib/presensi-import.functions";
 import { todayStamp } from "@/lib/utils";
 import {
@@ -436,42 +436,9 @@ function LaporanPresensi() {
       <TrendChart title="Tren Izin Harian" data={data?.trend ?? []} dataKey="I" color={STATUS_COLORS.I} />
       <TrendChart title="Tren PKL Harian" data={data?.trend ?? []} dataKey="P" color={STATUS_COLORS.P} />
 
-      {/* Rombel belum input */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-500" /> Rombel Belum Input Presensi
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">Daftar rombel tanpa catatan presensi pada rentang tanggal terpilih.</p>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-14">No</TableHead>
-                <TableHead>Nama Rombel</TableHead>
-                <TableHead>Wali Kelas</TableHead>
-                <TableHead className="text-right">Jumlah Hari</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(data?.rombelBelum ?? []).map((r, i) => (
-                <TableRow key={r.id}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell className="font-medium">{r.name}</TableCell>
-                  <TableCell>{r.walikelas ?? "-"}</TableCell>
-                  <TableCell className="text-right">
-                    <Badge variant="destructive">0 hari</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {data && data.rombelBelum.length === 0 && (
-                <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6">Semua rombel telah input presensi.</TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* Rombel belum input pada tanggal tertentu */}
+      <RombelBelumInputCard />
+
 
       {/* Alfa leaderboard */}
       <Card>
@@ -559,6 +526,103 @@ function LaporanPresensi() {
 
       {isFetching && <p className="text-xs text-muted-foreground text-center">Memuat data...</p>}
     </div>
+  );
+}
+
+function RombelBelumInputCard() {
+  const today = new Date().toISOString().slice(0, 10);
+  const [date, setDate] = useState(today);
+  const [tingkat, setTingkat] = useState<string>("__all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const fetchFn = useServerFn(rombelBelumInputByDate);
+  const { data, isFetching } = useQuery({
+    queryKey: ["rombel-belum-input", date, tingkat],
+    queryFn: () => fetchFn({ data: { date, tingkat } }),
+  });
+  const rows = data?.rows ?? [];
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const curPage = Math.min(page, totalPages);
+  const start = (curPage - 1) * pageSize;
+  const pageRows = rows.slice(start, start + pageSize);
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" /> Rombel Belum Input Presensi
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Daftar rombel yang belum menginput presensi pada tanggal yang dipilih</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Label className="text-xs">Tanggal:</Label>
+              <Input type="date" value={date} onChange={(e) => { setDate(e.target.value); setPage(1); }} className="h-9 w-[160px]" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-xs">Tingkat:</Label>
+              <Select value={tingkat} onValueChange={(v) => { setTingkat(v); setPage(1); }}>
+                <SelectTrigger className="h-9 w-[120px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all">Semua</SelectItem>
+                  {(data?.tingkatList ?? []).map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-14">No</TableHead>
+              <TableHead>Nama Rombel</TableHead>
+              <TableHead>Wali Kelas</TableHead>
+              <TableHead className="text-right">Jumlah Murid</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pageRows.map((r, i) => (
+              <TableRow key={r.id}>
+                <TableCell>{start + i + 1}</TableCell>
+                <TableCell className="font-medium">{r.name}</TableCell>
+                <TableCell>{r.walikelas}</TableCell>
+                <TableCell className="text-right">
+                  <Badge variant="secondary">{r.jumlahMurid} murid</Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+            {!isFetching && rows.length === 0 && (
+              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6">Semua rombel telah input presensi pada tanggal ini.</TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
+        {rows.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>Tampilkan</span>
+              <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+                <SelectTrigger className="h-8 w-[70px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[10, 25, 50, 100].map((n) => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <span>dari {rows.length} rombel</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <Button variant="outline" size="sm" disabled={curPage <= 1} onClick={() => setPage(curPage - 1)}>‹</Button>
+              <span className="text-muted-foreground">Halaman {curPage} dari {totalPages}</span>
+              <Button variant="outline" size="sm" disabled={curPage >= totalPages} onClick={() => setPage(curPage + 1)}>›</Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
