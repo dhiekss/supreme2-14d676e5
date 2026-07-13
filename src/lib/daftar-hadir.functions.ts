@@ -106,12 +106,12 @@ export const monthlyAttendanceData = createServerFn({ method: "GET" })
 
       rombels.push({
         rombel: {
-          id: meta.id,
-          name: meta.name,
-          tingkat: meta.tingkat ?? null,
-          konsentrasi_keahlian: meta.konsentrasi_keahlian ?? null,
-          wali_kelas_name: meta.wali_kelas_name ?? null,
-          wali_kelas_nip: meta.wali_kelas_nip ?? null,
+          id: String(meta.id),
+          name: String(meta.name),
+          tingkat: (meta as any).tingkat ?? null,
+          konsentrasi_keahlian: (meta as any).konsentrasi_keahlian ?? null,
+          wali_kelas_name: (meta as any).wali_kelas_name ?? null,
+          wali_kelas_nip: (meta as any).wali_kelas_nip ?? null,
         },
         students: (students ?? []) as any,
         attendance,
