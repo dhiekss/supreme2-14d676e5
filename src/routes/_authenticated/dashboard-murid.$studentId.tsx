@@ -284,7 +284,7 @@ function Page() {
             <div className="text-sm text-muted-foreground text-center py-6">Tidak ada teman sekelas.</div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 max-h-80 overflow-y-auto pr-2">
-              {teman.map((t) => (
+              {teman.map((t: any) => (
                 <div key={t.id} className="flex items-center gap-2 p-2 rounded border">
                   <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0">
                     <User className="h-4 w-4 text-muted-foreground" />
