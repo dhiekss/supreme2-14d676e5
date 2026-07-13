@@ -232,3 +232,18 @@ export const savePengaturanUmum = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+// ===== Auto-Reserve Nomor Surat (Run Now) =====
+export const runAutoReserveNow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin, error: e0 } = await context.supabase
+      .rpc("is_admin", { _user_id: context.userId });
+    if (e0) throw new Error(e0.message);
+    if (!isAdmin) throw new Error("Hanya admin yang bisa menjalankan pengamanan nomor");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.rpc("auto_reserve_nomor_surat");
+    if (error) throw new Error(error.message);
+    return { ok: true, result: data };
+  });
+
