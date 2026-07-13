@@ -97,6 +97,100 @@ function DiinputOleh({ email }: { email: string }) {
   );
 }
 
+// ---------- shared table helpers ----------
+type SortDir = "asc" | "desc" | null;
+function SortTh({
+  label, field, sort, setSort, className,
+}: { label: string; field: string; sort: { field: string; dir: SortDir }; setSort: (s: any) => void; className?: string }) {
+  const active = sort.field === field && sort.dir;
+  const Icon = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <TableHead className={className}>
+      <button
+        type="button"
+        className="inline-flex items-center gap-1 hover:text-foreground text-muted-foreground font-medium"
+        onClick={() => {
+          if (sort.field !== field) setSort({ field, dir: "asc" });
+          else if (sort.dir === "asc") setSort({ field, dir: "desc" });
+          else setSort({ field: "", dir: null });
+        }}
+      >
+        {label}
+        <Icon className="h-3.5 w-3.5" />
+      </button>
+    </TableHead>
+  );
+}
+
+function useSortedRows<T extends Record<string, any>>(rows: T[], sort: { field: string; dir: SortDir }, getters: Record<string, (r: T) => any>) {
+  return useMemo(() => {
+    if (!sort.field || !sort.dir) return rows;
+    const get = getters[sort.field] ?? ((r: any) => r[sort.field]);
+    const copy = [...rows];
+    copy.sort((a, b) => {
+      const va = get(a); const vb = get(b);
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      if (va < vb) return sort.dir === "asc" ? -1 : 1;
+      if (va > vb) return sort.dir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return copy;
+  }, [rows, sort, getters]);
+}
+
+function DapodikSelect({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
+  const v = (value ?? "belum").toLowerCase() === "sudah" ? "sudah" : "belum";
+  const isSudah = v === "sudah";
+  return (
+    <Select value={v} onValueChange={onChange} disabled={disabled}>
+      <SelectTrigger
+        className={`h-8 w-[110px] rounded-full border ${
+          isSudah
+            ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+            : "border-red-300 bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
+        }`}
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="belum">Belum</SelectItem>
+        <SelectItem value="sudah">Sudah</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
+function DapodikDate({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
+  return (
+    <Input
+      type="date"
+      value={value ?? ""}
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.value)}
+      className="h-8 w-[150px] rounded-full text-xs"
+    />
+  );
+}
+
+function RombelPill({ name }: { name?: string | null }) {
+  if (!name) return <span className="text-muted-foreground">—</span>;
+  return (
+    <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-xs font-medium">
+      {name}
+    </span>
+  );
+}
+
+function fmtDateID(s?: string | null) {
+  if (!s) return "—";
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return s;
+  return d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+}
+
+
 // ============ Page ============
 function MutasiPage() {
   const qc = useQueryClient();
