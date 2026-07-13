@@ -211,8 +211,8 @@ function Page() {
                         <TableCell className="font-medium">{it.name}</TableCell>
                         <TableCell>{it.nis ?? "—"}</TableCell>
                         <TableCell>
-                          <Select value={it.status} onValueChange={(v: string) => {
-                            setItems((prev) => prev.map((p, i) => i === idx ? { ...p, status: v as Status } : p));
+                          <Select value={it.status} onValueChange={(v: Status) => {
+                            setItems((prev) => prev.map((p, i) => i === idx ? { ...p, status: v } : p));
                           }} disabled={it.locked}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
