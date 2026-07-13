@@ -114,6 +114,10 @@ export const createUser = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
+    if (data.roles.includes("superadmin")) {
+      const callerSuper = await isSuperadmin(context.supabase, context.userId);
+      if (!callerSuper) throw new Error("Forbidden: hanya superadmin yang dapat membuat akun superadmin");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
