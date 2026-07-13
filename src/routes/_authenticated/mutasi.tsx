@@ -97,6 +97,65 @@ function DiinputOleh({ email }: { email: string }) {
   );
 }
 
+// Inline editor for the two "Dapodik" columns (status + tanggal).
+function InlineDapodik({
+  row,
+  save,
+}: {
+  row: any;
+  save: (patch: { dapodik_status?: string; dapodik_tanggal?: string | null }) => Promise<void>;
+}) {
+  const [status, setStatus] = useState<string>(
+    row.dapodik_status === "sinkron" ? "sudah" : row.dapodik_status ?? "belum",
+  );
+  const [tanggal, setTanggal] = useState<string>(row.dapodik_tanggal ?? "");
+
+  useEffect(() => {
+    setStatus(row.dapodik_status === "sinkron" ? "sudah" : row.dapodik_status ?? "belum");
+    setTanggal(row.dapodik_tanggal ?? "");
+  }, [row.dapodik_status, row.dapodik_tanggal]);
+
+  const done = status === "sudah";
+  const pill = done
+    ? "border-emerald-500/60 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30"
+    : "border-red-400/70 text-red-600 bg-red-50 dark:bg-red-950/30";
+
+  return (
+    <>
+      <TableCell>
+        <Select
+          value={status}
+          onValueChange={(v) => {
+            setStatus(v);
+            save({ dapodik_status: v }).catch((e) => toast.error(e.message));
+          }}
+        >
+          <SelectTrigger className={`h-8 w-28 rounded-full px-3 text-xs font-medium ${pill}`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent hideSearch className="min-w-[8rem]">
+            <SelectItem value="belum">Belum</SelectItem>
+            <SelectItem value="sudah">Sudah</SelectItem>
+          </SelectContent>
+        </Select>
+      </TableCell>
+      <TableCell>
+        <Input
+          type="date"
+          value={tanggal}
+          onChange={(e) => setTanggal(e.target.value)}
+          onBlur={() => {
+            const next = tanggal || null;
+            const prev = row.dapodik_tanggal ?? null;
+            if (next !== prev) save({ dapodik_tanggal: next }).catch((e) => toast.error(e.message));
+          }}
+          className="h-8 w-40"
+        />
+      </TableCell>
+    </>
+  );
+}
+
 // ============ Page ============
 function MutasiPage() {
   const qc = useQueryClient();
