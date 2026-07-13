@@ -3,12 +3,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 async function assertAdmin(supabase: any, userId: string) {
-  const { data } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .in("role", ["admin", "superadmin"])
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("is_admin", { _user_id: userId });
+  if (error) throw new Error(`Forbidden: ${error.message}`);
   if (!data) throw new Error("Forbidden: hanya admin yang dapat mengatur akses menu");
 }
 
