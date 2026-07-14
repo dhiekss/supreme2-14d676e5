@@ -384,24 +384,25 @@ function BulkAddDialog({
           </div>
           <div className="space-y-1">
             <Label>Mata Pelajaran <span className="text-destructive">*</span></Label>
-            <Select value={mapelId} onValueChange={setMapelId}>
-              <SelectTrigger><SelectValue placeholder="Pilih mata pelajaran..." /></SelectTrigger>
-              <SelectContent>
-                {opts.mapel.map((m: any) => (
-                  <SelectItem key={m.id} value={m.id}>{m.nama}{m.kode ? ` (${m.kode})` : ""}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox
+              value={mapelId}
+              onChange={setMapelId}
+              placeholder="Pilih mata pelajaran..."
+              searchPlaceholder="Cari mata pelajaran..."
+              options={opts.mapel.map((m: any) => ({ value: m.id, label: m.nama, hint: m.kode ? `(${m.kode})` : undefined }))}
+            />
           </div>
           <div className="space-y-1">
             <Label>Guru <span className="text-destructive">*</span></Label>
-            <Select value={guruId} onValueChange={setGuruId}>
-              <SelectTrigger><SelectValue placeholder="Pilih guru..." /></SelectTrigger>
-              <SelectContent>
-                {opts.guru.map((g: any) => <SelectItem key={g.id} value={g.id}>{g.nama}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Combobox
+              value={guruId}
+              onChange={setGuruId}
+              placeholder="Pilih guru..."
+              searchPlaceholder="Cari guru..."
+              options={opts.guru.map((g: any) => ({ value: g.id, label: g.nama }))}
+            />
           </div>
+
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
