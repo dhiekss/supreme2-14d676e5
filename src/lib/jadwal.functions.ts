@@ -98,3 +98,30 @@ export const deleteJadwal = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const clearJadwal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      rombelId: z.string().uuid().optional(),
+      guruId: z.string().uuid().optional(),
+      scope: z.enum(["filtered", "all"]).default("filtered"),
+    }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    const { data: isAdm } = await context.supabase
+      .from("user_roles").select("role").eq("user_id", context.userId)
+      .in("role", ["admin", "superadmin"]).maybeSingle();
+    if (!isAdm) throw new Error("Hanya admin yang boleh menghapus semua jadwal");
+
+    let q = context.supabase.from("jadwal_pelajaran").delete({ count: "exact" });
+    if (data.scope === "filtered") {
+      if (data.rombelId) q = q.eq("rombel_id", data.rombelId);
+      if (data.guruId) q = q.eq("guru_id", data.guruId);
+    }
+    const { error, count } = await q.not("id", "is", null);
+    if (error) throw new Error(error.message);
+    return { ok: true, deleted: count ?? 0 };
+  });
+
+

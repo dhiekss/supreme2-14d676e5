@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { listJadwal, jadwalOptions, createJadwal, deleteJadwal } from "@/lib/jadwal.functions";
-import { Trash2, Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { listJadwal, jadwalOptions, createJadwal, deleteJadwal, clearJadwal } from "@/lib/jadwal.functions";
+import { Trash2, Plus, Eraser } from "lucide-react";
 import { toast } from "sonner";
 
 const HARI = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"] as const;
@@ -67,7 +67,15 @@ function JadwalPage() {
           <h1 className="text-2xl font-bold tracking-tight">Jadwal Pelajaran</h1>
           <p className="text-sm text-muted-foreground">Kelola jadwal mingguan per rombel & guru.</p>
         </div>
-        <JadwalFormDialog opts={opts} onCreated={() => qc.invalidateQueries({ queryKey: ["jadwal"] })} />
+        <div className="flex gap-2 flex-wrap">
+          <ClearJadwalDialog
+            rombelId={filterRombel}
+            guruId={filterGuru === "all" ? undefined : filterGuru}
+            rombelName={opts.rombel.find((r: any) => r.id === filterRombel)?.name}
+            onDone={() => qc.invalidateQueries({ queryKey: ["jadwal"] })}
+          />
+          <JadwalFormDialog opts={opts} onCreated={() => qc.invalidateQueries({ queryKey: ["jadwal"] })} />
+        </div>
       </div>
 
       <Card>
@@ -232,6 +240,66 @@ function JadwalFormDialog({ opts, onCreated }: { opts: any; onCreated: () => voi
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Batal</Button>
           <Button onClick={submit} disabled={create.isPending}>{create.isPending ? "Menyimpan..." : "Simpan"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ClearJadwalDialog({
+  rombelId, guruId, rombelName, onDone,
+}: { rombelId: string; guruId?: string; rombelName?: string; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [scope, setScope] = useState<"filtered" | "all">("filtered");
+  const clearFn = useServerFn(clearJadwal);
+
+  const run = useMutation({
+    mutationFn: () => clearFn({ data: { rombelId: rombelId || undefined, guruId, scope } }),
+    onSuccess: (r: any) => {
+      toast.success(`${r.deleted ?? 0} slot dihapus`);
+      setOpen(false);
+      onDone();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="text-destructive hover:text-destructive">
+          <Eraser className="h-4 w-4 mr-1" /> Hapus Semua Jadwal
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Hapus Jadwal</DialogTitle>
+          <DialogDescription>
+            Pilih cakupan penghapusan. Tindakan ini tidak dapat dibatalkan.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 text-sm">
+          <label className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer">
+            <input type="radio" name="scope" checked={scope === "filtered"} onChange={() => setScope("filtered")} className="mt-1" />
+            <div>
+              <div className="font-medium">Hanya sesuai filter aktif</div>
+              <div className="text-xs text-muted-foreground">
+                Rombel: {rombelName ?? "—"}{guruId ? " • Guru dipilih" : ""}
+              </div>
+            </div>
+          </label>
+          <label className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer">
+            <input type="radio" name="scope" checked={scope === "all"} onChange={() => setScope("all")} className="mt-1" />
+            <div>
+              <div className="font-medium text-destructive">Semua jadwal (seluruh rombel & guru)</div>
+              <div className="text-xs text-muted-foreground">Menghapus SEMUA slot jadwal pada database.</div>
+            </div>
+          </label>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Batal</Button>
+          <Button variant="destructive" onClick={() => run.mutate()} disabled={run.isPending}>
+            {run.isPending ? "Menghapus..." : "Hapus"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
