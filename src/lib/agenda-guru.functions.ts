@@ -52,7 +52,7 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
   .inputValidator(
     z.object({
       guruId: z.string().uuid(),
-      tanggal: z.string(), // yyyy-mm-dd
+      tanggal: z.string(),
     }).parse,
   )
   .handler(async ({ context, data }) => {
@@ -79,7 +79,6 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
     const rMap = new Map((rombel.data ?? []).map((r: any) => [r.id, r.name]));
     const mMap = new Map((mapel.data ?? []).map((m: any) => [m.id, m.nama]));
 
-    // existing agenda for that date
     const { data: agenda } = await supabase
       .from("kbm_agenda")
       .select("id, jam_ke, rombel_id, mata_pelajaran_id, materi_detail, guru_status")
@@ -90,7 +89,6 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
       aMap.set(`${a.rombel_id}|${a.mata_pelajaran_id}|${a.jam_ke}`, a);
     });
 
-    // group consecutive same rombel+mapel
     const slots = (jadwal ?? []).map((j: any) => ({
       jam_ke: Number(j.jam_ke ?? 0),
       jam_mulai: j.jam_mulai,
@@ -135,11 +133,76 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
       return {
         ...g,
         sudah_diisi: existing.length > 0,
-        existing_id: existing[0]?.id ?? null,
-        existing_materi: existing[0]?.materi_detail ?? "",
-        existing_status: existing[0]?.guru_status ?? "Hadir",
       };
     });
+  });
+
+export const getAgendaDetail = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      guruId: z.string().uuid(),
+      tanggal: z.string(),
+      rombelId: z.string().uuid(),
+      mataPelajaranId: z.string().uuid(),
+      jamList: z.array(z.number().int()).min(1),
+    }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    await assertGuruAccess(supabase, userId, data.guruId);
+
+    const [{ data: students }, { data: rmp }, { data: agendaRows }] = await Promise.all([
+      supabase.from("students").select("id, name, nis").eq("rombel_id", data.rombelId).order("name"),
+      supabase.from("rombel_mata_pelajaran").select("id").eq("rombel_id", data.rombelId).eq("mata_pelajaran_id", data.mataPelajaranId).is("deleted_at", null),
+      supabase.from("kbm_agenda")
+        .select("id, jam_ke, guru_status, materi_detail, tujuan_pembelajaran_id, foto_dokumentasi, ttd_guru")
+        .eq("guru_id", data.guruId).eq("tanggal", data.tanggal)
+        .eq("rombel_id", data.rombelId).eq("mata_pelajaran_id", data.mataPelajaranId)
+        .in("jam_ke", data.jamList),
+    ]);
+
+    let tpList: any[] = [];
+    if (rmp && rmp.length) {
+      const rmpIds = rmp.map((r: any) => r.id);
+      const { data: tps } = await supabase
+        .from("tujuan_pembelajaran")
+        .select("id, kode_tp, deskripsi")
+        .in("rombel_mata_pelajaran_id", rmpIds)
+        .eq("is_active", true)
+        .order("urutan");
+      tpList = tps ?? [];
+    }
+
+    const perJam: Record<number, any> = {};
+    for (const j of data.jamList) perJam[j] = { guru_status: "masuk" };
+    (agendaRows ?? []).forEach((r: any) => {
+      perJam[Number(r.jam_ke)] = { id: r.id, guru_status: r.guru_status ?? "masuk" };
+    });
+
+    const first = (agendaRows ?? [])[0];
+    let kehadiran: Record<string, string> = {};
+    if (first?.id) {
+      const agendaIds = (agendaRows ?? []).map((r: any) => r.id);
+      const { data: keh } = await supabase
+        .from("kbm_agenda_kehadiran")
+        .select("student_id, status")
+        .in("kbm_agenda_id", agendaIds);
+      (keh ?? []).forEach((k: any) => {
+        kehadiran[k.student_id] = k.status;
+      });
+    }
+
+    return {
+      students: students ?? [],
+      tpList,
+      perJam,
+      tujuan_pembelajaran_id: first?.tujuan_pembelajaran_id ?? null,
+      materi_detail: first?.materi_detail ?? "",
+      foto_dokumentasi: first?.foto_dokumentasi ?? "",
+      ttd_guru: first?.ttd_guru ?? "",
+      kehadiran,
+    };
   });
 
 export const upsertAgendaGuru = createServerFn({ method: "POST" })
@@ -151,29 +214,28 @@ export const upsertAgendaGuru = createServerFn({ method: "POST" })
       rombelId: z.string().uuid(),
       mataPelajaranId: z.string().uuid(),
       jamList: z.array(z.number().int().min(1).max(20)).min(1),
-      materiDetail: z.string().min(1).max(4000),
-      guruStatus: z.enum(["Hadir", "Izin", "Sakit", "Dinas Luar"]).default("Hadir"),
+      perJamStatus: z.record(z.string(), z.enum(["masuk", "tidak_masuk_dengan_tugas", "tidak_masuk_tanpa_tugas"])),
+      tujuanPembelajaranId: z.string().uuid().nullable().optional(),
+      materiDetail: z.string().max(4000).optional().default(""),
+      fotoDokumentasi: z.string().optional().default(""),
+      ttdGuru: z.string().optional().default(""),
+      kehadiran: z.record(z.string(), z.enum(["hadir", "sakit", "izin", "alfa", "dispensasi", "bolos_kelas"])).optional().default({}),
     }).parse,
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     await assertGuruAccess(supabase, userId, data.guruId);
 
-    const { data: semester } = await supabase
-      .from("semester")
-      .select("id")
-      .eq("is_active", true)
-      .maybeSingle();
+    const { data: semester } = await supabase.from("semester").select("id").eq("is_active", true).maybeSingle();
 
-    // upsert one row per jam_ke
+    const agendaIds: string[] = [];
     for (const jam of data.jamList) {
+      const status = data.perJamStatus[String(jam)] ?? "masuk";
       const { data: existing } = await supabase
         .from("kbm_agenda")
         .select("id")
-        .eq("guru_id", data.guruId)
-        .eq("tanggal", data.tanggal)
-        .eq("rombel_id", data.rombelId)
-        .eq("mata_pelajaran_id", data.mataPelajaranId)
+        .eq("guru_id", data.guruId).eq("tanggal", data.tanggal)
+        .eq("rombel_id", data.rombelId).eq("mata_pelajaran_id", data.mataPelajaranId)
         .eq("jam_ke", jam)
         .maybeSingle();
 
@@ -183,20 +245,42 @@ export const upsertAgendaGuru = createServerFn({ method: "POST" })
         rombel_id: data.rombelId,
         mata_pelajaran_id: data.mataPelajaranId,
         jam_ke: jam,
-        materi_detail: data.materiDetail,
-        guru_status: data.guruStatus,
+        materi_detail: data.materiDetail ?? "",
+        guru_status: status,
+        tujuan_pembelajaran_id: data.tujuanPembelajaranId ?? null,
+        foto_dokumentasi: data.fotoDokumentasi ?? "",
+        ttd_guru: data.ttdGuru ?? "",
         semester_id: semester?.id ?? null,
         updated_at: new Date().toISOString(),
       };
 
-      if (existing?.id) {
-        const { error } = await supabase.from("kbm_agenda").update(payload).eq("id", existing.id);
+      let agendaId = existing?.id;
+      if (agendaId) {
+        const { error } = await supabase.from("kbm_agenda").update(payload).eq("id", agendaId);
         if (error) throw new Error(error.message);
       } else {
         payload.created_by = userId;
-        const { error } = await supabase.from("kbm_agenda").insert(payload);
+        const { data: ins, error } = await supabase.from("kbm_agenda").insert(payload).select("id").single();
+        if (error) throw new Error(error.message);
+        agendaId = ins.id;
+      }
+      agendaIds.push(agendaId);
+    }
+
+    // sync kehadiran on all agenda rows (mirror)
+    if (agendaIds.length && Object.keys(data.kehadiran ?? {}).length) {
+      await supabase.from("kbm_agenda_kehadiran").delete().in("kbm_agenda_id", agendaIds);
+      const rows: any[] = [];
+      for (const aid of agendaIds) {
+        for (const [studentId, status] of Object.entries(data.kehadiran ?? {})) {
+          rows.push({ kbm_agenda_id: aid, student_id: studentId, status });
+        }
+      }
+      if (rows.length) {
+        const { error } = await supabase.from("kbm_agenda_kehadiran").insert(rows);
         if (error) throw new Error(error.message);
       }
     }
+
     return { ok: true };
   });
