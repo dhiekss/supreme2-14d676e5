@@ -252,7 +252,7 @@ function AgendaDialog({
           rombelId: slot.rombel_id, mataPelajaranId: slot.mata_pelajaran_id,
           jamList: slot.jam_list,
           perJamStatus,
-          tujuanPembelajaranId: tpId || null,
+          tpManual: tpId,
           materiDetail: materi,
           fotoDokumentasi: foto,
           ttdGuru: ttdFinal,
