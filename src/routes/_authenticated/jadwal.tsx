@@ -67,7 +67,15 @@ function JadwalPage() {
           <h1 className="text-2xl font-bold tracking-tight">Jadwal Pelajaran</h1>
           <p className="text-sm text-muted-foreground">Kelola jadwal mingguan per rombel & guru.</p>
         </div>
-        <JadwalFormDialog opts={opts} onCreated={() => qc.invalidateQueries({ queryKey: ["jadwal"] })} />
+        <div className="flex gap-2 flex-wrap">
+          <ClearJadwalDialog
+            rombelId={filterRombel}
+            guruId={filterGuru === "all" ? undefined : filterGuru}
+            rombelName={opts.rombel.find((r: any) => r.id === filterRombel)?.name}
+            onDone={() => qc.invalidateQueries({ queryKey: ["jadwal"] })}
+          />
+          <JadwalFormDialog opts={opts} onCreated={() => qc.invalidateQueries({ queryKey: ["jadwal"] })} />
+        </div>
       </div>
 
       <Card>
