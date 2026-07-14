@@ -29,7 +29,8 @@ function AuthPage() {
   const { data: d = DEFAULT_DISPLAY } = useQuery({
     queryKey: ["display-settings"],
     queryFn: fetchDisplaySettings,
-    initialData: DEFAULT_DISPLAY,
+    placeholderData: DEFAULT_DISPLAY,
+    staleTime: 0,
   });
 
   useEffect(() => {
