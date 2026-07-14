@@ -152,27 +152,14 @@ export const getAgendaDetail = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     await assertGuruAccess(supabase, userId, data.guruId);
 
-    const [{ data: students }, { data: rmp }, { data: agendaRows }] = await Promise.all([
+    const [{ data: students }, { data: agendaRows }] = await Promise.all([
       supabase.from("students").select("id, name, nis").eq("rombel_id", data.rombelId).order("name"),
-      supabase.from("rombel_mata_pelajaran").select("id").eq("rombel_id", data.rombelId).eq("mata_pelajaran_id", data.mataPelajaranId).is("deleted_at", null),
       supabase.from("kbm_agenda")
-        .select("id, jam_ke, guru_status, materi_detail, tujuan_pembelajaran_id, foto_dokumentasi, ttd_guru")
+        .select("id, jam_ke, guru_status, materi_detail, tp_manual, foto_dokumentasi, ttd_guru")
         .eq("guru_id", data.guruId).eq("tanggal", data.tanggal)
         .eq("rombel_id", data.rombelId).eq("mata_pelajaran_id", data.mataPelajaranId)
         .in("jam_ke", data.jamList),
     ]);
-
-    let tpList: any[] = [];
-    if (rmp && rmp.length) {
-      const rmpIds = rmp.map((r: any) => r.id);
-      const { data: tps } = await supabase
-        .from("tujuan_pembelajaran")
-        .select("id, kode_tp, deskripsi")
-        .in("rombel_mata_pelajaran_id", rmpIds)
-        .eq("is_active", true)
-        .order("urutan");
-      tpList = tps ?? [];
-    }
 
     const perJam: Record<number, any> = {};
     for (const j of data.jamList) perJam[j] = { guru_status: "masuk" };
@@ -195,15 +182,15 @@ export const getAgendaDetail = createServerFn({ method: "GET" })
 
     return {
       students: students ?? [],
-      tpList,
       perJam,
-      tujuan_pembelajaran_id: first?.tujuan_pembelajaran_id ?? null,
+      tp_manual: first?.tp_manual ?? "",
       materi_detail: first?.materi_detail ?? "",
       foto_dokumentasi: first?.foto_dokumentasi ?? "",
       ttd_guru: first?.ttd_guru ?? "",
       kehadiran,
     };
   });
+
 
 export const upsertAgendaGuru = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
