@@ -202,7 +202,7 @@ export const upsertAgendaGuru = createServerFn({ method: "POST" })
       mataPelajaranId: z.string().uuid(),
       jamList: z.array(z.number().int().min(1).max(20)).min(1),
       perJamStatus: z.record(z.string(), z.enum(["masuk", "tidak_masuk_dengan_tugas", "tidak_masuk_tanpa_tugas"])),
-      tujuanPembelajaranId: z.string().uuid().nullable().optional(),
+      tpManual: z.string().max(2000).optional().default(""),
       materiDetail: z.string().max(4000).optional().default(""),
       fotoDokumentasi: z.string().optional().default(""),
       ttdGuru: z.string().optional().default(""),
