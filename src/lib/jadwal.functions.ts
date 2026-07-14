@@ -114,14 +114,14 @@ export const clearJadwal = createServerFn({ method: "POST" })
       .in("role", ["admin", "superadmin"]).maybeSingle();
     if (!isAdm) throw new Error("Hanya admin yang boleh menghapus semua jadwal");
 
-    let q = context.supabase.from("jadwal_pelajaran").delete();
+    let q = context.supabase.from("jadwal_pelajaran").delete({ count: "exact" });
     if (data.scope === "filtered") {
       if (data.rombelId) q = q.eq("rombel_id", data.rombelId);
       if (data.guruId) q = q.eq("guru_id", data.guruId);
     }
-    // must include a where clause for supabase delete; use a always-true guard on id
-    const { error, count } = await q.not("id", "is", null).select("id", { count: "exact", head: true });
+    const { error, count } = await q.not("id", "is", null);
     if (error) throw new Error(error.message);
     return { ok: true, deleted: count ?? 0 };
   });
+
 
