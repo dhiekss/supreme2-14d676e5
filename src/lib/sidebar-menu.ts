@@ -168,6 +168,59 @@ export const DEFAULT_SIDEBAR: DefaultNode[] = [
   },
 ];
 
+// Merge stored layout with defaults, returning a LayoutNode[] that includes
+// any default groups/leaves missing from the stored version. Used by the
+// admin menu editor so newly-added default items appear automatically.
+export function mergeLayoutWithDefaults(
+  stored: LayoutNode[] | null | undefined,
+): LayoutNode[] {
+  if (!stored || stored.length === 0) return defaultLayout();
+  const out: LayoutNode[] = stored.map((n) =>
+    n.kind === "group"
+      ? { ...n, children: n.children.map((c) => ({ ...c })) }
+      : { ...n },
+  );
+  const usedLeaf = new Set<string>();
+  const usedGroup = new Set<string>();
+  for (const n of out) {
+    if (n.kind === "group") {
+      usedGroup.add(n.id);
+      for (const c of n.children) usedLeaf.add(c.id);
+    } else {
+      usedLeaf.add(n.id);
+    }
+  }
+  for (const n of DEFAULT_SIDEBAR) {
+    if (isDefaultGroup(n)) {
+      if (usedGroup.has(n.id)) {
+        const g = out.find(
+          (r): r is LayoutGroupOverride => r.kind === "group" && r.id === n.id,
+        );
+        if (g) {
+          for (const c of n.children) {
+            if (!usedLeaf.has(c.id)) {
+              usedLeaf.add(c.id);
+              g.children.push({ kind: "leaf", id: c.id });
+            }
+          }
+        }
+      } else {
+        const children: LayoutLeafOverride[] = [];
+        for (const c of n.children) {
+          if (usedLeaf.has(c.id)) continue;
+          usedLeaf.add(c.id);
+          children.push({ kind: "leaf", id: c.id });
+        }
+        out.push({ kind: "group", id: n.id, children });
+      }
+    } else if (!usedLeaf.has(n.id)) {
+      usedLeaf.add(n.id);
+      out.push({ kind: "leaf", id: n.id });
+    }
+  }
+  return out;
+}
+
 // ---------- Layout types (stored in DB) ----------
 
 export type LayoutLeafOverride = {

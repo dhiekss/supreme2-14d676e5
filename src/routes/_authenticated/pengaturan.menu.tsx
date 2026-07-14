@@ -52,6 +52,7 @@ import {
 import {
   DEFAULT_SIDEBAR,
   defaultLayout,
+  mergeLayoutWithDefaults,
   resolveLayout,
   buildDefaultIndex,
   type LayoutNode,
@@ -122,7 +123,7 @@ function Editor() {
   useEffect(() => {
     if (!data) return;
     const row = data.rows.find((r) => r.role === role);
-    setLayout(row?.layout?.length ? (row.layout as LayoutNode[]) : defaultLayout());
+    setLayout(mergeLayoutWithDefaults(row?.layout as LayoutNode[] | undefined));
     setDirty(false);
   }, [data, role]);
 
