@@ -1,0 +1,1 @@
+ALTER TABLE public.kbm_agenda ADD COLUMN IF NOT EXISTS tp_manual text;
