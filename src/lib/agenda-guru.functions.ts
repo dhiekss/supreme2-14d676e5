@@ -234,7 +234,7 @@ export const upsertAgendaGuru = createServerFn({ method: "POST" })
         jam_ke: jam,
         materi_detail: data.materiDetail ?? "",
         guru_status: status,
-        tujuan_pembelajaran_id: data.tujuanPembelajaranId ?? null,
+        tp_manual: data.tpManual ?? "",
         foto_dokumentasi: data.fotoDokumentasi ?? "",
         ttd_guru: data.ttdGuru ?? "",
         semester_id: semester?.id ?? null,
