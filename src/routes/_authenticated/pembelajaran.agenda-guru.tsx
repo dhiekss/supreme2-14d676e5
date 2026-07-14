@@ -233,7 +233,7 @@ function AgendaDialog({
     const pjs: Record<string, GStatus> = {};
     for (const j of slot.jam_list) pjs[String(j)] = (d.perJam?.[j]?.guru_status ?? "masuk") as GStatus;
     setPerJamStatus(pjs);
-    setTpId(d.tujuan_pembelajaran_id ?? "");
+    setTpId(d.tp_manual ?? "");
     setMateri(d.materi_detail ?? "");
     setFoto(d.foto_dokumentasi ?? "");
     setTtd(d.ttd_guru ?? "");
