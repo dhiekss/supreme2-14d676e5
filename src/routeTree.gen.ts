@@ -64,6 +64,7 @@ import { Route as AuthenticatedPembelajaranPengaturanRouteImport } from './route
 import { Route as AuthenticatedPembelajaranNilaiRouteImport } from './routes/_authenticated/pembelajaran.nilai'
 import { Route as AuthenticatedPembelajaranKbmRouteImport } from './routes/_authenticated/pembelajaran.kbm'
 import { Route as AuthenticatedPembelajaranDashboardNilaiRouteImport } from './routes/_authenticated/pembelajaran.dashboard-nilai'
+import { Route as AuthenticatedPembelajaranAgendaGuruRouteImport } from './routes/_authenticated/pembelajaran.agenda-guru'
 import { Route as AuthenticatedPembelajaranAdministrasiRouteImport } from './routes/_authenticated/pembelajaran.administrasi'
 import { Route as AuthenticatedDashboardMuridStudentIdRouteImport } from './routes/_authenticated/dashboard-murid.$studentId'
 import { Route as AuthenticatedDashboardGuruGuruIdRouteImport } from './routes/_authenticated/dashboard-guru.$guruId'
@@ -371,6 +372,12 @@ const AuthenticatedPembelajaranDashboardNilaiRoute =
     path: '/pembelajaran/dashboard-nilai',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPembelajaranAgendaGuruRoute =
+  AuthenticatedPembelajaranAgendaGuruRouteImport.update({
+    id: '/pembelajaran/agenda-guru',
+    path: '/pembelajaran/agenda-guru',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPembelajaranAdministrasiRoute =
   AuthenticatedPembelajaranAdministrasiRouteImport.update({
     id: '/pembelajaran/administrasi',
@@ -429,6 +436,7 @@ export interface FileRoutesByFullPath {
   '/dashboard-guru/$guruId': typeof AuthenticatedDashboardGuruGuruIdRoute
   '/dashboard-murid/$studentId': typeof AuthenticatedDashboardMuridStudentIdRoute
   '/pembelajaran/administrasi': typeof AuthenticatedPembelajaranAdministrasiRoute
+  '/pembelajaran/agenda-guru': typeof AuthenticatedPembelajaranAgendaGuruRoute
   '/pembelajaran/dashboard-nilai': typeof AuthenticatedPembelajaranDashboardNilaiRoute
   '/pembelajaran/kbm': typeof AuthenticatedPembelajaranKbmRoute
   '/pembelajaran/nilai': typeof AuthenticatedPembelajaranNilaiRoute
@@ -488,6 +496,7 @@ export interface FileRoutesByTo {
   '/dashboard-guru/$guruId': typeof AuthenticatedDashboardGuruGuruIdRoute
   '/dashboard-murid/$studentId': typeof AuthenticatedDashboardMuridStudentIdRoute
   '/pembelajaran/administrasi': typeof AuthenticatedPembelajaranAdministrasiRoute
+  '/pembelajaran/agenda-guru': typeof AuthenticatedPembelajaranAgendaGuruRoute
   '/pembelajaran/dashboard-nilai': typeof AuthenticatedPembelajaranDashboardNilaiRoute
   '/pembelajaran/kbm': typeof AuthenticatedPembelajaranKbmRoute
   '/pembelajaran/nilai': typeof AuthenticatedPembelajaranNilaiRoute
@@ -549,6 +558,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard-guru/$guruId': typeof AuthenticatedDashboardGuruGuruIdRoute
   '/_authenticated/dashboard-murid/$studentId': typeof AuthenticatedDashboardMuridStudentIdRoute
   '/_authenticated/pembelajaran/administrasi': typeof AuthenticatedPembelajaranAdministrasiRoute
+  '/_authenticated/pembelajaran/agenda-guru': typeof AuthenticatedPembelajaranAgendaGuruRoute
   '/_authenticated/pembelajaran/dashboard-nilai': typeof AuthenticatedPembelajaranDashboardNilaiRoute
   '/_authenticated/pembelajaran/kbm': typeof AuthenticatedPembelajaranKbmRoute
   '/_authenticated/pembelajaran/nilai': typeof AuthenticatedPembelajaranNilaiRoute
@@ -610,6 +620,7 @@ export interface FileRouteTypes {
     | '/dashboard-guru/$guruId'
     | '/dashboard-murid/$studentId'
     | '/pembelajaran/administrasi'
+    | '/pembelajaran/agenda-guru'
     | '/pembelajaran/dashboard-nilai'
     | '/pembelajaran/kbm'
     | '/pembelajaran/nilai'
@@ -669,6 +680,7 @@ export interface FileRouteTypes {
     | '/dashboard-guru/$guruId'
     | '/dashboard-murid/$studentId'
     | '/pembelajaran/administrasi'
+    | '/pembelajaran/agenda-guru'
     | '/pembelajaran/dashboard-nilai'
     | '/pembelajaran/kbm'
     | '/pembelajaran/nilai'
@@ -729,6 +741,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard-guru/$guruId'
     | '/_authenticated/dashboard-murid/$studentId'
     | '/_authenticated/pembelajaran/administrasi'
+    | '/_authenticated/pembelajaran/agenda-guru'
     | '/_authenticated/pembelajaran/dashboard-nilai'
     | '/_authenticated/pembelajaran/kbm'
     | '/_authenticated/pembelajaran/nilai'
@@ -1143,6 +1156,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPembelajaranDashboardNilaiRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pembelajaran/agenda-guru': {
+      id: '/_authenticated/pembelajaran/agenda-guru'
+      path: '/pembelajaran/agenda-guru'
+      fullPath: '/pembelajaran/agenda-guru'
+      preLoaderRoute: typeof AuthenticatedPembelajaranAgendaGuruRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/pembelajaran/administrasi': {
       id: '/_authenticated/pembelajaran/administrasi'
       path: '/pembelajaran/administrasi'
@@ -1227,6 +1247,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardGuruGuruIdRoute: typeof AuthenticatedDashboardGuruGuruIdRoute
   AuthenticatedDashboardMuridStudentIdRoute: typeof AuthenticatedDashboardMuridStudentIdRoute
   AuthenticatedPembelajaranAdministrasiRoute: typeof AuthenticatedPembelajaranAdministrasiRoute
+  AuthenticatedPembelajaranAgendaGuruRoute: typeof AuthenticatedPembelajaranAgendaGuruRoute
   AuthenticatedPembelajaranDashboardNilaiRoute: typeof AuthenticatedPembelajaranDashboardNilaiRoute
   AuthenticatedPembelajaranKbmRoute: typeof AuthenticatedPembelajaranKbmRoute
   AuthenticatedPembelajaranNilaiRoute: typeof AuthenticatedPembelajaranNilaiRoute
@@ -1282,6 +1303,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedDashboardMuridStudentIdRoute,
   AuthenticatedPembelajaranAdministrasiRoute:
     AuthenticatedPembelajaranAdministrasiRoute,
+  AuthenticatedPembelajaranAgendaGuruRoute:
+    AuthenticatedPembelajaranAgendaGuruRoute,
   AuthenticatedPembelajaranDashboardNilaiRoute:
     AuthenticatedPembelajaranDashboardNilaiRoute,
   AuthenticatedPembelajaranKbmRoute: AuthenticatedPembelajaranKbmRoute,

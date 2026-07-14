@@ -41,6 +41,7 @@ export const MENU_CATALOG: MenuGroup[] = [
     items: [
       { key: "berkas", label: "Berkas Pembelajaran" },
       { key: "pembelajaran/administrasi", label: "Administrasi Pembelajaran" },
+      { key: "pembelajaran/agenda-guru", label: "Agenda Guru" },
       { key: "pembelajaran/pengaturan", label: "Pengaturan Pembelajaran" },
       { key: "pembelajaran/nilai", label: "Pengelolaan Nilai" },
       { key: "pembelajaran/dashboard-nilai", label: "Dashboard Nilai" },
