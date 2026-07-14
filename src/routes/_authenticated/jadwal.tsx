@@ -12,9 +12,59 @@ import {
   listJadwal, jadwalOptions, clearJadwal,
   bulkCreateJadwal, bulkUpdateJadwal, bulkDeleteJadwal,
 } from "@/lib/jadwal.functions";
-import { Eraser, Plus, Pencil, Trash2, X, CheckCircle2, Circle } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Eraser, Plus, Pencil, Trash2, X, CheckCircle2, Circle, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+type ComboOption = { value: string; label: string; hint?: string };
+function Combobox({
+  options, value, onChange, placeholder = "Pilih...", searchPlaceholder = "Cari...", emptyText = "Tidak ditemukan",
+}: {
+  options: ComboOption[]; value: string; onChange: (v: string) => void;
+  placeholder?: string; searchPlaceholder?: string; emptyText?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className={cn("w-full justify-between font-normal", !selected && "text-muted-foreground")}
+        >
+          <span className="truncate">{selected ? selected.label + (selected.hint ? ` ${selected.hint}` : "") : placeholder}</span>
+          <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" align="start">
+        <Command>
+          <CommandInput placeholder={searchPlaceholder} />
+          <CommandList>
+            <CommandEmpty>{emptyText}</CommandEmpty>
+            <CommandGroup>
+              {options.map((o) => (
+                <CommandItem
+                  key={o.value}
+                  value={`${o.label} ${o.hint ?? ""}`}
+                  onSelect={() => { onChange(o.value); setOpen(false); }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4", value === o.value ? "opacity-100" : "opacity-0")} />
+                  <span className="truncate">{o.label}{o.hint ? <span className="text-muted-foreground"> {o.hint}</span> : null}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 
 const HARI = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"] as const;
 type Hari = (typeof HARI)[number];
