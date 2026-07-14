@@ -52,6 +52,7 @@ import {
 import {
   DEFAULT_SIDEBAR,
   defaultLayout,
+  mergeLayoutWithDefaults,
   resolveLayout,
   buildDefaultIndex,
   type LayoutNode,
