@@ -124,4 +124,68 @@ export const clearJadwal = createServerFn({ method: "POST" })
     return { ok: true, deleted: count ?? 0 };
   });
 
+const SlotSchema = z.object({
+  hari: z.enum(HARI),
+  jamKe: z.number().int().min(1).max(20),
+  jamMulai: z.string().optional(),
+  jamSelesai: z.string().optional(),
+});
+
+export const bulkCreateJadwal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      rombelId: z.string().uuid(),
+      mataPelajaranId: z.string().uuid(),
+      guruId: z.string().uuid(),
+      slots: z.array(SlotSchema).min(1),
+    }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    const rows = data.slots.map((s) => ({
+      hari: s.hari,
+      jam_ke: s.jamKe,
+      jam_mulai: s.jamMulai || null,
+      jam_selesai: s.jamSelesai || null,
+      rombel_id: data.rombelId,
+      mata_pelajaran_id: data.mataPelajaranId,
+      guru_id: data.guruId,
+      created_by: context.userId,
+    }));
+    const { error } = await context.supabase.from("jadwal_pelajaran").insert(rows);
+    if (error) throw new Error(error.message);
+    return { ok: true, inserted: rows.length };
+  });
+
+export const bulkUpdateJadwal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      ids: z.array(z.string().uuid()).min(1),
+      mataPelajaranId: z.string().uuid(),
+      guruId: z.string().uuid(),
+    }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    const { error } = await context.supabase
+      .from("jadwal_pelajaran")
+      .update({ mata_pelajaran_id: data.mataPelajaranId, guru_id: data.guruId })
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, updated: data.ids.length };
+  });
+
+export const bulkDeleteJadwal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ ids: z.array(z.string().uuid()).min(1) }).parse)
+  .handler(async ({ context, data }) => {
+    const { error } = await context.supabase
+      .from("jadwal_pelajaran")
+      .delete()
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, deleted: data.ids.length };
+  });
+
+
 
