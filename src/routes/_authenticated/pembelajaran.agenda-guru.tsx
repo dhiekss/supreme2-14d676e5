@@ -233,7 +233,7 @@ function AgendaDialog({
     const pjs: Record<string, GStatus> = {};
     for (const j of slot.jam_list) pjs[String(j)] = (d.perJam?.[j]?.guru_status ?? "masuk") as GStatus;
     setPerJamStatus(pjs);
-    setTpId(d.tujuan_pembelajaran_id ?? "");
+    setTpId(d.tp_manual ?? "");
     setMateri(d.materi_detail ?? "");
     setFoto(d.foto_dokumentasi ?? "");
     setTtd(d.ttd_guru ?? "");
@@ -252,7 +252,7 @@ function AgendaDialog({
           rombelId: slot.rombel_id, mataPelajaranId: slot.mata_pelajaran_id,
           jamList: slot.jam_list,
           perJamStatus,
-          tujuanPembelajaranId: tpId || null,
+          tpManual: tpId,
           materiDetail: materi,
           fotoDokumentasi: foto,
           ttdGuru: ttdFinal,
@@ -398,18 +398,14 @@ function AgendaDialog({
           <TabsContent value="tp" className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label>Tujuan Pembelajaran (TP)</Label>
-              <Select value={tpId || undefined} onValueChange={setTpId}>
-                <SelectTrigger><SelectValue placeholder="Pilih TP yang diajarkan" /></SelectTrigger>
-                <SelectContent>
-                  {(detailQ.data?.tpList ?? []).map((t: any) => (
-                    <SelectItem key={t.id} value={t.id}>{t.kode_tp ? `${t.kode_tp} — ` : ""}{t.deskripsi}</SelectItem>
-                  ))}
-                  {(!detailQ.data?.tpList || detailQ.data.tpList.length === 0) && (
-                    <div className="p-3 text-xs text-muted-foreground">Belum ada TP untuk mata pelajaran ini.</div>
-                  )}
-                </SelectContent>
-              </Select>
+              <Textarea
+                rows={3}
+                placeholder="Tuliskan tujuan pembelajaran..."
+                value={tpId}
+                onChange={(e) => setTpId(e.target.value)}
+              />
             </div>
+
             <div className="space-y-2">
               <Label>Detail Materi yang Disampaikan</Label>
               <Textarea rows={6} placeholder="Tuliskan materi yang disampaikan pada pertemuan ini..." value={materi} onChange={(e) => setMateri(e.target.value)} />

@@ -709,6 +709,7 @@ export type Database = {
           rombel_id: string | null
           semester_id: string | null
           tanggal: string | null
+          tp_manual: string | null
           ttd_guru: string | null
           tujuan_pembelajaran_id: string | null
           updated_at: string | null
@@ -726,6 +727,7 @@ export type Database = {
           rombel_id?: string | null
           semester_id?: string | null
           tanggal?: string | null
+          tp_manual?: string | null
           ttd_guru?: string | null
           tujuan_pembelajaran_id?: string | null
           updated_at?: string | null
@@ -743,6 +745,7 @@ export type Database = {
           rombel_id?: string | null
           semester_id?: string | null
           tanggal?: string | null
+          tp_manual?: string | null
           ttd_guru?: string | null
           tujuan_pembelajaran_id?: string | null
           updated_at?: string | null
