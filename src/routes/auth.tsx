@@ -31,6 +31,7 @@ function AuthPage() {
     queryFn: fetchDisplaySettings,
     placeholderData: DEFAULT_DISPLAY,
     staleTime: 0,
+    refetchOnMount: "always",
   });
 
   useEffect(() => {
