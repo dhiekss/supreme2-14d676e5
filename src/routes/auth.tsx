@@ -114,7 +114,7 @@ function AuthPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@sekolah.sch.id"
+                    placeholder=""
                     className="rounded-full bg-secondary/60 h-11 px-5 border-0"
                   />
                   <p className="text-xs text-primary/70">Masukkan email, NIP (guru), atau NIS (murid)</p>
