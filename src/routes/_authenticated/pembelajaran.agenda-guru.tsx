@@ -398,18 +398,14 @@ function AgendaDialog({
           <TabsContent value="tp" className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label>Tujuan Pembelajaran (TP)</Label>
-              <Select value={tpId || undefined} onValueChange={setTpId}>
-                <SelectTrigger><SelectValue placeholder="Pilih TP yang diajarkan" /></SelectTrigger>
-                <SelectContent>
-                  {(detailQ.data?.tpList ?? []).map((t: any) => (
-                    <SelectItem key={t.id} value={t.id}>{t.kode_tp ? `${t.kode_tp} — ` : ""}{t.deskripsi}</SelectItem>
-                  ))}
-                  {(!detailQ.data?.tpList || detailQ.data.tpList.length === 0) && (
-                    <div className="p-3 text-xs text-muted-foreground">Belum ada TP untuk mata pelajaran ini.</div>
-                  )}
-                </SelectContent>
-              </Select>
+              <Textarea
+                rows={3}
+                placeholder="Tuliskan tujuan pembelajaran..."
+                value={tpId}
+                onChange={(e) => setTpId(e.target.value)}
+              />
             </div>
+
             <div className="space-y-2">
               <Label>Detail Materi yang Disampaikan</Label>
               <Textarea rows={6} placeholder="Tuliskan materi yang disampaikan pada pertemuan ini..." value={materi} onChange={(e) => setMateri(e.target.value)} />
