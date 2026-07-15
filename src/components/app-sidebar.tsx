@@ -107,6 +107,30 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border">
+        {profile && (
+          <div className="flex items-center gap-3 px-2 py-2">
+            <Avatar className="h-9 w-9 shrink-0">
+              <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-sm font-semibold uppercase">
+                {(profile.full_name || profile.email || "?").trim().charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            {!collapsed && (
+              <div className="leading-tight min-w-0 flex-1">
+                <div className="font-semibold text-sm truncate">
+                  {profile.full_name || "Pengguna"}
+                </div>
+                {profile.email && (
+                  <div className="text-xs opacity-80 truncate">{profile.email}</div>
+                )}
+                {profile.role && (
+                  <div className="text-xs opacity-70 capitalize truncate">
+                    {profile.role.replace(/_/g, " ")}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleSignOut}>
