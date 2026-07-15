@@ -313,6 +313,9 @@ export const attendanceDetailList = createServerFn({ method: "GET" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
+    const allowed = await getAllowedRombelIds(supabase, context.userId);
+    if (allowed !== null && allowed.length === 0) return [] as any[];
+    if (data.rombelId && allowed !== null && !allowed.includes(data.rombelId)) return [] as any[];
     const recs = await fetchAllPaged<any>((f, t) => {
       let q = supabase
         .from("attendance_records")
@@ -321,11 +324,13 @@ export const attendanceDetailList = createServerFn({ method: "GET" })
         .range(f, t);
       if (data.date) q = q.eq("date", data.date);
       if (data.rombelId) q = q.eq("rombel_id", data.rombelId);
+      if (allowed !== null) q = q.in("rombel_id", allowed);
       if (data.officer) q = q.eq("officer_name", data.officer);
       if (data.from) q = q.gte("date", data.from);
       if (data.to) q = q.lte("date", data.to);
       return q;
     });
+
 
     const rombelIds = [...new Set(recs.map((r: any) => r.rombel_id).filter(Boolean) as string[])];
     const recIds = recs.map((r: any) => r.id);
