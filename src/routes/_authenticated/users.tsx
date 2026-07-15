@@ -166,7 +166,7 @@ function UsersPage() {
 
   useEffect(() => {
     setSelected(new Set());
-  }, [search, role, status, sort, pageSize]);
+  }, [debouncedSearch, role, status, sort, pageSize]);
 
   const toggleSelectAll = () => {
     setSelected((prev) => {
