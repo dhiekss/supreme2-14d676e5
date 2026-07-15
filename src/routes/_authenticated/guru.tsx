@@ -173,7 +173,8 @@ function Page() {
   };
 
   return (
-    <>
+    <div className="space-y-4">
+      <GuruStats rows={data} />
       <CrudTable<Row>
         title="Manajemen Guru"
         description="Data guru & tenaga pendidik."
