@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { CrudTable } from "@/components/crud-table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -128,6 +128,25 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
     queryKey: ["rombel", khusus],
     queryFn: () => fetchFn({ data: { khusus } }) as Promise<Row[]>,
   });
+
+  const { data: allStudents = [] } = useQuery({
+    queryKey: ["all-students-for-rombel-counts"],
+    queryFn: () => allStudentsFn({}) as Promise<Array<{ rombel_id: string | null; gender: string | null }>>,
+  });
+
+  const countsByRombel = useMemo(() => {
+    const m = new Map<string, { total: number; L: number; P: number; belum: number }>();
+    for (const s of allStudents) {
+      if (!s.rombel_id) continue;
+      const c = m.get(s.rombel_id) ?? { total: 0, L: 0, P: 0, belum: 0 };
+      c.total += 1;
+      if (s.gender === "L") c.L += 1;
+      else if (s.gender === "P") c.P += 1;
+      else c.belum += 1;
+      m.set(s.rombel_id, c);
+    }
+    return m;
+  }, [allStudents]);
 
   const { data: guruList = [] } = useQuery({
     queryKey: ["guru-lite-for-wali"],
@@ -315,6 +334,18 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
           { header: "Wali Kelas", cell: (r) => <WaliKelasPicker row={r} guruList={guruList} /> },
           { header: "NIP", cell: (r) => <span className="tabular-nums text-sm">{r.wali_kelas_nip ?? "—"}</span> },
           { header: "Tipe", cell: (r) => r.is_khusus ? <Badge variant="secondary">Khusus</Badge> : <Badge variant="outline">Reguler</Badge> },
+          { header: "Jumlah Murid", cell: (r) => {
+            const c = countsByRombel.get(r.id);
+            if (!c) return <span className="text-muted-foreground">0</span>;
+            return (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Badge variant="outline" className="tabular-nums">{c.total}</Badge>
+                {c.L > 0 && <span className="text-xs text-muted-foreground tabular-nums">L: {c.L}</span>}
+                {c.P > 0 && <span className="text-xs text-muted-foreground tabular-nums">P: {c.P}</span>}
+                {c.belum > 0 && <span className="text-xs text-muted-foreground tabular-nums">?: {c.belum}</span>}
+              </div>
+            );
+          }},
           { header: "Anggota", cell: (r) => (
             <Button size="sm" variant="outline" onClick={() => setMembersOf(r)}>
               <Users className="h-4 w-4 mr-1" /> Lihat
@@ -455,6 +486,21 @@ function MembersDialog({ rombel, onClose }: { rombel: Row | null; onClose: () =>
           <DialogTitle>Anggota Rombel — {rombel?.name}</DialogTitle>
           <DialogDescription>Kelola murid di rombel ini.</DialogDescription>
         </DialogHeader>
+
+        {(() => {
+          const total = students.length;
+          const L = students.filter((s) => s.gender === "L").length;
+          const P = students.filter((s) => s.gender === "P").length;
+          const belum = total - L - P;
+          return (
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="tabular-nums">Total: {total}</Badge>
+              <Badge variant="secondary" className="tabular-nums">Laki-laki: {L}</Badge>
+              <Badge variant="secondary" className="tabular-nums">Perempuan: {P}</Badge>
+              {belum > 0 && <Badge variant="outline" className="tabular-nums">Belum diisi: {belum}</Badge>}
+            </div>
+          );
+        })()}
 
         <div className="flex justify-end">
           <Button size="sm" onClick={() => setAdding({})}><UserPlus className="h-4 w-4 mr-1" />Tambah Murid</Button>
