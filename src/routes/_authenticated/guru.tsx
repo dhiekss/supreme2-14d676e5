@@ -158,6 +158,7 @@ function Page() {
           no_whatsapp: pick(r, ["no_whatsapp", "whatsapp", "wa", "No WhatsApp"]) || null,
           status_kepegawaian: pick(r, ["status_kepegawaian", "status", "Status Kepegawaian"]) || null,
           pangkat_golongan: pick(r, ["pangkat_golongan", "pangkat", "golongan", "Pangkat/Golongan"]) || null,
+          konsentrasi_keahlian_nama: pick(r, ["konsentrasi_keahlian_nama", "konsentrasi_keahlian", "konsentrasi", "Konsentrasi Keahlian"]) || null,
         }))
         .filter((r) => r.nama.length > 0);
       if (!rows.length) {
