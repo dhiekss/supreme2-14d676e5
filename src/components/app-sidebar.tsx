@@ -45,6 +45,12 @@ export function AppSidebar() {
     queryFn: () => getLayout(),
     staleTime: 60_000,
   });
+  const getProfile = useServerFn(getMyProfile);
+  const { data: profile } = useQuery({
+    queryKey: ["my-profile"],
+    queryFn: () => getProfile(),
+    staleTime: 60_000,
+  });
   const nodes: ResolvedNode[] = resolveLayout(layoutRes?.layout ?? null).filter(
     (n) => !n.hidden,
   );
