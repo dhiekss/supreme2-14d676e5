@@ -566,3 +566,110 @@ function DocInput({ rmpId, field, label, value, onChange }: {
     </div>
   );
 }
+
+// ================ Deadline Countdown ================
+function DeadlineCountdown({ deadline, deadlineText }: { deadline: string; deadlineText: string }) {
+  const target = useMemo(() => new Date(deadline).getTime(), [deadline]);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const diff = target - now;
+  const overdue = diff <= 0;
+  const abs = Math.abs(diff);
+  const days = Math.floor(abs / 86400000);
+  const hours = Math.floor((abs % 86400000) / 3600000);
+  const minutes = Math.floor((abs % 3600000) / 60000);
+  const seconds = Math.floor((abs % 60000) / 1000);
+
+  const totalHours = abs / 3600000;
+  const level: "safe" | "warn" | "urgent" | "over" = overdue
+    ? "over"
+    : totalHours <= 24 ? "urgent"
+    : totalHours <= 72 ? "warn"
+    : "safe";
+
+  const theme = {
+    safe: {
+      wrap: "from-emerald-500/10 via-teal-500/10 to-cyan-500/10 border-emerald-300/60 dark:border-emerald-500/30",
+      accent: "text-emerald-700 dark:text-emerald-300",
+      chip: "bg-emerald-600 text-white",
+      block: "bg-white/70 dark:bg-emerald-950/40 border-emerald-200/70 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-100",
+      pulse: "bg-emerald-500",
+      label: "Waktu Tersisa",
+    },
+    warn: {
+      wrap: "from-amber-500/10 via-orange-500/10 to-yellow-500/10 border-amber-300/70 dark:border-amber-500/30",
+      accent: "text-amber-700 dark:text-amber-300",
+      chip: "bg-amber-600 text-white",
+      block: "bg-white/70 dark:bg-amber-950/40 border-amber-200/70 dark:border-amber-500/30 text-amber-900 dark:text-amber-100",
+      pulse: "bg-amber-500",
+      label: "Segera Berakhir",
+    },
+    urgent: {
+      wrap: "from-rose-500/15 via-red-500/10 to-orange-500/10 border-rose-300/70 dark:border-rose-500/40",
+      accent: "text-rose-700 dark:text-rose-300",
+      chip: "bg-rose-600 text-white",
+      block: "bg-white/70 dark:bg-rose-950/40 border-rose-200/70 dark:border-rose-500/30 text-rose-900 dark:text-rose-100",
+      pulse: "bg-rose-500",
+      label: "Mendesak!",
+    },
+    over: {
+      wrap: "from-slate-500/10 via-rose-500/10 to-slate-500/10 border-rose-400/60 dark:border-rose-500/40",
+      accent: "text-rose-700 dark:text-rose-300",
+      chip: "bg-rose-700 text-white",
+      block: "bg-white/70 dark:bg-rose-950/40 border-rose-200/70 dark:border-rose-500/30 text-rose-900 dark:text-rose-100",
+      pulse: "bg-rose-600",
+      label: "Terlewat",
+    },
+  }[level];
+
+  return (
+    <Card className={`relative overflow-hidden border bg-gradient-to-br ${theme.wrap}`}>
+      <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/30 dark:bg-white/5 blur-3xl" />
+      <CardContent className="relative p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="flex items-start gap-3">
+            <div className={`h-10 w-10 rounded-lg ${theme.chip} flex items-center justify-center shadow-sm`}>
+              <CalendarClock className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-foreground">Batas Waktu Pengumpulan Berkas</span>
+                <span className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${theme.chip}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${theme.pulse} animate-pulse`} />
+                  {theme.label}
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {overdue ? "Deadline telah terlewat pada " : "Deadline: "}
+                <span className={`font-semibold ${theme.accent}`}>{deadlineText}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {[
+              { v: days, l: "Hari" },
+              { v: hours, l: "Jam" },
+              { v: minutes, l: "Menit" },
+              { v: seconds, l: "Detik" },
+            ].map((u, i) => (
+              <div key={u.l} className="flex items-center">
+                <div className={`min-w-[54px] rounded-lg border px-2 py-1.5 text-center backdrop-blur-sm ${theme.block}`}>
+                  <div className={`text-xl sm:text-2xl font-bold tabular-nums leading-tight ${theme.accent}`}>
+                    {String(u.v).padStart(2, "0")}
+                  </div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{u.l}</div>
+                </div>
+                {i < 3 && <span className={`mx-1 text-lg font-bold ${theme.accent} opacity-60`}>:</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
