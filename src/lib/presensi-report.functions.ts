@@ -52,6 +52,11 @@ export const presensiReport = createServerFn({ method: "GET" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
+    const allowed = await getAllowedRombelIds(supabase, context.userId);
+    if (allowed !== null && !allowed.includes(data.rombelId)) {
+      throw new Error("Forbidden: Anda tidak memiliki akses ke rombel ini");
+    }
+
 
     const { data: students, error: sErr } = await supabase
       .from("students")
