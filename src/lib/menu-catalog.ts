@@ -28,6 +28,7 @@ export const MENU_CATALOG: MenuGroup[] = [
       { key: "konsentrasi", label: "Konsentrasi Keahlian" },
       { key: "mapel", label: "Manajemen Mata Pelajaran" },
       { key: "guru", label: "Manajemen Guru" },
+      { key: "tendik", label: "Manajemen Tendik" },
       { key: "jadwal", label: "Jadwal Pelajaran" },
       { key: "denah", label: "Manajemen Denah" },
       { key: "hari-efektif", label: "Manajemen Hari Efektif" },
