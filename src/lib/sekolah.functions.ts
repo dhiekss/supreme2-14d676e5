@@ -549,3 +549,45 @@ export const deleteJenisRuang = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ============ TENDIK ============
+export const listTendik = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("tendik" as any)
+      .select("*")
+      .order("nama");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as any[];
+  });
+
+const TendikInput = z.object({
+  id: uuid.optional(),
+  nama: z.string().trim().min(1).max(150),
+  nip: z.string().trim().max(50).optional().nullable(),
+  jenis_kelamin: z.string().trim().max(2).optional().nullable(),
+  status_kepegawaian: z.string().trim().max(50).optional().nullable(),
+  golongan: z.string().trim().max(50).optional().nullable(),
+});
+
+export const saveTendik = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(TendikInput.parse)
+  .handler(async ({ context, data }) => {
+    const { id, ...payload } = data;
+    const r = id
+      ? await context.supabase.from("tendik" as any).update(payload).eq("id", id)
+      : await context.supabase.from("tendik" as any).insert(payload);
+    if (r.error) throw new Error(r.error.message);
+    return { ok: true };
+  });
+
+export const deleteTendik = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: uuid }).parse)
+  .handler(async ({ context, data }) => {
+    const { error } = await context.supabase.from("tendik" as any).delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
