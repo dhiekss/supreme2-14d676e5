@@ -155,24 +155,47 @@ export const commitPromotion = createServerFn({ method: "POST" })
 export const listPromotionBatches = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+    const { supabase } = context;
+    const { data, error } = await supabase
       .from("student_promotions")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(1000);
     if (error) throw new Error(error.message);
+
+    const tahunIds = new Set<string>();
+    const semIds = new Set<string>();
+    for (const r of data ?? []) {
+      if (r.tahun_ajaran_tujuan_id) tahunIds.add(r.tahun_ajaran_tujuan_id);
+      if (r.semester_tujuan_id) semIds.add(r.semester_tujuan_id);
+    }
+    const [tahunRes, semRes] = await Promise.all([
+      tahunIds.size
+        ? supabase.from("tahun_ajaran").select("id, nama").in("id", [...tahunIds])
+        : Promise.resolve({ data: [] as any[] }),
+      semIds.size
+        ? supabase.from("semester").select("id, nama").in("id", [...semIds])
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const tahunMap = new Map((tahunRes.data ?? []).map((t: any) => [t.id, t.nama]));
+    const semMap = new Map((semRes.data ?? []).map((s: any) => [s.id, s.nama]));
+
     const map = new Map<string, any>();
     for (const r of data ?? []) {
+      const tahunTujuanName = r.tahun_ajaran_tujuan_id ? tahunMap.get(r.tahun_ajaran_tujuan_id) ?? null : null;
+      const semesterTujuanName = r.semester_tujuan_id ? semMap.get(r.semester_tujuan_id) ?? null : null;
       const b = map.get(r.batch_id) ?? {
         batch_id: r.batch_id,
         tanggal_proses: r.tanggal_proses,
         created_at: r.created_at,
         rombel_asal_name: r.rombel_asal_name,
+        tahun_ajaran_tujuan_name: tahunTujuanName,
+        semester_tujuan_name: semesterTujuanName,
         counts: { naik: 0, tinggal: 0, lulus: 0, keluar: 0 },
         items: [] as any[],
       };
       b.counts[r.status as keyof typeof b.counts] = (b.counts[r.status as keyof typeof b.counts] ?? 0) + 1;
-      b.items.push(r);
+      b.items.push({ ...r, tahun_ajaran_tujuan_name: tahunTujuanName, semester_tujuan_name: semesterTujuanName });
       map.set(r.batch_id, b);
     }
     return [...map.values()].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));

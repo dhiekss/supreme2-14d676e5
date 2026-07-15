@@ -311,6 +311,7 @@ function RiwayatTab({ batchesFn, undoFn, undoStudentFn, qc }: any) {
           <Table>
             <TableHeader><TableRow>
               <TableHead>Tanggal</TableHead><TableHead>Rombel Asal</TableHead>
+              <TableHead>Tujuan Semester / Tahun Ajaran</TableHead>
               <TableHead>Rincian</TableHead><TableHead className="text-right">Aksi</TableHead>
             </TableRow></TableHeader>
             <TableBody>
@@ -319,6 +320,14 @@ function RiwayatTab({ batchesFn, undoFn, undoStudentFn, qc }: any) {
                   <TableRow>
                     <TableCell>{b.tanggal_proses}</TableCell>
                     <TableCell className="font-medium">{b.rombel_asal_name ?? "—"}</TableCell>
+                    <TableCell className="text-sm">
+                      {b.semester_tujuan_name || b.tahun_ajaran_tujuan_name ? (
+                        <div className="flex flex-col">
+                          <span>Semester {b.semester_tujuan_name ?? "—"}</span>
+                          <span className="text-muted-foreground text-xs">TA {b.tahun_ajaran_tujuan_name ?? "—"}</span>
+                        </div>
+                      ) : "—"}
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-1 flex-wrap">
                         {b.counts.naik > 0 && <Badge variant="secondary">Naik: {b.counts.naik}</Badge>}
@@ -352,7 +361,7 @@ function RiwayatTab({ batchesFn, undoFn, undoStudentFn, qc }: any) {
                   </TableRow>
                   {openBatch === b.batch_id && (
                     <TableRow>
-                      <TableCell colSpan={4} className="bg-muted/30">
+                      <TableCell colSpan={5} className="bg-muted/30">
                         <Table>
                           <TableHeader><TableRow>
                             <TableHead>Nama</TableHead><TableHead>NIS</TableHead>
