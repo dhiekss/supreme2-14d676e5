@@ -895,3 +895,172 @@ function TrashDialog({
     </Dialog>
   );
 }
+
+// ================ Edit Dialog ================
+function EditDialog({
+  row, onOpenChange, refs, onSubmit, loading,
+}: {
+  row: any | null;
+  onOpenChange: (v: boolean) => void;
+  refs: any;
+  onSubmit: (v: { id: string; rombel_id: string; mata_pelajaran_id: string; guru_id: string }) => void;
+  loading: boolean;
+}) {
+  const [rombel, setRombel] = useState("");
+  const [mapel, setMapel] = useState("");
+  const [guru, setGuru] = useState("");
+
+  useMemo(() => {
+    if (row) {
+      setRombel(row.rombel_id ?? "");
+      setMapel(row.mata_pelajaran_id ?? "");
+      setGuru(row.guru_id ?? "");
+    }
+  }, [row?.id]);
+
+  const canSubmit = !!row && rombel && mapel && guru;
+
+  return (
+    <Dialog open={!!row} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Pembelajaran</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>Rombel</Label>
+            <Select value={rombel} onValueChange={setRombel}>
+              <SelectTrigger className="mt-1"><SelectValue placeholder="Pilih Rombel" /></SelectTrigger>
+              <SelectContent>
+                {(refs?.rombel ?? []).map((r: any) => (
+                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Mata Pelajaran</Label>
+            <Select value={mapel} onValueChange={setMapel}>
+              <SelectTrigger className="mt-1"><SelectValue placeholder="Pilih Mata Pelajaran" /></SelectTrigger>
+              <SelectContent>
+                {(refs?.mapel ?? []).map((m: any) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.nama}{m.kelompok ? ` — ${m.kelompok}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Guru Pengampu</Label>
+            <Select value={guru} onValueChange={setGuru}>
+              <SelectTrigger className="mt-1"><SelectValue placeholder="Pilih Guru" /></SelectTrigger>
+              <SelectContent>
+                {(refs?.guru ?? []).map((g: any) => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.nama}{g.nip ? ` (${g.nip})` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
+          <Button
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => onSubmit({ id: row!.id, rombel_id: rombel, mata_pelajaran_id: mapel, guru_id: guru })}
+            disabled={!canSubmit || loading}
+          >
+            {loading ? "Menyimpan…" : "Simpan"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ================ Bulk Edit Dialog ================
+function BulkEditDialog({
+  open, onOpenChange, refs, count, onSubmit, loading,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  refs: any;
+  count: number;
+  onSubmit: (v: { rombel_id?: string; mata_pelajaran_id?: string; guru_id?: string }) => void;
+  loading: boolean;
+}) {
+  const [rombel, setRombel] = useState("");
+  const [mapel, setMapel] = useState("");
+  const [guru, setGuru] = useState("");
+
+  const reset = () => { setRombel(""); setMapel(""); setGuru(""); };
+  const hasAny = !!(rombel || mapel || guru);
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Bulk Edit ({count} data terpilih)</DialogTitle>
+          <p className="text-xs text-muted-foreground">
+            Hanya field yang diisi yang akan diubah pada semua data terpilih.
+          </p>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>Rombel</Label>
+            <Select value={rombel} onValueChange={setRombel}>
+              <SelectTrigger className="mt-1"><SelectValue placeholder="— Tidak diubah —" /></SelectTrigger>
+              <SelectContent>
+                {(refs?.rombel ?? []).map((r: any) => (
+                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Mata Pelajaran</Label>
+            <Select value={mapel} onValueChange={setMapel}>
+              <SelectTrigger className="mt-1"><SelectValue placeholder="— Tidak diubah —" /></SelectTrigger>
+              <SelectContent>
+                {(refs?.mapel ?? []).map((m: any) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.nama}{m.kelompok ? ` — ${m.kelompok}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Guru Pengampu</Label>
+            <Select value={guru} onValueChange={setGuru}>
+              <SelectTrigger className="mt-1"><SelectValue placeholder="— Tidak diubah —" /></SelectTrigger>
+              <SelectContent>
+                {(refs?.guru ?? []).map((g: any) => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.nama}{g.nip ? ` (${g.nip})` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
+          <Button
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => onSubmit({
+              rombel_id: rombel || undefined,
+              mata_pelajaran_id: mapel || undefined,
+              guru_id: guru || undefined,
+            })}
+            disabled={!hasAny || loading}
+          >
+            {loading ? "Menyimpan…" : `Terapkan ke ${count} data`}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
