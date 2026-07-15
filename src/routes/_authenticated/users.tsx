@@ -110,9 +110,10 @@ function UsersPage() {
   const bulkFn = useServerFn(bulkSetAllActive);
   const forceFn = useServerFn(forceLogoutAll);
 
-  const { data: page1 } = useSuspenseQuery({
-    queryKey: ["users", { search, role, status, sort, page, pageSize }],
-    queryFn: () => fetchList({ data: { search: search || undefined, role, status, sort, page, pageSize } }),
+  const { data: page1 } = useQuery({
+    queryKey: ["users", { search: debouncedSearch, role, status, sort, page, pageSize }],
+    queryFn: () => fetchList({ data: { search: debouncedSearch || undefined, role, status, sort, page, pageSize } }),
+    placeholderData: (prev) => prev,
   });
   const { data: sum } = useQuery({ queryKey: ["users-sum"], queryFn: () => fetchSum() });
 
