@@ -14,7 +14,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { listRombel } from "@/lib/presensi.functions";
+import { listRombelAll as listRombel } from "@/lib/presensi.functions";
 import {
   createKeterlambatan,
   listStudentsByRombel,
