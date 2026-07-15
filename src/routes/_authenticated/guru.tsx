@@ -100,7 +100,7 @@ function Page() {
   const HEADERS = [
     "id", "nama", "nip", "jenis_kelamin", "mata_pelajaran_nama",
     "kelompok_mapel", "kualifikasi_pendidikan", "no_whatsapp",
-    "status_kepegawaian", "pangkat_golongan",
+    "status_kepegawaian", "pangkat_golongan", "konsentrasi_keahlian_nama",
   ];
 
   const downloadTemplate = (withData: boolean) => {
@@ -118,11 +118,13 @@ function Page() {
           r.no_whatsapp ?? "",
           r.status_kepegawaian ?? "",
           r.pangkat_golongan ?? "",
+          r.konsentrasi_nama ?? "",
         ]);
       }
     } else {
-      rows.push(["", "Budi Santoso", "198501012010011001", "L", "Matematika", "A", "S1", "081234567890", "PNS", "III/a"]);
-      rows.push(["", "Siti Aminah", "", "P", "Bahasa Indonesia", "A", "S2", "", "PPPK", "III/b"]);
+      rows.push(["", "Budi Santoso", "198501012010011001", "L", "Matematika", "A", "S1", "081234567890", "PNS", "III/a", ""]);
+      rows.push(["", "Siti Aminah", "", "P", "Bahasa Indonesia", "A", "S2", "", "PPPK", "III/b", ""]);
+      rows.push(["", "Andi Wijaya", "", "L", "Pemrograman Web", "C3", "S1", "", "PPPK", "III/a", "Rekayasa Perangkat Lunak"]);
     }
     const ws = XLSX.utils.aoa_to_sheet(rows);
     ws["!cols"] = HEADERS.map(() => ({ wch: 22 }));
