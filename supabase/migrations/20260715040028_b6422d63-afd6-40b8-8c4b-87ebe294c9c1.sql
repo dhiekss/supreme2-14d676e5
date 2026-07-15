@@ -1,0 +1,2 @@
+ALTER TABLE public.guru ADD COLUMN IF NOT EXISTS konsentrasi_keahlian_id uuid REFERENCES public.konsentrasi_keahlian(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_guru_konsentrasi_keahlian_id ON public.guru(konsentrasi_keahlian_id);

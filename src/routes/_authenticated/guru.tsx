@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Download, Upload } from "lucide-react";
-import { listGuru, saveGuru, deleteGuru, listMapel, importGuru } from "@/lib/sekolah.functions";
+import { listGuru, saveGuru, deleteGuru, listMapel, importGuru, listKonsentrasi } from "@/lib/sekolah.functions";
 import { toast } from "sonner";
 
 type Row = {
@@ -27,9 +27,14 @@ type Row = {
   no_whatsapp: string | null;
   status_kepegawaian: string | null;
   pangkat_golongan: string | null;
+  konsentrasi_keahlian_id: string | null;
+  konsentrasi_nama?: string | null;
 };
 
 const STATUS_OPTIONS = ["PNS", "PPPK", "GTT", "GTY", "Honorer", "CPNS"];
+
+// A mapel is "produktif" when its kelompok starts with "C" (C1/C2/C3), matching the SMK curriculum grouping.
+const isProduktifKelompok = (k?: string | null) => !!k && k.trim().toUpperCase().startsWith("C");
 
 type ImportRow = {
   id?: string | null;
@@ -42,6 +47,7 @@ type ImportRow = {
   no_whatsapp: string | null;
   status_kepegawaian: string | null;
   pangkat_golongan: string | null;
+  konsentrasi_keahlian_nama: string | null;
 };
 
 export const Route = createFileRoute("/_authenticated/guru")({
@@ -56,13 +62,18 @@ function Page() {
   const saveFn = useServerFn(saveGuru);
   const delFn = useServerFn(deleteGuru);
   const importFn = useServerFn(importGuru);
+  const fetchKons = useServerFn(listKonsentrasi);
   const { data = [] } = useQuery({ queryKey: ["guru"], queryFn: () => fetchFn() as Promise<Row[]> });
   const { data: mapel = [] } = useQuery({ queryKey: ["mapel"], queryFn: () => fetchMapel() as Promise<any[]> });
+  const { data: konsentrasi = [] } = useQuery({ queryKey: ["konsentrasi"], queryFn: () => fetchKons() as Promise<any[]> });
   const [editing, setEditing] = useState<Partial<Row> | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [importRows, setImportRows] = useState<ImportRow[]>([]);
   const [importMode, setImportMode] = useState<"append" | "replace" | "upsert">("upsert");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const selectedMapel = mapel.find((m: any) => m.id === editing?.mata_pelajaran_id);
+  const editingIsProduktif = isProduktifKelompok(selectedMapel?.kelompok);
 
   const save = useMutation({
     mutationFn: (v: any) => saveFn({ data: v }),
@@ -89,7 +100,7 @@ function Page() {
   const HEADERS = [
     "id", "nama", "nip", "jenis_kelamin", "mata_pelajaran_nama",
     "kelompok_mapel", "kualifikasi_pendidikan", "no_whatsapp",
-    "status_kepegawaian", "pangkat_golongan",
+    "status_kepegawaian", "pangkat_golongan", "konsentrasi_keahlian_nama",
   ];
 
   const downloadTemplate = (withData: boolean) => {
@@ -107,11 +118,13 @@ function Page() {
           r.no_whatsapp ?? "",
           r.status_kepegawaian ?? "",
           r.pangkat_golongan ?? "",
+          r.konsentrasi_nama ?? "",
         ]);
       }
     } else {
-      rows.push(["", "Budi Santoso", "198501012010011001", "L", "Matematika", "A", "S1", "081234567890", "PNS", "III/a"]);
-      rows.push(["", "Siti Aminah", "", "P", "Bahasa Indonesia", "A", "S2", "", "PPPK", "III/b"]);
+      rows.push(["", "Budi Santoso", "198501012010011001", "L", "Matematika", "A", "S1", "081234567890", "PNS", "III/a", ""]);
+      rows.push(["", "Siti Aminah", "", "P", "Bahasa Indonesia", "A", "S2", "", "PPPK", "III/b", ""]);
+      rows.push(["", "Andi Wijaya", "", "L", "Pemrograman Web", "C3", "S1", "", "PPPK", "III/a", "Rekayasa Perangkat Lunak"]);
     }
     const ws = XLSX.utils.aoa_to_sheet(rows);
     ws["!cols"] = HEADERS.map(() => ({ wch: 22 }));
@@ -145,6 +158,7 @@ function Page() {
           no_whatsapp: pick(r, ["no_whatsapp", "whatsapp", "wa", "No WhatsApp"]) || null,
           status_kepegawaian: pick(r, ["status_kepegawaian", "status", "Status Kepegawaian"]) || null,
           pangkat_golongan: pick(r, ["pangkat_golongan", "pangkat", "golongan", "Pangkat/Golongan"]) || null,
+          konsentrasi_keahlian_nama: pick(r, ["konsentrasi_keahlian_nama", "konsentrasi_keahlian", "konsentrasi", "Konsentrasi Keahlian"]) || null,
         }))
         .filter((r) => r.nama.length > 0);
       if (!rows.length) {
@@ -163,12 +177,13 @@ function Page() {
         title="Manajemen Guru"
         description="Data guru & tenaga pendidik."
         rows={data}
-        search={(r, q) => `${r.nama ?? ""} ${r.nip ?? ""} ${r.mapel_nama ?? ""} ${r.status_kepegawaian ?? ""} ${r.pangkat_golongan ?? ""}`.toLowerCase().includes(q)}
+        search={(r, q) => `${r.nama ?? ""} ${r.nip ?? ""} ${r.mapel_nama ?? ""} ${r.status_kepegawaian ?? ""} ${r.pangkat_golongan ?? ""} ${r.konsentrasi_nama ?? ""}`.toLowerCase().includes(q)}
         columns={[
           { header: "Nama", cell: (r) => <span className="font-medium">{r.nama}</span> },
           { header: "NIP", cell: (r) => <span className="font-mono text-xs">{r.nip ?? "—"}</span> },
           { header: "JK", cell: (r) => r.jenis_kelamin ?? "—" },
           { header: "Mata Pelajaran", cell: (r) => r.mapel_nama ?? "—" },
+          { header: "Konsentrasi", cell: (r) => r.konsentrasi_nama ? <Badge variant="outline">{r.konsentrasi_nama}</Badge> : "—" },
           { header: "Status", cell: (r) => r.status_kepegawaian ? <Badge variant="secondary">{r.status_kepegawaian}</Badge> : "—" },
           { header: "Pangkat/Gol", cell: (r) => r.pangkat_golongan ? <span className="font-mono text-xs">{r.pangkat_golongan}</span> : "—" },
           { header: "Kualifikasi", cell: (r) => r.kualifikasi_pendidikan ? <Badge variant="outline">{r.kualifikasi_pendidikan}</Badge> : "—" },
@@ -210,13 +225,45 @@ function Page() {
               </div>
               <div>
                 <Label>Mata Pelajaran</Label>
-                <Select value={editing.mata_pelajaran_id ?? ""} onValueChange={(v) => setEditing({ ...editing, mata_pelajaran_id: v })}>
+                <Select
+                  value={editing.mata_pelajaran_id ?? ""}
+                  onValueChange={(v) => {
+                    const m = mapel.find((x: any) => x.id === v);
+                    const produktif = isProduktifKelompok(m?.kelompok);
+                    setEditing({
+                      ...editing,
+                      mata_pelajaran_id: v,
+                      kelompok_mapel: m?.kelompok ?? editing.kelompok_mapel ?? null,
+                      // clear konsentrasi if mapel is not produktif
+                      konsentrasi_keahlian_id: produktif ? editing.konsentrasi_keahlian_id ?? null : null,
+                    });
+                  }}
+                >
                   <SelectTrigger><SelectValue placeholder="Pilih mata pelajaran" /></SelectTrigger>
                   <SelectContent>
-                    {mapel.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nama}</SelectItem>)}
+                    {mapel.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nama}{m.kelompok ? ` (${m.kelompok})` : ""}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
+              {editingIsProduktif && (
+                <div>
+                  <Label>Konsentrasi Keahlian *</Label>
+                  <Select
+                    value={editing.konsentrasi_keahlian_id ?? ""}
+                    onValueChange={(v) => setEditing({ ...editing, konsentrasi_keahlian_id: v })}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Pilih konsentrasi keahlian" /></SelectTrigger>
+                    <SelectContent>
+                      {konsentrasi.length === 0 ? (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">Belum ada data konsentrasi keahlian.</div>
+                      ) : (
+                        konsentrasi.map((k: any) => <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>)
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">Wajib untuk pengampu mata pelajaran produktif (kelompok C).</p>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Kelompok Mapel</Label><Input value={editing.kelompok_mapel ?? ""} onChange={(e) => setEditing({ ...editing, kelompok_mapel: e.target.value })} /></div>
                 <div><Label>Kualifikasi</Label><Input value={editing.kualifikasi_pendidikan ?? ""} onChange={(e) => setEditing({ ...editing, kualifikasi_pendidikan: e.target.value })} placeholder="S1 / S2" /></div>
@@ -249,6 +296,7 @@ function Page() {
               no_whatsapp: editing?.no_whatsapp || null,
               status_kepegawaian: editing?.status_kepegawaian || null,
               pangkat_golongan: editing?.pangkat_golongan || null,
+              konsentrasi_keahlian_id: editingIsProduktif ? (editing?.konsentrasi_keahlian_id || null) : null,
             })}>Simpan</Button>
           </DialogFooter>
         </DialogContent>
