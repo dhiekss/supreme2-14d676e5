@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import * as XLSX from "xlsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -190,6 +192,135 @@ function UsersPage() {
   const totalAll = page1?.totalAll ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalAll / pageSize));
 
+  // Import state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importProgress, setImportProgress] = useState({
+    done: 0,
+    total: 0,
+    inserted: 0,
+    failed: 0,
+    errors: [] as { row: number; message: string }[],
+  });
+  const [importRunning, setImportRunning] = useState(false);
+  const [importFinished, setImportFinished] = useState(false);
+
+  const downloadTemplate = () => {
+    const headers = ["email", "password", "full_name", "nip", "nis", "roles"];
+    const rows: any[][] = [
+      headers,
+      [
+        "guru1@sekolah.sch.id",
+        "password123",
+        "Budi Santoso",
+        "198501012010011001",
+        "",
+        "guru",
+      ],
+      [
+        "murid1@sekolah.sch.id",
+        "password123",
+        "Siti Aminah",
+        "",
+        "2024001",
+        "murid",
+      ],
+      [
+        "admin1@sekolah.sch.id",
+        "password123",
+        "Andi Wijaya",
+        "",
+        "",
+        "admin,walas",
+      ],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws["!cols"] = headers.map(() => ({ wch: 24 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Users");
+    XLSX.writeFile(wb, "template-user.xlsx");
+    toast.success("Template diunduh");
+  };
+
+  const handleImportFile = async (file: File) => {
+    let parsed: Array<{
+      email: string;
+      password: string;
+      full_name: string;
+      nip: string | null;
+      nis: string | null;
+      roles: Role[];
+    }> = [];
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json<any>(ws, { defval: "" });
+      const pick = (r: any, keys: string[]) => {
+        for (const k of keys) {
+          const v = r[k] ?? r[k.toLowerCase()] ?? r[k.toUpperCase()];
+          if (v !== undefined && v !== null && String(v).trim() !== "") return String(v).trim();
+        }
+        return "";
+      };
+      parsed = json
+        .map((r) => {
+          const rolesRaw = pick(r, ["roles", "role", "Role", "Roles"]);
+          const roles = rolesRaw
+            .split(/[,;|]/)
+            .map((s) => s.trim().toLowerCase())
+            .filter((s) => (ROLES as readonly string[]).includes(s)) as Role[];
+          return {
+            email: pick(r, ["email", "Email"]),
+            password: pick(r, ["password", "Password"]) || "password123",
+            full_name: pick(r, ["full_name", "nama", "Nama", "Full Name"]),
+            nip: pick(r, ["nip", "NIP"]) || null,
+            nis: pick(r, ["nis", "NIS"]) || null,
+            roles,
+          };
+        })
+        .filter((r) => r.email && r.full_name && r.roles.length > 0);
+    } catch (e: any) {
+      toast.error(`Gagal membaca file: ${e?.message ?? e}`);
+      return;
+    }
+    if (parsed.length === 0) {
+      toast.error("Tidak ada baris valid. Pastikan kolom email, full_name, dan roles terisi.");
+      return;
+    }
+
+    setImportOpen(true);
+    setImportRunning(true);
+    setImportFinished(false);
+    setImportProgress({ done: 0, total: parsed.length, inserted: 0, failed: 0, errors: [] });
+    let inserted = 0;
+    let failed = 0;
+    const errors: { row: number; message: string }[] = [];
+    for (let i = 0; i < parsed.length; i++) {
+      const row = parsed[i];
+      try {
+        await createFn({ data: row });
+        inserted++;
+      } catch (e: any) {
+        failed++;
+        errors.push({ row: i + 2, message: e?.message ?? "Gagal" });
+      }
+      setImportProgress({
+        done: i + 1,
+        total: parsed.length,
+        inserted,
+        failed,
+        errors,
+      });
+    }
+    setImportRunning(false);
+    setImportFinished(true);
+    if (inserted > 0) toast.success(`${inserted} user berhasil diimpor`);
+    if (failed > 0) toast.error(`${failed} user gagal`);
+    invalidate();
+  };
+
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -199,8 +330,23 @@ function UsersPage() {
           <p className="text-sm text-muted-foreground">Kelola pengguna sistem presensi</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-2" />Download Template</Button>
-          <Button variant="outline" size="sm"><Upload className="h-4 w-4 mr-2" />Import User</Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleImportFile(f);
+              if (fileInputRef.current) fileInputRef.current.value = "";
+            }}
+          />
+          <Button variant="outline" size="sm" onClick={downloadTemplate}>
+            <Download className="h-4 w-4 mr-2" />Download Template
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="h-4 w-4 mr-2" />Import User
+          </Button>
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEdit(null); }}>
             <DialogTrigger asChild>
               <Button size="sm" className="bg-blue-600 hover:bg-blue-700"><Plus className="h-4 w-4 mr-2" />Tambah User</Button>
@@ -538,6 +684,62 @@ function UsersPage() {
         onOpenChange={setBulkMenuOpen}
         onSaved={() => setSelected(new Set())}
       />
+
+      {/* Import Progress */}
+      <Dialog open={importOpen} onOpenChange={(o) => { if (!importRunning) setImportOpen(o); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {importRunning ? "Mengimpor user…" : importFinished ? "Import selesai" : "Import User"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Progress
+              value={importProgress.total > 0 ? (importProgress.done / importProgress.total) * 100 : 0}
+            />
+            <div className="text-sm text-muted-foreground">
+              {importProgress.done} / {importProgress.total} baris (
+              {importProgress.total > 0
+                ? Math.round((importProgress.done / importProgress.total) * 100)
+                : 0}
+              %)
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="rounded-md border p-2 bg-emerald-50">
+                <div className="text-xs text-muted-foreground">Berhasil</div>
+                <div className="font-semibold text-emerald-700">{importProgress.inserted}</div>
+              </div>
+              <div className="rounded-md border p-2 bg-red-50">
+                <div className="text-xs text-muted-foreground">Gagal</div>
+                <div className="font-semibold text-red-700">{importProgress.failed}</div>
+              </div>
+            </div>
+            {importProgress.errors.length > 0 && (
+              <div className="max-h-40 overflow-auto rounded-md border p-2 text-xs space-y-1">
+                {importProgress.errors.slice(0, 30).map((e, i) => (
+                  <div key={i} className="text-red-700">
+                    Baris {e.row}: {e.message}
+                  </div>
+                ))}
+                {importProgress.errors.length > 30 && (
+                  <div className="text-muted-foreground">
+                    …dan {importProgress.errors.length - 30} error lain
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={importRunning}
+              onClick={() => setImportOpen(false)}
+            >
+              Tutup
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
