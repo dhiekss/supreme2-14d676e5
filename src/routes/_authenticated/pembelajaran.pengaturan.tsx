@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { withDateSuffix } from "@/lib/utils";
 import {
   Settings, CalendarClock, QrCode, Plus, Trash2, Download, Upload, RotateCcw,
@@ -146,20 +147,54 @@ function PengaturanPembelajaranPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const importM = useMutation({
-    mutationFn: (rows: { rombel: string; mapel: string; guru: string }[]) =>
-      importFn({ data: { rows } }),
-    onSuccess: (r: any) => {
-      if (r.inserted > 0) toast.success(`${r.inserted} data berhasil diimpor`);
-      if (r.failed > 0) {
-        toast.error(`${r.failed} baris gagal`, {
-          description: (r.errors ?? []).slice(0, 5).map((e: any) => `Baris ${e.row}: ${e.message}`).join("\n"),
-        });
-      }
-      invalidate();
-    },
-    onError: (e: any) => toast.error(e.message),
+  // Import progress state
+  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState({
+    done: 0,
+    total: 0,
+    inserted: 0,
+    failed: 0,
+    errors: [] as { row: number; message: string }[],
   });
+  const [importFinished, setImportFinished] = useState(false);
+
+  const runImport = async (allRows: { rombel: string; mapel: string; guru: string }[]) => {
+    setImporting(true);
+    setImportFinished(false);
+    setImportProgress({ done: 0, total: allRows.length, inserted: 0, failed: 0, errors: [] });
+    const chunkSize = 1;
+    let inserted = 0;
+    let failed = 0;
+    const errors: { row: number; message: string }[] = [];
+    for (let i = 0; i < allRows.length; i += chunkSize) {
+      const chunk = allRows.slice(i, i + chunkSize);
+      try {
+        const r: any = await importFn({ data: { rows: chunk } });
+        inserted += r.inserted ?? 0;
+        failed += r.failed ?? 0;
+        if (Array.isArray(r.errors)) {
+          for (const e of r.errors) {
+            errors.push({ row: i + (e.row - 2) + 2, message: e.message });
+          }
+        }
+      } catch (e: any) {
+        failed += chunk.length;
+        errors.push({ row: i + 2, message: e?.message ?? "Gagal" });
+      }
+      setImportProgress({
+        done: Math.min(i + chunk.length, allRows.length),
+        total: allRows.length,
+        inserted,
+        failed,
+        errors,
+      });
+    }
+    setImportFinished(true);
+    if (inserted > 0) toast.success(`${inserted} data berhasil diimpor`);
+    if (failed > 0) toast.error(`${failed} baris gagal`);
+    invalidate();
+  };
+
 
   const downloadTemplate = () => {
     const sampleRombel = (refs?.rombel ?? [])[0]?.name ?? "X TKJ 1";
@@ -196,7 +231,7 @@ function PengaturanPembelajaranPage() {
         toast.error("File kosong atau format tidak dikenali");
         return;
       }
-      importM.mutate(parsed);
+      runImport(parsed);
     } catch (e: any) {
       toast.error("Gagal membaca file: " + (e?.message ?? "unknown"));
     }
@@ -252,10 +287,10 @@ function PengaturanPembelajaranPage() {
           <Button
             variant="outline" size="sm"
             onClick={() => fileInputRef.current?.click()}
-            disabled={importM.isPending}
+            disabled={importing}
           >
             <Upload className="h-4 w-4 mr-2" />
-            {importM.isPending ? "Mengimpor…" : "Import"}
+            {importing ? "Mengimpor…" : "Import"}
           </Button>
           <input
             ref={fileInputRef}
@@ -488,6 +523,75 @@ function PengaturanPembelajaranPage() {
         emptyTrashM={emptyTrashM}
         onChange={invalidate}
       />
+
+      {/* Dialog Progress Import */}
+      <Dialog
+        open={importing}
+        onOpenChange={(o) => {
+          if (!o && importFinished) setImporting(false);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {importFinished ? "Import Selesai" : "Mengimpor Data…"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Progress
+              value={
+                importProgress.total > 0
+                  ? (importProgress.done / importProgress.total) * 100
+                  : 0
+              }
+            />
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                {importProgress.done} / {importProgress.total} baris
+              </span>
+              <span className="font-medium">
+                {importProgress.total > 0
+                  ? Math.round((importProgress.done / importProgress.total) * 100)
+                  : 0}
+                %
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="rounded-md border p-2">
+                <div className="text-muted-foreground">Berhasil</div>
+                <div className="font-semibold text-green-600">
+                  {importProgress.inserted}
+                </div>
+              </div>
+              <div className="rounded-md border p-2">
+                <div className="text-muted-foreground">Gagal</div>
+                <div className="font-semibold text-red-600">
+                  {importProgress.failed}
+                </div>
+              </div>
+            </div>
+            {importFinished && importProgress.errors.length > 0 && (
+              <div className="max-h-40 overflow-y-auto rounded-md border p-2 text-xs space-y-1">
+                {importProgress.errors.slice(0, 20).map((e, i) => (
+                  <div key={i} className="text-muted-foreground">
+                    Baris {e.row}: {e.message}
+                  </div>
+                ))}
+                {importProgress.errors.length > 20 && (
+                  <div className="text-muted-foreground italic">
+                    …dan {importProgress.errors.length - 20} lainnya
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          {importFinished && (
+            <DialogFooter>
+              <Button onClick={() => setImporting(false)}>Tutup</Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
