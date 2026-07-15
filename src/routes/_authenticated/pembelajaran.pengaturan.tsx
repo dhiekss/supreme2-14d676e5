@@ -70,6 +70,9 @@ function PengaturanPembelajaranPage() {
   const [sort, setSort] = useState<SortKey>("no_asc");
   const [trashOpen, setTrashOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [editRow, setEditRow] = useState<any | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   // Deadline local state
   const [deadlineLocal, setDeadlineLocal] = useState<string>("");
