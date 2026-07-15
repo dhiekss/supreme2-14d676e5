@@ -98,10 +98,17 @@ export const listAdministrasi = createServerFn({ method: "GET" })
       }
     }
 
+    // Also restrict by Akses Rombel (non-privileged only)
+    const allowed = privileged ? null : await getAllowedRombelIds(s, context.userId);
+    if (allowed !== null && allowed.length === 0) {
+      return { rows: [], total: 0, page: 1, pageSize: data?.pageSize ?? 20, stats: { total: 0, sudah_input: 0, belum_input: 0, valid: 0, lengkap_100: 0, menunggu: 0, perbaikan: 0, parsial: 0 } };
+    }
+
     let baseQ = s
       .from("rombel_mata_pelajaran")
       .select("id, rombel_id, mata_pelajaran_id, guru_id")
       .is("deleted_at", null);
+    if (allowed !== null) baseQ = baseQ.in("rombel_id", allowed);
     if (data?.rombel_id && data.rombel_id !== "all") baseQ = baseQ.eq("rombel_id", data.rombel_id);
     if (data?.mapel_id && data.mapel_id !== "all") baseQ = baseQ.eq("mata_pelajaran_id", data.mapel_id);
     if (privileged) {
