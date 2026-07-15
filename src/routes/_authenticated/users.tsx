@@ -676,18 +676,18 @@ function UsersPage() {
         )}
       </Dialog>
 
-      {/* Akses Menu individu */}
-      <MenuAccessDialog
-        user={menuFor}
-        open={!!menuFor}
-        onOpenChange={(o) => !o && setMenuFor(null)}
+      {/* Akses Rombel individu */}
+      <RombelAccessDialog
+        user={rombelFor}
+        open={!!rombelFor}
+        onOpenChange={(o: boolean) => !o && setRombelFor(null)}
       />
 
-      {/* Akses Menu massal */}
-      <BulkMenuAccessDialog
+      {/* Akses Rombel massal */}
+      <BulkRombelAccessDialog
         userIds={Array.from(selected)}
-        open={bulkMenuOpen}
-        onOpenChange={setBulkMenuOpen}
+        open={bulkRombelOpen}
+        onOpenChange={setBulkRombelOpen}
         onSaved={() => setSelected(new Set())}
       />
 
