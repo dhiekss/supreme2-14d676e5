@@ -218,6 +218,8 @@ const GuruInput = z.object({
   kelompok_mapel: z.string().trim().max(50).optional().nullable(),
   kualifikasi_pendidikan: z.string().trim().max(50).optional().nullable(),
   no_whatsapp: z.string().trim().max(20).optional().nullable(),
+  status_kepegawaian: z.string().trim().max(50).optional().nullable(),
+  pangkat_golongan: z.string().trim().max(50).optional().nullable(),
 });
 
 export const saveGuru = createServerFn({ method: "POST" })
@@ -239,6 +241,84 @@ export const deleteGuru = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("guru").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+const GuruImportRow = z.object({
+  id: z.string().uuid().optional().nullable(),
+  nama: z.string().trim().min(1).max(150),
+  nip: z.string().trim().max(30).optional().nullable(),
+  jenis_kelamin: z.string().trim().max(5).optional().nullable(),
+  mata_pelajaran_nama: z.string().trim().max(150).optional().nullable(),
+  kelompok_mapel: z.string().trim().max(50).optional().nullable(),
+  kualifikasi_pendidikan: z.string().trim().max(50).optional().nullable(),
+  no_whatsapp: z.string().trim().max(30).optional().nullable(),
+  status_kepegawaian: z.string().trim().max(50).optional().nullable(),
+  pangkat_golongan: z.string().trim().max(50).optional().nullable(),
+});
+
+const GuruImportInput = z.object({
+  rows: z.array(GuruImportRow).min(1).max(2000),
+  mode: z.enum(["append", "replace", "upsert"]).default("upsert"),
+});
+
+export const importGuru = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(GuruImportInput.parse)
+  .handler(async ({ context, data }) => {
+    const { data: mapels } = await context.supabase.from("mata_pelajaran").select("id, nama, kode");
+    const mapelByName = new Map<string, string>();
+    for (const m of mapels ?? []) {
+      if ((m as any).nama) mapelByName.set(String((m as any).nama).toLowerCase().trim(), (m as any).id);
+      if ((m as any).kode) mapelByName.set(String((m as any).kode).toLowerCase().trim(), (m as any).id);
+    }
+    const normJK = (v?: string | null) => {
+      if (!v) return null;
+      const s = v.trim().toUpperCase();
+      if (s.startsWith("L")) return "L";
+      if (s.startsWith("P")) return "P";
+      return null;
+    };
+    const toPayload = (r: z.infer<typeof GuruImportRow>) => ({
+      nama: r.nama,
+      nip: r.nip || null,
+      jenis_kelamin: normJK(r.jenis_kelamin),
+      mata_pelajaran_id: r.mata_pelajaran_nama
+        ? mapelByName.get(r.mata_pelajaran_nama.toLowerCase().trim()) ?? null
+        : null,
+      kelompok_mapel: r.kelompok_mapel || null,
+      kualifikasi_pendidikan: r.kualifikasi_pendidikan || null,
+      no_whatsapp: r.no_whatsapp || null,
+      status_kepegawaian: r.status_kepegawaian || null,
+      pangkat_golongan: r.pangkat_golongan || null,
+    });
+
+    if (data.mode === "replace") {
+      const { error: delErr } = await context.supabase.from("guru").delete().not("id", "is", null);
+      if (delErr) throw new Error(delErr.message);
+      const { error } = await context.supabase.from("guru").insert(data.rows.map(toPayload));
+      if (error) throw new Error(error.message);
+      return { ok: true, count: data.rows.length };
+    }
+
+    let updated = 0;
+    let inserted = 0;
+    const toInsert: any[] = [];
+    for (const r of data.rows) {
+      const payload = toPayload(r);
+      if (data.mode === "upsert" && r.id) {
+        const { error } = await context.supabase.from("guru").update(payload).eq("id", r.id);
+        if (error) throw new Error(error.message);
+        updated++;
+      } else {
+        toInsert.push(payload);
+      }
+    }
+    if (toInsert.length) {
+      const { error } = await context.supabase.from("guru").insert(toInsert);
+      if (error) throw new Error(error.message);
+      inserted = toInsert.length;
+    }
+    return { ok: true, count: updated + inserted, updated, inserted };
   });
 
 // ============ PERIODE (Tahun Ajaran + Semester) ============
