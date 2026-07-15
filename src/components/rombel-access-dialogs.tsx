@@ -55,7 +55,7 @@ function RombelPicker({
     if (!needle) return rombels;
     return rombels.filter(
       (r) =>
-        r.name.toLowerCase().includes(needle) ||
+        (r.name ?? "").toLowerCase().includes(needle) ||
         (r.konsentrasi_keahlian ?? "").toLowerCase().includes(needle) ||
         (r.tingkat ?? "").toLowerCase().includes(needle),
     );
