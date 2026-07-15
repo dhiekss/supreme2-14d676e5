@@ -157,11 +157,40 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
   const [membersOf, setMembersOf] = useState<Row | null>(null);
   const [confirmDelAll, setConfirmDelAll] = useState(false);
   const [importNisnFor, setImportNisnFor] = useState<string>("");
+  const [filterTingkat, setFilterTingkat] = useState<string>("__all");
+  const [filterKonsentrasi, setFilterKonsentrasi] = useState<string>("__all");
+  const [filterTipe, setFilterTipe] = useState<string>("__all");
   const fileInputs = {
     nisn: useRef<HTMLInputElement>(null),
     murid: useRef<HTMLInputElement>(null),
     rombel: useRef<HTMLInputElement>(null),
   };
+
+  const tingkatOptions = useMemo(() => {
+    const s = new Set<string>();
+    data.forEach((r) => { if (r.tingkat) s.add(r.tingkat); });
+    const roman: Record<string, number> = { VII: 7, VIII: 8, IX: 9, X: 10, XI: 11, XII: 12 };
+    return [...s].sort((a, b) => (roman[a.toUpperCase()] ?? 0) - (roman[b.toUpperCase()] ?? 0) || a.localeCompare(b));
+  }, [data]);
+
+  const konsentrasiOptions = useMemo(() => {
+    const s = new Set<string>();
+    data.forEach((r) => { if (r.konsentrasi_keahlian) s.add(r.konsentrasi_keahlian); });
+    return [...s].sort((a, b) => a.localeCompare(b));
+  }, [data]);
+
+  const filteredData = useMemo(() => {
+    return data.filter((r) => {
+      if (filterTingkat !== "__all" && (r.tingkat ?? "") !== filterTingkat) return false;
+      if (filterKonsentrasi !== "__all" && (r.konsentrasi_keahlian ?? "") !== filterKonsentrasi) return false;
+      if (filterTipe !== "__all") {
+        const isK = !!r.is_khusus;
+        if (filterTipe === "khusus" && !isK) return false;
+        if (filterTipe === "reguler" && isK) return false;
+      }
+      return true;
+    });
+  }, [data, filterTingkat, filterKonsentrasi, filterTipe]);
 
   const save = useMutation({
     mutationFn: (v: any) => saveFn({ data: v }),
@@ -325,7 +354,7 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
       <CrudTable<Row>
         title={khusus ? "Rombel Khusus" : "Manajemen Rombel"}
         description={khusus ? "Rombel khusus / kelompok belajar." : "Kelola rombongan belajar (kelas)."}
-        rows={data}
+        rows={filteredData}
         search={(r, q) => `${r.name ?? ""} ${r.tingkat ?? ""} ${r.konsentrasi_keahlian ?? ""} ${r.wali_kelas_name ?? ""}`.toLowerCase().includes(q)}
         columns={[
           { header: "Nama Rombel", cell: (r) => <span className="font-medium">{r.name}</span>, sort: (a, b) => String(a.name ?? "").localeCompare(String(b.name ?? "")) },
@@ -366,6 +395,28 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
         addLabel="Tambah Rombel"
         extra={
           <div className="flex flex-wrap items-center gap-2">
+            <Select value={filterTingkat} onValueChange={setFilterTingkat}>
+              <SelectTrigger className="h-9 w-[130px]"><SelectValue placeholder="Tingkat" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua Tingkat</SelectItem>
+                {tingkatOptions.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterKonsentrasi} onValueChange={setFilterKonsentrasi}>
+              <SelectTrigger className="h-9 w-[180px]"><SelectValue placeholder="Konsentrasi" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua Konsentrasi</SelectItem>
+                {konsentrasiOptions.map((k) => <SelectItem key={k} value={k}>{k}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterTipe} onValueChange={setFilterTipe}>
+              <SelectTrigger className="h-9 w-[130px]"><SelectValue placeholder="Tipe" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua Tipe</SelectItem>
+                <SelectItem value="reguler">Reguler</SelectItem>
+                <SelectItem value="khusus">Khusus</SelectItem>
+              </SelectContent>
+            </Select>
             <Button size="sm" variant="outline" onClick={handleExportRombel}><Download className="h-4 w-4 mr-1" />Export Rombel</Button>
             <Button size="sm" variant="outline" onClick={handleExportMurid}><Download className="h-4 w-4 mr-1" />Export Daftar Murid</Button>
             <Button size="sm" variant="outline" onClick={handleTemplateNisn}><FileText className="h-4 w-4 mr-1" />Template NISN</Button>
