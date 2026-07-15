@@ -7,7 +7,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
     const [{ data: profile }, { data: roleRows }] = await Promise.all([
       context.supabase
         .from("profiles")
-        .select("full_name, email, avatar_url")
+        .select("full_name, email")
         .eq("id", context.userId)
         .maybeSingle(),
       context.supabase.from("user_roles").select("role").eq("user_id", context.userId),
