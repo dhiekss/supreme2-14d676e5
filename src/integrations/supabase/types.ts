@@ -476,6 +476,7 @@ export type Database = {
           id: string
           jenis_kelamin: string | null
           kelompok_mapel: string | null
+          konsentrasi_keahlian_id: string | null
           kualifikasi_pendidikan: string | null
           mata_pelajaran_id: string | null
           nama: string | null
@@ -489,6 +490,7 @@ export type Database = {
           id?: string
           jenis_kelamin?: string | null
           kelompok_mapel?: string | null
+          konsentrasi_keahlian_id?: string | null
           kualifikasi_pendidikan?: string | null
           mata_pelajaran_id?: string | null
           nama?: string | null
@@ -502,6 +504,7 @@ export type Database = {
           id?: string
           jenis_kelamin?: string | null
           kelompok_mapel?: string | null
+          konsentrasi_keahlian_id?: string | null
           kualifikasi_pendidikan?: string | null
           mata_pelajaran_id?: string | null
           nama?: string | null
@@ -510,7 +513,15 @@ export type Database = {
           pangkat_golongan?: string | null
           status_kepegawaian?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "guru_konsentrasi_keahlian_id_fkey"
+            columns: ["konsentrasi_keahlian_id"]
+            isOneToOne: false
+            referencedRelation: "konsentrasi_keahlian"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       guru_izin: {
         Row: {
