@@ -330,8 +330,23 @@ function UsersPage() {
           <p className="text-sm text-muted-foreground">Kelola pengguna sistem presensi</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-2" />Download Template</Button>
-          <Button variant="outline" size="sm"><Upload className="h-4 w-4 mr-2" />Import User</Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleImportFile(f);
+              if (fileInputRef.current) fileInputRef.current.value = "";
+            }}
+          />
+          <Button variant="outline" size="sm" onClick={downloadTemplate}>
+            <Download className="h-4 w-4 mr-2" />Download Template
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="h-4 w-4 mr-2" />Import User
+          </Button>
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEdit(null); }}>
             <DialogTrigger asChild>
               <Button size="sm" className="bg-blue-600 hover:bg-blue-700"><Plus className="h-4 w-4 mr-2" />Tambah User</Button>
