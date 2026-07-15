@@ -24,7 +24,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchDisplaySettings, DEFAULT_DISPLAY } from "@/lib/display-settings";
 import { getMyMenuLayout } from "@/lib/menu-layout.functions";
+import { getMyProfile } from "@/lib/me.functions";
 import { resolveLayout, type ResolvedGroup, type ResolvedNode } from "@/lib/sidebar-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -41,6 +43,12 @@ export function AppSidebar() {
   const { data: layoutRes } = useQuery({
     queryKey: ["sidebar-layout"],
     queryFn: () => getLayout(),
+    staleTime: 60_000,
+  });
+  const getProfile = useServerFn(getMyProfile);
+  const { data: profile } = useQuery({
+    queryKey: ["my-profile"],
+    queryFn: () => getProfile(),
     staleTime: 60_000,
   });
   const nodes: ResolvedNode[] = resolveLayout(layoutRes?.layout ?? null).filter(
@@ -99,6 +107,30 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border">
+        {profile && (
+          <div className="flex items-center gap-3 px-2 py-2">
+            <Avatar className="h-9 w-9 shrink-0">
+              <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-sm font-semibold uppercase">
+                {(profile.full_name || profile.email || "?").trim().charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            {!collapsed && (
+              <div className="leading-tight min-w-0 flex-1">
+                <div className="font-semibold text-sm truncate">
+                  {profile.full_name || "Pengguna"}
+                </div>
+                {profile.email && (
+                  <div className="text-xs opacity-80 truncate">{profile.email}</div>
+                )}
+                {profile.role && (
+                  <div className="text-xs opacity-70 capitalize truncate">
+                    {profile.role.replace(/_/g, " ")}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleSignOut}>
