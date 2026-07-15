@@ -296,7 +296,7 @@ export const rombelBelumInputByDate = createServerFn({ method: "GET" })
         jumlahMurid: countByRombel.get(r.id) ?? 0,
       }))
       .sort((a, b) => String(a.name).localeCompare(String(b.name)));
-    const tingkatList = [...new Set(allRombel.map((r: any) => r.tingkat).filter(Boolean))].map(String).sort();
+    const tingkatList = [...new Set(scoped.map((r: any) => r.tingkat).filter(Boolean))].map(String).sort();
     return { rows, tingkatList };
   });
 
