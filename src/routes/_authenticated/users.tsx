@@ -80,6 +80,11 @@ function UsersPage() {
 
   // Filters / pagination
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 350);
+    return () => clearTimeout(t);
+  }, [search]);
   const [role, setRole] = useState("all");
   const [status, setStatus] = useState<"all" | "active" | "inactive">("all");
   const [sort, setSort] = useState<"name_asc" | "name_desc" | "created_desc" | "created_asc">("name_asc");
