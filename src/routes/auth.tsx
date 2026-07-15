@@ -44,7 +44,23 @@ function AuthPage() {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    let loginEmail = email.trim();
+    if (!loginEmail.includes("@")) {
+      try {
+        const res = await resolveLoginEmail({ data: { identifier: loginEmail } });
+        if (!res?.email) {
+          setLoading(false);
+          toast.error("NIP/NIS tidak ditemukan");
+          return;
+        }
+        loginEmail = res.email;
+      } catch (err: any) {
+        setLoading(false);
+        toast.error(err?.message ?? "Gagal memverifikasi identitas");
+        return;
+      }
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
     setLoading(false);
     if (error) {
       toast.error(error.message);
