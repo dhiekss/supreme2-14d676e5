@@ -111,6 +111,9 @@ export const listLaporanKbm = createServerFn({ method: "GET" })
   )
   .handler(async ({ context, data }) => {
     const s = context.supabase;
+    const allowed = await getAllowedRombelIds(s, context.userId);
+    if (allowed !== null && allowed.length === 0) return [];
+
     let q = s
       .from("kbm_laporan")
       .select(
@@ -119,6 +122,7 @@ export const listLaporanKbm = createServerFn({ method: "GET" })
       .order("tanggal", { ascending: false })
       .limit(data?.limit ?? 200);
 
+    if (allowed !== null) q = q.in("rombel_id", allowed);
     if (data?.rombel_id && data.rombel_id !== "all") q = q.eq("rombel_id", data.rombel_id);
     if (data?.guru_id && data.guru_id !== "all") q = q.eq("guru_id", data.guru_id);
     if (data?.mapel_id && data.mapel_id !== "all") q = q.eq("mata_pelajaran_id", data.mapel_id);
@@ -127,6 +131,7 @@ export const listLaporanKbm = createServerFn({ method: "GET" })
 
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
+
 
     const rIds = [...new Set((rows ?? []).map((r) => r.rombel_id).filter(Boolean) as string[])];
     const mIds = [...new Set((rows ?? []).map((r) => r.mata_pelajaran_id).filter(Boolean) as string[])];
