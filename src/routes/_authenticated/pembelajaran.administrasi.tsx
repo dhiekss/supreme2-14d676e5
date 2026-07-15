@@ -158,17 +158,8 @@ function AdministrasiPage() {
         </div>
       </div>
 
-      {deadlineText && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3 flex gap-2">
-          <CalendarClock className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-          <div className="text-sm text-amber-900 dark:text-amber-200">
-            <span className="font-medium">Batas Waktu Pengumpulan Berkas</span>
-            <div className="text-xs mt-0.5 text-amber-800/90 dark:text-amber-100/80">
-              Harap lengkapi semua berkas paling lambat{" "}
-              <span className="font-semibold">{deadlineText}</span>.
-            </div>
-          </div>
-        </div>
+      {refs?.deadline && (
+        <DeadlineCountdown deadline={refs.deadline} deadlineText={deadlineText} />
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
