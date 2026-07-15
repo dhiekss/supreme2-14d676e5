@@ -177,7 +177,7 @@ function Page() {
         title="Manajemen Guru"
         description="Data guru & tenaga pendidik."
         rows={data}
-        search={(r, q) => `${r.nama ?? ""} ${r.nip ?? ""} ${r.mapel_nama ?? ""} ${r.status_kepegawaian ?? ""} ${r.pangkat_golongan ?? ""}`.toLowerCase().includes(q)}
+        search={(r, q) => `${r.nama ?? ""} ${r.nip ?? ""} ${r.mapel_nama ?? ""} ${r.status_kepegawaian ?? ""} ${r.pangkat_golongan ?? ""} ${r.konsentrasi_nama ?? ""}`.toLowerCase().includes(q)}
         columns={[
           { header: "Nama", cell: (r) => <span className="font-medium">{r.nama}</span> },
           { header: "NIP", cell: (r) => <span className="font-mono text-xs">{r.nip ?? "—"}</span> },
