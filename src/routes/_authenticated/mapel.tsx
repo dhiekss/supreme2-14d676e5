@@ -1,17 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
-import { CrudTable } from "@/components/crud-table";
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Download, Upload } from "lucide-react";
-import { listMapel, saveMapel, deleteMapel, importMapel } from "@/lib/sekolah.functions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Download, Upload, Pencil, Trash2, Plus, Search, X } from "lucide-react";
+import { listMapel, saveMapel, deleteMapel, importMapel, bulkDeleteMapel, bulkUpdateMapelKelompok } from "@/lib/sekolah.functions";
 import { toast } from "sonner";
 
 type Row = { id: string; nama: string | null; kode: string | null; kelompok: string | null };
@@ -27,12 +39,41 @@ function Page() {
   const saveFn = useServerFn(saveMapel);
   const delFn = useServerFn(deleteMapel);
   const importFn = useServerFn(importMapel);
+  const bulkDelFn = useServerFn(bulkDeleteMapel);
+  const bulkUpdFn = useServerFn(bulkUpdateMapelKelompok);
   const { data = [] } = useQuery({ queryKey: ["mapel"], queryFn: () => fetchFn() as Promise<Row[]> });
   const [editing, setEditing] = useState<Partial<Row> | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [importRows, setImportRows] = useState<{ nama: string; kode: string | null; kelompok: string | null }[]>([]);
   const [importMode, setImportMode] = useState<"append" | "replace">("append");
   const fileRef = useRef<HTMLInputElement>(null);
+  const [q, setQ] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmRow, setConfirmRow] = useState<Row | null>(null);
+  const [confirmBulk, setConfirmBulk] = useState(false);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [bulkKelompok, setBulkKelompok] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!q) return data;
+    const s = q.toLowerCase();
+    return data.filter((r) => `${r.nama ?? ""} ${r.kode ?? ""} ${r.kelompok ?? ""}`.toLowerCase().includes(s));
+  }, [data, q]);
+
+  const allChecked = filtered.length > 0 && filtered.every((r) => selected.has(r.id));
+  const someChecked = filtered.some((r) => selected.has(r.id));
+  const toggleAll = (v: boolean) => {
+    const n = new Set(selected);
+    if (v) filtered.forEach((r) => n.add(r.id));
+    else filtered.forEach((r) => n.delete(r.id));
+    setSelected(n);
+  };
+  const toggleOne = (id: string, v: boolean) => {
+    const n = new Set(selected);
+    if (v) n.add(id); else n.delete(id);
+    setSelected(n);
+  };
+  const clearSelection = () => setSelected(new Set());
 
   const save = useMutation({
     mutationFn: (v: any) => saveFn({ data: v }),
@@ -42,6 +83,26 @@ function Page() {
   const del = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
     onSuccess: () => { toast.success("Dihapus"); qc.invalidateQueries({ queryKey: ["mapel"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const bulkDel = useMutation({
+    mutationFn: (ids: string[]) => bulkDelFn({ data: { ids } }),
+    onSuccess: (r: any) => {
+      toast.success(`${r.count} mata pelajaran dihapus`);
+      qc.invalidateQueries({ queryKey: ["mapel"] });
+      clearSelection();
+      setConfirmBulk(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const bulkUpd = useMutation({
+    mutationFn: (v: { ids: string[]; kelompok: string | null }) => bulkUpdFn({ data: v }),
+    onSuccess: (r: any) => {
+      toast.success(`${r.count} mata pelajaran diperbarui`);
+      qc.invalidateQueries({ queryKey: ["mapel"] });
+      clearSelection();
+      setBulkEditOpen(false);
+    },
     onError: (e: any) => toast.error(e.message),
   });
   const imp = useMutation({
@@ -93,32 +154,106 @@ function Page() {
     }
   };
 
+  const selectedIds = Array.from(selected);
+  const selectedCount = selectedIds.length;
+
   return (
     <>
-      <CrudTable<Row>
-        title="Manajemen Mata Pelajaran"
-        description="Daftar mata pelajaran."
-        rows={data}
-        search={(r, q) => `${r.nama ?? ""} ${r.kode ?? ""} ${r.kelompok ?? ""}`.toLowerCase().includes(q)}
-        columns={[
-          { header: "Kode", cell: (r) => <span className="font-mono text-xs">{r.kode ?? "—"}</span> },
-          { header: "Nama", cell: (r) => <span className="font-medium">{r.nama}</span> },
-          { header: "Kelompok", cell: (r) => r.kelompok ? <Badge variant="outline">{r.kelompok}</Badge> : "—" },
-        ]}
-        onAdd={() => setEditing({})}
-        onEdit={(r) => setEditing(r)}
-        onDelete={(r) => del.mutateAsync(r.id)}
-        extra={
-          <>
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Manajemen Mata Pelajaran</h1>
+            <p className="text-sm text-muted-foreground">Daftar mata pelajaran.</p>
+          </div>
+          <div className="flex items-center gap-2">
             <Button variant="outline" onClick={downloadTemplate}>
               <Download className="mr-2 h-4 w-4" /> Template
             </Button>
             <Button variant="outline" onClick={() => setImportOpen(true)}>
               <Upload className="mr-2 h-4 w-4" /> Import
             </Button>
-          </>
-        }
-      />
+            <Button onClick={() => setEditing({})}>
+              <Plus className="mr-2 h-4 w-4" /> Tambah
+            </Button>
+          </div>
+        </div>
+
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex flex-wrap items-center gap-3 justify-between">
+              <div className="relative max-w-sm w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input className="pl-9" placeholder="Cari…" value={q} onChange={(e) => setQ(e.target.value)} />
+              </div>
+              {selectedCount > 0 && (
+                <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-1.5">
+                  <span className="text-sm font-medium">{selectedCount} dipilih</span>
+                  <Button size="sm" variant="outline" onClick={() => { setBulkKelompok(""); setBulkEditOpen(true); }}>
+                    <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit Kelompok
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => setConfirmBulk(true)}>
+                    <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Hapus
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={clearSelection}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[40px]">
+                      <Checkbox
+                        checked={allChecked ? true : someChecked ? "indeterminate" : false}
+                        onCheckedChange={(v) => toggleAll(!!v)}
+                        aria-label="Pilih semua"
+                      />
+                    </TableHead>
+                    <TableHead>Kode</TableHead>
+                    <TableHead>Nama</TableHead>
+                    <TableHead>Kelompok</TableHead>
+                    <TableHead className="w-[120px] text-right">Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                        Tidak ada data
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filtered.map((row) => (
+                      <TableRow key={row.id} data-state={selected.has(row.id) ? "selected" : undefined}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selected.has(row.id)}
+                            onCheckedChange={(v) => toggleOne(row.id, !!v)}
+                            aria-label={`Pilih ${row.nama}`}
+                          />
+                        </TableCell>
+                        <TableCell><span className="font-mono text-xs">{row.kode ?? "—"}</span></TableCell>
+                        <TableCell><span className="font-medium">{row.nama}</span></TableCell>
+                        <TableCell>{row.kelompok ? <Badge variant="outline">{row.kelompok}</Badge> : "—"}</TableCell>
+                        <TableCell className="text-right">
+                          <Button size="icon" variant="ghost" onClick={() => setEditing(row)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" onClick={() => setConfirmRow(row)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent>
@@ -138,6 +273,58 @@ function Page() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={bulkEditOpen} onOpenChange={setBulkEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Kelompok Massal</DialogTitle>
+            <DialogDescription>
+              Perbarui kelompok untuk {selectedCount} mata pelajaran terpilih. Kosongkan untuk menghapus kelompok.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2">
+            <Label>Kelompok</Label>
+            <Input value={bulkKelompok} onChange={(e) => setBulkKelompok(e.target.value)} placeholder="A / B / C1 / C2 / C3" />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkEditOpen(false)}>Batal</Button>
+            <Button
+              disabled={bulkUpd.isPending}
+              onClick={() => bulkUpd.mutate({ ids: selectedIds, kelompok: bulkKelompok.trim() || null })}
+            >
+              Simpan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!confirmRow} onOpenChange={(o) => !o && setConfirmRow(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus data?</AlertDialogTitle>
+            <AlertDialogDescription>Aksi ini tidak dapat dibatalkan.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => { if (confirmRow) await del.mutateAsync(confirmRow.id); setConfirmRow(null); }}>
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmBulk} onOpenChange={setConfirmBulk}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus {selectedCount} mata pelajaran?</AlertDialogTitle>
+            <AlertDialogDescription>Aksi ini tidak dapat dibatalkan.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={() => bulkDel.mutate(selectedIds)}>Hapus Semua</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={importOpen} onOpenChange={(o) => { if (!o) { setImportOpen(false); setImportRows([]); if (fileRef.current) fileRef.current.value = ""; } }}>
         <DialogContent className="max-w-xl">
