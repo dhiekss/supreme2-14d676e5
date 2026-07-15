@@ -68,8 +68,20 @@ export const listGuruByRombelMapel = createServerFn({ method: "POST" })
 export const listLaporanKbmOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const allowed = await getAllowedRombelIds(context.supabase, context.userId);
+    let rombelQ = context.supabase.from("rombel").select("id, name").order("name");
+    if (allowed !== null) {
+      if (allowed.length === 0) {
+        const [mapel, guru] = await Promise.all([
+          context.supabase.from("mata_pelajaran").select("id, nama").order("nama"),
+          context.supabase.from("guru").select("id, nama").order("nama"),
+        ]);
+        return { rombel: [], mapel: mapel.data ?? [], guru: guru.data ?? [] };
+      }
+      rombelQ = rombelQ.in("id", allowed);
+    }
     const [rombel, mapel, guru] = await Promise.all([
-      context.supabase.from("rombel").select("id, name").order("name"),
+      rombelQ,
       context.supabase.from("mata_pelajaran").select("id, nama").order("nama"),
       context.supabase.from("guru").select("id, nama").order("nama"),
     ]);
