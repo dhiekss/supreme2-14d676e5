@@ -147,20 +147,54 @@ function PengaturanPembelajaranPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const importM = useMutation({
-    mutationFn: (rows: { rombel: string; mapel: string; guru: string }[]) =>
-      importFn({ data: { rows } }),
-    onSuccess: (r: any) => {
-      if (r.inserted > 0) toast.success(`${r.inserted} data berhasil diimpor`);
-      if (r.failed > 0) {
-        toast.error(`${r.failed} baris gagal`, {
-          description: (r.errors ?? []).slice(0, 5).map((e: any) => `Baris ${e.row}: ${e.message}`).join("\n"),
-        });
-      }
-      invalidate();
-    },
-    onError: (e: any) => toast.error(e.message),
+  // Import progress state
+  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState({
+    done: 0,
+    total: 0,
+    inserted: 0,
+    failed: 0,
+    errors: [] as { row: number; message: string }[],
   });
+  const [importFinished, setImportFinished] = useState(false);
+
+  const runImport = async (allRows: { rombel: string; mapel: string; guru: string }[]) => {
+    setImporting(true);
+    setImportFinished(false);
+    setImportProgress({ done: 0, total: allRows.length, inserted: 0, failed: 0, errors: [] });
+    const chunkSize = 1;
+    let inserted = 0;
+    let failed = 0;
+    const errors: { row: number; message: string }[] = [];
+    for (let i = 0; i < allRows.length; i += chunkSize) {
+      const chunk = allRows.slice(i, i + chunkSize);
+      try {
+        const r: any = await importFn({ data: { rows: chunk } });
+        inserted += r.inserted ?? 0;
+        failed += r.failed ?? 0;
+        if (Array.isArray(r.errors)) {
+          for (const e of r.errors) {
+            errors.push({ row: i + (e.row - 2) + 2, message: e.message });
+          }
+        }
+      } catch (e: any) {
+        failed += chunk.length;
+        errors.push({ row: i + 2, message: e?.message ?? "Gagal" });
+      }
+      setImportProgress({
+        done: Math.min(i + chunk.length, allRows.length),
+        total: allRows.length,
+        inserted,
+        failed,
+        errors,
+      });
+    }
+    setImportFinished(true);
+    if (inserted > 0) toast.success(`${inserted} data berhasil diimpor`);
+    if (failed > 0) toast.error(`${failed} baris gagal`);
+    invalidate();
+  };
+
 
   const downloadTemplate = () => {
     const sampleRombel = (refs?.rombel ?? [])[0]?.name ?? "X TKJ 1";
