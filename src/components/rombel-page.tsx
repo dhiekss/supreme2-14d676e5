@@ -529,3 +529,98 @@ function MembersDialog({ rombel, onClose }: { rombel: Row | null; onClose: () =>
     </Dialog>
   );
 }
+
+function WaliKelasPicker({
+  row,
+  guruList,
+}: {
+  row: Row;
+  guruList: Array<{ id: string; nama: string; nip: string | null }>;
+}) {
+  const qc = useQueryClient();
+  const saveFn = useServerFn(saveRombel);
+  const [open, setOpen] = useState(false);
+  const m = useMutation({
+    mutationFn: (g: { nama: string | null; nip: string | null }) =>
+      saveFn({
+        data: {
+          id: row.id,
+          name: row.name,
+          tingkat: row.tingkat || null,
+          konsentrasi_keahlian: row.konsentrasi_keahlian || null,
+          wali_kelas_name: g.nama,
+          wali_kelas_nip: g.nip,
+          is_khusus: !!row.is_khusus,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Wali kelas diperbarui");
+      qc.invalidateQueries({ queryKey: ["rombel"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          role="combobox"
+          disabled={m.isPending}
+          className="h-8 justify-between font-normal min-w-[180px] max-w-[240px]"
+        >
+          <span className="truncate">
+            {row.wali_kelas_name || <span className="text-muted-foreground">Pilih guru…</span>}
+          </span>
+          <ChevronsUpDown className="h-3.5 w-3.5 opacity-50 shrink-0 ml-1" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="p-0 w-[300px]" align="start">
+        <Command
+          filter={(value, search) => {
+            return value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="Cari nama / NIP guru…" />
+          <CommandList>
+            <CommandEmpty>Guru tidak ditemukan</CommandEmpty>
+            <CommandGroup>
+              {row.wali_kelas_name && (
+                <CommandItem
+                  value="__clear__ kosongkan hapus"
+                  onSelect={() => {
+                    m.mutate({ nama: null, nip: null });
+                    setOpen(false);
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-2 text-destructive" />
+                  <span className="text-muted-foreground">Kosongkan</span>
+                </CommandItem>
+              )}
+              {guruList.map((g) => {
+                const selected = row.wali_kelas_name === g.nama;
+                return (
+                  <CommandItem
+                    key={g.id}
+                    value={`${g.nama} ${g.nip ?? ""}`}
+                    onSelect={() => {
+                      m.mutate({ nama: g.nama, nip: g.nip ?? null });
+                      setOpen(false);
+                    }}
+                  >
+                    <Check className={`h-3.5 w-3.5 mr-2 ${selected ? "opacity-100" : "opacity-0"}`} />
+                    <div className="flex flex-col">
+                      <span className="text-sm">{g.nama}</span>
+                      <span className="text-xs text-muted-foreground tabular-nums">{g.nip ?? "—"}</span>
+                    </div>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
