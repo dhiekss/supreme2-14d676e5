@@ -193,6 +193,13 @@ function PengaturanPembelajaranPage() {
     setImportFinished(true);
     if (inserted > 0) toast.success(`${inserted} data berhasil diimpor`);
     if (failed > 0) toast.error(`${failed} baris gagal`);
+    createAktivitas({
+      data: {
+        action: "import",
+        description: `Mengimpor ${inserted} data pembelajaran (gagal ${failed} dari ${allRows.length} baris)`,
+        metadata: { inserted, failed, total: allRows.length },
+      },
+    }).catch(() => {});
     invalidate();
   };
 
