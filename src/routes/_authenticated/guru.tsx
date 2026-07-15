@@ -62,13 +62,18 @@ function Page() {
   const saveFn = useServerFn(saveGuru);
   const delFn = useServerFn(deleteGuru);
   const importFn = useServerFn(importGuru);
+  const fetchKons = useServerFn(listKonsentrasi);
   const { data = [] } = useQuery({ queryKey: ["guru"], queryFn: () => fetchFn() as Promise<Row[]> });
   const { data: mapel = [] } = useQuery({ queryKey: ["mapel"], queryFn: () => fetchMapel() as Promise<any[]> });
+  const { data: konsentrasi = [] } = useQuery({ queryKey: ["konsentrasi"], queryFn: () => fetchKons() as Promise<any[]> });
   const [editing, setEditing] = useState<Partial<Row> | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [importRows, setImportRows] = useState<ImportRow[]>([]);
   const [importMode, setImportMode] = useState<"append" | "replace" | "upsert">("upsert");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const selectedMapel = mapel.find((m: any) => m.id === editing?.mata_pelajaran_id);
+  const editingIsProduktif = isProduktifKelompok(selectedMapel?.kelompok);
 
   const save = useMutation({
     mutationFn: (v: any) => saveFn({ data: v }),
