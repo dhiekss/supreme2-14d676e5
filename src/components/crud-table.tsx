@@ -97,20 +97,44 @@ export function CrudTable<T extends { id: string }>(props: {
               <TableHeader>
                 <TableRow>
                   {props.columns.map((c, i) => (
-                    <TableHead key={i} className={c.className}>{c.header}</TableHead>
+                    <TableHead
+                      key={i}
+                      className={c.className}
+                    >
+                      {c.sort ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleSort(i)}
+                          className="flex items-center gap-1 hover:text-foreground focus:outline-none"
+                        >
+                          {c.header}
+                          {sortColumn === i ? (
+                            sortDesc ? (
+                              <ArrowDown className="h-3.5 w-3.5" />
+                            ) : (
+                              <ArrowUp className="h-3.5 w-3.5" />
+                            )
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/70" />
+                          )}
+                        </button>
+                      ) : (
+                        c.header
+                      )}
+                    </TableHead>
                   ))}
                   <TableHead className="w-[120px] text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.length === 0 ? (
+                {sorted.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={props.columns.length + 1} className="text-center text-muted-foreground py-8">
                       Tidak ada data
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map((row) => (
+                  sorted.map((row) => (
                     <TableRow key={row.id}>
                       {props.columns.map((c, i) => (
                         <TableCell key={i} className={c.className}>{c.cell(row)}</TableCell>
