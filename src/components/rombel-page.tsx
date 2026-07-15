@@ -129,6 +129,25 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
     queryFn: () => fetchFn({ data: { khusus } }) as Promise<Row[]>,
   });
 
+  const { data: allStudents = [] } = useQuery({
+    queryKey: ["all-students-for-rombel-counts"],
+    queryFn: () => allStudentsFn({}) as Promise<Array<{ rombel_id: string | null; gender: string | null }>>,
+  });
+
+  const countsByRombel = useMemo(() => {
+    const m = new Map<string, { total: number; L: number; P: number; belum: number }>();
+    for (const s of allStudents) {
+      if (!s.rombel_id) continue;
+      const c = m.get(s.rombel_id) ?? { total: 0, L: 0, P: 0, belum: 0 };
+      c.total += 1;
+      if (s.gender === "L") c.L += 1;
+      else if (s.gender === "P") c.P += 1;
+      else c.belum += 1;
+      m.set(s.rombel_id, c);
+    }
+    return m;
+  }, [allStudents]);
+
   const { data: guruList = [] } = useQuery({
     queryKey: ["guru-lite-for-wali"],
     queryFn: () => guruFn() as Promise<Array<{ id: string; nama: string; nip: string | null }>>,
