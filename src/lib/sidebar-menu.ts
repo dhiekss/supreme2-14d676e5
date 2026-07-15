@@ -97,6 +97,7 @@ export const DEFAULT_SIDEBAR: DefaultNode[] = [
       { id: "konsentrasi", title: "Konsentrasi Keahlian", url: "/konsentrasi", icon: Briefcase },
       { id: "mapel", title: "Manajemen Mata Pelajaran", url: "/mapel", icon: BookOpen },
       { id: "guru", title: "Manajemen Guru", url: "/guru", icon: Users },
+      { id: "tendik", title: "Manajemen Tendik", url: "/tendik", icon: UserCog },
       { id: "jadwal", title: "Jadwal Pelajaran", url: "/jadwal", icon: CalendarDays },
       { id: "denah", title: "Manajemen Denah", url: "/denah", icon: MapIcon },
       { id: "hari-efektif", title: "Manajemen Hari Efektif", url: "/hari-efektif", icon: CalendarRange },

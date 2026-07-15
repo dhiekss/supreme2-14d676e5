@@ -2264,6 +2264,39 @@ export type Database = {
         }
         Relationships: []
       }
+      tendik: {
+        Row: {
+          created_at: string
+          golongan: string | null
+          id: string
+          jenis_kelamin: string | null
+          nama: string
+          nip: string | null
+          status_kepegawaian: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          golongan?: string | null
+          id?: string
+          jenis_kelamin?: string | null
+          nama: string
+          nip?: string | null
+          status_kepegawaian?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          golongan?: string | null
+          id?: string
+          jenis_kelamin?: string | null
+          nama?: string
+          nip?: string | null
+          status_kepegawaian?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tpg_administrasi: {
         Row: {
           bulan: number | null

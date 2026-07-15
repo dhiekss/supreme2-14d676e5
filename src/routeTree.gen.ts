@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedVervalRouteImport } from './routes/_authenticated/verval'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedTpgRouteImport } from './routes/_authenticated/tpg'
+import { Route as AuthenticatedTendikRouteImport } from './routes/_authenticated/tendik'
 import { Route as AuthenticatedTahunAjaranRouteImport } from './routes/_authenticated/tahun-ajaran'
 import { Route as AuthenticatedSpRouteImport } from './routes/_authenticated/sp'
 import { Route as AuthenticatedSemesterRouteImport } from './routes/_authenticated/semester'
@@ -96,6 +97,11 @@ const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
 const AuthenticatedTpgRoute = AuthenticatedTpgRouteImport.update({
   id: '/tpg',
   path: '/tpg',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTendikRoute = AuthenticatedTendikRouteImport.update({
+  id: '/tendik',
+  path: '/tendik',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedTahunAjaranRoute =
@@ -430,6 +436,7 @@ export interface FileRoutesByFullPath {
   '/semester': typeof AuthenticatedSemesterRoute
   '/sp': typeof AuthenticatedSpRoute
   '/tahun-ajaran': typeof AuthenticatedTahunAjaranRoute
+  '/tendik': typeof AuthenticatedTendikRoute
   '/tpg': typeof AuthenticatedTpgRoute
   '/users': typeof AuthenticatedUsersRoute
   '/verval': typeof AuthenticatedVervalRoute
@@ -490,6 +497,7 @@ export interface FileRoutesByTo {
   '/semester': typeof AuthenticatedSemesterRoute
   '/sp': typeof AuthenticatedSpRoute
   '/tahun-ajaran': typeof AuthenticatedTahunAjaranRoute
+  '/tendik': typeof AuthenticatedTendikRoute
   '/tpg': typeof AuthenticatedTpgRoute
   '/users': typeof AuthenticatedUsersRoute
   '/verval': typeof AuthenticatedVervalRoute
@@ -552,6 +560,7 @@ export interface FileRoutesById {
   '/_authenticated/semester': typeof AuthenticatedSemesterRoute
   '/_authenticated/sp': typeof AuthenticatedSpRoute
   '/_authenticated/tahun-ajaran': typeof AuthenticatedTahunAjaranRoute
+  '/_authenticated/tendik': typeof AuthenticatedTendikRoute
   '/_authenticated/tpg': typeof AuthenticatedTpgRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/verval': typeof AuthenticatedVervalRoute
@@ -614,6 +623,7 @@ export interface FileRouteTypes {
     | '/semester'
     | '/sp'
     | '/tahun-ajaran'
+    | '/tendik'
     | '/tpg'
     | '/users'
     | '/verval'
@@ -674,6 +684,7 @@ export interface FileRouteTypes {
     | '/semester'
     | '/sp'
     | '/tahun-ajaran'
+    | '/tendik'
     | '/tpg'
     | '/users'
     | '/verval'
@@ -735,6 +746,7 @@ export interface FileRouteTypes {
     | '/_authenticated/semester'
     | '/_authenticated/sp'
     | '/_authenticated/tahun-ajaran'
+    | '/_authenticated/tendik'
     | '/_authenticated/tpg'
     | '/_authenticated/users'
     | '/_authenticated/verval'
@@ -811,6 +823,13 @@ declare module '@tanstack/react-router' {
       path: '/tpg'
       fullPath: '/tpg'
       preLoaderRoute: typeof AuthenticatedTpgRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tendik': {
+      id: '/_authenticated/tendik'
+      path: '/tendik'
+      fullPath: '/tendik'
+      preLoaderRoute: typeof AuthenticatedTendikRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/tahun-ajaran': {
@@ -1241,6 +1260,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSemesterRoute: typeof AuthenticatedSemesterRoute
   AuthenticatedSpRoute: typeof AuthenticatedSpRoute
   AuthenticatedTahunAjaranRoute: typeof AuthenticatedTahunAjaranRoute
+  AuthenticatedTendikRoute: typeof AuthenticatedTendikRoute
   AuthenticatedTpgRoute: typeof AuthenticatedTpgRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedVervalRoute: typeof AuthenticatedVervalRoute
@@ -1295,6 +1315,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSemesterRoute: AuthenticatedSemesterRoute,
   AuthenticatedSpRoute: AuthenticatedSpRoute,
   AuthenticatedTahunAjaranRoute: AuthenticatedTahunAjaranRoute,
+  AuthenticatedTendikRoute: AuthenticatedTendikRoute,
   AuthenticatedTpgRoute: AuthenticatedTpgRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedVervalRoute: AuthenticatedVervalRoute,
