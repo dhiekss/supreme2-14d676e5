@@ -524,9 +524,9 @@ function UsersPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setBulkMenuOpen(true)}
+                  onClick={() => setBulkRombelOpen(true)}
                 >
-                  <MenuIcon className="h-3.5 w-3.5 mr-1" />Atur Akses Menu
+                  <School className="h-3.5 w-3.5 mr-1" />Atur Akses Rombel
                 </Button>
                 <Button
                   size="sm"
