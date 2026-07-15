@@ -65,7 +65,7 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
     const hariName = HARI_MAP[dt.getDay()];
 
     const allowed = await getAllowedRombelIds(supabase, userId);
-    if (allowed !== null && allowed.length === 0) return { jadwal: [], grouped: [] };
+    if (allowed !== null && allowed.length === 0) return [] as any[];
     let jq = supabase
       .from("jadwal_pelajaran")
       .select("id, hari, jam_ke, jam_mulai, jam_selesai, rombel_id, mata_pelajaran_id")
