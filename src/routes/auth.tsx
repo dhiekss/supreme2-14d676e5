@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Eye, EyeOff, Megaphone, Image as ImageIcon } from "lucide-react";
 import { fetchDisplaySettings, DEFAULT_DISPLAY } from "@/lib/display-settings";
+import { resolveLoginEmail } from "@/lib/auth-lookup.functions";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -43,7 +44,23 @@ function AuthPage() {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    let loginEmail = email.trim();
+    if (!loginEmail.includes("@")) {
+      try {
+        const res = await resolveLoginEmail({ data: { identifier: loginEmail } });
+        if (!res?.email) {
+          setLoading(false);
+          toast.error("NIP/NIS tidak ditemukan");
+          return;
+        }
+        loginEmail = res.email;
+      } catch (err: any) {
+        setLoading(false);
+        toast.error(err?.message ?? "Gagal memverifikasi identitas");
+        return;
+      }
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
     setLoading(false);
     if (error) {
       toast.error(error.message);
