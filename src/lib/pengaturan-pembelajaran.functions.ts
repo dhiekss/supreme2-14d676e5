@@ -194,10 +194,15 @@ export const updateRombelMapel = createServerFn({ method: "POST" })
     guru_id: z.string().uuid().optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    const patch: Record<string, any> = { updated_at: new Date().toISOString() };
+    const patch: {
+      rombel_id?: string;
+      mata_pelajaran_id?: string;
+      guru_id?: string;
+    } = {};
     if (data.rombel_id) patch.rombel_id = data.rombel_id;
     if (data.mata_pelajaran_id) patch.mata_pelajaran_id = data.mata_pelajaran_id;
     if (data.guru_id) patch.guru_id = data.guru_id;
+    if (Object.keys(patch).length === 0) return { ok: true };
     const { error } = await context.supabase
       .from("rombel_mata_pelajaran")
       .update(patch)
@@ -215,13 +220,15 @@ export const bulkUpdateRombelMapel = createServerFn({ method: "POST" })
     guru_id: z.string().uuid().optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
-    const patch: Record<string, any> = { updated_at: new Date().toISOString() };
+    const patch: {
+      rombel_id?: string;
+      mata_pelajaran_id?: string;
+      guru_id?: string;
+    } = {};
     if (data.rombel_id) patch.rombel_id = data.rombel_id;
     if (data.mata_pelajaran_id) patch.mata_pelajaran_id = data.mata_pelajaran_id;
     if (data.guru_id) patch.guru_id = data.guru_id;
-    if (Object.keys(patch).length === 1) {
-      return { ok: true, affected: 0 };
-    }
+    if (Object.keys(patch).length === 0) return { ok: true, affected: 0 };
     const { error, count } = await context.supabase
       .from("rombel_mata_pelajaran")
       .update(patch, { count: "exact" })
