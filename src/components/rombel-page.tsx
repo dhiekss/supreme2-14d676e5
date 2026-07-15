@@ -312,8 +312,8 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
           { header: "Nama Rombel", cell: (r) => <span className="font-medium">{r.name}</span> },
           { header: "Tingkat", cell: (r) => r.tingkat ?? "—" },
           { header: "Konsentrasi", cell: (r) => r.konsentrasi_keahlian ?? "—" },
-          { header: "Wali Kelas", cell: (r) => r.wali_kelas_name ?? "—" },
-          { header: "NIP", cell: (r) => r.wali_kelas_nip ?? "—" },
+          { header: "Wali Kelas", cell: (r) => <WaliKelasPicker row={r} guruList={guruList} /> },
+          { header: "NIP", cell: (r) => <span className="tabular-nums text-sm">{r.wali_kelas_nip ?? "—"}</span> },
           { header: "Tipe", cell: (r) => r.is_khusus ? <Badge variant="secondary">Khusus</Badge> : <Badge variant="outline">Reguler</Badge> },
           { header: "Anggota", cell: (r) => (
             <Button size="sm" variant="outline" onClick={() => setMembersOf(r)}>
