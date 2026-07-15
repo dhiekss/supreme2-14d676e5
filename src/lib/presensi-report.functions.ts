@@ -269,14 +269,17 @@ export const rombelBelumInputByDate = createServerFn({ method: "GET" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
+    const allowed = await getAllowedRombelIds(supabase, context.userId);
+    if (allowed !== null && allowed.length === 0) return { rows: [], tingkatList: [] as string[] };
     const [allRombel, allStudents, records] = await Promise.all([
       fetchAllPaged((f, t) => supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian, wali_kelas_name").range(f, t)),
       fetchAllPaged((f, t) => supabase.from("students").select("id, rombel_id").range(f, t)),
       fetchAllPaged((f, t) => supabase.from("attendance_records").select("rombel_id").eq("date", data.date).range(f, t)),
     ]);
+    const scoped = allowed === null ? allRombel : allRombel.filter((r: any) => allowed.includes(r.id));
     const filtered = data.tingkat && data.tingkat !== "__all"
-      ? allRombel.filter((r: any) => String(r.tingkat) === String(data.tingkat))
-      : allRombel;
+      ? scoped.filter((r: any) => String(r.tingkat) === String(data.tingkat))
+      : scoped;
     const hasRec = new Set(records.map((r: any) => r.rombel_id));
     const countByRombel = new Map<string, number>();
     for (const s of allStudents) {
