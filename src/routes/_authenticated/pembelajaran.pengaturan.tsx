@@ -604,6 +604,25 @@ function PengaturanPembelajaranPage() {
         loading={createM.isPending}
       />
 
+      {/* Dialog Edit */}
+      <EditDialog
+        row={editRow}
+        onOpenChange={(o) => !o && setEditRow(null)}
+        refs={refs}
+        onSubmit={(v) => updateM.mutate(v)}
+        loading={updateM.isPending}
+      />
+
+      {/* Dialog Bulk Edit */}
+      <BulkEditDialog
+        open={bulkEditOpen}
+        onOpenChange={setBulkEditOpen}
+        refs={refs}
+        count={selectedIds.size}
+        onSubmit={(v) => bulkUpdateM.mutate({ ids: Array.from(selectedIds), ...v })}
+        loading={bulkUpdateM.isPending}
+      />
+
       {/* Dialog Tempat Sampah */}
       <TrashDialog
         open={trashOpen}
