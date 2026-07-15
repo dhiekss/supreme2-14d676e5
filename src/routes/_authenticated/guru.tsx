@@ -225,13 +225,45 @@ function Page() {
               </div>
               <div>
                 <Label>Mata Pelajaran</Label>
-                <Select value={editing.mata_pelajaran_id ?? ""} onValueChange={(v) => setEditing({ ...editing, mata_pelajaran_id: v })}>
+                <Select
+                  value={editing.mata_pelajaran_id ?? ""}
+                  onValueChange={(v) => {
+                    const m = mapel.find((x: any) => x.id === v);
+                    const produktif = isProduktifKelompok(m?.kelompok);
+                    setEditing({
+                      ...editing,
+                      mata_pelajaran_id: v,
+                      kelompok_mapel: m?.kelompok ?? editing.kelompok_mapel ?? null,
+                      // clear konsentrasi if mapel is not produktif
+                      konsentrasi_keahlian_id: produktif ? editing.konsentrasi_keahlian_id ?? null : null,
+                    });
+                  }}
+                >
                   <SelectTrigger><SelectValue placeholder="Pilih mata pelajaran" /></SelectTrigger>
                   <SelectContent>
-                    {mapel.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nama}</SelectItem>)}
+                    {mapel.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.nama}{m.kelompok ? ` (${m.kelompok})` : ""}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
+              {editingIsProduktif && (
+                <div>
+                  <Label>Konsentrasi Keahlian *</Label>
+                  <Select
+                    value={editing.konsentrasi_keahlian_id ?? ""}
+                    onValueChange={(v) => setEditing({ ...editing, konsentrasi_keahlian_id: v })}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Pilih konsentrasi keahlian" /></SelectTrigger>
+                    <SelectContent>
+                      {konsentrasi.length === 0 ? (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">Belum ada data konsentrasi keahlian.</div>
+                      ) : (
+                        konsentrasi.map((k: any) => <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>)
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">Wajib untuk pengampu mata pelajaran produktif (kelompok C).</p>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Kelompok Mapel</Label><Input value={editing.kelompok_mapel ?? ""} onChange={(e) => setEditing({ ...editing, kelompok_mapel: e.target.value })} /></div>
                 <div><Label>Kualifikasi</Label><Input value={editing.kualifikasi_pendidikan ?? ""} onChange={(e) => setEditing({ ...editing, kualifikasi_pendidikan: e.target.value })} placeholder="S1 / S2" /></div>
