@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Download, Upload } from "lucide-react";
 import { listTendik, saveTendik, deleteTendik, importTendik } from "@/lib/sekolah.functions";
+import { TendikStats } from "@/components/tendik-stats";
 import { toast } from "sonner";
 
 type Row = {
@@ -137,6 +138,7 @@ function Page() {
 
   return (
     <div className="space-y-4">
+      <TendikStats rows={data} />
       <CrudTable<Row>
         title="Manajemen Tendik"
         description="Data tenaga kependidikan (non-guru)."
