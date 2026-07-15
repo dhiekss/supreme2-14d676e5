@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { createAktivitas } from "@/lib/aktivitas.functions";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,15 +12,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import { withDateSuffix } from "@/lib/utils";
 import {
   Settings, CalendarClock, QrCode, Plus, Trash2, Download, Upload, RotateCcw,
-  ChevronLeft, ChevronRight, ArrowUpDown, RefreshCw, ArchiveRestore, Eraser,
+  ChevronLeft, ChevronRight, ArrowUpDown, RefreshCw, ArchiveRestore, Eraser, Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   getPembelajaranSettings, saveDeadline, setKbmQrValidation,
   listPembelajaranRefs, listRombelMapel, createRombelMapel,
+  updateRombelMapel, bulkUpdateRombelMapel,
   softDeleteRombelMapel, restoreRombelMapel, purgeRombelMapel,
   softDeleteAllRombelMapel, emptyTrashRombelMapel, bulkImportRombelMapel,
 } from "@/lib/pengaturan-pembelajaran.functions";
@@ -49,6 +51,8 @@ function PengaturanPembelajaranPage() {
   const listRefsFn = useServerFn(listPembelajaranRefs);
   const listFn = useServerFn(listRombelMapel);
   const createFn = useServerFn(createRombelMapel);
+  const updateFn = useServerFn(updateRombelMapel);
+  const bulkUpdateFn = useServerFn(bulkUpdateRombelMapel);
   const delFn = useServerFn(softDeleteRombelMapel);
   const restoreFn = useServerFn(restoreRombelMapel);
   const purgeFn = useServerFn(purgeRombelMapel);
@@ -66,6 +70,9 @@ function PengaturanPembelajaranPage() {
   const [sort, setSort] = useState<SortKey>("no_asc");
   const [trashOpen, setTrashOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [editRow, setEditRow] = useState<any | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   // Deadline local state
   const [deadlineLocal, setDeadlineLocal] = useState<string>("");
@@ -122,6 +129,29 @@ function PengaturanPembelajaranPage() {
     onSuccess: () => {
       toast.success("Ditambahkan");
       setAddOpen(false);
+      invalidate();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const updateM = useMutation({
+    mutationFn: (v: { id: string; rombel_id?: string; mata_pelajaran_id?: string; guru_id?: string }) =>
+      updateFn({ data: v }),
+    onSuccess: () => {
+      toast.success("Perubahan disimpan");
+      setEditRow(null);
+      invalidate();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const bulkUpdateM = useMutation({
+    mutationFn: (v: { ids: string[]; rombel_id?: string; mata_pelajaran_id?: string; guru_id?: string }) =>
+      bulkUpdateFn({ data: v }),
+    onSuccess: (r: any) => {
+      toast.success(`${r.affected} data diperbarui`);
+      setBulkEditOpen(false);
+      setSelectedIds(new Set());
       invalidate();
     },
     onError: (e: any) => toast.error(e.message),
@@ -444,15 +474,46 @@ function PengaturanPembelajaranPage() {
             )}
           </div>
 
-          <div className="text-xs text-muted-foreground">
-            Menampilkan {(list?.rows ?? []).length === 0 ? 0 : (page - 1) * pageSize + 1}
-            –{(page - 1) * pageSize + (list?.rows ?? []).length} dari {total} data
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="text-xs text-muted-foreground">
+              Menampilkan {(list?.rows ?? []).length === 0 ? 0 : (page - 1) * pageSize + 1}
+              –{(page - 1) * pageSize + (list?.rows ?? []).length} dari {total} data
+            </div>
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-2 text-xs">
+                <span className="font-medium">{selectedIds.size} terpilih</span>
+                <Button size="sm" variant="outline" onClick={() => setBulkEditOpen(true)}>
+                  <Pencil className="h-3.5 w-3.5 mr-1" />Bulk Edit
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+                  Batal Pilih
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40">
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={
+                        (list?.rows ?? []).length > 0 &&
+                        (list?.rows ?? []).every((r: any) => selectedIds.has(r.id))
+                      }
+                      onCheckedChange={(v) => {
+                        const rows = list?.rows ?? [];
+                        setSelectedIds((prev) => {
+                          const next = new Set(prev);
+                          if (v) rows.forEach((r: any) => next.add(r.id));
+                          else rows.forEach((r: any) => next.delete(r.id));
+                          return next;
+                        });
+                      }}
+                      aria-label="Pilih semua"
+                    />
+                  </TableHead>
                   <TableHead className="w-12">No</TableHead>
                   <TableHead>Rombel {sortIcon("rombel")}</TableHead>
                   <TableHead>Kelompok Mapel {sortIcon("kelompok")}</TableHead>
@@ -463,13 +524,26 @@ function PengaturanPembelajaranPage() {
               </TableHeader>
               <TableBody>
                 {isFetching && (list?.rows ?? []).length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Memuat…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Memuat…</TableCell></TableRow>
                 )}
                 {!isFetching && (list?.rows ?? []).length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Tidak ada data</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Tidak ada data</TableCell></TableRow>
                 )}
                 {(list?.rows ?? []).map((r: any, idx: number) => (
-                  <TableRow key={r.id}>
+                  <TableRow key={r.id} data-state={selectedIds.has(r.id) ? "selected" : undefined}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(r.id)}
+                        onCheckedChange={(v) => {
+                          setSelectedIds((prev) => {
+                            const next = new Set(prev);
+                            if (v) next.add(r.id); else next.delete(r.id);
+                            return next;
+                          });
+                        }}
+                        aria-label="Pilih baris"
+                      />
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{(page - 1) * pageSize + idx + 1}</TableCell>
                     <TableCell className="font-medium">{r.rombel_name}</TableCell>
                     <TableCell className="text-sm">{r.mapel_kelompok}</TableCell>
@@ -481,13 +555,22 @@ function PengaturanPembelajaranPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        size="icon" variant="destructive" className="h-8 w-8"
-                        onClick={() => { if (confirm("Pindahkan ke tempat sampah?")) delM.mutate(r.id); }}
-                        title="Hapus"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="inline-flex gap-1">
+                        <Button
+                          size="icon" variant="outline" className="h-8 w-8"
+                          onClick={() => setEditRow(r)}
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon" variant="destructive" className="h-8 w-8"
+                          onClick={() => { if (confirm("Pindahkan ke tempat sampah?")) delM.mutate(r.id); }}
+                          title="Hapus"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -519,6 +602,25 @@ function PengaturanPembelajaranPage() {
         refs={refs}
         onSubmit={(v) => createM.mutate(v)}
         loading={createM.isPending}
+      />
+
+      {/* Dialog Edit */}
+      <EditDialog
+        row={editRow}
+        onOpenChange={(o) => !o && setEditRow(null)}
+        refs={refs}
+        onSubmit={(v) => updateM.mutate(v)}
+        loading={updateM.isPending}
+      />
+
+      {/* Dialog Bulk Edit */}
+      <BulkEditDialog
+        open={bulkEditOpen}
+        onOpenChange={setBulkEditOpen}
+        refs={refs}
+        count={selectedIds.size}
+        onSubmit={(v) => bulkUpdateM.mutate({ ids: Array.from(selectedIds), ...v })}
+        loading={bulkUpdateM.isPending}
       />
 
       {/* Dialog Tempat Sampah */}
@@ -789,6 +891,175 @@ function TrashDialog({
             </TableBody>
           </Table>
         </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ================ Edit Dialog ================
+function EditDialog({
+  row, onOpenChange, refs, onSubmit, loading,
+}: {
+  row: any | null;
+  onOpenChange: (v: boolean) => void;
+  refs: any;
+  onSubmit: (v: { id: string; rombel_id: string; mata_pelajaran_id: string; guru_id: string }) => void;
+  loading: boolean;
+}) {
+  const [rombel, setRombel] = useState("");
+  const [mapel, setMapel] = useState("");
+  const [guru, setGuru] = useState("");
+
+  useEffect(() => {
+    if (row) {
+      setRombel(row.rombel_id ?? "");
+      setMapel(row.mata_pelajaran_id ?? "");
+      setGuru(row.guru_id ?? "");
+    }
+  }, [row?.id]);
+
+  const canSubmit = !!row && rombel && mapel && guru;
+
+  return (
+    <Dialog open={!!row} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Pembelajaran</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>Rombel</Label>
+            <Select value={rombel} onValueChange={setRombel}>
+              <SelectTrigger className="mt-1"><SelectValue placeholder="Pilih Rombel" /></SelectTrigger>
+              <SelectContent>
+                {(refs?.rombel ?? []).map((r: any) => (
+                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Mata Pelajaran</Label>
+            <Select value={mapel} onValueChange={setMapel}>
+              <SelectTrigger className="mt-1"><SelectValue placeholder="Pilih Mata Pelajaran" /></SelectTrigger>
+              <SelectContent>
+                {(refs?.mapel ?? []).map((m: any) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.nama}{m.kelompok ? ` — ${m.kelompok}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Guru Pengampu</Label>
+            <Select value={guru} onValueChange={setGuru}>
+              <SelectTrigger className="mt-1"><SelectValue placeholder="Pilih Guru" /></SelectTrigger>
+              <SelectContent>
+                {(refs?.guru ?? []).map((g: any) => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.nama}{g.nip ? ` (${g.nip})` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
+          <Button
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => onSubmit({ id: row!.id, rombel_id: rombel, mata_pelajaran_id: mapel, guru_id: guru })}
+            disabled={!canSubmit || loading}
+          >
+            {loading ? "Menyimpan…" : "Simpan"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ================ Bulk Edit Dialog ================
+function BulkEditDialog({
+  open, onOpenChange, refs, count, onSubmit, loading,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  refs: any;
+  count: number;
+  onSubmit: (v: { rombel_id?: string; mata_pelajaran_id?: string; guru_id?: string }) => void;
+  loading: boolean;
+}) {
+  const [rombel, setRombel] = useState("");
+  const [mapel, setMapel] = useState("");
+  const [guru, setGuru] = useState("");
+
+  const reset = () => { setRombel(""); setMapel(""); setGuru(""); };
+  const hasAny = !!(rombel || mapel || guru);
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Bulk Edit ({count} data terpilih)</DialogTitle>
+          <p className="text-xs text-muted-foreground">
+            Hanya field yang diisi yang akan diubah pada semua data terpilih.
+          </p>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>Rombel</Label>
+            <Select value={rombel} onValueChange={setRombel}>
+              <SelectTrigger className="mt-1"><SelectValue placeholder="— Tidak diubah —" /></SelectTrigger>
+              <SelectContent>
+                {(refs?.rombel ?? []).map((r: any) => (
+                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Mata Pelajaran</Label>
+            <Select value={mapel} onValueChange={setMapel}>
+              <SelectTrigger className="mt-1"><SelectValue placeholder="— Tidak diubah —" /></SelectTrigger>
+              <SelectContent>
+                {(refs?.mapel ?? []).map((m: any) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.nama}{m.kelompok ? ` — ${m.kelompok}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Guru Pengampu</Label>
+            <Select value={guru} onValueChange={setGuru}>
+              <SelectTrigger className="mt-1"><SelectValue placeholder="— Tidak diubah —" /></SelectTrigger>
+              <SelectContent>
+                {(refs?.guru ?? []).map((g: any) => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.nama}{g.nip ? ` (${g.nip})` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
+          <Button
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => onSubmit({
+              rombel_id: rombel || undefined,
+              mata_pelajaran_id: mapel || undefined,
+              guru_id: guru || undefined,
+            })}
+            disabled={!hasAny || loading}
+          >
+            {loading ? "Menyimpan…" : `Terapkan ke ${count} data`}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

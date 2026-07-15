@@ -185,6 +185,58 @@ export const createRombelMapel = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const updateRombelMapel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    id: z.string().uuid(),
+    rombel_id: z.string().uuid().optional(),
+    mata_pelajaran_id: z.string().uuid().optional(),
+    guru_id: z.string().uuid().optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const patch: {
+      rombel_id?: string;
+      mata_pelajaran_id?: string;
+      guru_id?: string;
+    } = {};
+    if (data.rombel_id) patch.rombel_id = data.rombel_id;
+    if (data.mata_pelajaran_id) patch.mata_pelajaran_id = data.mata_pelajaran_id;
+    if (data.guru_id) patch.guru_id = data.guru_id;
+    if (Object.keys(patch).length === 0) return { ok: true };
+    const { error } = await context.supabase
+      .from("rombel_mata_pelajaran")
+      .update(patch)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const bulkUpdateRombelMapel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    ids: z.array(z.string().uuid()).min(1).max(2000),
+    rombel_id: z.string().uuid().optional(),
+    mata_pelajaran_id: z.string().uuid().optional(),
+    guru_id: z.string().uuid().optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const patch: {
+      rombel_id?: string;
+      mata_pelajaran_id?: string;
+      guru_id?: string;
+    } = {};
+    if (data.rombel_id) patch.rombel_id = data.rombel_id;
+    if (data.mata_pelajaran_id) patch.mata_pelajaran_id = data.mata_pelajaran_id;
+    if (data.guru_id) patch.guru_id = data.guru_id;
+    if (Object.keys(patch).length === 0) return { ok: true, affected: 0 };
+    const { error, count } = await context.supabase
+      .from("rombel_mata_pelajaran")
+      .update(patch, { count: "exact" })
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, affected: count ?? 0 };
+  });
+
 export const softDeleteRombelMapel = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
