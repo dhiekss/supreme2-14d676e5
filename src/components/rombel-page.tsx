@@ -354,7 +354,7 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
       <CrudTable<Row>
         title={khusus ? "Rombel Khusus" : "Manajemen Rombel"}
         description={khusus ? "Rombel khusus / kelompok belajar." : "Kelola rombongan belajar (kelas)."}
-        rows={data}
+        rows={filteredData}
         search={(r, q) => `${r.name ?? ""} ${r.tingkat ?? ""} ${r.konsentrasi_keahlian ?? ""} ${r.wali_kelas_name ?? ""}`.toLowerCase().includes(q)}
         columns={[
           { header: "Nama Rombel", cell: (r) => <span className="font-medium">{r.name}</span>, sort: (a, b) => String(a.name ?? "").localeCompare(String(b.name ?? "")) },
