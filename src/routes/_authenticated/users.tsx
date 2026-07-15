@@ -623,8 +623,8 @@ function UsersPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex">
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setMenuFor(u)} title="Atur akses menu">
-                          <MenuIcon className="h-4 w-4" />
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setRombelFor(u)} title="Atur akses rombel">
+                          <School className="h-4 w-4" />
                         </Button>
                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setResetFor(u)} title="Reset password">
                           <KeyRound className="h-4 w-4" />
