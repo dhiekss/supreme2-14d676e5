@@ -17,14 +17,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Plus, Trash2, Pencil, KeyRound, Download, Upload, LogOut, RefreshCw,
   Filter, Power, ShieldCheck, Info, Users as UsersIcon, ChevronLeft, ChevronRight,
-  Menu as MenuIcon,
+  School,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   listUsers, createUser, updateUser, deleteUser, resetPassword, userSummary,
   toggleUserActive, bulkSetAllActive, forceLogoutAll, listUserActivity,
 } from "@/lib/users.functions";
-import { MenuAccessDialog, BulkMenuAccessDialog } from "@/components/menu-access-dialogs";
+import { RombelAccessDialog, BulkRombelAccessDialog } from "@/components/rombel-access-dialogs";
 
 export const Route = createFileRoute("/_authenticated/users")({
   head: () => ({ meta: [{ title: "Manajemen User — SUPREME XPOES" }] }),
@@ -97,8 +97,8 @@ function UsersPage() {
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<any>(null);
   const [resetFor, setResetFor] = useState<any>(null);
-  const [menuFor, setMenuFor] = useState<any>(null);
-  const [bulkMenuOpen, setBulkMenuOpen] = useState(false);
+  const [rombelFor, setRombelFor] = useState<any>(null);
+  const [bulkRombelOpen, setBulkRombelOpen] = useState(false);
 
   const fetchList = useServerFn(listUsers);
   const fetchSum = useServerFn(userSummary);
@@ -524,9 +524,9 @@ function UsersPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setBulkMenuOpen(true)}
+                  onClick={() => setBulkRombelOpen(true)}
                 >
-                  <MenuIcon className="h-3.5 w-3.5 mr-1" />Atur Akses Menu
+                  <School className="h-3.5 w-3.5 mr-1" />Atur Akses Rombel
                 </Button>
                 <Button
                   size="sm"
@@ -623,8 +623,8 @@ function UsersPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex">
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setMenuFor(u)} title="Atur akses menu">
-                          <MenuIcon className="h-4 w-4" />
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setRombelFor(u)} title="Atur akses rombel">
+                          <School className="h-4 w-4" />
                         </Button>
                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setResetFor(u)} title="Reset password">
                           <KeyRound className="h-4 w-4" />
@@ -676,18 +676,18 @@ function UsersPage() {
         )}
       </Dialog>
 
-      {/* Akses Menu individu */}
-      <MenuAccessDialog
-        user={menuFor}
-        open={!!menuFor}
-        onOpenChange={(o) => !o && setMenuFor(null)}
+      {/* Akses Rombel individu */}
+      <RombelAccessDialog
+        user={rombelFor}
+        open={!!rombelFor}
+        onOpenChange={(o: boolean) => !o && setRombelFor(null)}
       />
 
-      {/* Akses Menu massal */}
-      <BulkMenuAccessDialog
+      {/* Akses Rombel massal */}
+      <BulkRombelAccessDialog
         userIds={Array.from(selected)}
-        open={bulkMenuOpen}
-        onOpenChange={setBulkMenuOpen}
+        open={bulkRombelOpen}
+        onOpenChange={setBulkRombelOpen}
         onSaved={() => setSelected(new Set())}
       />
 
