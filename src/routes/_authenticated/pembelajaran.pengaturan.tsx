@@ -523,6 +523,75 @@ function PengaturanPembelajaranPage() {
         emptyTrashM={emptyTrashM}
         onChange={invalidate}
       />
+
+      {/* Dialog Progress Import */}
+      <Dialog
+        open={importing}
+        onOpenChange={(o) => {
+          if (!o && importFinished) setImporting(false);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {importFinished ? "Import Selesai" : "Mengimpor Data…"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Progress
+              value={
+                importProgress.total > 0
+                  ? (importProgress.done / importProgress.total) * 100
+                  : 0
+              }
+            />
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                {importProgress.done} / {importProgress.total} baris
+              </span>
+              <span className="font-medium">
+                {importProgress.total > 0
+                  ? Math.round((importProgress.done / importProgress.total) * 100)
+                  : 0}
+                %
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="rounded-md border p-2">
+                <div className="text-muted-foreground">Berhasil</div>
+                <div className="font-semibold text-green-600">
+                  {importProgress.inserted}
+                </div>
+              </div>
+              <div className="rounded-md border p-2">
+                <div className="text-muted-foreground">Gagal</div>
+                <div className="font-semibold text-red-600">
+                  {importProgress.failed}
+                </div>
+              </div>
+            </div>
+            {importFinished && importProgress.errors.length > 0 && (
+              <div className="max-h-40 overflow-y-auto rounded-md border p-2 text-xs space-y-1">
+                {importProgress.errors.slice(0, 20).map((e, i) => (
+                  <div key={i} className="text-muted-foreground">
+                    Baris {e.row}: {e.message}
+                  </div>
+                ))}
+                {importProgress.errors.length > 20 && (
+                  <div className="text-muted-foreground italic">
+                    …dan {importProgress.errors.length - 20} lainnya
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          {importFinished && (
+            <DialogFooter>
+              <Button onClick={() => setImporting(false)}>Tutup</Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
