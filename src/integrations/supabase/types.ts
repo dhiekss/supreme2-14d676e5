@@ -481,6 +481,8 @@ export type Database = {
           nama: string | null
           nip: string | null
           no_whatsapp: string | null
+          pangkat_golongan: string | null
+          status_kepegawaian: string | null
         }
         Insert: {
           created_at?: string | null
@@ -492,6 +494,8 @@ export type Database = {
           nama?: string | null
           nip?: string | null
           no_whatsapp?: string | null
+          pangkat_golongan?: string | null
+          status_kepegawaian?: string | null
         }
         Update: {
           created_at?: string | null
@@ -503,6 +507,8 @@ export type Database = {
           nama?: string | null
           nip?: string | null
           no_whatsapp?: string | null
+          pangkat_golongan?: string | null
+          status_kepegawaian?: string | null
         }
         Relationships: []
       }

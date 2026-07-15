@@ -1,0 +1,1 @@
+ALTER TABLE public.guru ADD COLUMN IF NOT EXISTS status_kepegawaian text; ALTER TABLE public.guru ADD COLUMN IF NOT EXISTS pangkat_golongan text;
