@@ -153,6 +153,38 @@ export const deleteMapel = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const MapelImportInput = z.object({
+  rows: z.array(
+    z.object({
+      nama: z.string().trim().min(1).max(150),
+      kode: z.string().trim().max(20).optional().nullable(),
+      kelompok: z.string().trim().max(50).optional().nullable(),
+    }),
+  ).min(1).max(1000),
+  mode: z.enum(["append", "replace"]).default("append"),
+});
+
+export const importMapel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(MapelImportInput.parse)
+  .handler(async ({ context, data }) => {
+    if (data.mode === "replace") {
+      const { error: delErr } = await context.supabase
+        .from("mata_pelajaran")
+        .delete()
+        .not("id", "is", null);
+      if (delErr) throw new Error(delErr.message);
+    }
+    const payload = data.rows.map((r) => ({
+      nama: r.nama,
+      kode: r.kode || null,
+      kelompok: r.kelompok || null,
+    }));
+    const { error } = await context.supabase.from("mata_pelajaran").insert(payload);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: payload.length };
+  });
+
 // ============ GURU ============
 export const listGuru = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
