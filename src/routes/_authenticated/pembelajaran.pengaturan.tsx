@@ -12,15 +12,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import { withDateSuffix } from "@/lib/utils";
 import {
   Settings, CalendarClock, QrCode, Plus, Trash2, Download, Upload, RotateCcw,
-  ChevronLeft, ChevronRight, ArrowUpDown, RefreshCw, ArchiveRestore, Eraser,
+  ChevronLeft, ChevronRight, ArrowUpDown, RefreshCw, ArchiveRestore, Eraser, Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   getPembelajaranSettings, saveDeadline, setKbmQrValidation,
   listPembelajaranRefs, listRombelMapel, createRombelMapel,
+  updateRombelMapel, bulkUpdateRombelMapel,
   softDeleteRombelMapel, restoreRombelMapel, purgeRombelMapel,
   softDeleteAllRombelMapel, emptyTrashRombelMapel, bulkImportRombelMapel,
 } from "@/lib/pengaturan-pembelajaran.functions";
