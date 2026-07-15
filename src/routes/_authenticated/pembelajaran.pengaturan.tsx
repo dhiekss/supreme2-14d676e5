@@ -910,7 +910,7 @@ function EditDialog({
   const [mapel, setMapel] = useState("");
   const [guru, setGuru] = useState("");
 
-  useMemo(() => {
+  useEffect(() => {
     if (row) {
       setRombel(row.rombel_id ?? "");
       setMapel(row.mata_pelajaran_id ?? "");
