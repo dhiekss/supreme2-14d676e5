@@ -115,8 +115,18 @@ export const presensiDashboard = createServerFn({ method: "GET" })
     const { supabase } = context;
     const allowed = await getAllowedRombelIds(supabase, context.userId);
     if (allowed !== null && allowed.length === 0) {
-      return { rombel: [], totals: { H: 0, S: 0, I: 0, A: 0, P: 0 }, daily: [], byRombel: [], konsentrasi: [] as string[] } as any;
+      return {
+        filter: { from: data.from, to: data.to, konsentrasi: data.konsentrasi ?? "__all" },
+        stats: { totalKelas: 0, totalPengajar: 0, totalMurid: 0 },
+        totals: { sesi: 0, H: 0, S: 0, I: 0, A: 0, P: 0, kehadiran: 0 },
+        trend: [] as { date: string; H: number; S: number; I: number; A: number; P: number }[],
+        rombelBelum: [] as { id: string; name: string; walikelas: string | null; tingkat: string | null }[],
+        alfaTop: [] as { id: string; name: string; nis: string | null; rombel: string; count: number }[],
+        detailRows: [] as { date: string; rombel: string; walikelas: string | null; H: number; S: number; I: number; A: number; P: number; total: number }[],
+        konsentrasiList: [] as string[],
+      };
     }
+
 
     const [rombelAll, guruRes, studentsAll] = await Promise.all([
       fetchAllPaged((f, t) => supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian, wali_kelas_name").range(f, t)),
