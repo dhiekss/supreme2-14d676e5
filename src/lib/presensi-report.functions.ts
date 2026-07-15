@@ -218,7 +218,7 @@ export const presensiDashboard = createServerFn({ method: "GET" })
       .sort((a, b) => String(b.date).localeCompare(String(a.date)))
       .slice(0, 100);
 
-    const konsentrasiList = [...new Set(allRombel.map((r: any) => r.konsentrasi_keahlian).filter(Boolean))] as string[];
+    const konsentrasiList = [...new Set(filteredAll.map((r: any) => r.konsentrasi_keahlian).filter(Boolean))] as string[];
 
     return {
       filter: { from: data.from, to: data.to, konsentrasi: data.konsentrasi ?? "__all" },
