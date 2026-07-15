@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { createAktivitas } from "@/lib/aktivitas.functions";
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -192,6 +193,13 @@ function PengaturanPembelajaranPage() {
     setImportFinished(true);
     if (inserted > 0) toast.success(`${inserted} data berhasil diimpor`);
     if (failed > 0) toast.error(`${failed} baris gagal`);
+    createAktivitas({
+      data: {
+        action: "import",
+        description: `Mengimpor ${inserted} data pembelajaran (gagal ${failed} dari ${allRows.length} baris)`,
+        metadata: { inserted, failed, total: allRows.length },
+      },
+    }).catch(() => {});
     invalidate();
   };
 
