@@ -80,6 +80,11 @@ function UsersPage() {
 
   // Filters / pagination
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 350);
+    return () => clearTimeout(t);
+  }, [search]);
   const [role, setRole] = useState("all");
   const [status, setStatus] = useState<"all" | "active" | "inactive">("all");
   const [sort, setSort] = useState<"name_asc" | "name_desc" | "created_desc" | "created_asc">("name_asc");
@@ -105,9 +110,10 @@ function UsersPage() {
   const bulkFn = useServerFn(bulkSetAllActive);
   const forceFn = useServerFn(forceLogoutAll);
 
-  const { data: page1 } = useSuspenseQuery({
-    queryKey: ["users", { search, role, status, sort, page, pageSize }],
-    queryFn: () => fetchList({ data: { search: search || undefined, role, status, sort, page, pageSize } }),
+  const { data: page1 } = useQuery({
+    queryKey: ["users", { search: debouncedSearch, role, status, sort, page, pageSize }],
+    queryFn: () => fetchList({ data: { search: debouncedSearch || undefined, role, status, sort, page, pageSize } }),
+    placeholderData: (prev) => prev,
   });
   const { data: sum } = useQuery({ queryKey: ["users-sum"], queryFn: () => fetchSum() });
 
@@ -160,7 +166,7 @@ function UsersPage() {
 
   useEffect(() => {
     setSelected(new Set());
-  }, [search, role, status, sort, pageSize]);
+  }, [debouncedSearch, role, status, sort, pageSize]);
 
   const toggleSelectAll = () => {
     setSelected((prev) => {
