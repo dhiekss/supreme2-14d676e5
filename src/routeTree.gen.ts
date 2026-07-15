@@ -32,6 +32,7 @@ import { Route as AuthenticatedMutasiRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMasterRouteImport } from './routes/_authenticated/master'
 import { Route as AuthenticatedMapelRouteImport } from './routes/_authenticated/mapel'
 import { Route as AuthenticatedLaporanPresensiRouteImport } from './routes/_authenticated/laporan-presensi'
+import { Route as AuthenticatedLaporanKeterlambatanRouteImport } from './routes/_authenticated/laporan-keterlambatan'
 import { Route as AuthenticatedKonsentrasiRouteImport } from './routes/_authenticated/konsentrasi'
 import { Route as AuthenticatedKeterlambatanRouteImport } from './routes/_authenticated/keterlambatan'
 import { Route as AuthenticatedKenaikanKelasRouteImport } from './routes/_authenticated/kenaikan-kelas'
@@ -186,6 +187,12 @@ const AuthenticatedLaporanPresensiRoute =
   AuthenticatedLaporanPresensiRouteImport.update({
     id: '/laporan-presensi',
     path: '/laporan-presensi',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLaporanKeterlambatanRoute =
+  AuthenticatedLaporanKeterlambatanRouteImport.update({
+    id: '/laporan-keterlambatan',
+    path: '/laporan-keterlambatan',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedKonsentrasiRoute =
@@ -420,6 +427,7 @@ export interface FileRoutesByFullPath {
   '/kenaikan-kelas': typeof AuthenticatedKenaikanKelasRoute
   '/keterlambatan': typeof AuthenticatedKeterlambatanRoute
   '/konsentrasi': typeof AuthenticatedKonsentrasiRoute
+  '/laporan-keterlambatan': typeof AuthenticatedLaporanKeterlambatanRoute
   '/laporan-presensi': typeof AuthenticatedLaporanPresensiRoute
   '/mapel': typeof AuthenticatedMapelRoute
   '/master': typeof AuthenticatedMasterRoute
@@ -481,6 +489,7 @@ export interface FileRoutesByTo {
   '/kenaikan-kelas': typeof AuthenticatedKenaikanKelasRoute
   '/keterlambatan': typeof AuthenticatedKeterlambatanRoute
   '/konsentrasi': typeof AuthenticatedKonsentrasiRoute
+  '/laporan-keterlambatan': typeof AuthenticatedLaporanKeterlambatanRoute
   '/laporan-presensi': typeof AuthenticatedLaporanPresensiRoute
   '/mapel': typeof AuthenticatedMapelRoute
   '/master': typeof AuthenticatedMasterRoute
@@ -544,6 +553,7 @@ export interface FileRoutesById {
   '/_authenticated/kenaikan-kelas': typeof AuthenticatedKenaikanKelasRoute
   '/_authenticated/keterlambatan': typeof AuthenticatedKeterlambatanRoute
   '/_authenticated/konsentrasi': typeof AuthenticatedKonsentrasiRoute
+  '/_authenticated/laporan-keterlambatan': typeof AuthenticatedLaporanKeterlambatanRoute
   '/_authenticated/laporan-presensi': typeof AuthenticatedLaporanPresensiRoute
   '/_authenticated/mapel': typeof AuthenticatedMapelRoute
   '/_authenticated/master': typeof AuthenticatedMasterRoute
@@ -607,6 +617,7 @@ export interface FileRouteTypes {
     | '/kenaikan-kelas'
     | '/keterlambatan'
     | '/konsentrasi'
+    | '/laporan-keterlambatan'
     | '/laporan-presensi'
     | '/mapel'
     | '/master'
@@ -668,6 +679,7 @@ export interface FileRouteTypes {
     | '/kenaikan-kelas'
     | '/keterlambatan'
     | '/konsentrasi'
+    | '/laporan-keterlambatan'
     | '/laporan-presensi'
     | '/mapel'
     | '/master'
@@ -730,6 +742,7 @@ export interface FileRouteTypes {
     | '/_authenticated/kenaikan-kelas'
     | '/_authenticated/keterlambatan'
     | '/_authenticated/konsentrasi'
+    | '/_authenticated/laporan-keterlambatan'
     | '/_authenticated/laporan-presensi'
     | '/_authenticated/mapel'
     | '/_authenticated/master'
@@ -942,6 +955,13 @@ declare module '@tanstack/react-router' {
       path: '/laporan-presensi'
       fullPath: '/laporan-presensi'
       preLoaderRoute: typeof AuthenticatedLaporanPresensiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/laporan-keterlambatan': {
+      id: '/_authenticated/laporan-keterlambatan'
+      path: '/laporan-keterlambatan'
+      fullPath: '/laporan-keterlambatan'
+      preLoaderRoute: typeof AuthenticatedLaporanKeterlambatanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/konsentrasi': {
@@ -1244,6 +1264,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedKenaikanKelasRoute: typeof AuthenticatedKenaikanKelasRoute
   AuthenticatedKeterlambatanRoute: typeof AuthenticatedKeterlambatanRoute
   AuthenticatedKonsentrasiRoute: typeof AuthenticatedKonsentrasiRoute
+  AuthenticatedLaporanKeterlambatanRoute: typeof AuthenticatedLaporanKeterlambatanRoute
   AuthenticatedLaporanPresensiRoute: typeof AuthenticatedLaporanPresensiRoute
   AuthenticatedMapelRoute: typeof AuthenticatedMapelRoute
   AuthenticatedMasterRoute: typeof AuthenticatedMasterRoute
@@ -1299,6 +1320,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedKenaikanKelasRoute: AuthenticatedKenaikanKelasRoute,
   AuthenticatedKeterlambatanRoute: AuthenticatedKeterlambatanRoute,
   AuthenticatedKonsentrasiRoute: AuthenticatedKonsentrasiRoute,
+  AuthenticatedLaporanKeterlambatanRoute:
+    AuthenticatedLaporanKeterlambatanRoute,
   AuthenticatedLaporanPresensiRoute: AuthenticatedLaporanPresensiRoute,
   AuthenticatedMapelRoute: AuthenticatedMapelRoute,
   AuthenticatedMasterRoute: AuthenticatedMasterRoute,

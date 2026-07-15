@@ -85,7 +85,15 @@ export const DEFAULT_SIDEBAR: DefaultNode[] = [
       { id: "revisi-presensi", title: "Revisi Presensi", url: "/revisi-presensi", icon: FileBarChart },
     ],
   },
-  { id: "keterlambatan", title: "Keterlambatan", url: "/keterlambatan", icon: Clock },
+  {
+    id: "grp-keterlambatan",
+    title: "Keterlambatan",
+    icon: Clock,
+    children: [
+      { id: "keterlambatan", title: "Input Keterlambatan", url: "/keterlambatan", icon: Clock },
+      { id: "laporan-keterlambatan", title: "Laporan Keterlambatan", url: "/laporan-keterlambatan", icon: FileBarChart },
+    ],
+  },
   { id: "sp", title: "Surat Peringatan", url: "/sp", icon: AlertTriangle },
   {
     id: "grp-manajemen-sekolah",
