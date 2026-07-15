@@ -20,6 +20,7 @@ function describeMutation(mutation: any): { action: string; description: string 
     } catch {
       src = "";
     }
+    if (/aktivitas|activity_log/.test(src)) return null;
     if (/\b(del|delete|hapus|remove|destroy)/.test(src)) action = "hapus";
     else if (/\bimport/.test(src)) action = "import";
     else if (/\b(save|create|update|upsert|insert|edit|add|new)/.test(src)) action = "input/edit";
