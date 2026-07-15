@@ -62,13 +62,38 @@ export const listAdministrasi = createServerFn({ method: "GET" })
   }).optional().parse(d))
   .handler(async ({ data, context }) => {
     const s = context.supabase;
+
+    // Restrict to own guru row unless admin/superadmin
+    const [{ data: isAdmin }, { data: isSuper }] = await Promise.all([
+      s.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+      s.rpc("has_role", { _user_id: context.userId, _role: "superadmin" }),
+    ]);
+    const privileged = Boolean(isAdmin) || Boolean(isSuper);
+
+    let ownGuruId: string | null = null;
+    if (!privileged) {
+      const { data: prof } = await s.from("profiles").select("nip").eq("id", context.userId).maybeSingle();
+      const nip = (prof as any)?.nip?.trim();
+      if (nip) {
+        const { data: g } = await s.from("guru").select("id").eq("nip", nip).maybeSingle();
+        ownGuruId = (g as any)?.id ?? null;
+      }
+      if (!ownGuruId) {
+        return { rows: [], total: 0, page: 1, pageSize: data?.pageSize ?? 20, stats: { total: 0, sudah_input: 0, belum_input: 0, valid: 0, lengkap_100: 0, menunggu: 0, perbaikan: 0, parsial: 0 } };
+      }
+    }
+
     let baseQ = s
       .from("rombel_mata_pelajaran")
       .select("id, rombel_id, mata_pelajaran_id, guru_id")
       .is("deleted_at", null);
     if (data?.rombel_id && data.rombel_id !== "all") baseQ = baseQ.eq("rombel_id", data.rombel_id);
     if (data?.mapel_id && data.mapel_id !== "all") baseQ = baseQ.eq("mata_pelajaran_id", data.mapel_id);
-    if (data?.guru_id && data.guru_id !== "all") baseQ = baseQ.eq("guru_id", data.guru_id);
+    if (privileged) {
+      if (data?.guru_id && data.guru_id !== "all") baseQ = baseQ.eq("guru_id", data.guru_id);
+    } else {
+      baseQ = baseQ.eq("guru_id", ownGuruId!);
+    }
     const { data: assignments, error } = await baseQ;
     if (error) throw new Error(error.message);
 
