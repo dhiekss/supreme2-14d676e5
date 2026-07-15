@@ -36,7 +36,32 @@ export function CrudTable<T extends { id: string }>(props: {
 }) {
   const [q, setQ] = useState("");
   const [confirmRow, setConfirmRow] = useState<T | null>(null);
+  const [sortColumn, setSortColumn] = useState<number | null>(null);
+  const [sortDesc, setSortDesc] = useState(false);
+
   const filtered = props.search && q ? props.rows.filter((r) => props.search!(r, q.toLowerCase())) : props.rows;
+  const sorted =
+    sortColumn !== null && props.columns[sortColumn]?.sort
+      ? [...filtered].sort((a, b) => {
+          const cmp = props.columns[sortColumn].sort!(a, b);
+          return sortDesc ? -cmp : cmp;
+        })
+      : filtered;
+
+  function toggleSort(i: number) {
+    const col = props.columns[i];
+    if (!col?.sort) return;
+    if (sortColumn === i) {
+      if (!sortDesc) setSortDesc(true);
+      else {
+        setSortColumn(null);
+        setSortDesc(false);
+      }
+    } else {
+      setSortColumn(i);
+      setSortDesc(false);
+    }
+  }
 
   return (
     <div className="space-y-4">
