@@ -385,6 +385,10 @@ export const attendanceDetailView = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!rec) throw new Error("Record tidak ditemukan");
+    const allowed = await getAllowedRombelIds(supabase, context.userId);
+    if (allowed !== null && (!rec.rombel_id || !allowed.includes(rec.rombel_id))) {
+      throw new Error("Forbidden: Anda tidak memiliki akses ke rombel ini");
+    }
     const [rombelRes, studentsRes, detailsRes] = await Promise.all([
       rec.rombel_id
         ? supabase.from("rombel").select("id, name, wali_kelas_name").eq("id", rec.rombel_id).maybeSingle()
