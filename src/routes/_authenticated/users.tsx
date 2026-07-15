@@ -684,6 +684,62 @@ function UsersPage() {
         onOpenChange={setBulkMenuOpen}
         onSaved={() => setSelected(new Set())}
       />
+
+      {/* Import Progress */}
+      <Dialog open={importOpen} onOpenChange={(o) => { if (!importRunning) setImportOpen(o); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {importRunning ? "Mengimpor user…" : importFinished ? "Import selesai" : "Import User"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Progress
+              value={importProgress.total > 0 ? (importProgress.done / importProgress.total) * 100 : 0}
+            />
+            <div className="text-sm text-muted-foreground">
+              {importProgress.done} / {importProgress.total} baris (
+              {importProgress.total > 0
+                ? Math.round((importProgress.done / importProgress.total) * 100)
+                : 0}
+              %)
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="rounded-md border p-2 bg-emerald-50">
+                <div className="text-xs text-muted-foreground">Berhasil</div>
+                <div className="font-semibold text-emerald-700">{importProgress.inserted}</div>
+              </div>
+              <div className="rounded-md border p-2 bg-red-50">
+                <div className="text-xs text-muted-foreground">Gagal</div>
+                <div className="font-semibold text-red-700">{importProgress.failed}</div>
+              </div>
+            </div>
+            {importProgress.errors.length > 0 && (
+              <div className="max-h-40 overflow-auto rounded-md border p-2 text-xs space-y-1">
+                {importProgress.errors.slice(0, 30).map((e, i) => (
+                  <div key={i} className="text-red-700">
+                    Baris {e.row}: {e.message}
+                  </div>
+                ))}
+                {importProgress.errors.length > 30 && (
+                  <div className="text-muted-foreground">
+                    …dan {importProgress.errors.length - 30} error lain
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={importRunning}
+              onClick={() => setImportOpen(false)}
+            >
+              Tutup
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
