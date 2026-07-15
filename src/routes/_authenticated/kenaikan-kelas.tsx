@@ -361,7 +361,7 @@ function RiwayatTab({ batchesFn, undoFn, undoStudentFn, qc }: any) {
                   </TableRow>
                   {openBatch === b.batch_id && (
                     <TableRow>
-                      <TableCell colSpan={4} className="bg-muted/30">
+                      <TableCell colSpan={5} className="bg-muted/30">
                         <Table>
                           <TableHeader><TableRow>
                             <TableHead>Nama</TableHead><TableHead>NIS</TableHead>
