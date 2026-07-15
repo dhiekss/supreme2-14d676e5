@@ -14,10 +14,10 @@ export const listKeterlambatan = createServerFn({ method: "GET" })
   .handler(async ({ context, data }) => {
     let q = context.supabase
       .from("late_records")
-      .select("id, student_id, rombel_id, record_date, recorded_at, created_at")
+      .select("id, student_id, rombel_id, record_date, recorded_at, created_at, recorded_by")
       .order("record_date", { ascending: false })
       .order("recorded_at", { ascending: false })
-      .limit(300);
+      .limit(5000);
     if (data.from) q = q.gte("record_date", data.from);
     if (data.to) q = q.lte("record_date", data.to);
     if (data.rombelId) q = q.eq("rombel_id", data.rombelId);
@@ -26,18 +26,45 @@ export const listKeterlambatan = createServerFn({ method: "GET" })
 
     const sids = [...new Set((rows ?? []).map((r) => r.student_id).filter(Boolean) as string[])];
     const rids = [...new Set((rows ?? []).map((r) => r.rombel_id).filter(Boolean) as string[])];
-    const [students, rombel] = await Promise.all([
+    const uids = [...new Set((rows ?? []).map((r) => r.recorded_by).filter(Boolean) as string[])];
+    const [students, rombel, profiles] = await Promise.all([
       sids.length ? context.supabase.from("students").select("id, name, nis").in("id", sids) : Promise.resolve({ data: [] }),
-      rids.length ? context.supabase.from("rombel").select("id, name").in("id", rids) : Promise.resolve({ data: [] }),
+      rids.length ? context.supabase.from("rombel").select("id, name, konsentrasi_keahlian").in("id", rids) : Promise.resolve({ data: [] }),
+      uids.length ? context.supabase.from("profiles").select("id, full_name").in("id", uids) : Promise.resolve({ data: [] }),
     ]);
     const sMap = new Map((students.data ?? []).map((x: any) => [x.id, x]));
-    const rMap = new Map((rombel.data ?? []).map((x: any) => [x.id, x.name]));
+    const rMap = new Map((rombel.data ?? []).map((x: any) => [x.id, x]));
+    const pMap = new Map((profiles.data ?? []).map((x: any) => [x.id, x.full_name]));
 
     return (rows ?? []).map((r) => ({
       ...r,
       student_name: r.student_id ? (sMap.get(r.student_id) as any)?.name ?? "—" : "—",
       student_nis: r.student_id ? (sMap.get(r.student_id) as any)?.nis ?? "—" : "—",
-      rombel_name: r.rombel_id ? rMap.get(r.rombel_id) ?? "—" : "—",
+      rombel_name: r.rombel_id ? (rMap.get(r.rombel_id) as any)?.name ?? "—" : "—",
+      konsentrasi: r.rombel_id ? (rMap.get(r.rombel_id) as any)?.konsentrasi_keahlian ?? "—" : "—",
+      penginput_name: r.recorded_by ? pMap.get(r.recorded_by) ?? "—" : "—",
+    }));
+  });
+
+// Directory of all rombel with student totals + konsentrasi — used for
+// "X dari Y siswa" ranking on the Laporan Keterlambatan page.
+export const listRombelDirectory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const [{ data: rombel }, { data: students }] = await Promise.all([
+      context.supabase.from("rombel").select("id, name, konsentrasi_keahlian"),
+      context.supabase.from("students").select("id, rombel_id"),
+    ]);
+    const countByRombel = new Map<string, number>();
+    for (const s of students ?? []) {
+      if (!s.rombel_id) continue;
+      countByRombel.set(s.rombel_id, (countByRombel.get(s.rombel_id) ?? 0) + 1);
+    }
+    return (rombel ?? []).map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      konsentrasi: r.konsentrasi_keahlian ?? "—",
+      total_students: countByRombel.get(r.id) ?? 0,
     }));
   });
 
