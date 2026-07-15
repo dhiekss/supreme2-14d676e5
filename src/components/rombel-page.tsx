@@ -122,10 +122,16 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
   const bulkStudentsFn = useServerFn(bulkImportStudents);
   const bulkRombelFn = useServerFn(bulkImportRombel);
   const importNisnFn = useServerFn(importNisnToRombel);
+  const guruFn = useServerFn(listGuru);
 
   const { data = [] } = useQuery({
     queryKey: ["rombel", khusus],
     queryFn: () => fetchFn({ data: { khusus } }) as Promise<Row[]>,
+  });
+
+  const { data: guruList = [] } = useQuery({
+    queryKey: ["guru-lite-for-wali"],
+    queryFn: () => guruFn() as Promise<Array<{ id: string; nama: string; nip: string | null }>>,
   });
 
   const [editing, setEditing] = useState<Partial<Row> | null>(null);
