@@ -474,15 +474,46 @@ function PengaturanPembelajaranPage() {
             )}
           </div>
 
-          <div className="text-xs text-muted-foreground">
-            Menampilkan {(list?.rows ?? []).length === 0 ? 0 : (page - 1) * pageSize + 1}
-            –{(page - 1) * pageSize + (list?.rows ?? []).length} dari {total} data
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="text-xs text-muted-foreground">
+              Menampilkan {(list?.rows ?? []).length === 0 ? 0 : (page - 1) * pageSize + 1}
+              –{(page - 1) * pageSize + (list?.rows ?? []).length} dari {total} data
+            </div>
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-2 text-xs">
+                <span className="font-medium">{selectedIds.size} terpilih</span>
+                <Button size="sm" variant="outline" onClick={() => setBulkEditOpen(true)}>
+                  <Pencil className="h-3.5 w-3.5 mr-1" />Bulk Edit
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+                  Batal Pilih
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40">
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={
+                        (list?.rows ?? []).length > 0 &&
+                        (list?.rows ?? []).every((r: any) => selectedIds.has(r.id))
+                      }
+                      onCheckedChange={(v) => {
+                        const rows = list?.rows ?? [];
+                        setSelectedIds((prev) => {
+                          const next = new Set(prev);
+                          if (v) rows.forEach((r: any) => next.add(r.id));
+                          else rows.forEach((r: any) => next.delete(r.id));
+                          return next;
+                        });
+                      }}
+                      aria-label="Pilih semua"
+                    />
+                  </TableHead>
                   <TableHead className="w-12">No</TableHead>
                   <TableHead>Rombel {sortIcon("rombel")}</TableHead>
                   <TableHead>Kelompok Mapel {sortIcon("kelompok")}</TableHead>
@@ -493,13 +524,26 @@ function PengaturanPembelajaranPage() {
               </TableHeader>
               <TableBody>
                 {isFetching && (list?.rows ?? []).length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Memuat…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Memuat…</TableCell></TableRow>
                 )}
                 {!isFetching && (list?.rows ?? []).length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Tidak ada data</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Tidak ada data</TableCell></TableRow>
                 )}
                 {(list?.rows ?? []).map((r: any, idx: number) => (
-                  <TableRow key={r.id}>
+                  <TableRow key={r.id} data-state={selectedIds.has(r.id) ? "selected" : undefined}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(r.id)}
+                        onCheckedChange={(v) => {
+                          setSelectedIds((prev) => {
+                            const next = new Set(prev);
+                            if (v) next.add(r.id); else next.delete(r.id);
+                            return next;
+                          });
+                        }}
+                        aria-label="Pilih baris"
+                      />
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{(page - 1) * pageSize + idx + 1}</TableCell>
                     <TableCell className="font-medium">{r.rombel_name}</TableCell>
                     <TableCell className="text-sm">{r.mapel_kelompok}</TableCell>
@@ -511,13 +555,22 @@ function PengaturanPembelajaranPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        size="icon" variant="destructive" className="h-8 w-8"
-                        onClick={() => { if (confirm("Pindahkan ke tempat sampah?")) delM.mutate(r.id); }}
-                        title="Hapus"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="inline-flex gap-1">
+                        <Button
+                          size="icon" variant="outline" className="h-8 w-8"
+                          onClick={() => setEditRow(r)}
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon" variant="destructive" className="h-8 w-8"
+                          onClick={() => { if (confirm("Pindahkan ke tempat sampah?")) delM.mutate(r.id); }}
+                          title="Hapus"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
