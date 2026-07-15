@@ -22,7 +22,10 @@ export function ActivityTracker() {
     const key = `nav:${pathname}`;
     if (seen.current.has(key)) return;
     seen.current.add(key);
-    const t = setTimeout(() => {
+    const t = setTimeout(async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) return;
+      seen.current.add(key);
       logFn({
         data: {
           action: "navigate",
@@ -41,12 +44,8 @@ export function ActivityTracker() {
         logFn({
           data: { action: "signin", description: "Pengguna masuk ke aplikasi" },
         }).catch(() => {});
-      } else if (event === "SIGNED_OUT") {
-        // may fail due to lost session; ignore
-        logFn({
-          data: { action: "signout", description: "Pengguna keluar dari aplikasi" },
-        }).catch(() => {});
       }
+      // Skip SIGNED_OUT: session is already cleared, server fn will 401
     });
     return () => subscription.unsubscribe();
   }, [logFn]);
