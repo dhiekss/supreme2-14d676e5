@@ -289,6 +289,7 @@ const GuruImportRow = z.object({
   no_whatsapp: z.string().trim().max(30).optional().nullable(),
   status_kepegawaian: z.string().trim().max(50).optional().nullable(),
   pangkat_golongan: z.string().trim().max(50).optional().nullable(),
+  konsentrasi_keahlian_nama: z.string().trim().max(150).optional().nullable(),
 });
 
 const GuruImportInput = z.object({
@@ -305,6 +306,11 @@ export const importGuru = createServerFn({ method: "POST" })
     for (const m of mapels ?? []) {
       if ((m as any).nama) mapelByName.set(String((m as any).nama).toLowerCase().trim(), (m as any).id);
       if ((m as any).kode) mapelByName.set(String((m as any).kode).toLowerCase().trim(), (m as any).id);
+    }
+    const { data: konsList } = await context.supabase.from("konsentrasi_keahlian").select("id, name");
+    const konsByName = new Map<string, string>();
+    for (const k of konsList ?? []) {
+      if ((k as any).name) konsByName.set(String((k as any).name).toLowerCase().trim(), (k as any).id);
     }
     const normJK = (v?: string | null) => {
       if (!v) return null;
@@ -325,6 +331,9 @@ export const importGuru = createServerFn({ method: "POST" })
       no_whatsapp: r.no_whatsapp || null,
       status_kepegawaian: r.status_kepegawaian || null,
       pangkat_golongan: r.pangkat_golongan || null,
+      konsentrasi_keahlian_id: r.konsentrasi_keahlian_nama
+        ? konsByName.get(r.konsentrasi_keahlian_nama.toLowerCase().trim()) ?? null
+        : null,
     });
 
     if (data.mode === "replace") {
