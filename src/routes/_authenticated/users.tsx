@@ -17,14 +17,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Plus, Trash2, Pencil, KeyRound, Download, Upload, LogOut, RefreshCw,
   Filter, Power, ShieldCheck, Info, Users as UsersIcon, ChevronLeft, ChevronRight,
-  Menu as MenuIcon,
+  School,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   listUsers, createUser, updateUser, deleteUser, resetPassword, userSummary,
   toggleUserActive, bulkSetAllActive, forceLogoutAll, listUserActivity,
 } from "@/lib/users.functions";
-import { MenuAccessDialog, BulkMenuAccessDialog } from "@/components/menu-access-dialogs";
+import { RombelAccessDialog, BulkRombelAccessDialog } from "@/components/rombel-access-dialogs";
 
 export const Route = createFileRoute("/_authenticated/users")({
   head: () => ({ meta: [{ title: "Manajemen User — SUPREME XPOES" }] }),
