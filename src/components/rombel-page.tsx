@@ -395,6 +395,28 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
         addLabel="Tambah Rombel"
         extra={
           <div className="flex flex-wrap items-center gap-2">
+            <Select value={filterTingkat} onValueChange={setFilterTingkat}>
+              <SelectTrigger className="h-9 w-[130px]"><SelectValue placeholder="Tingkat" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua Tingkat</SelectItem>
+                {tingkatOptions.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterKonsentrasi} onValueChange={setFilterKonsentrasi}>
+              <SelectTrigger className="h-9 w-[180px]"><SelectValue placeholder="Konsentrasi" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua Konsentrasi</SelectItem>
+                {konsentrasiOptions.map((k) => <SelectItem key={k} value={k}>{k}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterTipe} onValueChange={setFilterTipe}>
+              <SelectTrigger className="h-9 w-[130px]"><SelectValue placeholder="Tipe" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua Tipe</SelectItem>
+                <SelectItem value="reguler">Reguler</SelectItem>
+                <SelectItem value="khusus">Khusus</SelectItem>
+              </SelectContent>
+            </Select>
             <Button size="sm" variant="outline" onClick={handleExportRombel}><Download className="h-4 w-4 mr-1" />Export Rombel</Button>
             <Button size="sm" variant="outline" onClick={handleExportMurid}><Download className="h-4 w-4 mr-1" />Export Daftar Murid</Button>
             <Button size="sm" variant="outline" onClick={handleTemplateNisn}><FileText className="h-4 w-4 mr-1" />Template NISN</Button>
