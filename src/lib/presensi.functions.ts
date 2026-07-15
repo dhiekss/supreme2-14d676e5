@@ -1,8 +1,29 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getAllowedRombelIds } from "@/lib/rombel-access";
 import { z } from "zod";
 
 export const listRombel = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const allowed = await getAllowedRombelIds(context.supabase, context.userId);
+    let q = context.supabase
+      .from("rombel")
+      .select("id, name, tingkat, konsentrasi_keahlian, wali_kelas_name")
+      .order("tingkat")
+      .order("name");
+    if (allowed !== null) {
+      if (allowed.length === 0) return [];
+      q = q.in("id", allowed);
+    }
+    const { data, error } = await q;
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+// Unfiltered rombel list — for menus that must be accessible to all users
+// regardless of Akses Rombel (e.g. Input Keterlambatan, Laporan Keterlambatan).
+export const listRombelAll = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
