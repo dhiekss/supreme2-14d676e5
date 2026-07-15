@@ -287,10 +287,10 @@ function PengaturanPembelajaranPage() {
           <Button
             variant="outline" size="sm"
             onClick={() => fileInputRef.current?.click()}
-            disabled={importM.isPending}
+            disabled={importing}
           >
             <Upload className="h-4 w-4 mr-2" />
-            {importM.isPending ? "Mengimpor…" : "Import"}
+            {importing ? "Mengimpor…" : "Import"}
           </Button>
           <input
             ref={fileInputRef}
