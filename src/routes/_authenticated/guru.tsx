@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Download, Upload } from "lucide-react";
-import { listGuru, saveGuru, deleteGuru, listMapel, importGuru } from "@/lib/sekolah.functions";
+import { listGuru, saveGuru, deleteGuru, listMapel, importGuru, listKonsentrasi } from "@/lib/sekolah.functions";
 import { toast } from "sonner";
 
 type Row = {
