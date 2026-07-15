@@ -27,9 +27,14 @@ type Row = {
   no_whatsapp: string | null;
   status_kepegawaian: string | null;
   pangkat_golongan: string | null;
+  konsentrasi_keahlian_id: string | null;
+  konsentrasi_nama?: string | null;
 };
 
 const STATUS_OPTIONS = ["PNS", "PPPK", "GTT", "GTY", "Honorer", "CPNS"];
+
+// A mapel is "produktif" when its kelompok starts with "C" (C1/C2/C3), matching the SMK curriculum grouping.
+const isProduktifKelompok = (k?: string | null) => !!k && k.trim().toUpperCase().startsWith("C");
 
 type ImportRow = {
   id?: string | null;
@@ -42,6 +47,7 @@ type ImportRow = {
   no_whatsapp: string | null;
   status_kepegawaian: string | null;
   pangkat_golongan: string | null;
+  konsentrasi_keahlian_nama: string | null;
 };
 
 export const Route = createFileRoute("/_authenticated/guru")({
