@@ -11,9 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Download, Upload, FileDown, FileText, UserPlus, Trash2, AlertTriangle } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Users, Download, Upload, FileDown, FileText, UserPlus, Trash2, AlertTriangle, ChevronsUpDown, Check } from "lucide-react";
 import { withDateSuffix } from "@/lib/utils";
-import { listRombel, saveRombel, deleteRombel, deleteAllRombel } from "@/lib/sekolah.functions";
+import { listRombel, saveRombel, deleteRombel, deleteAllRombel, listGuru } from "@/lib/sekolah.functions";
 import {
   listStudentsByRombel,
   listAllStudents,
@@ -120,10 +122,16 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
   const bulkStudentsFn = useServerFn(bulkImportStudents);
   const bulkRombelFn = useServerFn(bulkImportRombel);
   const importNisnFn = useServerFn(importNisnToRombel);
+  const guruFn = useServerFn(listGuru);
 
   const { data = [] } = useQuery({
     queryKey: ["rombel", khusus],
     queryFn: () => fetchFn({ data: { khusus } }) as Promise<Row[]>,
+  });
+
+  const { data: guruList = [] } = useQuery({
+    queryKey: ["guru-lite-for-wali"],
+    queryFn: () => guruFn() as Promise<Array<{ id: string; nama: string; nip: string | null }>>,
   });
 
   const [editing, setEditing] = useState<Partial<Row> | null>(null);
@@ -304,8 +312,8 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
           { header: "Nama Rombel", cell: (r) => <span className="font-medium">{r.name}</span> },
           { header: "Tingkat", cell: (r) => r.tingkat ?? "—" },
           { header: "Konsentrasi", cell: (r) => r.konsentrasi_keahlian ?? "—" },
-          { header: "Wali Kelas", cell: (r) => r.wali_kelas_name ?? "—" },
-          { header: "NIP", cell: (r) => r.wali_kelas_nip ?? "—" },
+          { header: "Wali Kelas", cell: (r) => <WaliKelasPicker row={r} guruList={guruList} /> },
+          { header: "NIP", cell: (r) => <span className="tabular-nums text-sm">{r.wali_kelas_nip ?? "—"}</span> },
           { header: "Tipe", cell: (r) => r.is_khusus ? <Badge variant="secondary">Khusus</Badge> : <Badge variant="outline">Reguler</Badge> },
           { header: "Anggota", cell: (r) => (
             <Button size="sm" variant="outline" onClick={() => setMembersOf(r)}>
@@ -519,5 +527,100 @@ function MembersDialog({ rombel, onClose }: { rombel: Row | null; onClose: () =>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function WaliKelasPicker({
+  row,
+  guruList,
+}: {
+  row: Row;
+  guruList: Array<{ id: string; nama: string; nip: string | null }>;
+}) {
+  const qc = useQueryClient();
+  const saveFn = useServerFn(saveRombel);
+  const [open, setOpen] = useState(false);
+  const m = useMutation({
+    mutationFn: (g: { nama: string | null; nip: string | null }) =>
+      saveFn({
+        data: {
+          id: row.id,
+          name: row.name,
+          tingkat: row.tingkat || null,
+          konsentrasi_keahlian: row.konsentrasi_keahlian || null,
+          wali_kelas_name: g.nama,
+          wali_kelas_nip: g.nip,
+          is_khusus: !!row.is_khusus,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Wali kelas diperbarui");
+      qc.invalidateQueries({ queryKey: ["rombel"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          role="combobox"
+          disabled={m.isPending}
+          className="h-8 justify-between font-normal min-w-[180px] max-w-[240px]"
+        >
+          <span className="truncate">
+            {row.wali_kelas_name || <span className="text-muted-foreground">Pilih guru…</span>}
+          </span>
+          <ChevronsUpDown className="h-3.5 w-3.5 opacity-50 shrink-0 ml-1" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="p-0 w-[300px]" align="start">
+        <Command
+          filter={(value, search) => {
+            return value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="Cari nama / NIP guru…" />
+          <CommandList>
+            <CommandEmpty>Guru tidak ditemukan</CommandEmpty>
+            <CommandGroup>
+              {row.wali_kelas_name && (
+                <CommandItem
+                  value="__clear__ kosongkan hapus"
+                  onSelect={() => {
+                    m.mutate({ nama: null, nip: null });
+                    setOpen(false);
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-2 text-destructive" />
+                  <span className="text-muted-foreground">Kosongkan</span>
+                </CommandItem>
+              )}
+              {guruList.map((g) => {
+                const selected = row.wali_kelas_name === g.nama;
+                return (
+                  <CommandItem
+                    key={g.id}
+                    value={`${g.nama} ${g.nip ?? ""}`}
+                    onSelect={() => {
+                      m.mutate({ nama: g.nama, nip: g.nip ?? null });
+                      setOpen(false);
+                    }}
+                  >
+                    <Check className={`h-3.5 w-3.5 mr-2 ${selected ? "opacity-100" : "opacity-0"}`} />
+                    <div className="flex flex-col">
+                      <span className="text-sm">{g.nama}</span>
+                      <span className="text-xs text-muted-foreground tabular-nums">{g.nip ?? "—"}</span>
+                    </div>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
