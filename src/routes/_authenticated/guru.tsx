@@ -183,6 +183,7 @@ function Page() {
           { header: "NIP", cell: (r) => <span className="font-mono text-xs">{r.nip ?? "—"}</span> },
           { header: "JK", cell: (r) => r.jenis_kelamin ?? "—" },
           { header: "Mata Pelajaran", cell: (r) => r.mapel_nama ?? "—" },
+          { header: "Konsentrasi", cell: (r) => r.konsentrasi_nama ? <Badge variant="outline">{r.konsentrasi_nama}</Badge> : "—" },
           { header: "Status", cell: (r) => r.status_kepegawaian ? <Badge variant="secondary">{r.status_kepegawaian}</Badge> : "—" },
           { header: "Pangkat/Gol", cell: (r) => r.pangkat_golongan ? <span className="font-mono text-xs">{r.pangkat_golongan}</span> : "—" },
           { header: "Kualifikasi", cell: (r) => r.kualifikasi_pendidikan ? <Badge variant="outline">{r.kualifikasi_pendidikan}</Badge> : "—" },
