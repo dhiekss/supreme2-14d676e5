@@ -153,6 +153,15 @@ export const deleteMapel = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const bulkDeleteMapel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ ids: z.array(uuid).min(1).max(2000) }).parse)
+  .handler(async ({ context, data }) => {
+    const { error } = await context.supabase.from("mata_pelajaran").delete().in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: data.ids.length };
+  });
+
 const MapelImportInput = z.object({
   rows: z.array(
     z.object({
