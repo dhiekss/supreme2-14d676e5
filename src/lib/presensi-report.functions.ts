@@ -113,20 +113,25 @@ export const presensiDashboard = createServerFn({ method: "GET" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
+    const allowed = await getAllowedRombelIds(supabase, context.userId);
+    if (allowed !== null && allowed.length === 0) {
+      return { rombel: [], totals: { H: 0, S: 0, I: 0, A: 0, P: 0 }, daily: [], byRombel: [], konsentrasi: [] as string[] } as any;
+    }
 
     const [rombelAll, guruRes, studentsAll] = await Promise.all([
       fetchAllPaged((f, t) => supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian, wali_kelas_name").range(f, t)),
       supabase.from("guru").select("*", { count: "exact", head: true }),
       fetchAllPaged((f, t) => supabase.from("students").select("id, nis, name, rombel_id").range(f, t)),
     ]);
-    const allRombel = rombelAll;
+    const filteredAll = allowed === null ? rombelAll : rombelAll.filter((r: any) => allowed.includes(r.id));
     const rombel = data.konsentrasi && data.konsentrasi !== "__all"
-      ? allRombel.filter((r: any) => r.konsentrasi_keahlian === data.konsentrasi)
-      : allRombel;
+      ? filteredAll.filter((r: any) => r.konsentrasi_keahlian === data.konsentrasi)
+      : filteredAll;
     const rombelIds = new Set(rombel.map((r: any) => r.id));
-    const rombelById = new Map(allRombel.map((r: any) => [r.id, r]));
+    const rombelById = new Map(filteredAll.map((r: any) => [r.id, r]));
     const students = studentsAll.filter((s: any) => s.rombel_id && rombelIds.has(s.rombel_id));
     const studentById = new Map(students.map((s: any) => [s.id, s]));
+
 
     const records = await fetchAllPaged((from, to) =>
       supabase
