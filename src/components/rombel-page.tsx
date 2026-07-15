@@ -487,6 +487,21 @@ function MembersDialog({ rombel, onClose }: { rombel: Row | null; onClose: () =>
           <DialogDescription>Kelola murid di rombel ini.</DialogDescription>
         </DialogHeader>
 
+        {(() => {
+          const total = students.length;
+          const L = students.filter((s) => s.gender === "L").length;
+          const P = students.filter((s) => s.gender === "P").length;
+          const belum = total - L - P;
+          return (
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="tabular-nums">Total: {total}</Badge>
+              <Badge variant="secondary" className="tabular-nums">Laki-laki: {L}</Badge>
+              <Badge variant="secondary" className="tabular-nums">Perempuan: {P}</Badge>
+              {belum > 0 && <Badge variant="outline" className="tabular-nums">Belum diisi: {belum}</Badge>}
+            </div>
+          );
+        })()}
+
         <div className="flex justify-end">
           <Button size="sm" onClick={() => setAdding({})}><UserPlus className="h-4 w-4 mr-1" />Tambah Murid</Button>
         </div>
