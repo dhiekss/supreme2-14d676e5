@@ -30,8 +30,21 @@ function fillCount(row: any): number {
 export const getAdministrasiRefs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const allowed = await getAllowedRombelIds(context.supabase, context.userId);
+    let rombelQ = context.supabase.from("rombel").select("id, name").order("name");
+    if (allowed !== null) {
+      if (allowed.length === 0) {
+        const [{ data: mapel }, { data: guru }, { data: setting }] = await Promise.all([
+          context.supabase.from("mata_pelajaran").select("id, nama").order("nama"),
+          context.supabase.from("guru").select("id, nama, nip").order("nama"),
+          context.supabase.from("app_settings").select("value").eq("key", SETTING_DEADLINE).maybeSingle(),
+        ]);
+        return { rombel: [], mapel: mapel ?? [], guru: guru ?? [], deadline: (setting as any)?.value ?? "" };
+      }
+      rombelQ = rombelQ.in("id", allowed);
+    }
     const [{ data: rombel }, { data: mapel }, { data: guru }, { data: setting }] = await Promise.all([
-      context.supabase.from("rombel").select("id, name").order("name"),
+      rombelQ,
       context.supabase.from("mata_pelajaran").select("id, nama").order("nama"),
       context.supabase.from("guru").select("id, nama, nip").order("nama"),
       context.supabase.from("app_settings").select("value").eq("key", SETTING_DEADLINE).maybeSingle(),
