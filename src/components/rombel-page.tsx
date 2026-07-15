@@ -157,11 +157,40 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
   const [membersOf, setMembersOf] = useState<Row | null>(null);
   const [confirmDelAll, setConfirmDelAll] = useState(false);
   const [importNisnFor, setImportNisnFor] = useState<string>("");
+  const [filterTingkat, setFilterTingkat] = useState<string>("__all");
+  const [filterKonsentrasi, setFilterKonsentrasi] = useState<string>("__all");
+  const [filterTipe, setFilterTipe] = useState<string>("__all");
   const fileInputs = {
     nisn: useRef<HTMLInputElement>(null),
     murid: useRef<HTMLInputElement>(null),
     rombel: useRef<HTMLInputElement>(null),
   };
+
+  const tingkatOptions = useMemo(() => {
+    const s = new Set<string>();
+    data.forEach((r) => { if (r.tingkat) s.add(r.tingkat); });
+    const roman: Record<string, number> = { VII: 7, VIII: 8, IX: 9, X: 10, XI: 11, XII: 12 };
+    return [...s].sort((a, b) => (roman[a.toUpperCase()] ?? 0) - (roman[b.toUpperCase()] ?? 0) || a.localeCompare(b));
+  }, [data]);
+
+  const konsentrasiOptions = useMemo(() => {
+    const s = new Set<string>();
+    data.forEach((r) => { if (r.konsentrasi_keahlian) s.add(r.konsentrasi_keahlian); });
+    return [...s].sort((a, b) => a.localeCompare(b));
+  }, [data]);
+
+  const filteredData = useMemo(() => {
+    return data.filter((r) => {
+      if (filterTingkat !== "__all" && (r.tingkat ?? "") !== filterTingkat) return false;
+      if (filterKonsentrasi !== "__all" && (r.konsentrasi_keahlian ?? "") !== filterKonsentrasi) return false;
+      if (filterTipe !== "__all") {
+        const isK = !!r.is_khusus;
+        if (filterTipe === "khusus" && !isK) return false;
+        if (filterTipe === "reguler" && isK) return false;
+      }
+      return true;
+    });
+  }, [data, filterTingkat, filterKonsentrasi, filterTipe]);
 
   const save = useMutation({
     mutationFn: (v: any) => saveFn({ data: v }),
