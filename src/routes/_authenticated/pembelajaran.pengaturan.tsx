@@ -231,7 +231,7 @@ function PengaturanPembelajaranPage() {
         toast.error("File kosong atau format tidak dikenali");
         return;
       }
-      importM.mutate(parsed);
+      runImport(parsed);
     } catch (e: any) {
       toast.error("Gagal membaca file: " + (e?.message ?? "unknown"));
     }
