@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getAllowedRombelIds } from "@/lib/rombel-access";
 import { z } from "zod";
+
 
 // PostgREST caps a single response (~1000 rows). Page through until we get everything.
 const PAGE = 1000;
@@ -50,6 +52,11 @@ export const presensiReport = createServerFn({ method: "GET" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
+    const allowed = await getAllowedRombelIds(supabase, context.userId);
+    if (allowed !== null && !allowed.includes(data.rombelId)) {
+      throw new Error("Forbidden: Anda tidak memiliki akses ke rombel ini");
+    }
+
 
     const { data: students, error: sErr } = await supabase
       .from("students")
@@ -106,20 +113,35 @@ export const presensiDashboard = createServerFn({ method: "GET" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
+    const allowed = await getAllowedRombelIds(supabase, context.userId);
+    if (allowed !== null && allowed.length === 0) {
+      return {
+        filter: { from: data.from, to: data.to, konsentrasi: data.konsentrasi ?? "__all" },
+        stats: { totalKelas: 0, totalPengajar: 0, totalMurid: 0 },
+        totals: { sesi: 0, H: 0, S: 0, I: 0, A: 0, P: 0, kehadiran: 0 },
+        trend: [] as { date: string; H: number; S: number; I: number; A: number; P: number }[],
+        rombelBelum: [] as { id: string; name: string; walikelas: string | null; tingkat: string | null }[],
+        alfaTop: [] as { id: string; name: string; nis: string | null; rombel: string; count: number }[],
+        detailRows: [] as { date: string; rombel: string; walikelas: string | null; H: number; S: number; I: number; A: number; P: number; total: number }[],
+        konsentrasiList: [] as string[],
+      };
+    }
+
 
     const [rombelAll, guruRes, studentsAll] = await Promise.all([
       fetchAllPaged((f, t) => supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian, wali_kelas_name").range(f, t)),
       supabase.from("guru").select("*", { count: "exact", head: true }),
       fetchAllPaged((f, t) => supabase.from("students").select("id, nis, name, rombel_id").range(f, t)),
     ]);
-    const allRombel = rombelAll;
+    const filteredAll = allowed === null ? rombelAll : rombelAll.filter((r: any) => allowed.includes(r.id));
     const rombel = data.konsentrasi && data.konsentrasi !== "__all"
-      ? allRombel.filter((r: any) => r.konsentrasi_keahlian === data.konsentrasi)
-      : allRombel;
+      ? filteredAll.filter((r: any) => r.konsentrasi_keahlian === data.konsentrasi)
+      : filteredAll;
     const rombelIds = new Set(rombel.map((r: any) => r.id));
-    const rombelById = new Map(allRombel.map((r: any) => [r.id, r]));
+    const rombelById = new Map(filteredAll.map((r: any) => [r.id, r]));
     const students = studentsAll.filter((s: any) => s.rombel_id && rombelIds.has(s.rombel_id));
     const studentById = new Map(students.map((s: any) => [s.id, s]));
+
 
     const records = await fetchAllPaged((from, to) =>
       supabase
@@ -206,7 +228,7 @@ export const presensiDashboard = createServerFn({ method: "GET" })
       .sort((a, b) => String(b.date).localeCompare(String(a.date)))
       .slice(0, 100);
 
-    const konsentrasiList = [...new Set(allRombel.map((r: any) => r.konsentrasi_keahlian).filter(Boolean))] as string[];
+    const konsentrasiList = [...new Set(filteredAll.map((r: any) => r.konsentrasi_keahlian).filter(Boolean))] as string[];
 
     return {
       filter: { from: data.from, to: data.to, konsentrasi: data.konsentrasi ?? "__all" },
@@ -247,14 +269,17 @@ export const rombelBelumInputByDate = createServerFn({ method: "GET" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
+    const allowed = await getAllowedRombelIds(supabase, context.userId);
+    if (allowed !== null && allowed.length === 0) return { rows: [], tingkatList: [] as string[] };
     const [allRombel, allStudents, records] = await Promise.all([
       fetchAllPaged((f, t) => supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian, wali_kelas_name").range(f, t)),
       fetchAllPaged((f, t) => supabase.from("students").select("id, rombel_id").range(f, t)),
       fetchAllPaged((f, t) => supabase.from("attendance_records").select("rombel_id").eq("date", data.date).range(f, t)),
     ]);
+    const scoped = allowed === null ? allRombel : allRombel.filter((r: any) => allowed.includes(r.id));
     const filtered = data.tingkat && data.tingkat !== "__all"
-      ? allRombel.filter((r: any) => String(r.tingkat) === String(data.tingkat))
-      : allRombel;
+      ? scoped.filter((r: any) => String(r.tingkat) === String(data.tingkat))
+      : scoped;
     const hasRec = new Set(records.map((r: any) => r.rombel_id));
     const countByRombel = new Map<string, number>();
     for (const s of allStudents) {
@@ -271,7 +296,7 @@ export const rombelBelumInputByDate = createServerFn({ method: "GET" })
         jumlahMurid: countByRombel.get(r.id) ?? 0,
       }))
       .sort((a, b) => String(a.name).localeCompare(String(b.name)));
-    const tingkatList = [...new Set(allRombel.map((r: any) => r.tingkat).filter(Boolean))].map(String).sort();
+    const tingkatList = [...new Set(scoped.map((r: any) => r.tingkat).filter(Boolean))].map(String).sort();
     return { rows, tingkatList };
   });
 
@@ -288,6 +313,9 @@ export const attendanceDetailList = createServerFn({ method: "GET" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
+    const allowed = await getAllowedRombelIds(supabase, context.userId);
+    if (allowed !== null && allowed.length === 0) return [] as any[];
+    if (data.rombelId && allowed !== null && !allowed.includes(data.rombelId)) return [] as any[];
     const recs = await fetchAllPaged<any>((f, t) => {
       let q = supabase
         .from("attendance_records")
@@ -296,11 +324,13 @@ export const attendanceDetailList = createServerFn({ method: "GET" })
         .range(f, t);
       if (data.date) q = q.eq("date", data.date);
       if (data.rombelId) q = q.eq("rombel_id", data.rombelId);
+      if (allowed !== null) q = q.in("rombel_id", allowed);
       if (data.officer) q = q.eq("officer_name", data.officer);
       if (data.from) q = q.gte("date", data.from);
       if (data.to) q = q.lte("date", data.to);
       return q;
     });
+
 
     const rombelIds = [...new Set(recs.map((r: any) => r.rombel_id).filter(Boolean) as string[])];
     const recIds = recs.map((r: any) => r.id);
@@ -355,6 +385,10 @@ export const attendanceDetailView = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!rec) throw new Error("Record tidak ditemukan");
+    const allowed = await getAllowedRombelIds(supabase, context.userId);
+    if (allowed !== null && (!rec.rombel_id || !allowed.includes(rec.rombel_id))) {
+      throw new Error("Forbidden: Anda tidak memiliki akses ke rombel ini");
+    }
     const [rombelRes, studentsRes, detailsRes] = await Promise.all([
       rec.rombel_id
         ? supabase.from("rombel").select("id, name, wali_kelas_name").eq("id", rec.rombel_id).maybeSingle()

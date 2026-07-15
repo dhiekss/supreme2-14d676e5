@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getAllowedRombelIds } from "@/lib/rombel-access";
 import { z } from "zod";
+
 
 const SETTING_DEADLINE = "berkas_pembelajaran_deadline";
 
@@ -28,8 +30,21 @@ function fillCount(row: any): number {
 export const getAdministrasiRefs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const allowed = await getAllowedRombelIds(context.supabase, context.userId);
+    let rombelQ = context.supabase.from("rombel").select("id, name").order("name");
+    if (allowed !== null) {
+      if (allowed.length === 0) {
+        const [{ data: mapel }, { data: guru }, { data: setting }] = await Promise.all([
+          context.supabase.from("mata_pelajaran").select("id, nama").order("nama"),
+          context.supabase.from("guru").select("id, nama, nip").order("nama"),
+          context.supabase.from("app_settings").select("value").eq("key", SETTING_DEADLINE).maybeSingle(),
+        ]);
+        return { rombel: [], mapel: mapel ?? [], guru: guru ?? [], deadline: (setting as any)?.value ?? "" };
+      }
+      rombelQ = rombelQ.in("id", allowed);
+    }
     const [{ data: rombel }, { data: mapel }, { data: guru }, { data: setting }] = await Promise.all([
-      context.supabase.from("rombel").select("id, name").order("name"),
+      rombelQ,
       context.supabase.from("mata_pelajaran").select("id, nama").order("nama"),
       context.supabase.from("guru").select("id, nama, nip").order("nama"),
       context.supabase.from("app_settings").select("value").eq("key", SETTING_DEADLINE).maybeSingle(),
@@ -83,10 +98,17 @@ export const listAdministrasi = createServerFn({ method: "GET" })
       }
     }
 
+    // Also restrict by Akses Rombel (non-privileged only)
+    const allowed = privileged ? null : await getAllowedRombelIds(s, context.userId);
+    if (allowed !== null && allowed.length === 0) {
+      return { rows: [], total: 0, page: 1, pageSize: data?.pageSize ?? 20, stats: { total: 0, sudah_input: 0, belum_input: 0, valid: 0, lengkap_100: 0, menunggu: 0, perbaikan: 0, parsial: 0 } };
+    }
+
     let baseQ = s
       .from("rombel_mata_pelajaran")
       .select("id, rombel_id, mata_pelajaran_id, guru_id")
       .is("deleted_at", null);
+    if (allowed !== null) baseQ = baseQ.in("rombel_id", allowed);
     if (data?.rombel_id && data.rombel_id !== "all") baseQ = baseQ.eq("rombel_id", data.rombel_id);
     if (data?.mapel_id && data.mapel_id !== "all") baseQ = baseQ.eq("mata_pelajaran_id", data.mapel_id);
     if (privileged) {

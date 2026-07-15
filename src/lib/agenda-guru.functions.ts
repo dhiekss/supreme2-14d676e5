@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getAllowedRombelIds } from "@/lib/rombel-access";
 import { z } from "zod";
+
 
 const HARI_MAP = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
@@ -62,13 +64,18 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
     const dt = new Date(`${data.tanggal}T00:00:00`);
     const hariName = HARI_MAP[dt.getDay()];
 
-    const { data: jadwal, error } = await supabase
+    const allowed = await getAllowedRombelIds(supabase, userId);
+    if (allowed !== null && allowed.length === 0) return [] as any[];
+    let jq = supabase
       .from("jadwal_pelajaran")
       .select("id, hari, jam_ke, jam_mulai, jam_selesai, rombel_id, mata_pelajaran_id")
       .eq("guru_id", data.guruId)
       .eq("hari", hariName)
       .order("jam_ke");
+    if (allowed !== null) jq = jq.in("rombel_id", allowed);
+    const { data: jadwal, error } = await jq;
     if (error) throw new Error(error.message);
+
 
     const rombelIds = [...new Set((jadwal ?? []).map((j: any) => j.rombel_id).filter(Boolean))] as string[];
     const mapelIds = [...new Set((jadwal ?? []).map((j: any) => j.mata_pelajaran_id).filter(Boolean))] as string[];

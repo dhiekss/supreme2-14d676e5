@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getAllowedRombelIds } from "@/lib/rombel-access";
 import { z } from "zod";
 
 // ============ Options / dependent selects ============
@@ -7,10 +8,13 @@ import { z } from "zod";
 export const listRombelForKbm = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("rombel")
-      .select("id, name")
-      .order("name");
+    const allowed = await getAllowedRombelIds(context.supabase, context.userId);
+    let q = context.supabase.from("rombel").select("id, name").order("name");
+    if (allowed !== null) {
+      if (allowed.length === 0) return [];
+      q = q.in("id", allowed);
+    }
+    const { data, error } = await q;
     if (error) throw new Error(error.message);
     return data ?? [];
   });
@@ -64,8 +68,20 @@ export const listGuruByRombelMapel = createServerFn({ method: "POST" })
 export const listLaporanKbmOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const allowed = await getAllowedRombelIds(context.supabase, context.userId);
+    let rombelQ = context.supabase.from("rombel").select("id, name").order("name");
+    if (allowed !== null) {
+      if (allowed.length === 0) {
+        const [mapel, guru] = await Promise.all([
+          context.supabase.from("mata_pelajaran").select("id, nama").order("nama"),
+          context.supabase.from("guru").select("id, nama").order("nama"),
+        ]);
+        return { rombel: [], mapel: mapel.data ?? [], guru: guru.data ?? [] };
+      }
+      rombelQ = rombelQ.in("id", allowed);
+    }
     const [rombel, mapel, guru] = await Promise.all([
-      context.supabase.from("rombel").select("id, name").order("name"),
+      rombelQ,
       context.supabase.from("mata_pelajaran").select("id, nama").order("nama"),
       context.supabase.from("guru").select("id, nama").order("nama"),
     ]);
@@ -95,6 +111,9 @@ export const listLaporanKbm = createServerFn({ method: "GET" })
   )
   .handler(async ({ context, data }) => {
     const s = context.supabase;
+    const allowed = await getAllowedRombelIds(s, context.userId);
+    if (allowed !== null && allowed.length === 0) return [];
+
     let q = s
       .from("kbm_laporan")
       .select(
@@ -103,6 +122,7 @@ export const listLaporanKbm = createServerFn({ method: "GET" })
       .order("tanggal", { ascending: false })
       .limit(data?.limit ?? 200);
 
+    if (allowed !== null) q = q.in("rombel_id", allowed);
     if (data?.rombel_id && data.rombel_id !== "all") q = q.eq("rombel_id", data.rombel_id);
     if (data?.guru_id && data.guru_id !== "all") q = q.eq("guru_id", data.guru_id);
     if (data?.mapel_id && data.mapel_id !== "all") q = q.eq("mata_pelajaran_id", data.mapel_id);
@@ -111,6 +131,7 @@ export const listLaporanKbm = createServerFn({ method: "GET" })
 
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
+
 
     const rIds = [...new Set((rows ?? []).map((r) => r.rombel_id).filter(Boolean) as string[])];
     const mIds = [...new Set((rows ?? []).map((r) => r.mata_pelajaran_id).filter(Boolean) as string[])];
