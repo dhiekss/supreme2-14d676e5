@@ -3,21 +3,40 @@ import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 import { createAktivitas } from "@/lib/aktivitas.functions";
 
-// Map meta.log.action or mutationKey to a human label + action tag.
+// Map meta.log.action or mutationFn body to a human label + action tag.
 function describeMutation(mutation: any): { action: string; description: string } | null {
   const meta = mutation?.options?.meta?.log as
     | { action?: string; description?: string; skip?: boolean }
     | undefined;
   if (meta?.skip) return null;
 
-  const path =
-    typeof window !== "undefined" ? window.location.pathname : "";
-  const action = meta?.action || "mutasi";
+  const path = typeof window !== "undefined" ? window.location.pathname : "";
+  let action = meta?.action;
+  if (!action) {
+    // Heuristic: inspect the mutationFn source to guess intent
+    let src = "";
+    try {
+      src = String(mutation?.options?.mutationFn ?? "").toLowerCase();
+    } catch {
+      src = "";
+    }
+    if (/\b(del|delete|hapus|remove|destroy)/.test(src)) action = "hapus";
+    else if (/\bimport/.test(src)) action = "import";
+    else if (/\b(save|create|update|upsert|insert|edit|add|new)/.test(src)) action = "input/edit";
+    else action = "mutasi";
+  }
+  const labelMap: Record<string, string> = {
+    hapus: "Menghapus data",
+    import: "Mengimpor data",
+    "input/edit": "Menambah/mengubah data",
+    mutasi: "Melakukan perubahan data",
+  };
   const description =
     meta?.description ||
-    (path ? `Melakukan perubahan data pada halaman ${path}` : "Melakukan perubahan data");
+    `${labelMap[action] ?? "Melakukan perubahan data"}${path ? ` pada halaman ${path}` : ""}`;
   return { action, description };
 }
+
 
 export const getRouter = () => {
   const mutationCache = new MutationCache({
