@@ -20,7 +20,7 @@ import {
 
 type Rombel = {
   id: string;
-  name: string;
+  name: string | null;
   tingkat: string | null;
   konsentrasi_keahlian: string | null;
 };
