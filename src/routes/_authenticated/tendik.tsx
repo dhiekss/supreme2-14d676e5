@@ -138,6 +138,7 @@ function Page() {
 
   return (
     <div className="space-y-4">
+      <TendikStats rows={data} />
       <CrudTable<Row>
         title="Manajemen Tendik"
         description="Data tenaga kependidikan (non-guru)."
