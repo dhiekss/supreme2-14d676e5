@@ -30,7 +30,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
       id: context.userId,
       email: (profile as any)?.email ?? context.claims?.email ?? null,
       full_name: (profile as any)?.full_name ?? null,
-      avatar_url: (profile as any)?.avatar_url ?? null,
+      avatar_url: null as string | null,
       role: primary,
       roles,
     };
