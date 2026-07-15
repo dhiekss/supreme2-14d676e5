@@ -1,16 +1,21 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getAllowedRombelIds } from "@/lib/rombel-access";
 import { z } from "zod";
 
 export const listAgenda = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ limit: z.number().min(1).max(200).default(50) }).parse)
   .handler(async ({ context, data }) => {
-    const { data: rows, error } = await context.supabase
+    const allowed = await getAllowedRombelIds(context.supabase, context.userId);
+    if (allowed !== null && allowed.length === 0) return [];
+    let q = context.supabase
       .from("kbm_agenda")
       .select("id, tanggal, jam_ke, materi_detail, guru_status, rombel_id, mata_pelajaran_id, guru_id")
       .order("tanggal", { ascending: false })
       .limit(data.limit);
+    if (allowed !== null) q = q.in("rombel_id", allowed);
+    const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
 
     const ids = {
@@ -38,8 +43,20 @@ export const listAgenda = createServerFn({ method: "GET" })
 export const listKbmOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const allowed = await getAllowedRombelIds(context.supabase, context.userId);
+    let rombelQ = context.supabase.from("rombel").select("id, name").order("name");
+    if (allowed !== null) {
+      if (allowed.length === 0) {
+        const [mapel, guru] = await Promise.all([
+          context.supabase.from("mata_pelajaran").select("id, nama").order("nama"),
+          context.supabase.from("guru").select("id, nama").order("nama"),
+        ]);
+        return { rombel: [], mapel: mapel.data ?? [], guru: guru.data ?? [] };
+      }
+      rombelQ = rombelQ.in("id", allowed);
+    }
     const [rombel, mapel, guru] = await Promise.all([
-      context.supabase.from("rombel").select("id, name").order("name"),
+      rombelQ,
       context.supabase.from("mata_pelajaran").select("id, nama").order("nama"),
       context.supabase.from("guru").select("id, nama").order("nama"),
     ]);
