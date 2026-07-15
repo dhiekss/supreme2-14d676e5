@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Download, Upload } from "lucide-react";
 import { listGuru, saveGuru, deleteGuru, listMapel, importGuru, listKonsentrasi } from "@/lib/sekolah.functions";
 import { toast } from "sonner";
+import { GuruStats } from "@/components/guru-stats";
 
 type Row = {
   id: string;
