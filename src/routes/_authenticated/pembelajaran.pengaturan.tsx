@@ -134,6 +134,29 @@ function PengaturanPembelajaranPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const updateM = useMutation({
+    mutationFn: (v: { id: string; rombel_id?: string; mata_pelajaran_id?: string; guru_id?: string }) =>
+      updateFn({ data: v }),
+    onSuccess: () => {
+      toast.success("Perubahan disimpan");
+      setEditRow(null);
+      invalidate();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const bulkUpdateM = useMutation({
+    mutationFn: (v: { ids: string[]; rombel_id?: string; mata_pelajaran_id?: string; guru_id?: string }) =>
+      bulkUpdateFn({ data: v }),
+    onSuccess: (r: any) => {
+      toast.success(`${r.affected} data diperbarui`);
+      setBulkEditOpen(false);
+      setSelectedIds(new Set());
+      invalidate();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const delM = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
     onSuccess: () => { toast.success("Dipindahkan ke tempat sampah"); invalidate(); },
