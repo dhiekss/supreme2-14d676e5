@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { BarChart3, ChevronDown, ChevronUp, Users, GraduationCap, Briefcase, BookOpen, Sparkles } from "lucide-react";
+import { BarChart3, ChevronDown, ChevronUp, Users, Briefcase, BookOpen, Sparkles } from "lucide-react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
