@@ -334,6 +334,18 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
           { header: "Wali Kelas", cell: (r) => <WaliKelasPicker row={r} guruList={guruList} /> },
           { header: "NIP", cell: (r) => <span className="tabular-nums text-sm">{r.wali_kelas_nip ?? "—"}</span> },
           { header: "Tipe", cell: (r) => r.is_khusus ? <Badge variant="secondary">Khusus</Badge> : <Badge variant="outline">Reguler</Badge> },
+          { header: "Jumlah Murid", cell: (r) => {
+            const c = countsByRombel.get(r.id);
+            if (!c) return <span className="text-muted-foreground">0</span>;
+            return (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Badge variant="outline" className="tabular-nums">{c.total}</Badge>
+                {c.L > 0 && <span className="text-xs text-muted-foreground tabular-nums">L: {c.L}</span>}
+                {c.P > 0 && <span className="text-xs text-muted-foreground tabular-nums">P: {c.P}</span>}
+                {c.belum > 0 && <span className="text-xs text-muted-foreground tabular-nums">?: {c.belum}</span>}
+              </div>
+            );
+          }},
           { header: "Anggota", cell: (r) => (
             <Button size="sm" variant="outline" onClick={() => setMembersOf(r)}>
               <Users className="h-4 w-4 mr-1" /> Lihat
