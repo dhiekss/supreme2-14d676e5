@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getAllowedRombelIds } from "@/lib/rombel-access";
 import { z } from "zod";
+
 
 // PostgREST caps a single response (~1000 rows). Page through until we get everything.
 const PAGE = 1000;
