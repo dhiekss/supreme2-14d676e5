@@ -296,6 +296,7 @@ function Page() {
               no_whatsapp: editing?.no_whatsapp || null,
               status_kepegawaian: editing?.status_kepegawaian || null,
               pangkat_golongan: editing?.pangkat_golongan || null,
+              konsentrasi_keahlian_id: editingIsProduktif ? (editing?.konsentrasi_keahlian_id || null) : null,
             })}>Simpan</Button>
           </DialogFooter>
         </DialogContent>
