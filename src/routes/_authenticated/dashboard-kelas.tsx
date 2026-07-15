@@ -283,7 +283,7 @@ function DaftarSiswaTab({ data }: { data: any }) {
 
   const exportCsv = () => {
     const rows = [["No", "NIS", "Nama", "L/P"], ...filtered.map((s: any, i: number) => [i + 1, s.nis ?? "", s.name ?? "", s.gender ?? ""])];
-    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = rows.map((r) => r.map((c: any) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
