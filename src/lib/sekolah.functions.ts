@@ -591,3 +591,68 @@ export const deleteTendik = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+const TendikImportRow = z.object({
+  id: uuid.optional().nullable(),
+  nama: z.string().trim().min(1).max(150),
+  nip: z.string().trim().max(50).optional().nullable(),
+  jenis_kelamin: z.string().trim().max(20).optional().nullable(),
+  status_kepegawaian: z.string().trim().max(50).optional().nullable(),
+  golongan: z.string().trim().max(50).optional().nullable(),
+});
+
+export const importTendik = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      rows: z.array(TendikImportRow).min(1),
+      mode: z.enum(["append", "replace", "upsert"]).default("upsert"),
+    }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    const normJK = (v?: string | null) => {
+      if (!v) return null;
+      const s = v.trim().toLowerCase();
+      if (["l", "laki", "laki-laki", "pria", "male", "m"].includes(s)) return "L";
+      if (["p", "perempuan", "wanita", "female", "f"].includes(s)) return "P";
+      return v.trim().toUpperCase().slice(0, 2);
+    };
+
+    const rowsMapped = data.rows.map((r) => ({
+      id: r.id || null,
+      nama: r.nama,
+      nip: r.nip || null,
+      jenis_kelamin: normJK(r.jenis_kelamin),
+      status_kepegawaian: r.status_kepegawaian || null,
+      golongan: r.golongan || null,
+    }));
+
+    if (data.mode === "replace") {
+      const { error: delErr } = await context.supabase
+        .from("tendik" as any)
+        .delete()
+        .not("id", "is", null);
+      if (delErr) throw new Error(delErr.message);
+      const payload = rowsMapped.map(({ id: _id, ...rest }) => rest);
+      const { error } = await context.supabase.from("tendik" as any).insert(payload);
+      if (error) throw new Error(error.message);
+      return { ok: true, count: payload.length, inserted: payload.length, updated: 0 };
+    }
+
+    let inserted = 0;
+    let updated = 0;
+    for (const r of rowsMapped) {
+      if (data.mode === "upsert" && r.id) {
+        const { id, ...rest } = r;
+        const { error } = await context.supabase.from("tendik" as any).update(rest).eq("id", id);
+        if (error) throw new Error(error.message);
+        updated++;
+      } else {
+        const { id: _id, ...rest } = r;
+        const { error } = await context.supabase.from("tendik" as any).insert(rest);
+        if (error) throw new Error(error.message);
+        inserted++;
+      }
+    }
+    return { ok: true, count: inserted + updated, inserted, updated };
+  });
