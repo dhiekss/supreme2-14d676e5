@@ -19,6 +19,7 @@ export type Column<T> = {
   header: string;
   cell: (row: T) => ReactNode;
   className?: string;
+  sort?: (a: T, b: T) => number;
 };
 
 export function CrudTable<T extends { id: string }>(props: {
