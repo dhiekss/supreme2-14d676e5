@@ -51,6 +51,8 @@ function PengaturanPembelajaranPage() {
   const listRefsFn = useServerFn(listPembelajaranRefs);
   const listFn = useServerFn(listRombelMapel);
   const createFn = useServerFn(createRombelMapel);
+  const updateFn = useServerFn(updateRombelMapel);
+  const bulkUpdateFn = useServerFn(bulkUpdateRombelMapel);
   const delFn = useServerFn(softDeleteRombelMapel);
   const restoreFn = useServerFn(restoreRombelMapel);
   const purgeFn = useServerFn(purgeRombelMapel);
