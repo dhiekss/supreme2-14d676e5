@@ -97,8 +97,8 @@ function UsersPage() {
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<any>(null);
   const [resetFor, setResetFor] = useState<any>(null);
-  const [menuFor, setMenuFor] = useState<any>(null);
-  const [bulkMenuOpen, setBulkMenuOpen] = useState(false);
+  const [rombelFor, setRombelFor] = useState<any>(null);
+  const [bulkRombelOpen, setBulkRombelOpen] = useState(false);
 
   const fetchList = useServerFn(listUsers);
   const fetchSum = useServerFn(userSummary);
