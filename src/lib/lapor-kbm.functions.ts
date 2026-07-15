@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getAllowedRombelIds } from "@/lib/rombel-access";
 import { z } from "zod";
 
 // ============ Options / dependent selects ============
@@ -7,10 +8,13 @@ import { z } from "zod";
 export const listRombelForKbm = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("rombel")
-      .select("id, name")
-      .order("name");
+    const allowed = await getAllowedRombelIds(context.supabase, context.userId);
+    let q = context.supabase.from("rombel").select("id, name").order("name");
+    if (allowed !== null) {
+      if (allowed.length === 0) return [];
+      q = q.in("id", allowed);
+    }
+    const { data, error } = await q;
     if (error) throw new Error(error.message);
     return data ?? [];
   });
