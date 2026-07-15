@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Trash2, Plus, Search } from "lucide-react";
+import { Pencil, Trash2, Plus, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +19,7 @@ export type Column<T> = {
   header: string;
   cell: (row: T) => ReactNode;
   className?: string;
+  sort?: (a: T, b: T) => number;
 };
 
 export function CrudTable<T extends { id: string }>(props: {
@@ -35,7 +36,32 @@ export function CrudTable<T extends { id: string }>(props: {
 }) {
   const [q, setQ] = useState("");
   const [confirmRow, setConfirmRow] = useState<T | null>(null);
+  const [sortColumn, setSortColumn] = useState<number | null>(null);
+  const [sortDesc, setSortDesc] = useState(false);
+
   const filtered = props.search && q ? props.rows.filter((r) => props.search!(r, q.toLowerCase())) : props.rows;
+  const sorted =
+    sortColumn !== null && props.columns[sortColumn]?.sort
+      ? [...filtered].sort((a, b) => {
+          const cmp = props.columns[sortColumn].sort!(a, b);
+          return sortDesc ? -cmp : cmp;
+        })
+      : filtered;
+
+  function toggleSort(i: number) {
+    const col = props.columns[i];
+    if (!col?.sort) return;
+    if (sortColumn === i) {
+      if (!sortDesc) setSortDesc(true);
+      else {
+        setSortColumn(null);
+        setSortDesc(false);
+      }
+    } else {
+      setSortColumn(i);
+      setSortDesc(false);
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -71,20 +97,44 @@ export function CrudTable<T extends { id: string }>(props: {
               <TableHeader>
                 <TableRow>
                   {props.columns.map((c, i) => (
-                    <TableHead key={i} className={c.className}>{c.header}</TableHead>
+                    <TableHead
+                      key={i}
+                      className={c.className}
+                    >
+                      {c.sort ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleSort(i)}
+                          className="flex items-center gap-1 hover:text-foreground focus:outline-none"
+                        >
+                          {c.header}
+                          {sortColumn === i ? (
+                            sortDesc ? (
+                              <ArrowDown className="h-3.5 w-3.5" />
+                            ) : (
+                              <ArrowUp className="h-3.5 w-3.5" />
+                            )
+                          ) : (
+                            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/70" />
+                          )}
+                        </button>
+                      ) : (
+                        c.header
+                      )}
+                    </TableHead>
                   ))}
                   <TableHead className="w-[120px] text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.length === 0 ? (
+                {sorted.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={props.columns.length + 1} className="text-center text-muted-foreground py-8">
                       Tidak ada data
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map((row) => (
+                  sorted.map((row) => (
                     <TableRow key={row.id}>
                       {props.columns.map((c, i) => (
                         <TableCell key={i} className={c.className}>{c.cell(row)}</TableCell>

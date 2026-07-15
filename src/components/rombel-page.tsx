@@ -328,12 +328,16 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
         rows={data}
         search={(r, q) => `${r.name ?? ""} ${r.tingkat ?? ""} ${r.konsentrasi_keahlian ?? ""} ${r.wali_kelas_name ?? ""}`.toLowerCase().includes(q)}
         columns={[
-          { header: "Nama Rombel", cell: (r) => <span className="font-medium">{r.name}</span> },
-          { header: "Tingkat", cell: (r) => r.tingkat ?? "—" },
-          { header: "Konsentrasi", cell: (r) => r.konsentrasi_keahlian ?? "—" },
-          { header: "Wali Kelas", cell: (r) => <WaliKelasPicker row={r} guruList={guruList} /> },
-          { header: "NIP", cell: (r) => <span className="tabular-nums text-sm">{r.wali_kelas_nip ?? "—"}</span> },
-          { header: "Tipe", cell: (r) => r.is_khusus ? <Badge variant="secondary">Khusus</Badge> : <Badge variant="outline">Reguler</Badge> },
+          { header: "Nama Rombel", cell: (r) => <span className="font-medium">{r.name}</span>, sort: (a, b) => String(a.name ?? "").localeCompare(String(b.name ?? "")) },
+          { header: "Tingkat", cell: (r) => r.tingkat ?? "—", sort: (a, b) => {
+            const roman: Record<string, number> = { VII: 7, VIII: 8, IX: 9, X: 10, XI: 11, XII: 12 };
+            const ta = roman[String(a.tingkat).toUpperCase()] ?? 0;
+            const tb = roman[String(b.tingkat).toUpperCase()] ?? 0;
+            return ta - tb || String(a.name ?? "").localeCompare(String(b.name ?? ""));
+          }},
+          { header: "Konsentrasi", cell: (r) => r.konsentrasi_keahlian ?? "—", sort: (a, b) => String(a.konsentrasi_keahlian ?? "").localeCompare(String(b.konsentrasi_keahlian ?? "")) || String(a.name ?? "").localeCompare(String(b.name ?? "")) },
+          { header: "Wali Kelas", cell: (r) => <WaliKelasPicker row={r} guruList={guruList} />, sort: (a, b) => String(a.wali_kelas_name ?? "").localeCompare(String(b.wali_kelas_name ?? "")) || String(a.name ?? "").localeCompare(String(b.name ?? "")) },
+          { header: "Tipe", cell: (r) => r.is_khusus ? <Badge variant="secondary">Khusus</Badge> : <Badge variant="outline">Reguler</Badge>, sort: (a, b) => Number(!!a.is_khusus) - Number(!!b.is_khusus) || String(a.name ?? "").localeCompare(String(b.name ?? "")) },
           { header: "Jumlah Murid", cell: (r) => {
             const c = countsByRombel.get(r.id);
             if (!c) return <span className="text-muted-foreground">0</span>;
@@ -345,6 +349,10 @@ export function RombelPage({ khusus = false }: { khusus?: boolean }) {
                 {c.belum > 0 && <span className="text-xs text-muted-foreground tabular-nums">?: {c.belum}</span>}
               </div>
             );
+          }, sort: (a, b) => {
+            const ca = countsByRombel.get(a.id)?.total ?? 0;
+            const cb = countsByRombel.get(b.id)?.total ?? 0;
+            return ca - cb || String(a.name ?? "").localeCompare(String(b.name ?? ""));
           }},
           { header: "Anggota", cell: (r) => (
             <Button size="sm" variant="outline" onClick={() => setMembersOf(r)}>
