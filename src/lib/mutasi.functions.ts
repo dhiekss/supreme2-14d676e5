@@ -284,12 +284,20 @@ export const deleteTransferOut = createServerFn({ method: "POST" })
 export const listStudentsForMutasi = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("students")
-      .select("id, name, nis, rombel_id")
-      .order("name");
-    if (error) throw new Error(error.message);
-    return data ?? [];
+    const pageSize = 1000;
+    const out: any[] = [];
+    for (let from = 0; ; from += pageSize) {
+      const { data, error } = await context.supabase
+        .from("students")
+        .select("id, name, nis, rombel_id")
+        .order("name")
+        .range(from, from + pageSize - 1);
+      if (error) throw new Error(error.message);
+      const rows = data ?? [];
+      out.push(...rows);
+      if (rows.length < pageSize) break;
+    }
+    return out;
   });
 
 export const listRombelForMutasi = createServerFn({ method: "GET" })
