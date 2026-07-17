@@ -261,15 +261,18 @@ function statusBadge(s: string) {
   return <Badge variant="secondary">{s}</Badge>;
 }
 
-type SortKey = "jam" | "rombel" | "guru" | "mapel" | "status";
+type SortKey = "tanggal" | "jam" | "rombel" | "guru" | "mapel" | "status";
 
 function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelOpts: any[] }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [statusF, setStatusF] = useState<string>("all");
   const [rombelF, setRombelF] = useState<string>("all");
-  const [sortKey, setSortKey] = useState<SortKey>("jam");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [sortKey, setSortKey] = useState<SortKey>("tanggal");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
   const [detail, setDetail] = useState<any | null>(null);
 
   const rows = useMemo(() => {
@@ -277,6 +280,8 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
     let out = sessions.filter((x) => {
       if (statusF !== "all" && x.guru_status !== statusF) return false;
       if (rombelF !== "all" && x.rombel_id !== rombelF) return false;
+      if (dateFrom && (x.tanggal ?? "") < dateFrom) return false;
+      if (dateTo && (x.tanggal ?? "") > dateTo) return false;
       if (!s) return true;
       return (
         (x.guru_nama ?? "").toLowerCase().includes(s) ||
@@ -287,7 +292,10 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
     const cmp = (a: any, b: any) => {
       let va: any = "";
       let vb: any = "";
-      if (sortKey === "jam") {
+      if (sortKey === "tanggal") {
+        va = `${a.tanggal ?? ""}-${String(a.jam_list[0] ?? 0).padStart(2, "0")}`;
+        vb = `${b.tanggal ?? ""}-${String(b.jam_list[0] ?? 0).padStart(2, "0")}`;
+      } else if (sortKey === "jam") {
         va = a.jam_list[0] ?? 0;
         vb = b.jam_list[0] ?? 0;
       } else if (sortKey === "rombel") { va = a.rombel_name; vb = b.rombel_name; }
@@ -298,7 +306,8 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
       return sortDir === "asc" ? r : -r;
     };
     return [...out].sort(cmp);
-  }, [sessions, search, statusF, rombelF, sortKey, sortDir]);
+  }, [sessions, search, statusF, rombelF, dateFrom, dateTo, sortKey, sortDir]);
+
 
   const toggleSort = (k: SortKey) => {
     if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -350,13 +359,28 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
                 {rombelOpts.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
               </SelectContent>
             </Select>
+            <div className="flex items-center gap-1">
+              <label className="text-xs text-muted-foreground whitespace-nowrap">Dari</label>
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40" />
+            </div>
+            <div className="flex items-center gap-1">
+              <label className="text-xs text-muted-foreground whitespace-nowrap">Sampai</label>
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-40" />
+            </div>
+            {(dateFrom || dateTo) && (
+              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); }}>Reset</Button>
+            )}
+
+
           </div>
 
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <SortHead label="Tanggal" active={sortKey === "tanggal"} dir={sortDir} onClick={() => toggleSort("tanggal")} />
                   <SortHead label="Jam" active={sortKey === "jam"} dir={sortDir} onClick={() => toggleSort("jam")} />
+
                   <SortHead label="Rombel" active={sortKey === "rombel"} dir={sortDir} onClick={() => toggleSort("rombel")} />
                   <SortHead label="Guru" active={sortKey === "guru"} dir={sortDir} onClick={() => toggleSort("guru")} />
                   <SortHead label="Mapel" active={sortKey === "mapel"} dir={sortDir} onClick={() => toggleSort("mapel")} />
@@ -373,11 +397,13 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
               </TableHeader>
               <TableBody>
                 {rows.length === 0 && (
-                  <TableRow><TableCell colSpan={13} className="text-center text-muted-foreground">Tidak ada data.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={14} className="text-center text-muted-foreground">Tidak ada data.</TableCell></TableRow>
                 )}
                 {rows.map((r) => (
                   <TableRow key={r.key}>
+                    <TableCell className="whitespace-nowrap">{r.tanggal}</TableCell>
                     <TableCell>{r.jam_label}</TableCell>
+
                     <TableCell>{r.rombel_name}</TableCell>
                     <TableCell className="max-w-[180px] truncate" title={r.guru_nama}>{r.guru_nama}</TableCell>
                     <TableCell className="max-w-[180px] truncate" title={r.mapel_nama}>{r.mapel_nama}</TableCell>
