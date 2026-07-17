@@ -361,7 +361,15 @@ function DaftarSiswaTab({ data }: { data: any }) {
 }
 
 /* ------------------ Kehadiran ------------------ */
-function KehadiranTab({ data }: { data: any }) {
+function KehadiranTab({
+  data,
+  range,
+  setRange,
+}: {
+  data: any;
+  range: { startDate: string; endDate: string; label: string } | null;
+  setRange: (r: { startDate: string; endDate: string; label: string } | null) => void;
+}) {
   const dist = data.distribusi;
   const pieData = [
     { name: "Hadir", value: dist.H, color: "#10b981" },
@@ -370,7 +378,26 @@ function KehadiranTab({ data }: { data: any }) {
     { name: "Alfa", value: dist.A, color: "#ef4444" },
     { name: "PKL", value: dist.P, color: "#8b5cf6" },
   ].filter((d) => d.value > 0);
-  const label = `${BULAN[data.periode.bulan - 1]} ${data.periode.tahun}`;
+  const defaultLabel = `${BULAN[data.periode.bulan - 1]} ${data.periode.tahun}`;
+  const label = range?.label ?? defaultLabel;
+  const semester = data.semester as
+    | { nama: string | null; tanggal_mulai: string | null; tanggal_selesai: string | null; tahun_ajaran: { nama: string | null } | null }
+    | null;
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <Card className="lg:col-span-2">
+        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+          <CardTitle className="text-base">Rekap Kehadiran</CardTitle>
+          <RangePicker
+            label={label}
+            range={range}
+            setRange={setRange}
+            defaultBulan={data.periode.bulan}
+            defaultTahun={data.periode.tahun}
+            semester={semester}
+          />
+        </CardHeader>
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <Card className="lg:col-span-2">
