@@ -12,15 +12,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { withDateSuffix } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   FileText, CalendarClock, Users, FileCheck2, FileX2, CheckCircle2, TrendingUp,
   Hourglass, AlertTriangle, FileClock, Pencil, ChevronLeft, ChevronRight,
-  ArrowUpDown, ExternalLink, Download, Upload, Loader2, X,
+  ArrowUpDown, ExternalLink, Download, Upload, Loader2, X, RotateCcw, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
   getAdministrasiRefs, listAdministrasi, upsertAdministrasi, getBerkasSignedUrl,
+  resetAdministrasi,
 } from "@/lib/administrasi-pembelajaran.functions";
 import { supabase } from "@/integrations/supabase/client";
 
