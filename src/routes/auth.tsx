@@ -27,12 +27,11 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { data: d = DEFAULT_DISPLAY } = useQuery({
+  const { data: d = getCachedDisplaySettings() } = useQuery({
     queryKey: ["display-settings"],
     queryFn: fetchDisplaySettings,
-    placeholderData: DEFAULT_DISPLAY,
-    staleTime: 0,
-    refetchOnMount: "always",
+    initialData: getCachedDisplaySettings,
+    staleTime: 5 * 60_000,
   });
 
   useEffect(() => {
