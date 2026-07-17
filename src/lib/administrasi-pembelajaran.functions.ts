@@ -72,7 +72,7 @@ export const getAdministrasiRefs = createServerFn({ method: "GET" })
           s.from("guru").select("id, nama, nip").order("nama"),
           s.from("app_settings").select("value").eq("key", SETTING_DEADLINE).maybeSingle(),
         ]);
-        return { rombel: [], mapel: mapel ?? [], guru: guru ?? [], deadline: (setting as any)?.value ?? "" };
+        return { rombel: [], mapel: mapel ?? [], guru: guru ?? [], deadline: (setting as any)?.value ?? "", is_admin: privileged };
       }
       rombelQ = rombelQ.in("id", rombelIds);
     }
@@ -87,6 +87,7 @@ export const getAdministrasiRefs = createServerFn({ method: "GET" })
       mapel: mapel ?? [],
       guru: guru ?? [],
       deadline: (setting as any)?.value ?? "",
+      is_admin: privileged,
     };
   });
 
