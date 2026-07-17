@@ -309,11 +309,12 @@ function DaftarSiswaTab({ data }: { data: any }) {
     <Card>
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pb-2">
         <CardTitle className="text-base">Daftar Murid</CardTitle>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
+        <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
+          <div className="relative flex-1 min-w-[10rem] md:flex-none">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama/NIS…" className="pl-9 h-9 w-56" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama/NIS…" className="pl-9 h-9 w-full md:w-56" />
           </div>
+
           <Select value={gender} onValueChange={setGender}>
             <SelectTrigger className="h-9 w-28"><SelectValue /></SelectTrigger>
             <SelectContent>
