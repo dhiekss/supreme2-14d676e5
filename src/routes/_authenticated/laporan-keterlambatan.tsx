@@ -475,7 +475,7 @@ function LaporanKeterlambatanPage() {
 
       {/* Detail dialog */}
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Riwayat Keterlambatan</DialogTitle>
           </DialogHeader>
