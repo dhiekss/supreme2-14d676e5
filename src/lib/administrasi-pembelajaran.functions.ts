@@ -30,24 +30,57 @@ function fillCount(row: any): number {
 export const getAdministrasiRefs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const allowed = await getAllowedRombelIds(context.supabase, context.userId);
-    let rombelQ = context.supabase.from("rombel").select("id, name").order("name");
-    if (allowed !== null) {
-      if (allowed.length === 0) {
+    const s = context.supabase;
+    const [{ data: isAdmin }, { data: isSuper }] = await Promise.all([
+      s.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+      s.rpc("has_role", { _user_id: context.userId, _role: "superadmin" }),
+    ]);
+    const privileged = Boolean(isAdmin) || Boolean(isSuper);
+
+    // Determine own guru row for non-privileged users
+    let ownGuruId: string | null = null;
+    if (!privileged) {
+      const { data: prof } = await s.from("profiles").select("nip").eq("id", context.userId).maybeSingle();
+      const nip = (prof as any)?.nip?.trim();
+      if (nip) {
+        const { data: g } = await s.from("guru").select("id").eq("nip", nip).maybeSingle();
+        ownGuruId = (g as any)?.id ?? null;
+      }
+    }
+
+    // Restrict rombel list: privileged sees all; guru sees only rombels they teach;
+    // non-privileged non-guru falls back to Akses Rombel.
+    let rombelIds: string[] | null = null;
+    if (!privileged) {
+      if (ownGuruId) {
+        const { data: rmpRows } = await s
+          .from("rombel_mata_pelajaran")
+          .select("rombel_id")
+          .eq("guru_id", ownGuruId)
+          .is("deleted_at", null);
+        rombelIds = Array.from(new Set((rmpRows ?? []).map((r: any) => r.rombel_id).filter(Boolean))) as string[];
+      } else {
+        rombelIds = await getAllowedRombelIds(s, context.userId);
+      }
+    }
+
+    let rombelQ = s.from("rombel").select("id, name").order("name");
+    if (rombelIds !== null) {
+      if (rombelIds.length === 0) {
         const [{ data: mapel }, { data: guru }, { data: setting }] = await Promise.all([
-          context.supabase.from("mata_pelajaran").select("id, nama").order("nama"),
-          context.supabase.from("guru").select("id, nama, nip").order("nama"),
-          context.supabase.from("app_settings").select("value").eq("key", SETTING_DEADLINE).maybeSingle(),
+          s.from("mata_pelajaran").select("id, nama").order("nama"),
+          s.from("guru").select("id, nama, nip").order("nama"),
+          s.from("app_settings").select("value").eq("key", SETTING_DEADLINE).maybeSingle(),
         ]);
         return { rombel: [], mapel: mapel ?? [], guru: guru ?? [], deadline: (setting as any)?.value ?? "" };
       }
-      rombelQ = rombelQ.in("id", allowed);
+      rombelQ = rombelQ.in("id", rombelIds);
     }
     const [{ data: rombel }, { data: mapel }, { data: guru }, { data: setting }] = await Promise.all([
       rombelQ,
-      context.supabase.from("mata_pelajaran").select("id, nama").order("nama"),
-      context.supabase.from("guru").select("id, nama, nip").order("nama"),
-      context.supabase.from("app_settings").select("value").eq("key", SETTING_DEADLINE).maybeSingle(),
+      s.from("mata_pelajaran").select("id, nama").order("nama"),
+      s.from("guru").select("id, nama, nip").order("nama"),
+      s.from("app_settings").select("value").eq("key", SETTING_DEADLINE).maybeSingle(),
     ]);
     return {
       rombel: rombel ?? [],
