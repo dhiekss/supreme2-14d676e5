@@ -259,3 +259,315 @@ function statusBadge(s: string) {
   if (s === "tidak_masuk_tanpa_tugas") return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Tidak Masuk</Badge>;
   return <Badge variant="secondary">{s}</Badge>;
 }
+
+type SortKey = "jam" | "rombel" | "guru" | "mapel" | "status";
+
+function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelOpts: any[] }) {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState("");
+  const [statusF, setStatusF] = useState<string>("all");
+  const [rombelF, setRombelF] = useState<string>("all");
+  const [sortKey, setSortKey] = useState<SortKey>("jam");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [detail, setDetail] = useState<any | null>(null);
+
+  const rows = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    let out = sessions.filter((x) => {
+      if (statusF !== "all" && x.guru_status !== statusF) return false;
+      if (rombelF !== "all" && x.rombel_id !== rombelF) return false;
+      if (!s) return true;
+      return (
+        (x.guru_nama ?? "").toLowerCase().includes(s) ||
+        (x.rombel_name ?? "").toLowerCase().includes(s) ||
+        (x.mapel_nama ?? "").toLowerCase().includes(s)
+      );
+    });
+    const cmp = (a: any, b: any) => {
+      let va: any = "";
+      let vb: any = "";
+      if (sortKey === "jam") {
+        va = a.jam_list[0] ?? 0;
+        vb = b.jam_list[0] ?? 0;
+      } else if (sortKey === "rombel") { va = a.rombel_name; vb = b.rombel_name; }
+      else if (sortKey === "guru") { va = a.guru_nama; vb = b.guru_nama; }
+      else if (sortKey === "mapel") { va = a.mapel_nama; vb = b.mapel_nama; }
+      else { va = a.guru_status; vb = b.guru_status; }
+      const r = typeof va === "number" && typeof vb === "number" ? va - vb : String(va).localeCompare(String(vb));
+      return sortDir === "asc" ? r : -r;
+    };
+    return [...out].sort(cmp);
+  }, [sessions, search, statusF, rombelF, sortKey, sortDir]);
+
+  const toggleSort = (k: SortKey) => {
+    if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(k); setSortDir("asc"); }
+  };
+
+  const exportExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(rows.map((r) => ({
+      Tanggal: r.tanggal, Jam: r.jam_label, Rombel: r.rombel_name, Guru: r.guru_nama,
+      Mapel: r.mapel_nama, Status: r.guru_status, Jml: r.jml,
+      H: r.hadir, S: r.sakit, I: r.izin, D: r.dispensasi, B: r.bolos, A: r.alfa,
+    })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Tabel Kehadiran");
+    XLSX.writeFile(wb, `tabel-kehadiran-guru.xlsx`);
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between gap-2">
+          <div>
+            <CardTitle className="flex items-center gap-2"><TableIcon className="h-5 w-5" />Tabel Kehadiran Guru</CardTitle>
+            <div className="text-sm text-muted-foreground mt-1">Detail kehadiran guru per sesi pembelajaran</div>
+          </div>
+          <Button variant="outline" onClick={exportExcel}>
+            <Download className="h-4 w-4 mr-1" /> Export Excel
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap gap-2 items-center">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari guru, rombel, atau mapel..." className="pl-9" />
+            </div>
+            <Select value={statusF} onValueChange={setStatusF}>
+              <SelectTrigger className="w-44"><SelectValue placeholder="Semua Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Status</SelectItem>
+                <SelectItem value="masuk">Masuk</SelectItem>
+                <SelectItem value="tidak_masuk_dengan_tugas">Tidak + Tugas</SelectItem>
+                <SelectItem value="tidak_masuk_tanpa_tugas">Tidak Masuk</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={rombelF} onValueChange={setRombelF}>
+              <SelectTrigger className="w-44"><SelectValue placeholder="Semua Rombel" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Rombel</SelectItem>
+                {rombelOpts.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <SortHead label="Jam" active={sortKey === "jam"} dir={sortDir} onClick={() => toggleSort("jam")} />
+                  <SortHead label="Rombel" active={sortKey === "rombel"} dir={sortDir} onClick={() => toggleSort("rombel")} />
+                  <SortHead label="Guru" active={sortKey === "guru"} dir={sortDir} onClick={() => toggleSort("guru")} />
+                  <SortHead label="Mapel" active={sortKey === "mapel"} dir={sortDir} onClick={() => toggleSort("mapel")} />
+                  <SortHead label="Status" active={sortKey === "status"} dir={sortDir} onClick={() => toggleSort("status")} />
+                  <TableHead>Jml</TableHead>
+                  <TableHead className="text-green-600">H</TableHead>
+                  <TableHead className="text-yellow-500">S</TableHead>
+                  <TableHead className="text-blue-600">I</TableHead>
+                  <TableHead className="text-purple-600">D</TableHead>
+                  <TableHead className="text-orange-600">B</TableHead>
+                  <TableHead className="text-red-600">A</TableHead>
+                  <TableHead>Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.length === 0 && (
+                  <TableRow><TableCell colSpan={13} className="text-center text-muted-foreground">Tidak ada data.</TableCell></TableRow>
+                )}
+                {rows.map((r) => (
+                  <TableRow key={r.key}>
+                    <TableCell>{r.jam_label}</TableCell>
+                    <TableCell>{r.rombel_name}</TableCell>
+                    <TableCell className="max-w-[180px] truncate" title={r.guru_nama}>{r.guru_nama}</TableCell>
+                    <TableCell className="max-w-[180px] truncate" title={r.mapel_nama}>{r.mapel_nama}</TableCell>
+                    <TableCell>{statusBadge(r.guru_status)}</TableCell>
+                    <TableCell><Badge variant="outline">{r.jml}</Badge></TableCell>
+                    <TableCell><TallyPill n={r.hadir} color="bg-green-500" /></TableCell>
+                    <TableCell><TallyPill n={r.sakit} color="bg-yellow-500" /></TableCell>
+                    <TableCell><TallyPill n={r.izin} color="bg-blue-500" /></TableCell>
+                    <TableCell><TallyPill n={r.dispensasi} color="bg-purple-500" /></TableCell>
+                    <TableCell><TallyPill n={r.bolos} color="bg-orange-500" /></TableCell>
+                    <TableCell><TallyPill n={r.alfa} color="bg-red-500" /></TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title="Edit di Agenda Guru"
+                          onClick={() => navigate({ to: "/pembelajaran/agenda-guru" })}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title="Lihat detail isian"
+                          onClick={() => setDetail(r)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <DetailDialog session={detail} onClose={() => setDetail(null)} />
+    </>
+  );
+}
+
+function SortHead({ label, active, dir, onClick }: { label: string; active: boolean; dir: "asc" | "desc"; onClick: () => void }) {
+  return (
+    <TableHead>
+      <button className="flex items-center gap-1 hover:text-foreground" onClick={onClick}>
+        {label}
+        <ArrowUpDown className={`h-3 w-3 ${active ? "opacity-100" : "opacity-40"} ${active && dir === "desc" ? "rotate-180" : ""}`} />
+      </button>
+    </TableHead>
+  );
+}
+
+function TallyPill({ n, color }: { n: number; color: string }) {
+  return (
+    <span className={`inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-full text-white text-xs font-semibold ${color}`}>
+      {n}
+    </span>
+  );
+}
+
+function DetailDialog({ session, onClose }: { session: any | null; onClose: () => void }) {
+  const getDetail = useServerFn(getAgendaDetail);
+  const open = !!session;
+  const dQ = useQuery({
+    queryKey: ["agenda-detail-rekap", session?.key],
+    queryFn: () =>
+      getDetail({
+        data: {
+          guruId: session.guru_id,
+          tanggal: session.tanggal,
+          rombelId: session.rombel_id,
+          mataPelajaranId: session.mapel_id,
+          jamList: session.jam_list,
+        },
+      }),
+    enabled: open && !!session?.guru_id && !!session?.rombel_id && !!session?.mapel_id,
+  });
+
+  const kehadiranMap: Record<string, string> = dQ.data?.kehadiran ?? {};
+  const students: any[] = dQ.data?.students ?? [];
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Detail Isian Agenda KBM</DialogTitle>
+        </DialogHeader>
+        {session && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+              <Info label="Tanggal" value={session.tanggal} />
+              <Info label="Jam ke" value={session.jam_label} />
+              <Info label="Rombel" value={session.rombel_name} />
+              <Info label="Mapel" value={session.mapel_nama} />
+              <Info label="Guru" value={session.guru_nama} />
+              <Info label="NIP" value={session.guru_nip || "—"} />
+              <Info label="Status" value={<>{statusBadge(session.guru_status)}</>} />
+              <Info label="Jml Murid" value={String(session.jml)} />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <FieldBlock label="Tujuan Pembelajaran">{session.tp_manual || <span className="text-muted-foreground">—</span>}</FieldBlock>
+              <FieldBlock label="Materi / Kegiatan">{session.materi_detail || <span className="text-muted-foreground">—</span>}</FieldBlock>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <FieldBlock label="Foto Dokumentasi">
+                {session.foto_dokumentasi ? (
+                  <img src={session.foto_dokumentasi} alt="Foto" className="max-h-48 rounded border" />
+                ) : (
+                  <span className="text-muted-foreground text-sm">Belum diunggah</span>
+                )}
+              </FieldBlock>
+              <FieldBlock label="TTD Guru">
+                {session.ttd_guru ? (
+                  <img src={session.ttd_guru} alt="TTD" className="max-h-32 rounded border bg-white" />
+                ) : (
+                  <span className="text-muted-foreground text-sm">Belum ditandatangani</span>
+                )}
+              </FieldBlock>
+            </div>
+
+            <div>
+              <div className="font-semibold text-sm mb-2">Kehadiran Murid ({students.length})</div>
+              <div className="border rounded-md overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>NIS</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dQ.isLoading && (
+                      <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">Memuat…</TableCell></TableRow>
+                    )}
+                    {!dQ.isLoading && students.length === 0 && (
+                      <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">Tidak ada data murid.</TableCell></TableRow>
+                    )}
+                    {students.map((s: any, i: number) => (
+                      <TableRow key={s.id}>
+                        <TableCell>{i + 1}</TableCell>
+                        <TableCell>{s.name}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{s.nis}</TableCell>
+                        <TableCell>{kehadiranLabel(kehadiranMap[s.id])}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Info({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="font-medium">{value}</div>
+    </div>
+  );
+}
+
+function FieldBlock({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="border rounded-md p-3">
+      <div className="text-xs font-semibold text-muted-foreground mb-1">{label}</div>
+      <div className="text-sm whitespace-pre-wrap">{children}</div>
+    </div>
+  );
+}
+
+function kehadiranLabel(v?: string) {
+  if (!v) return <span className="text-muted-foreground text-xs">—</span>;
+  const map: Record<string, { label: string; cls: string }> = {
+    hadir: { label: "Hadir", cls: "bg-green-100 text-green-800" },
+    sakit: { label: "Sakit", cls: "bg-yellow-100 text-yellow-800" },
+    izin: { label: "Izin", cls: "bg-blue-100 text-blue-800" },
+    dispensasi: { label: "Dispensasi", cls: "bg-purple-100 text-purple-800" },
+    bolos_kelas: { label: "Bolos", cls: "bg-orange-100 text-orange-800" },
+    alfa: { label: "Alfa", cls: "bg-red-100 text-red-800" },
+  };
+  const m = map[v] ?? { label: v, cls: "bg-muted" };
+  return <Badge className={`${m.cls} hover:${m.cls}`}>{m.label}</Badge>;
+}
