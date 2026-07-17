@@ -72,7 +72,7 @@ export const getAdministrasiRefs = createServerFn({ method: "GET" })
           s.from("guru").select("id, nama, nip").order("nama"),
           s.from("app_settings").select("value").eq("key", SETTING_DEADLINE).maybeSingle(),
         ]);
-        return { rombel: [], mapel: mapel ?? [], guru: guru ?? [], deadline: (setting as any)?.value ?? "" };
+        return { rombel: [], mapel: mapel ?? [], guru: guru ?? [], deadline: (setting as any)?.value ?? "", is_admin: privileged };
       }
       rombelQ = rombelQ.in("id", rombelIds);
     }
@@ -87,6 +87,7 @@ export const getAdministrasiRefs = createServerFn({ method: "GET" })
       mapel: mapel ?? [],
       guru: guru ?? [],
       deadline: (setting as any)?.value ?? "",
+      is_admin: privileged,
     };
   });
 
@@ -309,4 +310,56 @@ export const getBerkasSignedUrl = createServerFn({ method: "POST" })
       .createSignedUrl(data.path, 60 * 10);
     if (error) throw new Error(error.message);
     return { url: signed?.signedUrl ?? "" };
+  });
+
+/**
+ * Reset berkas for one or more rombel_mata_pelajaran assignments.
+ * Removes uploaded files from storage and deletes the berkas_pembelajaran rows,
+ * so kelengkapan resets to 0%. Admin/superadmin only.
+ */
+export const resetAdministrasi = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    rombel_mata_pelajaran_ids: z.array(z.string().uuid()).min(1),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const s = context.supabase;
+    const [{ data: isAdmin }, { data: isSuper }] = await Promise.all([
+      s.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+      s.rpc("has_role", { _user_id: context.userId, _role: "superadmin" }),
+    ]);
+    if (!isAdmin && !isSuper) {
+      throw new Error("Hanya admin yang dapat mereset isian administrasi pembelajaran");
+    }
+
+    const ids = data.rombel_mata_pelajaran_ids;
+    const { data: rows, error: fetchErr } = await s
+      .from("berkas_pembelajaran")
+      .select("id, rombel_mata_pelajaran_id, analisis_cp_atp_link, prota_link, promes_link, rpa_link, modul_ajar_link")
+      .in("rombel_mata_pelajaran_id", ids);
+    if (fetchErr) throw new Error(fetchErr.message);
+
+    const paths: string[] = [];
+    for (const r of rows ?? []) {
+      for (const k of DOC_FIELDS) {
+        const v = (r as any)[k];
+        if (typeof v === "string" && v.startsWith("storage://")) {
+          paths.push(v.replace(/^storage:\/\//, ""));
+        }
+      }
+    }
+    if (paths.length > 0) {
+      await s.storage.from("berkas-pembelajaran").remove(paths);
+    }
+
+    let deleted = 0;
+    if ((rows ?? []).length > 0) {
+      const { error: delErr, count } = await s
+        .from("berkas_pembelajaran")
+        .delete({ count: "exact" })
+        .in("rombel_mata_pelajaran_id", ids);
+      if (delErr) throw new Error(delErr.message);
+      deleted = count ?? 0;
+    }
+    return { ok: true, reset: deleted, files_removed: paths.length };
   });

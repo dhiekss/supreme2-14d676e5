@@ -12,15 +12,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { withDateSuffix } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   FileText, CalendarClock, Users, FileCheck2, FileX2, CheckCircle2, TrendingUp,
   Hourglass, AlertTriangle, FileClock, Pencil, ChevronLeft, ChevronRight,
-  ArrowUpDown, ExternalLink, Download, Upload, Loader2, X,
+  ArrowUpDown, ExternalLink, Download, Upload, Loader2, X, RotateCcw, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
   getAdministrasiRefs, listAdministrasi, upsertAdministrasi, getBerkasSignedUrl,
+  resetAdministrasi,
 } from "@/lib/administrasi-pembelajaran.functions";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -62,6 +68,7 @@ function AdministrasiPage() {
   const refsFn = useServerFn(getAdministrasiRefs);
   const listFn = useServerFn(listAdministrasi);
   const upsertFn = useServerFn(upsertAdministrasi);
+  const resetFn = useServerFn(resetAdministrasi);
 
   const [rombelId, setRombelId] = useState("all");
   const [mapelId, setMapelId] = useState("all");
@@ -71,6 +78,13 @@ function AdministrasiPage() {
   const [pageSize, setPageSize] = useState(20);
   const [sort, setSort] = useState<SortKey>("rombel_asc");
   const [editRow, setEditRow] = useState<any | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirmReset, setConfirmReset] = useState<
+    | { kind: "single"; ids: string[]; label: string }
+    | { kind: "bulk"; ids: string[] }
+    | { kind: "guru"; ids: string[]; guruName: string }
+    | null
+  >(null);
 
   const { data: refs } = useQuery({
     queryKey: ["administrasi-refs"],
@@ -92,6 +106,18 @@ function AdministrasiPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const resetM = useMutation({
+    mutationFn: (ids: string[]) => resetFn({ data: { rombel_mata_pelajaran_ids: ids } }),
+    onSuccess: (r: any) => {
+      toast.success(`Berhasil mereset ${r?.reset ?? 0} data (${r?.files_removed ?? 0} berkas dihapus)`);
+      setSelectedIds(new Set());
+      setConfirmReset(null);
+      qc.invalidateQueries({ queryKey: ["administrasi"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const isAdmin = Boolean((refs as any)?.is_admin);
   const total = list?.total ?? 0;
   const stats = list?.stats;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -209,9 +235,26 @@ function AdministrasiPage() {
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <h2 className="font-semibold">Daftar Berkas Pembelajaran</h2>
-            <Button variant="outline" size="sm" onClick={exportExcel}>
-              <Download className="h-4 w-4 mr-2" />Export Excel
-            </Button>
+            <div className="flex items-center gap-2">
+              {isAdmin && guruId !== "all" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-rose-600 hover:text-rose-700 border-rose-200 hover:bg-rose-50"
+                  onClick={() => {
+                    const ids = (list?.rows ?? []).map((r: any) => r.id);
+                    if (ids.length === 0) { toast.info("Tidak ada data untuk direset"); return; }
+                    const g = (refs?.guru ?? []).find((x: any) => x.id === guruId);
+                    setConfirmReset({ kind: "guru", ids, guruName: g?.nama ?? "guru terpilih" });
+                  }}
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />Reset Guru Ini
+                </Button>
+              )}
+              <Button variant="outline" size="sm" onClick={exportExcel}>
+                <Download className="h-4 w-4 mr-2" />Export Excel
+              </Button>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -262,6 +305,24 @@ function AdministrasiPage() {
             </Select>
           </div>
 
+          {isAdmin && selectedIds.size > 0 && (
+            <div className="flex items-center justify-between gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2">
+              <div className="text-sm text-rose-800">
+                <span className="font-semibold">{selectedIds.size}</span> data terpilih
+              </div>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>Bersihkan</Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => setConfirmReset({ kind: "bulk", ids: Array.from(selectedIds) })}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />Reset Terpilih
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="text-xs text-muted-foreground">
             Menampilkan {(list?.rows ?? []).length === 0 ? 0 : (page - 1) * pageSize + 1}
             –{(page - 1) * pageSize + (list?.rows ?? []).length} dari {total} data
@@ -271,6 +332,23 @@ function AdministrasiPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40">
+                  {isAdmin && (
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={
+                          (list?.rows ?? []).length > 0 &&
+                          (list?.rows ?? []).every((r: any) => selectedIds.has(r.id))
+                        }
+                        onCheckedChange={(v) => {
+                          const next = new Set(selectedIds);
+                          const rows = list?.rows ?? [];
+                          if (v) rows.forEach((r: any) => next.add(r.id));
+                          else rows.forEach((r: any) => next.delete(r.id));
+                          setSelectedIds(next);
+                        }}
+                      />
+                    </TableHead>
+                  )}
                   <TableHead className="w-12">No</TableHead>
                   <TableHead>Rombel {sortIcon("rombel")}</TableHead>
                   <TableHead>Mata Pelajaran {sortIcon("mapel")}</TableHead>
@@ -286,13 +364,25 @@ function AdministrasiPage() {
               </TableHeader>
               <TableBody>
                 {isFetching && (list?.rows ?? []).length === 0 && (
-                  <TableRow><TableCell colSpan={13} className="text-center text-muted-foreground py-8">Memuat…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={isAdmin ? 14 : 13} className="text-center text-muted-foreground py-8">Memuat…</TableCell></TableRow>
                 )}
                 {!isFetching && (list?.rows ?? []).length === 0 && (
-                  <TableRow><TableCell colSpan={13} className="text-center text-muted-foreground py-8">Tidak ada data</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={isAdmin ? 14 : 13} className="text-center text-muted-foreground py-8">Tidak ada data</TableCell></TableRow>
                 )}
                 {(list?.rows ?? []).map((r: any, idx: number) => (
-                  <TableRow key={r.id}>
+                  <TableRow key={r.id} data-state={selectedIds.has(r.id) ? "selected" : undefined}>
+                    {isAdmin && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(r.id)}
+                          onCheckedChange={(v) => {
+                            const next = new Set(selectedIds);
+                            if (v) next.add(r.id); else next.delete(r.id);
+                            setSelectedIds(next);
+                          }}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="text-sm text-muted-foreground">{(page - 1) * pageSize + idx + 1}</TableCell>
                     <TableCell className="font-medium">{r.rombel_name}</TableCell>
                     <TableCell className="text-sm">{r.mapel_nama}</TableCell>
@@ -318,15 +408,33 @@ function AdministrasiPage() {
                       ) : <span className="text-muted-foreground">-</span>}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setEditRow(r)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setEditRow(r)} title="Edit">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        {isAdmin && r.kelengkapan > 0 && (
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                            title="Reset isian"
+                            onClick={() => setConfirmReset({
+                              kind: "single",
+                              ids: [r.id],
+                              label: `${r.rombel_name} • ${r.mapel_nama} • ${r.guru_nama}`,
+                            })}
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
+
 
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="text-xs text-muted-foreground">Halaman {page} dari {totalPages}</div>
@@ -350,6 +458,50 @@ function AdministrasiPage() {
         onSubmit={(v) => upsertM.mutate(v)}
         loading={upsertM.isPending}
       />
+
+      <AlertDialog open={!!confirmReset} onOpenChange={(o) => { if (!o) setConfirmReset(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset Isian Administrasi Pembelajaran?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>
+                  Tindakan ini akan <span className="font-semibold text-rose-700">menghapus semua berkas yang diinput</span>
+                  {" "}(link maupun file terunggah) dan mereset kelengkapan menjadi <span className="font-semibold">0%</span>.
+                  Tindakan ini <span className="font-semibold">tidak dapat dibatalkan</span>.
+                </p>
+                {confirmReset?.kind === "single" && (
+                  <p className="rounded-md bg-muted p-2 text-xs">{confirmReset.label}</p>
+                )}
+                {confirmReset?.kind === "guru" && (
+                  <p className="rounded-md bg-muted p-2 text-xs">
+                    Semua isian milik <span className="font-semibold">{confirmReset.guruName}</span> yang tampil pada filter saat ini
+                    ({confirmReset.ids.length} data) akan direset.
+                  </p>
+                )}
+                {confirmReset?.kind === "bulk" && (
+                  <p className="rounded-md bg-muted p-2 text-xs">
+                    <span className="font-semibold">{confirmReset.ids.length}</span> data terpilih akan direset.
+                  </p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={resetM.isPending}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-rose-600 hover:bg-rose-700"
+              disabled={resetM.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirmReset) resetM.mutate(confirmReset.ids);
+              }}
+            >
+              {resetM.isPending ? "Mereset…" : "Ya, Reset"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
