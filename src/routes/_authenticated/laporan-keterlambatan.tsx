@@ -67,6 +67,8 @@ function LaporanKeterlambatanPage() {
   const [filterKonsentrasi, setFilterKonsentrasi] = useState<string>("all");
   const [filterRombel, setFilterRombel] = useState<string>("all");
   const [dateOpen, setDateOpen] = useState(false);
+  const isMobile = useIsMobile();
+
 
   const from = range?.from ? toISO(range.from) : "";
   const to = range?.to ? toISO(range.to) : from;
