@@ -83,9 +83,9 @@ function Page() {
             <p className="text-sm text-muted-foreground mt-1">Pilih kelas untuk menampilkan dashboard</p>
           )}
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:flex-wrap">
           <Select value={rombelId} onValueChange={setRombelId}>
-            <SelectTrigger className="w-56 h-10">
+            <SelectTrigger className="w-full sm:w-56 h-10">
               <SelectValue placeholder="Pilih Kelas" />
             </SelectTrigger>
             <SelectContent>
@@ -97,16 +97,17 @@ function Page() {
               ))}
             </SelectContent>
           </Select>
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="pl-9 h-10 w-52"
+              className="pl-9 h-10 w-full sm:w-52"
             />
           </div>
         </div>
+
       </div>
 
       {!rombelId ? (
