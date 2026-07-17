@@ -397,11 +397,13 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
               </TableHeader>
               <TableBody>
                 {rows.length === 0 && (
-                  <TableRow><TableCell colSpan={13} className="text-center text-muted-foreground">Tidak ada data.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={14} className="text-center text-muted-foreground">Tidak ada data.</TableCell></TableRow>
                 )}
                 {rows.map((r) => (
                   <TableRow key={r.key}>
+                    <TableCell className="whitespace-nowrap">{r.tanggal}</TableCell>
                     <TableCell>{r.jam_label}</TableCell>
+
                     <TableCell>{r.rombel_name}</TableCell>
                     <TableCell className="max-w-[180px] truncate" title={r.guru_nama}>{r.guru_nama}</TableCell>
                     <TableCell className="max-w-[180px] truncate" title={r.mapel_nama}>{r.mapel_nama}</TableCell>
