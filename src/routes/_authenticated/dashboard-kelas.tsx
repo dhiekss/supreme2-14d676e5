@@ -398,13 +398,6 @@ function KehadiranTab({
             semester={semester}
           />
         </CardHeader>
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <Card className="lg:col-span-2">
-        <CardHeader className="pb-2 flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Rekap Kehadiran</CardTitle>
-          <Badge variant="outline">{label}</Badge>
-        </CardHeader>
         <CardContent className="p-0">
           <div className="max-h-[560px] overflow-y-auto">
             <Table>
