@@ -87,13 +87,23 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
 
     const { data: agenda } = await supabase
       .from("kbm_agenda")
-      .select("id, jam_ke, rombel_id, mata_pelajaran_id, materi_detail, guru_status")
+      .select("id, jam_ke, rombel_id, mata_pelajaran_id, materi_detail, guru_status, tp_manual, foto_dokumentasi, ttd_guru")
       .eq("guru_id", data.guruId)
       .eq("tanggal", data.tanggal);
     const aMap = new Map<string, any>();
     (agenda ?? []).forEach((a: any) => {
       aMap.set(`${a.rombel_id}|${a.mata_pelajaran_id}|${a.jam_ke}`, a);
     });
+
+    const agendaIds = (agenda ?? []).map((a: any) => a.id);
+    const kehSet = new Set<string>();
+    if (agendaIds.length) {
+      const { data: keh } = await supabase
+        .from("kbm_agenda_kehadiran")
+        .select("kbm_agenda_id")
+        .in("kbm_agenda_id", agendaIds);
+      (keh ?? []).forEach((k: any) => kehSet.add(k.kbm_agenda_id));
+    }
 
     const slots = (jadwal ?? []).map((j: any) => ({
       jam_ke: Number(j.jam_ke ?? 0),
@@ -136,9 +146,20 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
       const existing = g.jam_list
         .map((j: number) => aMap.get(`${g.rombel_id}|${g.mata_pelajaran_id}|${j}`))
         .filter(Boolean);
+      const sudah = existing.length > 0;
+      const first = existing[0];
+      const hasKeh = existing.some((e: any) => kehSet.has(e.id));
+      const lengkap =
+        sudah &&
+        !!first?.tp_manual &&
+        !!first?.materi_detail &&
+        !!first?.foto_dokumentasi &&
+        !!first?.ttd_guru &&
+        hasKeh;
       return {
         ...g,
-        sudah_diisi: existing.length > 0,
+        sudah_diisi: sudah,
+        lengkap,
       };
     });
   });

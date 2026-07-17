@@ -173,9 +173,15 @@ function AgendaGuruPage() {
                       Jam ke-{slot.jam_ke_start}{slot.jam_ke_end !== slot.jam_ke_start ? ` – ${slot.jam_ke_end}` : ""}
                     </div>
                     {slot.sudah_diisi ? (
-                      <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
-                        <CheckCircle2 className="h-3 w-3 mr-1" /> Sudah Diisi
-                      </Badge>
+                      slot.lengkap ? (
+                        <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
+                          <CheckCircle2 className="h-3 w-3 mr-1" /> Sudah Lengkap
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100">
+                          Belum Lengkap
+                        </Badge>
+                      )
                     ) : (<Badge variant="outline">Belum Diisi</Badge>)}
                   </div>
                   {(slot.jam_mulai || slot.jam_selesai) && (
@@ -483,7 +489,7 @@ function AgendaDialog({
 
   return (
     <Dialog open={!!slot} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Isi Agenda KBM – {jamLabel}</DialogTitle>
           <DialogDescription>
@@ -492,12 +498,12 @@ function AgendaDialog({
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="grid grid-cols-5 w-full">
-            <TabsTrigger value="status">Status Guru</TabsTrigger>
-            <TabsTrigger value="hadir">Kehadiran</TabsTrigger>
-            <TabsTrigger value="tp">TP & Materi</TabsTrigger>
-            <TabsTrigger value="doc">Dokumentasi</TabsTrigger>
-            <TabsTrigger value="ttd">Tanda Tangan</TabsTrigger>
+          <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full h-auto gap-1 p-1">
+            <TabsTrigger value="status" className="text-xs sm:text-sm px-2 py-1.5 whitespace-normal leading-tight">Status Guru</TabsTrigger>
+            <TabsTrigger value="hadir" className="text-xs sm:text-sm px-2 py-1.5 whitespace-normal leading-tight">Kehadiran</TabsTrigger>
+            <TabsTrigger value="tp" className="text-xs sm:text-sm px-2 py-1.5 whitespace-normal leading-tight">TP & Materi</TabsTrigger>
+            <TabsTrigger value="doc" className="text-xs sm:text-sm px-2 py-1.5 whitespace-normal leading-tight">Dokumentasi</TabsTrigger>
+            <TabsTrigger value="ttd" className="text-xs sm:text-sm px-2 py-1.5 whitespace-normal leading-tight">Tanda Tangan</TabsTrigger>
           </TabsList>
 
           {/* STATUS GURU */}
@@ -559,31 +565,33 @@ function AgendaDialog({
                 ))}
               </div>
             </div>
-            <div className="rounded-lg border overflow-hidden">
-              <div className="grid grid-cols-[40px_1fr_100px_160px] gap-2 px-3 py-2 bg-muted/50 text-xs font-semibold">
-                <div>No</div><div>Nama Murid</div><div>NIS</div><div>Status KBM</div>
-              </div>
-              <div className="divide-y">
-                {(detailQ.data?.students ?? []).map((s: any, i: number) => (
-                  <div key={s.id} className="grid grid-cols-[40px_1fr_100px_160px] gap-2 px-3 py-2 items-center text-sm">
-                    <div>{i + 1}</div>
-                    <div className="uppercase">{s.name}</div>
-                    <div className="text-muted-foreground">{s.nis ?? "-"}</div>
-                    <Select value={kehadiran[s.id] ?? "hadir"} onValueChange={(v) => setKehadiran((k) => ({ ...k, [s.id]: v as KStatus }))}>
-                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {K_OPTS.map((o) => (
-                          <SelectItem key={o.v} value={o.v}>
-                            <span className="flex items-center gap-2"><span className={cn("w-2 h-2 rounded-full", o.dot)} />{o.label}</span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
-                {(!detailQ.data?.students || detailQ.data.students.length === 0) && (
-                  <div className="p-6 text-center text-sm text-muted-foreground">Tidak ada murid</div>
-                )}
+            <div className="rounded-lg border overflow-x-auto">
+              <div className="min-w-[520px]">
+                <div className="grid grid-cols-[40px_1fr_100px_160px] gap-2 px-3 py-2 bg-muted/50 text-xs font-semibold">
+                  <div>No</div><div>Nama Murid</div><div>NIS</div><div>Status KBM</div>
+                </div>
+                <div className="divide-y">
+                  {(detailQ.data?.students ?? []).map((s: any, i: number) => (
+                    <div key={s.id} className="grid grid-cols-[40px_1fr_100px_160px] gap-2 px-3 py-2 items-center text-sm">
+                      <div>{i + 1}</div>
+                      <div className="uppercase">{s.name}</div>
+                      <div className="text-muted-foreground">{s.nis ?? "-"}</div>
+                      <Select value={kehadiran[s.id] ?? "hadir"} onValueChange={(v) => setKehadiran((k) => ({ ...k, [s.id]: v as KStatus }))}>
+                        <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {K_OPTS.map((o) => (
+                            <SelectItem key={o.v} value={o.v}>
+                              <span className="flex items-center gap-2"><span className={cn("w-2 h-2 rounded-full", o.dot)} />{o.label}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                  {(!detailQ.data?.students || detailQ.data.students.length === 0) && (
+                    <div className="p-6 text-center text-sm text-muted-foreground">Tidak ada murid</div>
+                  )}
+                </div>
               </div>
             </div>
           </TabsContent>
