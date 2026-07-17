@@ -498,12 +498,12 @@ function AgendaDialog({
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="grid grid-cols-5 w-full">
-            <TabsTrigger value="status">Status Guru</TabsTrigger>
-            <TabsTrigger value="hadir">Kehadiran</TabsTrigger>
-            <TabsTrigger value="tp">TP & Materi</TabsTrigger>
-            <TabsTrigger value="doc">Dokumentasi</TabsTrigger>
-            <TabsTrigger value="ttd">Tanda Tangan</TabsTrigger>
+          <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full h-auto gap-1 p-1">
+            <TabsTrigger value="status" className="text-xs sm:text-sm px-2 py-1.5 whitespace-normal leading-tight">Status Guru</TabsTrigger>
+            <TabsTrigger value="hadir" className="text-xs sm:text-sm px-2 py-1.5 whitespace-normal leading-tight">Kehadiran</TabsTrigger>
+            <TabsTrigger value="tp" className="text-xs sm:text-sm px-2 py-1.5 whitespace-normal leading-tight">TP & Materi</TabsTrigger>
+            <TabsTrigger value="doc" className="text-xs sm:text-sm px-2 py-1.5 whitespace-normal leading-tight">Dokumentasi</TabsTrigger>
+            <TabsTrigger value="ttd" className="text-xs sm:text-sm px-2 py-1.5 whitespace-normal leading-tight">Tanda Tangan</TabsTrigger>
           </TabsList>
 
           {/* STATUS GURU */}
