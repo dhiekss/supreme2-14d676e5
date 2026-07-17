@@ -565,31 +565,33 @@ function AgendaDialog({
                 ))}
               </div>
             </div>
-            <div className="rounded-lg border overflow-hidden">
-              <div className="grid grid-cols-[40px_1fr_100px_160px] gap-2 px-3 py-2 bg-muted/50 text-xs font-semibold">
-                <div>No</div><div>Nama Murid</div><div>NIS</div><div>Status KBM</div>
-              </div>
-              <div className="divide-y">
-                {(detailQ.data?.students ?? []).map((s: any, i: number) => (
-                  <div key={s.id} className="grid grid-cols-[40px_1fr_100px_160px] gap-2 px-3 py-2 items-center text-sm">
-                    <div>{i + 1}</div>
-                    <div className="uppercase">{s.name}</div>
-                    <div className="text-muted-foreground">{s.nis ?? "-"}</div>
-                    <Select value={kehadiran[s.id] ?? "hadir"} onValueChange={(v) => setKehadiran((k) => ({ ...k, [s.id]: v as KStatus }))}>
-                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {K_OPTS.map((o) => (
-                          <SelectItem key={o.v} value={o.v}>
-                            <span className="flex items-center gap-2"><span className={cn("w-2 h-2 rounded-full", o.dot)} />{o.label}</span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
-                {(!detailQ.data?.students || detailQ.data.students.length === 0) && (
-                  <div className="p-6 text-center text-sm text-muted-foreground">Tidak ada murid</div>
-                )}
+            <div className="rounded-lg border overflow-x-auto">
+              <div className="min-w-[520px]">
+                <div className="grid grid-cols-[40px_1fr_100px_160px] gap-2 px-3 py-2 bg-muted/50 text-xs font-semibold">
+                  <div>No</div><div>Nama Murid</div><div>NIS</div><div>Status KBM</div>
+                </div>
+                <div className="divide-y">
+                  {(detailQ.data?.students ?? []).map((s: any, i: number) => (
+                    <div key={s.id} className="grid grid-cols-[40px_1fr_100px_160px] gap-2 px-3 py-2 items-center text-sm">
+                      <div>{i + 1}</div>
+                      <div className="uppercase">{s.name}</div>
+                      <div className="text-muted-foreground">{s.nis ?? "-"}</div>
+                      <Select value={kehadiran[s.id] ?? "hadir"} onValueChange={(v) => setKehadiran((k) => ({ ...k, [s.id]: v as KStatus }))}>
+                        <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {K_OPTS.map((o) => (
+                            <SelectItem key={o.v} value={o.v}>
+                              <span className="flex items-center gap-2"><span className={cn("w-2 h-2 rounded-full", o.dot)} />{o.label}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                  {(!detailQ.data?.students || detailQ.data.students.length === 0) && (
+                    <div className="p-6 text-center text-sm text-muted-foreground">Tidak ada murid</div>
+                  )}
+                </div>
               </div>
             </div>
           </TabsContent>
