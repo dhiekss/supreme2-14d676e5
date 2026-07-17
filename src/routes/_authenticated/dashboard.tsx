@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, GraduationCap, Building2, CheckCircle2, Layers, Clock, AlertTriangle, Library, BookOpen } from "lucide-react";
 import { getDashboardStats } from "@/lib/dashboard.functions";
@@ -7,19 +7,16 @@ import { getDashboardStats } from "@/lib/dashboard.functions";
 const statsQO = queryOptions({
   queryKey: ["dashboard-stats"],
   queryFn: () => getDashboardStats(),
-  staleTime: 60_000,
+  staleTime: 5 * 60_000,
 });
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Halaman Utama — SUPREME XPOES" }] }),
   loader: ({ context }) => {
-    // Fire prefetch but don't block navigation — useSuspenseQuery will suspend
-    // the component and show pendingComponent instead of a white screen.
+    // Non-blocking prefetch — page renders instantly with skeleton while data loads.
     void context.queryClient.prefetchQuery(statsQO);
     return null;
   },
-  pendingMs: 0,
-  pendingComponent: DashboardSkeleton,
   component: Dashboard,
   errorComponent: ({ error }) => <div className="text-destructive">Gagal memuat: {error.message}</div>,
   notFoundComponent: () => <div>Halaman tidak ditemukan.</div>,
@@ -47,7 +44,11 @@ const dateLong = new Date().toLocaleDateString("id-ID", {
 });
 
 function Dashboard() {
-  const { data } = useSuspenseQuery(statsQO);
+  const { data, isLoading, error } = useQuery(statsQO);
+
+  if (isLoading || !data) return <DashboardSkeleton />;
+  if (error) return <div className="text-destructive">Gagal memuat: {(error as Error).message}</div>;
+
   const persenStr = `${data.persenHadir}%`;
 
   return (
