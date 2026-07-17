@@ -79,7 +79,7 @@ function Page() {
       </Card>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard icon={<CalendarDays className="h-4 w-4" />} label="Jadwal Hari Ini" value={String(today.jamHariIni)} sub="jam pelajaran" />
         <StatCard icon={<BookOpen className="h-4 w-4" />} label="Realisasi KBM" value={`${stats.persenKBM}%`} sub={`${stats.jamRealisasi}/${stats.jamTerjadwal} jam bulan ini`} progress={stats.persenKBM} />
         <StatCard icon={<Users className="h-4 w-4" />} label="Kelas Diampu" value={String(stats.kelasDiampu)} sub="rombongan belajar" />
