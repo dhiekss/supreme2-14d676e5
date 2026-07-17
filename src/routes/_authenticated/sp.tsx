@@ -201,7 +201,7 @@ function BpBkPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Semua Rombel</SelectItem>
-            {bp.rombelList.map((r) => (
+            {bp.rombelList.map((r: any) => (
               <SelectItem key={r.id} value={r.id}>
                 {r.name}
               </SelectItem>
