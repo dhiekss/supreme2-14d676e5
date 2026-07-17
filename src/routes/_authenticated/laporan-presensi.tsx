@@ -349,7 +349,7 @@ function LaporanPresensi() {
       {/* Filters */}
       <Card>
         <CardContent className="pt-6 p-4 sm:p-6">
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
             <div className="space-y-2">
               <Label>Tanggal Awal</Label>
               <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
