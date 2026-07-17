@@ -314,7 +314,7 @@ function LaporanKeterlambatanPage() {
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="range"
-                    numberOfMonths={2}
+                    numberOfMonths={isMobile ? 1 : 2}
                     selected={range}
                     onSelect={(v) => { setRange(v); setPage(1); }}
                     defaultMonth={range?.from}
