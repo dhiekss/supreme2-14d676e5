@@ -62,7 +62,7 @@ export const getGuruDashboard = createServerFn({ method: "GET" })
     const hariName = HARI_MAP[today.getDay()];
     const todayIso = today.toISOString().slice(0, 10);
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
-    const thirtyAgo = new Date(today.getTime() - 30 * 86_400_000).toISOString().slice(0, 10);
+    
 
     const [mapel, jadwalAll, rmp, berkas, activeSem, waliRombel] = await Promise.all([
       guru.mata_pelajaran_id
@@ -71,7 +71,7 @@ export const getGuruDashboard = createServerFn({ method: "GET" })
       supabase.from("jadwal_pelajaran").select("*").eq("guru_id", data.guruId),
       supabase.from("rombel_mata_pelajaran").select("*").eq("guru_id", data.guruId).is("deleted_at", null),
       supabase.from("berkas_pembelajaran").select("*").eq("guru_id", data.guruId),
-      supabase.from("semester").select("id, nama").eq("is_active", true).maybeSingle(),
+      supabase.from("semester").select("id, nama, tanggal_mulai, tanggal_selesai, tahun_ajaran_id").eq("is_active", true).maybeSingle(),
       guru.nip
         ? supabase.from("rombel").select("id, name").eq("wali_kelas_nip", guru.nip)
         : Promise.resolve({ data: [] }),
@@ -192,14 +192,21 @@ export const getGuruDashboard = createServerFn({ method: "GET" })
     ).length;
     const berkasTotal = (rmp.data ?? []).length || berkasRows.length;
 
-    // Siswa alfa 30 hari terakhir untuk kelas yang diampu
+    // Batas semester aktif — alfa & terlambat hanya dihitung dalam rentang ini
+    const semStart = (activeSem.data as any)?.tanggal_mulai ?? null;
+    const semEnd = (activeSem.data as any)?.tanggal_selesai ?? null;
+
+    // Siswa alfa pada semester & tahun ajaran aktif untuk kelas yang diampu
     let alfaList: { student_id: string; name: string; rombel: string; count: number }[] = [];
-    if (kelasIds.length) {
-      const { data: recs } = await supabase
+    if (kelasIds.length && activeSem.data) {
+      let recQ = supabase
         .from("attendance_records")
-        .select("id, date, rombel_id")
+        .select("id, date, rombel_id, semester_id")
         .in("rombel_id", kelasIds)
-        .gte("date", thirtyAgo);
+        .eq("semester_id", (activeSem.data as any).id);
+      if (semStart) recQ = recQ.gte("date", semStart);
+      if (semEnd) recQ = recQ.lte("date", semEnd);
+      const { data: recs } = await recQ;
       const recIds = (recs ?? []).map((r: any) => r.id);
       if (recIds.length) {
         const { data: dets } = await supabase
@@ -225,14 +232,17 @@ export const getGuruDashboard = createServerFn({ method: "GET" })
       }
     }
 
-    // Siswa terlambat bulan ini
+    // Siswa terlambat pada semester & tahun ajaran aktif
     let terlambatList: { student_id: string; name: string; rombel: string; count: number }[] = [];
-    if (kelasIds.length) {
-      const { data: lates } = await supabase
+    if (kelasIds.length && activeSem.data) {
+      let lateQ = supabase
         .from("late_records")
-        .select("student_id, rombel_id, record_date")
+        .select("student_id, rombel_id, record_date, semester_id")
         .in("rombel_id", kelasIds)
-        .gte("record_date", monthStart);
+        .eq("semester_id", (activeSem.data as any).id);
+      if (semStart) lateQ = lateQ.gte("record_date", semStart);
+      if (semEnd) lateQ = lateQ.lte("record_date", semEnd);
+      const { data: lates } = await lateQ;
       const cnt = new Map<string, number>();
       (lates ?? []).forEach((l: any) => cnt.set(l.student_id, (cnt.get(l.student_id) ?? 0) + 1));
       const sids = [...cnt.keys()];
