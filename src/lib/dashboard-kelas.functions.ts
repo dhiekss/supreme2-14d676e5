@@ -332,6 +332,15 @@ export const getDashboardKelas = createServerFn({ method: "GET" })
       totalL,
       totalP,
       periode: { tanggal, bulan, tahun, monthStart, monthEnd, hariNama },
+      semester: activeSem
+        ? {
+            id: activeSem.id,
+            nama: activeSem.nama,
+            tanggal_mulai: semStart,
+            tanggal_selesai: semEnd,
+            tahun_ajaran: activeTA ? { id: activeTA.id, nama: activeTA.nama } : null,
+          }
+        : null,
       students,
       kehadiranHariIni,
       todaySummary: { H: tHadir, S: tSakit, I: tIzin, A: tAlfa, P: tPkl, terlambat: terlambatHariIni },
