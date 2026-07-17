@@ -153,7 +153,7 @@ function Page() {
         <StudentListCard
           icon={<AlertCircle className="h-4 w-4 text-rose-500" />}
           title="Siswa Alfa"
-          subtitle="30 hari terakhir"
+          subtitle="Semester aktif"
           badge={String(alfaList.reduce((s, a) => s + a.count, 0))}
           items={alfaList.slice(0, 5).map((a) => ({ name: a.name, sub: a.rombel, right: `${a.count}x` }))}
           empty="Tidak ada siswa alfa"
@@ -161,7 +161,7 @@ function Page() {
         <StudentListCard
           icon={<Clock className="h-4 w-4 text-amber-500" />}
           title="Siswa Terlambat"
-          subtitle="Bulan ini"
+          subtitle="Semester aktif"
           badge={String(terlambatList.reduce((s, a) => s + a.count, 0))}
           items={terlambatList.slice(0, 5).map((a) => ({ name: a.name, sub: a.rombel, right: `${a.count}x` }))}
           empty="Tidak ada siswa terlambat"
