@@ -329,37 +329,40 @@ function DaftarSiswaTab({ data }: { data: any }) {
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">No</TableHead>
-              <TableHead className="w-28">NIS</TableHead>
-              <TableHead>Nama</TableHead>
-              <TableHead className="w-16">L/P</TableHead>
-              <TableHead className="w-20 text-right">Aksi</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-6">Tidak ada murid.</TableCell></TableRow>
-            ) : filtered.map((s: any, i: number) => (
-              <TableRow key={s.id}>
-                <TableCell className="text-primary font-medium">{i + 1}</TableCell>
-                <TableCell>{s.nis ?? "—"}</TableCell>
-                <TableCell className="font-medium">{s.name ?? "—"}</TableCell>
-                <TableCell>{s.gender ?? "—"}</TableCell>
-                <TableCell className="text-right">
-                  <Button asChild size="icon" variant="ghost" className="h-8 w-8">
-                    <Link to="/dashboard-murid/$studentId" params={{ studentId: s.id }}>
-                      <Eye className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </TableCell>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">No</TableHead>
+                <TableHead className="w-28">NIS</TableHead>
+                <TableHead>Nama</TableHead>
+                <TableHead className="w-16">L/P</TableHead>
+                <TableHead className="w-20 text-right">Aksi</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filtered.length === 0 ? (
+                <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-6">Tidak ada murid.</TableCell></TableRow>
+              ) : filtered.map((s: any, i: number) => (
+                <TableRow key={s.id}>
+                  <TableCell className="text-primary font-medium">{i + 1}</TableCell>
+                  <TableCell className="whitespace-nowrap">{s.nis ?? "—"}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{s.name ?? "—"}</TableCell>
+                  <TableCell>{s.gender ?? "—"}</TableCell>
+                  <TableCell className="text-right">
+                    <Button asChild size="icon" variant="ghost" className="h-8 w-8">
+                      <Link to="/dashboard-murid/$studentId" params={{ studentId: s.id }}>
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
+
     </Card>
   );
 }
