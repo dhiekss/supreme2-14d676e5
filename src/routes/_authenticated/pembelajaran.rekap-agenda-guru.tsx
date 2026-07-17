@@ -328,23 +328,23 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-2">
-          <div>
-            <CardTitle className="flex items-center gap-2"><TableIcon className="h-5 w-5" />Tabel Kehadiran Guru</CardTitle>
-            <div className="text-sm text-muted-foreground mt-1">Detail kehadiran guru per sesi pembelajaran</div>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+          <div className="min-w-0">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg"><TableIcon className="h-5 w-5 shrink-0" />Tabel Kehadiran Guru</CardTitle>
+            <div className="text-xs sm:text-sm text-muted-foreground mt-1">Detail kehadiran guru per sesi pembelajaran</div>
           </div>
-          <Button variant="outline" onClick={exportExcel}>
+          <Button variant="outline" onClick={exportExcel} className="w-full sm:w-auto shrink-0">
             <Download className="h-4 w-4 mr-1" /> Export Excel
           </Button>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex flex-wrap gap-2 items-center">
-            <div className="relative flex-1 min-w-[220px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-2 items-center">
+            <div className="relative sm:col-span-2 lg:flex-1 lg:min-w-[220px]">
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari guru, rombel, atau mapel..." className="pl-9" />
             </div>
             <Select value={statusF} onValueChange={setStatusF}>
-              <SelectTrigger className="w-44"><SelectValue placeholder="Semua Status" /></SelectTrigger>
+              <SelectTrigger className="w-full lg:w-44"><SelectValue placeholder="Semua Status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Status</SelectItem>
                 <SelectItem value="masuk">Masuk</SelectItem>
@@ -353,7 +353,7 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
               </SelectContent>
             </Select>
             <Select value={rombelF} onValueChange={setRombelF}>
-              <SelectTrigger className="w-44"><SelectValue placeholder="Semua Rombel" /></SelectTrigger>
+              <SelectTrigger className="w-full lg:w-44"><SelectValue placeholder="Semua Rombel" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Rombel</SelectItem>
                 {rombelOpts.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
@@ -361,14 +361,14 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
             </Select>
             <div className="flex items-center gap-1">
               <label className="text-xs text-muted-foreground whitespace-nowrap">Dari</label>
-              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40" />
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="flex-1 lg:w-40" />
             </div>
             <div className="flex items-center gap-1">
               <label className="text-xs text-muted-foreground whitespace-nowrap">Sampai</label>
-              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-40" />
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="flex-1 lg:w-40" />
             </div>
             {(dateFrom || dateTo) && (
-              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); }}>Reset</Button>
+              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); }} className="w-full sm:w-auto">Reset</Button>
             )}
 
 
