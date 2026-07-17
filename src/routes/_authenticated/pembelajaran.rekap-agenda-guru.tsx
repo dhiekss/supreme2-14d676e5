@@ -378,7 +378,9 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
             <Table>
               <TableHeader>
                 <TableRow>
+                  <SortHead label="Tanggal" active={sortKey === "tanggal"} dir={sortDir} onClick={() => toggleSort("tanggal")} />
                   <SortHead label="Jam" active={sortKey === "jam"} dir={sortDir} onClick={() => toggleSort("jam")} />
+
                   <SortHead label="Rombel" active={sortKey === "rombel"} dir={sortDir} onClick={() => toggleSort("rombel")} />
                   <SortHead label="Guru" active={sortKey === "guru"} dir={sortDir} onClick={() => toggleSort("guru")} />
                   <SortHead label="Mapel" active={sortKey === "mapel"} dir={sortDir} onClick={() => toggleSort("mapel")} />
