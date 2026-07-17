@@ -29,9 +29,12 @@ import { resolveLayout, type ResolvedGroup, type ResolvedNode } from "@/lib/side
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const closeOnMobile = () => {
+    if (isMobile) setOpenMobile(false);
+  };
   const navigate = useNavigate();
   const { data: d = getCachedDisplaySettings() } = useQuery({
     queryKey: ["display-settings"],
