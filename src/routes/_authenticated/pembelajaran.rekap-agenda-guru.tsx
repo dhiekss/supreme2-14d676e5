@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +8,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { BookOpen, CheckCircle2, XCircle, AlertCircle, Users, Download, RefreshCw, ClipboardList } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { BookOpen, CheckCircle2, XCircle, AlertCircle, Users, Download, RefreshCw, ClipboardList, Search, Eye, Pencil, TableIcon, ArrowUpDown } from "lucide-react";
 import { getRekapAgendaGuru, listRekapOptions } from "@/lib/rekap-agenda.functions";
+import { getAgendaDetail } from "@/lib/agenda-guru.functions";
+import { useServerFn } from "@tanstack/react-start";
 import * as XLSX from "xlsx";
 
 function firstOfMonth(d = new Date()) {
