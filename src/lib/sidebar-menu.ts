@@ -122,6 +122,7 @@ export const DEFAULT_SIDEBAR: DefaultNode[] = [
     children: [
       { id: "pembelajaran-administrasi", title: "Administrasi Pembelajaran", url: "/pembelajaran/administrasi", icon: FileText },
       { id: "pembelajaran-agenda-guru", title: "Agenda Guru", url: "/pembelajaran/agenda-guru", icon: BookUser },
+      { id: "pembelajaran-rekap-agenda-guru", title: "Rekap Agenda Guru", url: "/pembelajaran/rekap-agenda-guru", icon: BarChart3 },
       { id: "pembelajaran-pengaturan", title: "Pengaturan Pembelajaran", url: "/pembelajaran/pengaturan", icon: Settings },
       { id: "pembelajaran-nilai", title: "Pengelolaan Nilai", url: "/pembelajaran/nilai", icon: Award },
       { id: "pembelajaran-dashboard-nilai", title: "Dashboard Nilai", url: "/pembelajaran/dashboard-nilai", icon: BarChart3 },
