@@ -458,6 +458,50 @@ function AdministrasiPage() {
         onSubmit={(v) => upsertM.mutate(v)}
         loading={upsertM.isPending}
       />
+
+      <AlertDialog open={!!confirmReset} onOpenChange={(o) => { if (!o) setConfirmReset(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset Isian Administrasi Pembelajaran?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>
+                  Tindakan ini akan <span className="font-semibold text-rose-700">menghapus semua berkas yang diinput</span>
+                  {" "}(link maupun file terunggah) dan mereset kelengkapan menjadi <span className="font-semibold">0%</span>.
+                  Tindakan ini <span className="font-semibold">tidak dapat dibatalkan</span>.
+                </p>
+                {confirmReset?.kind === "single" && (
+                  <p className="rounded-md bg-muted p-2 text-xs">{confirmReset.label}</p>
+                )}
+                {confirmReset?.kind === "guru" && (
+                  <p className="rounded-md bg-muted p-2 text-xs">
+                    Semua isian milik <span className="font-semibold">{confirmReset.guruName}</span> yang tampil pada filter saat ini
+                    ({confirmReset.ids.length} data) akan direset.
+                  </p>
+                )}
+                {confirmReset?.kind === "bulk" && (
+                  <p className="rounded-md bg-muted p-2 text-xs">
+                    <span className="font-semibold">{confirmReset.ids.length}</span> data terpilih akan direset.
+                  </p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={resetM.isPending}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-rose-600 hover:bg-rose-700"
+              disabled={resetM.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirmReset) resetM.mutate(confirmReset.ids);
+              }}
+            >
+              {resetM.isPending ? "Mereset…" : "Ya, Reset"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
