@@ -43,8 +43,44 @@ import {
   Pencil,
   Eye,
   FilePlus2,
+  Settings,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
+
+type Thresholds = {
+  sp1Alfa: number;
+  sp1Telat: number;
+  sp2Alfa: number;
+  sp2Telat: number;
+  sp3Alfa: number;
+  sp3Telat: number;
+};
+
+const DEFAULT_TH: Thresholds = {
+  sp1Alfa: 3,
+  sp1Telat: 5,
+  sp2Alfa: 6,
+  sp2Telat: 10,
+  sp3Alfa: 10,
+  sp3Telat: 15,
+};
+
+const TH_STORAGE_KEY = "bpbk-thresholds-v1";
+
+function loadThresholds(): Thresholds {
+  if (typeof window === "undefined") return DEFAULT_TH;
+  try {
+    const raw = localStorage.getItem(TH_STORAGE_KEY);
+    if (!raw) return DEFAULT_TH;
+    const parsed = JSON.parse(raw);
+    return { ...DEFAULT_TH, ...parsed };
+  } catch {
+    return DEFAULT_TH;
+  }
+}
 
 export const Route = createFileRoute("/_authenticated/sp")({
   head: () => ({ meta: [{ title: "Manajemen BP/BK — SUPREME XPOES" }] }),
