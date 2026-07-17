@@ -153,16 +153,29 @@ function Page() {
               </Select>
             </>
           ) : (
-            <Select value={periode.semesterId ?? ""} onValueChange={(v) => setSemesterId(v)}>
-              <SelectTrigger className="w-72"><SelectValue placeholder="Pilih Semester" /></SelectTrigger>
-              <SelectContent>
-                {(semesterOptions ?? []).map((s: any) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.nama}{s.is_active ? " (Aktif)" : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <>
+              {tahunAjaranList.length > 0 && (
+                <Select value={tahunAjaran} onValueChange={setTahunAjaran}>
+                  <SelectTrigger className="w-48"><SelectValue placeholder="Tahun Ajaran" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Tahun Ajaran</SelectItem>
+                    {tahunAjaranList.map((ta) => (
+                      <SelectItem key={ta} value={ta}>{ta}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Select value={periode.semesterId ?? ""} onValueChange={(v) => setSemesterId(v)}>
+                <SelectTrigger className="w-72"><SelectValue placeholder="Pilih Semester" /></SelectTrigger>
+                <SelectContent>
+                  {filteredSemesters.length === 0 ? (
+                    <div className="px-3 py-2 text-xs text-muted-foreground">Tidak ada semester</div>
+                  ) : filteredSemesters.map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>{semesterLabel(s)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
           )}
         </CardContent>
       </Card>
