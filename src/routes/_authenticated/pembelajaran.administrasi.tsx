@@ -613,7 +613,7 @@ function EditDialog({ row, onOpenChange, onSubmit, loading }: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-xl w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Input Berkas Pembelajaran</DialogTitle>
         </DialogHeader>
