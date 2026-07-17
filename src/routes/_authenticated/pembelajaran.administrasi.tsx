@@ -235,8 +235,8 @@ function AdministrasiPage() {
       <Card>
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <h2 className="font-semibold">Daftar Berkas Pembelajaran</h2>
-            <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-sm sm:text-base">Daftar Berkas Pembelajaran</h2>
+            <div className="flex items-center gap-2 flex-wrap">
               {isAdmin && guruId !== "all" && (
                 <Button
                   variant="outline"
@@ -249,11 +249,11 @@ function AdministrasiPage() {
                     setConfirmReset({ kind: "guru", ids, guruName: g?.nama ?? "guru terpilih" });
                   }}
                 >
-                  <RotateCcw className="h-4 w-4 mr-2" />Reset Guru Ini
+                  <RotateCcw className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Reset Guru Ini</span>
                 </Button>
               )}
               <Button variant="outline" size="sm" onClick={exportExcel}>
-                <Download className="h-4 w-4 mr-2" />Export Excel
+                <Download className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Export Excel</span>
               </Button>
             </div>
           </div>
