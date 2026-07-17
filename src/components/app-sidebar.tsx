@@ -152,10 +152,12 @@ function GroupMenu({
   item,
   collapsed,
   isActive,
+  onNavigate,
 }: {
   item: ResolvedGroup;
   collapsed: boolean;
   isActive: (url: string) => boolean;
+  onNavigate?: () => void;
 }) {
   const visibleChildren = item.children.filter((c) => !c.hidden);
   const anyActive = visibleChildren.some((c) => isActive(c.url));
@@ -185,7 +187,7 @@ function GroupMenu({
               {visibleChildren.map((c) => (
                 <SidebarMenuSubItem key={c.id}>
                   <SidebarMenuSubButton asChild isActive={isActive(c.url)}>
-                    <Link to={c.url} className="flex items-center gap-2">
+                    <Link to={c.url} onClick={onNavigate} className="flex items-center gap-2">
                       <c.icon className="h-3.5 w-3.5" />
                       <span>{c.title}</span>
                     </Link>
