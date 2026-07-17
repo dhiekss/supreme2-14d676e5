@@ -186,9 +186,9 @@ function PresensiPage() {
       {rombelId && (
         <Card className="border-border/60 shadow-sm">
           <CardHeader className="pb-3">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
-              <CardTitle className="text-lg">Daftar Murid</CardTitle>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+              <CardTitle className="text-lg shrink-0">Daftar Murid</CardTitle>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
                 {STATUS_OPTIONS.map((o) => (
                   <span key={o.value} className={cn("flex items-center gap-1 font-medium", o.textClass)}>
                     <span className={cn("h-2 w-2 rounded-full bg-current")} />
