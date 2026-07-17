@@ -21,11 +21,16 @@ async function getSelfNip(supabase: any, userId: string) {
   return (data?.nip ?? null) as string | null;
 }
 
-async function assertGuruAccess(supabase: any, _userId: string, guruId: string) {
+async function assertGuruAccess(supabase: any, userId: string, guruId: string) {
+  const admin = await isAdmin(supabase, userId);
   const { data: guru, error } = await supabase.from("guru").select("id, nama, nip").eq("id", guruId).maybeSingle();
   if (error) throw new Error(error.message);
   if (!guru) throw new Error("Guru tidak ditemukan");
-  return { admin: true, guru };
+  if (!admin) {
+    const nip = await getSelfNip(supabase, userId);
+    if (!nip || nip !== guru.nip) throw new Error("Forbidden: hanya bisa mengakses agenda sendiri");
+  }
+  return { admin, guru };
 }
 
 export const listGuruForAgenda = createServerFn({ method: "GET" })
@@ -33,7 +38,13 @@ export const listGuruForAgenda = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const admin = await isAdmin(supabase, userId);
-    const { data, error } = await supabase.from("guru").select("id, nama, nip").order("nama");
+    let q = supabase.from("guru").select("id, nama, nip").order("nama");
+    if (!admin) {
+      const nip = await getSelfNip(supabase, userId);
+      if (!nip) return { isAdmin: false, rows: [] };
+      q = q.eq("nip", nip);
+    }
+    const { data, error } = await q;
     if (error) throw new Error(error.message);
     return { isAdmin: admin, rows: data ?? [] };
   });
