@@ -188,7 +188,7 @@ function AdministrasiPage() {
         <DeadlineCountdown deadline={refs.deadline} deadlineText={deadlineText} />
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <StatCard icon={<Users className="h-4 w-4 text-blue-600" />} label="Total Data" value={stats?.total ?? 0} tint="blue" />
         <StatCard icon={<FileCheck2 className="h-4 w-4 text-blue-600" />} label="Sudah Input" value={stats?.sudah_input ?? 0}
           suffix={pctSuffix(stats?.sudah_input, stats?.total)} tint="blue" />
@@ -200,11 +200,11 @@ function AdministrasiPage() {
           suffix={pctSuffix(stats?.lengkap_100, stats?.total)} tint="emerald" />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard icon={<Hourglass className="h-4 w-4 text-amber-600" />} label="Menunggu Validasi" value={stats?.menunggu ?? 0} tint="amber" />
         <StatCard icon={<AlertTriangle className="h-4 w-4 text-rose-600" />} label="Butuh Perbaikan" value={stats?.perbaikan ?? 0} tint="rose" />
         <StatCard icon={<FileClock className="h-4 w-4 text-amber-600" />} label="Berkas Parsial" value={stats?.parsial ?? 0} tint="amber" />
-        <Card>
+        <Card className="col-span-2 md:col-span-1">
           <CardContent className="p-3">
             <div className="text-xs text-muted-foreground">Progress Keseluruhan</div>
             <div className="flex items-center gap-2 mt-2">
@@ -214,6 +214,7 @@ function AdministrasiPage() {
           </CardContent>
         </Card>
       </div>
+
 
       <Card className="bg-muted/40">
         <CardContent className="p-4 text-sm space-y-2">
