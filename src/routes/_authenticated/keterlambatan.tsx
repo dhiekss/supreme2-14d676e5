@@ -94,7 +94,7 @@ function KeterlambatanPage() {
       <div className="text-center space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">Input Keterlambatan</h1>
         <p className="text-sm text-muted-foreground">
-          Catat siswa yang terlambat datang ke sekolah
+          Catat murid yang terlambat datang ke sekolah
         </p>
       </div>
 

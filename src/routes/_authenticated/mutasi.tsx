@@ -23,7 +23,7 @@ import {
 } from "@/lib/mutasi.functions";
 
 export const Route = createFileRoute("/_authenticated/mutasi")({
-  head: () => ({ meta: [{ title: "Mutasi Siswa — SUPREME XPOES" }] }),
+  head: () => ({ meta: [{ title: "Mutasi Murid — SUPREME XPOES" }] }),
   component: MutasiPage,
   errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
 });
@@ -208,7 +208,7 @@ function MutasiPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-2xl font-bold">Mutasi Siswa</h1>
+          <h1 className="text-2xl font-bold">Mutasi Murid</h1>
           <p className="text-sm text-muted-foreground">Pindah rombel, resign, dan pindah sekolah</p>
         </div>
         <Button variant="outline" onClick={invalidate}><RefreshCw className="h-4 w-4 mr-2" />Refresh</Button>

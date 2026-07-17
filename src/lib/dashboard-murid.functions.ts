@@ -81,7 +81,7 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
       .eq("id", data.studentId)
       .maybeSingle();
     if (serr) throw new Error(serr.message);
-    if (!student) throw new Error("Siswa tidak ditemukan");
+    if (!student) throw new Error("Murid tidak ditemukan");
 
     if (!staff) {
       const selfNis = await getSelfNis(supabase, userId);

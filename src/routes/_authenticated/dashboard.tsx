@@ -51,7 +51,7 @@ function Dashboard() {
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
         <InfoCard icon={Clock} title="Keterlambatan" color="text-amber-600">
           <div className="text-3xl font-bold">{data.lateToday}</div>
-          <div className="text-xs text-muted-foreground mt-1">Siswa terlambat hari ini</div>
+          <div className="text-xs text-muted-foreground mt-1">Murid terlambat hari ini</div>
         </InfoCard>
         <InfoCard icon={AlertTriangle} title="Manajemen BP / BK" color="text-rose-600">
           <div className="text-3xl font-bold">{data.spAktif}</div>

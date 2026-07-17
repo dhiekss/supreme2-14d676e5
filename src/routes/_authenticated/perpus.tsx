@@ -297,7 +297,7 @@ function LoanFormDialog({ onSaved }: { onSaved: () => void }) {
               <Select value={form.borrowerType} onValueChange={(v) => setForm({ ...form, borrowerType: v as any })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="siswa">Siswa</SelectItem>
+                  <SelectItem value="siswa">Murid</SelectItem>
                   <SelectItem value="guru">Guru</SelectItem>
                   <SelectItem value="umum">Umum</SelectItem>
                 </SelectContent>

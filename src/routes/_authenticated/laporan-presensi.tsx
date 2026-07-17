@@ -975,14 +975,14 @@ function ViewDetailDialog({ recordId, onClose }: { recordId: string | null; onCl
               ))}
             </div>
             <div>
-              <div className="text-sm font-medium mb-2">Daftar Siswa:</div>
+              <div className="text-sm font-medium mb-2">Daftar Murid:</div>
               <div className="max-h-[360px] overflow-y-auto rounded-lg border">
                 <Table>
                   <TableHeader className="sticky top-0 bg-muted/60 backdrop-blur">
                     <TableRow>
                       <TableHead className="w-12">No</TableHead>
                       <TableHead className="w-28">NIS</TableHead>
-                      <TableHead>Nama Siswa</TableHead>
+                      <TableHead>Nama Murid</TableHead>
                       <TableHead className="text-right w-24">Status</TableHead>
                     </TableRow>
                   </TableHeader>

@@ -147,8 +147,8 @@ export const DEFAULT_SIDEBAR: DefaultNode[] = [
   { id: "sarpras", title: "Sarpras", url: "/sarpras", icon: Building2 },
   { id: "tpg", title: "TPG", url: "/tpg", icon: Wallet },
   { id: "notifikasi-wa", title: "Notifikasi WA", url: "/notifikasi", icon: MessageSquare },
-  { id: "verval", title: "Verval Siswa", url: "/verval", icon: ClipboardCheck },
-  { id: "mutasi", title: "Mutasi Siswa", url: "/mutasi", icon: ArrowLeftRight },
+  { id: "verval", title: "Verval Murid", url: "/verval", icon: ClipboardCheck },
+  { id: "mutasi", title: "Mutasi Murid", url: "/mutasi", icon: ArrowLeftRight },
   { id: "kenaikan-kelas", title: "Kenaikan Kelas", url: "/kenaikan-kelas", icon: GraduationCap },
   {
     id: "grp-kbm",

@@ -77,7 +77,7 @@ function Page() {
           </h1>
           {data?.rombel ? (
             <p className="text-sm text-muted-foreground mt-1">
-              Wali Kelas: {data.rombel.wali_kelas_name ?? "—"} · {data.totalSiswa} Siswa (L: {data.totalL}, P: {data.totalP})
+              Wali Kelas: {data.rombel.wali_kelas_name ?? "—"} · {data.totalSiswa} Murid (L: {data.totalL}, P: {data.totalP})
             </p>
           ) : (
             <p className="text-sm text-muted-foreground mt-1">Pilih kelas untuk menampilkan dashboard</p>
@@ -125,7 +125,7 @@ function Page() {
         <Tabs defaultValue="ringkasan" className="space-y-4">
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="ringkasan">Ringkasan</TabsTrigger>
-            <TabsTrigger value="daftar">Daftar Siswa</TabsTrigger>
+            <TabsTrigger value="daftar">Daftar Murid</TabsTrigger>
             <TabsTrigger value="kehadiran">Kehadiran</TabsTrigger>
             <TabsTrigger value="keterlambatan">Keterlambatan</TabsTrigger>
             <TabsTrigger value="jadwal">Jadwal</TabsTrigger>
@@ -272,7 +272,7 @@ function RingkasanTab({ data, tanggalLabel }: { data: any; tanggalLabel: string 
   );
 }
 
-/* ------------------ Daftar Siswa ------------------ */
+/* ------------------ Daftar Murid ------------------ */
 function DaftarSiswaTab({ data }: { data: any }) {
   const [q, setQ] = useState("");
   const [gender, setGender] = useState("all");
@@ -296,7 +296,7 @@ function DaftarSiswaTab({ data }: { data: any }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `daftar-siswa-${data.rombel.name}.csv`;
+    a.download = `daftar-murid-${data.rombel.name}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -304,7 +304,7 @@ function DaftarSiswaTab({ data }: { data: any }) {
   return (
     <Card>
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pb-2">
-        <CardTitle className="text-base">Daftar Siswa</CardTitle>
+        <CardTitle className="text-base">Daftar Murid</CardTitle>
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -337,7 +337,7 @@ function DaftarSiswaTab({ data }: { data: any }) {
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-6">Tidak ada siswa.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-6">Tidak ada murid.</TableCell></TableRow>
             ) : filtered.map((s: any, i: number) => (
               <TableRow key={s.id}>
                 <TableCell className="text-primary font-medium">{i + 1}</TableCell>
@@ -482,7 +482,7 @@ function KeterlambatanTab({ data, bulan, tahun }: { data: any; bulan: number; ta
       <div className="lg:col-span-1 grid grid-cols-1 gap-3">
         <StatBig label="Total Terlambat (semua waktu)" value={data.keterlambatan.total} tone="orange" icon={<Clock className="h-5 w-5" />} />
         <StatBig label={`Bulan ${BULAN[bulan - 1]} ${tahun}`} value={list.length} tone="amber" icon={<CalendarDays className="h-5 w-5" />} />
-        <StatBig label="Siswa Terlambat (bulan ini)" value={sorted.length} tone="red" icon={<Users className="h-5 w-5" />} />
+        <StatBig label="Murid Terlambat (bulan ini)" value={sorted.length} tone="red" icon={<Users className="h-5 w-5" />} />
       </div>
       <Card className="lg:col-span-2">
         <CardHeader className="pb-2"><CardTitle className="text-base">Rekap Keterlambatan Bulan Ini</CardTitle></CardHeader>
@@ -566,10 +566,10 @@ function StatusSpTab({ data }: { data: any }) {
         <SpMini level={3} value={data.sp.sp3} />
       </div>
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-base">Siswa dengan SP Aktif</CardTitle></CardHeader>
+        <CardHeader className="pb-2"><CardTitle className="text-base">Murid dengan SP Aktif</CardTitle></CardHeader>
         <CardContent className="p-0">
           {data.sp.list.length === 0 ? (
-            <div className="text-center py-8 text-sm text-muted-foreground">Tidak ada siswa dengan SP aktif.</div>
+            <div className="text-center py-8 text-sm text-muted-foreground">Tidak ada murid dengan SP aktif.</div>
           ) : (
             <Table>
               <TableHeader>

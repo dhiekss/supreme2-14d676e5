@@ -112,7 +112,7 @@ function buildAttendanceTable(
   let head = `<tr>
     <th style="${thWide}" rowspan="3">NO</th>
     <th style="${thWide}" rowspan="3">NIS</th>
-    <th style="${thWide}" rowspan="3">NAMA SISWA</th>
+    <th style="${thWide}" rowspan="3">NAMA MURID</th>
     <th style="${thWide}" rowspan="3">L/P</th>
     <th style="${thWide}" colspan="${lastDay}">TANGGAL / BULAN ${BULAN_ID[month - 1].toUpperCase()}</th>
     <th style="${thWide}" colspan="4">JUMLAH</th>

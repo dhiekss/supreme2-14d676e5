@@ -68,7 +68,7 @@ function Page() {
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard Siswa</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard Murid</h1>
           <p className="text-sm text-muted-foreground mt-1">Melihat data: {student.name}</p>
         </div>
         <Button variant="outline" size="sm" asChild>
@@ -81,7 +81,7 @@ function Page() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
-              <div className="text-xs text-muted-foreground">Nama Siswa</div>
+              <div className="text-xs text-muted-foreground">Nama Murid</div>
               <User className="h-4 w-4 text-muted-foreground" />
             </div>
             <div className="text-xl font-bold mt-2">{student.name}</div>

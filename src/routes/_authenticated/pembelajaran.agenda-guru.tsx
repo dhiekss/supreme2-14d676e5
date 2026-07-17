@@ -367,7 +367,7 @@ function AgendaDialog({
             </div>
             <div className="rounded-lg border overflow-hidden">
               <div className="grid grid-cols-[40px_1fr_100px_160px] gap-2 px-3 py-2 bg-muted/50 text-xs font-semibold">
-                <div>No</div><div>Nama Siswa</div><div>NIS</div><div>Status KBM</div>
+                <div>No</div><div>Nama Murid</div><div>NIS</div><div>Status KBM</div>
               </div>
               <div className="divide-y">
                 {(detailQ.data?.students ?? []).map((s: any, i: number) => (
@@ -388,7 +388,7 @@ function AgendaDialog({
                   </div>
                 ))}
                 {(!detailQ.data?.students || detailQ.data.students.length === 0) && (
-                  <div className="p-6 text-center text-sm text-muted-foreground">Tidak ada siswa</div>
+                  <div className="p-6 text-center text-sm text-muted-foreground">Tidak ada murid</div>
                 )}
               </div>
             </div>

@@ -238,7 +238,7 @@ export const undoPromotionStudent = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: isAdmin } = await supabase.rpc("is_admin", { _user_id: userId });
-    if (!isAdmin) throw new Error("Hanya admin yang dapat mengembalikan siswa.");
+    if (!isAdmin) throw new Error("Hanya admin yang dapat mengembalikan murid.");
 
     const { data: row, error } = await supabase
       .from("student_promotions")

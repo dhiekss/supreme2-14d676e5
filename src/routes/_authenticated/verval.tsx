@@ -23,7 +23,7 @@ import {
 } from "@/lib/verval.functions";
 
 export const Route = createFileRoute("/_authenticated/verval")({
-  head: () => ({ meta: [{ title: "Verval Siswa — SUPREME XPOES" }] }),
+  head: () => ({ meta: [{ title: "Verval Murid — SUPREME XPOES" }] }),
   component: VervalPage,
   errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
 });
@@ -81,7 +81,7 @@ function VervalPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Verval Siswa</h1>
+          <h1 className="text-2xl font-bold">Verval Murid</h1>
           <p className="text-sm text-muted-foreground">Verifikasi & validasi data peserta didik</p>
         </div>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEdit(null); }}>
@@ -117,7 +117,7 @@ function VervalPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Siswa</TableHead>
+                <TableHead>Murid</TableHead>
                 <TableHead>NISN</TableHead>
                 <TableHead>TTL</TableHead>
                 <TableHead>Orang Tua</TableHead>
@@ -200,12 +200,12 @@ function FormDialog({ edit, students, onSubmit, loading }: { edit: any; students
 
   return (
     <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-      <DialogHeader><DialogTitle>{edit ? "Edit" : "Tambah"} Verval Siswa</DialogTitle></DialogHeader>
+      <DialogHeader><DialogTitle>{edit ? "Edit" : "Tambah"} Verval Murid</DialogTitle></DialogHeader>
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <Label>Siswa</Label>
+          <Label>Murid</Label>
           <Select value={form.student_id} onValueChange={(v) => set("student_id", v)}>
-            <SelectTrigger><SelectValue placeholder="Pilih siswa" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder="Pilih murid" /></SelectTrigger>
             <SelectContent>
               {students.map((s) => <SelectItem key={s.id} value={s.id}>{s.name} ({s.nis ?? "-"})</SelectItem>)}
             </SelectContent>
