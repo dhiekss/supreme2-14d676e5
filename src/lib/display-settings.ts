@@ -20,17 +20,45 @@ export const DEFAULT_DISPLAY: DisplaySettings = {
   bg_color: "#c8fefb",
 };
 
-export async function fetchDisplaySettings(): Promise<DisplaySettings> {
-  const { data } = await supabase
-    .from("app_settings")
-    .select("key,value")
-    .like("key", "display.%");
-  const out: any = { ...DEFAULT_DISPLAY };
-  for (const row of data ?? []) {
-    const k = (row.key as string).replace("display.", "");
-    if (k in out && row.value != null && row.value !== "") out[k] = row.value;
+const CACHE_KEY = "display-settings-cache-v1";
+
+export function getCachedDisplaySettings(): DisplaySettings {
+  if (typeof window === "undefined") return DEFAULT_DISPLAY;
+  try {
+    const raw = window.localStorage.getItem(CACHE_KEY);
+    if (!raw) return DEFAULT_DISPLAY;
+    const parsed = JSON.parse(raw);
+    return { ...DEFAULT_DISPLAY, ...parsed };
+  } catch {
+    return DEFAULT_DISPLAY;
   }
-  return out as DisplaySettings;
+}
+
+export async function fetchDisplaySettings(): Promise<DisplaySettings> {
+  try {
+    const { data, error } = await supabase
+      .from("app_settings")
+      .select("key,value")
+      .like("key", "display.%");
+    if (error) throw error;
+    const out: any = { ...DEFAULT_DISPLAY };
+    for (const row of data ?? []) {
+      const k = (row.key as string).replace("display.", "");
+      if (k in out && row.value != null && row.value !== "") out[k] = row.value;
+    }
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(CACHE_KEY, JSON.stringify(out));
+      } catch {
+        /* quota exceeded — ignore */
+      }
+    }
+    return out as DisplaySettings;
+  } catch {
+    // On network/query failure fall back to last-known cached values so the
+    // logo/hero don't disappear.
+    return getCachedDisplaySettings();
+  }
 }
 
 /** Compress + convert an image File to a data URL. Returns dataURL string. */

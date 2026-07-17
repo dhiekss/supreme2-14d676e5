@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Eye, EyeOff, Megaphone, Image as ImageIcon } from "lucide-react";
-import { fetchDisplaySettings, DEFAULT_DISPLAY } from "@/lib/display-settings";
+import { fetchDisplaySettings, getCachedDisplaySettings } from "@/lib/display-settings";
 import { resolveLoginEmail } from "@/lib/auth-lookup.functions";
 
 export const Route = createFileRoute("/auth")({
@@ -27,12 +27,11 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { data: d = DEFAULT_DISPLAY } = useQuery({
+  const { data: d = getCachedDisplaySettings() } = useQuery({
     queryKey: ["display-settings"],
     queryFn: fetchDisplaySettings,
-    placeholderData: DEFAULT_DISPLAY,
-    staleTime: 0,
-    refetchOnMount: "always",
+    initialData: getCachedDisplaySettings,
+    staleTime: 5 * 60_000,
   });
 
   useEffect(() => {
