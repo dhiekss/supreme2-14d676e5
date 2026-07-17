@@ -141,7 +141,7 @@ function Page() {
           </TabsContent>
 
           <TabsContent value="kehadiran">
-            <KehadiranTab data={data} />
+            <KehadiranTab data={data} range={kehadiranRange} setRange={setKehadiranRange} />
           </TabsContent>
 
           <TabsContent value="keterlambatan">
