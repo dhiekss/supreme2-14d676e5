@@ -88,11 +88,25 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
       if (!selfNis || selfNis !== student.nis) throw new Error("Forbidden");
     }
 
-    // Semester options
-    const { data: semesterOptions } = await supabase
+    // Semester options (with tahun ajaran)
+    const { data: semRaw } = await supabase
       .from("semester")
-      .select("id, nama, tanggal_mulai, tanggal_selesai, is_active")
+      .select("id, nama, tanggal_mulai, tanggal_selesai, is_active, tahun_ajaran_id")
       .order("tanggal_mulai", { ascending: false });
+    const taIds = [...new Set((semRaw ?? []).map((s: any) => s.tahun_ajaran_id).filter(Boolean))];
+    const { data: taRows } = taIds.length
+      ? await supabase.from("tahun_ajaran").select("id, nama").in("id", taIds)
+      : { data: [] as any[] };
+    const taMap = new Map((taRows ?? []).map((t: any) => [t.id, t.nama as string]));
+    const semesterOptions = (semRaw ?? []).map((s: any) => ({
+      id: s.id,
+      nama: s.nama,
+      tanggal_mulai: s.tanggal_mulai,
+      tanggal_selesai: s.tanggal_selesai,
+      is_active: s.is_active,
+      tahun_ajaran_id: s.tahun_ajaran_id,
+      tahun_ajaran: s.tahun_ajaran_id ? taMap.get(s.tahun_ajaran_id) ?? null : null,
+    }));
 
     const mode = data.mode ?? "bulan";
     const now = new Date();
