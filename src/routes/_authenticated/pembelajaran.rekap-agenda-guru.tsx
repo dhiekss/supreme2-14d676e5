@@ -371,10 +371,7 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
               <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); }}>Reset</Button>
             )}
 
-                <SelectItem value="all">Semua Rombel</SelectItem>
-                {rombelOpts.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+
           </div>
 
           <div className="overflow-x-auto">
