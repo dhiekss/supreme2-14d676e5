@@ -9,9 +9,11 @@ import { ActivityTracker } from "@/components/activity-tracker";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
-    return { user: data.user };
+    // getSession() reads localStorage synchronously (no network) — instant gate.
+    // requireSupabaseAuth on server fns still validates the bearer server-side.
+    const { data } = await supabase.auth.getSession();
+    if (!data.session?.user) throw redirect({ to: "/auth" });
+    return { user: data.session.user };
   },
   component: AuthedLayout,
 });
