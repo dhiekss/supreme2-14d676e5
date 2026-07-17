@@ -43,6 +43,8 @@ function Page() {
 
   const [rombelId, setRombelId] = useState<string>("");
   const [date, setDate] = useState<string>(todayISO());
+  // Kehadiran recap range (null = default: current month of `date`)
+  const [kehadiranRange, setKehadiranRange] = useState<{ startDate: string; endDate: string; label: string } | null>(null);
 
   const detailFn = useServerFn(getDashboardKelas);
   const monthYear = useMemo(() => {
@@ -51,8 +53,13 @@ function Page() {
   }, [date]);
   const { data, isLoading, error } = useQuery({
     enabled: !!rombelId,
-    queryKey: ["dashboard-kelas", rombelId, date, monthYear.bulan, monthYear.tahun],
-    queryFn: () => detailFn({ data: { rombelId, date, bulan: monthYear.bulan, tahun: monthYear.tahun } }),
+    queryKey: ["dashboard-kelas", rombelId, date, monthYear.bulan, monthYear.tahun, kehadiranRange?.startDate, kehadiranRange?.endDate],
+    queryFn: () => detailFn({
+      data: {
+        rombelId, date, bulan: monthYear.bulan, tahun: monthYear.tahun,
+        startDate: kehadiranRange?.startDate, endDate: kehadiranRange?.endDate,
+      },
+    }),
   });
 
   const tanggalLabel = useMemo(() => {
