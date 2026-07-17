@@ -94,11 +94,11 @@ export function AppSidebar() {
             <SidebarMenu>
               {nodes.map((item) =>
                 item.kind === "group" ? (
-                  <GroupMenu key={item.id} item={item} collapsed={collapsed} isActive={isActive} />
+                  <GroupMenu key={item.id} item={item} collapsed={collapsed} isActive={isActive} onNavigate={closeOnMobile} />
                 ) : (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                      <Link to={item.url} className="flex items-center gap-2">
+                      <Link to={item.url} onClick={closeOnMobile} className="flex items-center gap-2">
                         <item.icon className="h-4 w-4" />
                         {!collapsed && <span>{item.title}</span>}
                       </Link>
