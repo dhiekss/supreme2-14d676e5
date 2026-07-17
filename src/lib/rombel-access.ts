@@ -15,12 +15,22 @@ export async function getAllowedRombelIds(
     supabase.rpc("has_role", { _user_id: userId, _role: "superadmin" }),
   ]);
   if (isAdmin || isSuper) return null;
-  const { data, error } = await supabase
-    .from("user_rombel")
-    .select("rombel_id")
-    .eq("user_id", userId);
-  if (error) throw new Error(error.message);
-  return Array.from(
-    new Set((data ?? []).map((r: any) => r.rombel_id).filter(Boolean)),
-  ) as string[];
+  const [urRes, profRes] = await Promise.all([
+    supabase.from("user_rombel").select("rombel_id").eq("user_id", userId),
+    supabase.from("profiles").select("nip").eq("id", userId).maybeSingle(),
+  ]);
+  if (urRes.error) throw new Error(urRes.error.message);
+  const ids = new Set<string>(
+    (urRes.data ?? []).map((r: any) => r.rombel_id).filter(Boolean) as string[],
+  );
+  const nip = (profRes.data as any)?.nip ?? null;
+  if (nip) {
+    const { data: waliRows, error: waliErr } = await supabase
+      .from("rombel")
+      .select("id")
+      .eq("wali_kelas_nip", nip);
+    if (waliErr) throw new Error(waliErr.message);
+    (waliRows ?? []).forEach((r: any) => r.id && ids.add(r.id));
+  }
+  return Array.from(ids);
 }
