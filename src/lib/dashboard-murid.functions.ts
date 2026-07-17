@@ -175,31 +175,32 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
       }).sort((a, b) => a.mapel.localeCompare(b.mapel));
     }
 
-    // Presensi bulan berjalan
+    // Presensi pada periode (tidak dibatasi rombel saat ini agar riwayat lintas rombel ikut terhitung)
     let hadir = 0, sakit = 0, izin = 0, alfa = 0;
     const riwayat: { date: string; status: string }[] = [];
-    if (student.rombel_id) {
-      const { data: recs } = await supabase
-        .from("attendance_records")
-        .select("id, date")
-        .eq("rombel_id", student.rombel_id)
-        .gte("date", periodeStart)
-        .lte("date", periodeEnd);
-      const recIds = (recs ?? []).map((r: any) => r.id);
-      const dateMap = new Map((recs ?? []).map((r: any) => [r.id, r.date]));
+    {
+      const { data: detsAll } = await supabase
+        .from("attendance_details")
+        .select("attendance_record_id, status")
+        .eq("student_id", data.studentId);
+      const recIds = [...new Set((detsAll ?? []).map((d: any) => d.attendance_record_id).filter(Boolean))];
       if (recIds.length) {
-        const { data: dets } = await supabase
-          .from("attendance_details")
-          .select("attendance_record_id, status")
-          .in("attendance_record_id", recIds)
-          .eq("student_id", data.studentId);
-        (dets ?? []).forEach((d: any) => {
+        const { data: recs } = await supabase
+          .from("attendance_records")
+          .select("id, date")
+          .in("id", recIds)
+          .gte("date", periodeStart)
+          .lte("date", periodeEnd);
+        const dateMap = new Map((recs ?? []).map((r: any) => [r.id, r.date as string]));
+        (detsAll ?? []).forEach((d: any) => {
+          const dt = dateMap.get(d.attendance_record_id);
+          if (!dt) return;
           const s = String(d.status ?? "").toLowerCase();
           if (s === "h" || s === "hadir") hadir++;
           else if (s === "s" || s === "sakit") sakit++;
           else if (s === "i" || s === "izin") izin++;
           else if (s === "a" || s === "alfa") alfa++;
-          riwayat.push({ date: dateMap.get(d.attendance_record_id) as string, status: s });
+          riwayat.push({ date: dt, status: s });
         });
       }
     }
