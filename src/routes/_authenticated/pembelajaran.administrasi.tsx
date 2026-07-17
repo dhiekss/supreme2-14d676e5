@@ -173,12 +173,12 @@ function AdministrasiPage() {
   return (
     <div className="p-4 sm:p-6 space-y-4">
       <div className="flex items-start gap-3">
-        <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
+        <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0">
           <FileText className="h-5 w-5 text-muted-foreground" />
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">Administrasi Pembelajaran</h1>
-          <p className="text-sm text-muted-foreground">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold">Administrasi Pembelajaran</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Input berkas pembelajaran (Analisis CP &amp; ATP, Prota, Promes, RPA, Modul Ajar / PP)
           </p>
         </div>
