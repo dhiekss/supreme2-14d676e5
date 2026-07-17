@@ -760,6 +760,13 @@ function MuridSpTable({
   onDelete: (id: string) => void;
 }) {
   const [detail, setDetail] = useState<any | null>(null);
+  const sort = useSort<
+    "student_name" | "student_nis" | "rombel_name" | "tanggal_rekaman" | "jumlah_alfa" | "jumlah_terlambat"
+  >();
+  const sorted = useMemo(
+    () => sortRows(rows, sort.key as any, sort.dir),
+    [rows, sort.key, sort.dir],
+  );
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -773,25 +780,25 @@ function MuridSpTable({
           <TableHeader>
             <TableRow>
               <TableHead className="w-12">No</TableHead>
-              <TableHead>Nama</TableHead>
-              <TableHead>NIS</TableHead>
-              <TableHead>Rombel</TableHead>
-              <TableHead>Tanggal SP {level}</TableHead>
+              <SortHead label="Nama" sortKey="student_name" state={sort} />
+              <SortHead label="NIS" sortKey="student_nis" state={sort} />
+              <SortHead label="Rombel" sortKey="rombel_name" state={sort} />
+              <SortHead label={`Tanggal SP ${level}`} sortKey="tanggal_rekaman" state={sort} />
               <TableHead>Alasan</TableHead>
-              <TableHead className="text-center">Jml Alfa</TableHead>
-              <TableHead className="text-center">Jml Terlambat</TableHead>
+              <SortHead label="Jml Alfa" sortKey="jumlah_alfa" state={sort} className="text-center" />
+              <SortHead label="Jml Terlambat" sortKey="jumlah_terlambat" state={sort} className="text-center" />
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.length === 0 ? (
+            {sorted.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="py-10 text-center text-muted-foreground">
                   Belum ada catatan SP {level}
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((r, i) => (
+              sorted.map((r: any, i) => (
                 <TableRow key={r.id}>
                   <TableCell>{i + 1}</TableCell>
                   <TableCell className="font-medium">{r.student_name}</TableCell>
