@@ -320,23 +320,27 @@ const levelColor: Record<number, string> = {
   3: "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-400",
 };
 
-const levelHeader: Record<number, { title: string; sub: string; btn: string }> = {
-  1: {
-    title: "Rekomendasi SP 1",
-    sub: "Murid dengan jumlah Alfa > 3 dan/atau Terlambat > 5",
-    btn: "Beri SP 1",
-  },
-  2: {
-    title: "Rekomendasi SP 2",
-    sub: "Murid dengan jumlah Alfa > 6 dan/atau Terlambat > 10, sudah memiliki SP 1",
-    btn: "Beri SP 2",
-  },
-  3: {
+function makeLevelHeader(level: 1 | 2 | 3, th: { alfa: number; telat: number }) {
+  if (level === 1) {
+    return {
+      title: "Rekomendasi SP 1",
+      sub: `Murid dengan jumlah Alfa > ${th.alfa} dan/atau Terlambat > ${th.telat}`,
+      btn: "Beri SP 1",
+    };
+  }
+  if (level === 2) {
+    return {
+      title: "Rekomendasi SP 2",
+      sub: `Murid dengan jumlah Alfa > ${th.alfa} dan/atau Terlambat > ${th.telat}, sudah memiliki SP 1`,
+      btn: "Beri SP 2",
+    };
+  }
+  return {
     title: "Rekomendasi Pindah / SP 3",
-    sub: "Murid dengan jumlah Alfa > 10 dan/atau Terlambat > 15, sudah memiliki SP 2",
+    sub: `Murid dengan jumlah Alfa > ${th.alfa} dan/atau Terlambat > ${th.telat}, sudah memiliki SP 2`,
     btn: "Beri SP 3",
-  },
-};
+  };
+}
 
 function CountPill({ value, danger }: { value: number; danger: boolean }) {
   return (
@@ -349,6 +353,192 @@ function CountPill({ value, danger }: { value: number; danger: boolean }) {
     </span>
   );
 }
+
+type SortDir = "asc" | "desc";
+function useSort<K extends string>(defaultKey: K | null = null) {
+  const [key, setKey] = useState<K | null>(defaultKey);
+  const [dir, setDir] = useState<SortDir>("asc");
+  function toggle(k: K) {
+    if (key === k) {
+      if (dir === "asc") setDir("desc");
+      else {
+        setKey(null);
+        setDir("asc");
+      }
+    } else {
+      setKey(k);
+      setDir("asc");
+    }
+  }
+  return { key, dir, toggle };
+}
+
+function SortHead<K extends string>({
+  label,
+  sortKey,
+  state,
+  className,
+}: {
+  label: string;
+  sortKey: K;
+  state: { key: K | null; dir: SortDir; toggle: (k: K) => void };
+  className?: string;
+}) {
+  const active = state.key === sortKey;
+  return (
+    <TableHead className={className}>
+      <button
+        type="button"
+        onClick={() => state.toggle(sortKey)}
+        className="inline-flex items-center gap-1 hover:text-foreground focus:outline-none"
+      >
+        {label}
+        {active ? (
+          state.dir === "asc" ? (
+            <ArrowUp className="h-3.5 w-3.5" />
+          ) : (
+            <ArrowDown className="h-3.5 w-3.5" />
+          )
+        ) : (
+          <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/70" />
+        )}
+      </button>
+    </TableHead>
+  );
+}
+
+function sortRows<T>(rows: T[], key: keyof T | null, dir: SortDir): T[] {
+  if (!key) return rows;
+  const arr = [...rows];
+  arr.sort((a: any, b: any) => {
+    const va = a[key];
+    const vb = b[key];
+    let cmp = 0;
+    if (typeof va === "number" && typeof vb === "number") cmp = va - vb;
+    else cmp = String(va ?? "").localeCompare(String(vb ?? ""));
+    return dir === "asc" ? cmp : -cmp;
+  });
+  return arr;
+}
+
+function ThresholdSettingsDialog({
+  value,
+  onSave,
+}: {
+  value: Thresholds;
+  onSave: (v: Thresholds) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState<Thresholds>(value);
+
+  function reset() {
+    setForm(DEFAULT_TH);
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) setForm(value);
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Settings className="mr-2 h-4 w-4" />
+          Pengaturan Ambang
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Ambang Batas Rekomendasi SP</DialogTitle>
+        </DialogHeader>
+        <p className="text-xs text-muted-foreground">
+          Murid akan muncul di daftar rekomendasi bila jumlah Alfa <em>atau</em> Terlambat
+          melebihi (&gt;) ambang batas berikut.
+        </p>
+
+        <div className="space-y-4">
+          {([1, 2, 3] as const).map((lv) => {
+            const alfaKey = `sp${lv}Alfa` as keyof Thresholds;
+            const telatKey = `sp${lv}Telat` as keyof Thresholds;
+            const tone =
+              lv === 1
+                ? "border-l-amber-500"
+                : lv === 2
+                  ? "border-l-orange-500"
+                  : "border-l-red-500";
+            return (
+              <div key={lv} className={`rounded-md border border-l-4 ${tone} p-3`}>
+                <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                  <AlertTriangle
+                    className={`h-4 w-4 ${
+                      lv === 1
+                        ? "text-amber-500"
+                        : lv === 2
+                          ? "text-orange-500"
+                          : "text-red-500"
+                    }`}
+                  />
+                  SP {lv}
+                  {lv === 3 && (
+                    <span className="text-xs font-normal text-muted-foreground">
+                      (Rekomendasi pindah)
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Alfa &gt;</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={form[alfaKey]}
+                      onChange={(e) =>
+                        setForm({ ...form, [alfaKey]: Number(e.target.value) })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Terlambat &gt;</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={form[telatKey]}
+                      onChange={(e) =>
+                        setForm({ ...form, [telatKey]: Number(e.target.value) })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <DialogFooter className="flex-row justify-between sm:justify-between">
+          <Button variant="ghost" onClick={reset}>
+            Kembalikan default
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Batal
+            </Button>
+            <Button
+              onClick={() => {
+                onSave(form);
+                setOpen(false);
+              }}
+            >
+              Simpan
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function RekomendasiTable({
   level,
