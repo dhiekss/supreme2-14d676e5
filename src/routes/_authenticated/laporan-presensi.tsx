@@ -375,7 +375,7 @@ function LaporanPresensi() {
       </Card>
 
       {/* Big colorful stat cards */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
         <BigStat icon={<School className="h-6 w-6" />} label="Total Kelas" value={data?.stats.totalKelas ?? 0}
           gradient="from-blue-500 to-cyan-500" />
         <BigStat icon={<Users className="h-6 w-6" />} label="Total Pengajar" value={data?.stats.totalPengajar ?? 0}
