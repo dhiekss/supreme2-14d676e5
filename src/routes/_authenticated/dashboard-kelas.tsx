@@ -220,32 +220,35 @@ function RingkasanTab({ data, tanggalLabel }: { data: any; tanggalLabel: string 
           {data.jadwalHariIni.length === 0 ? (
             <div className="text-center text-sm text-muted-foreground py-6">Tidak ada jadwal untuk hari ini.</div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-16">Jam</TableHead>
-                  <TableHead className="w-40">Waktu</TableHead>
-                  <TableHead>Mata Pelajaran</TableHead>
-                  <TableHead>Guru</TableHead>
-                  <TableHead className="w-32">Status KBM</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.jadwalHariIni.map((j: any) => (
-                  <TableRow key={j.id}>
-                    <TableCell>{j.jam_ke ?? "—"}</TableCell>
-                    <TableCell className="whitespace-nowrap text-xs">
-                      {(j.jam_mulai ?? "—")} – {(j.jam_selesai ?? "—")}
-                    </TableCell>
-                    <TableCell>{j.mapel}</TableCell>
-                    <TableCell>{j.guru}</TableCell>
-                    <TableCell><KbmBadge status={j.kbm_status} /></TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16">Jam</TableHead>
+                    <TableHead className="w-40">Waktu</TableHead>
+                    <TableHead>Mata Pelajaran</TableHead>
+                    <TableHead>Guru</TableHead>
+                    <TableHead className="w-32">Status KBM</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {data.jadwalHariIni.map((j: any) => (
+                    <TableRow key={j.id}>
+                      <TableCell>{j.jam_ke ?? "—"}</TableCell>
+                      <TableCell className="whitespace-nowrap text-xs">
+                        {(j.jam_mulai ?? "—")} – {(j.jam_selesai ?? "—")}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{j.mapel}</TableCell>
+                      <TableCell className="whitespace-nowrap">{j.guru}</TableCell>
+                      <TableCell><KbmBadge status={j.kbm_status} /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
+
       </Card>
 
       <Card>
