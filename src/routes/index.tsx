@@ -10,8 +10,8 @@ export const Route = createFileRoute("/")({
 function IndexRedirect() {
   const navigate = useNavigate();
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      navigate({ to: data.user ? "/dashboard" : "/auth", replace: true });
+    supabase.auth.getSession().then(({ data }) => {
+      navigate({ to: data.session ? "/dashboard" : "/auth", replace: true });
     });
   }, [navigate]);
   return (
