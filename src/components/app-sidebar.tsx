@@ -33,10 +33,11 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
-  const { data: d = DEFAULT_DISPLAY } = useQuery({
+  const { data: d = getCachedDisplaySettings() } = useQuery({
     queryKey: ["display-settings"],
     queryFn: fetchDisplaySettings,
-    initialData: DEFAULT_DISPLAY,
+    initialData: getCachedDisplaySettings,
+    staleTime: 5 * 60_000,
   });
 
   const getLayout = useServerFn(getMyMenuLayout);
