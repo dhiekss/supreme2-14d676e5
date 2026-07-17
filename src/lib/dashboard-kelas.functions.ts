@@ -41,6 +41,8 @@ export const getDashboardKelas = createServerFn({ method: "GET" })
       date: z.string().optional(), // YYYY-MM-DD
       bulan: z.number().int().min(1).max(12).optional(),
       tahun: z.number().int().optional(),
+      startDate: z.string().optional(), // recap range start (overrides bulan/tahun)
+      endDate: z.string().optional(),
     }).parse,
   )
   .handler(async ({ context, data }) => {
@@ -56,9 +58,31 @@ export const getDashboardKelas = createServerFn({ method: "GET" })
     const hariNama = HARI[dateObj.getDay()];
     const bulan = data.bulan ?? dateObj.getMonth() + 1;
     const tahun = data.tahun ?? dateObj.getFullYear();
-    const monthStart = `${tahun}-${String(bulan).padStart(2, "0")}-01`;
-    const monthEndDate = new Date(tahun, bulan, 0);
-    const monthEnd = `${tahun}-${String(bulan).padStart(2, "0")}-${String(monthEndDate.getDate()).padStart(2, "0")}`;
+
+    // Active semester (for UI bounds & clamping custom range)
+    const { data: activeSem } = await supabase
+      .from("semester")
+      .select("id, nama, tanggal_mulai, tanggal_selesai, tahun_ajaran_id")
+      .eq("is_active", true)
+      .maybeSingle();
+    const { data: activeTA } = activeSem?.tahun_ajaran_id
+      ? await supabase.from("tahun_ajaran").select("id, nama").eq("id", activeSem.tahun_ajaran_id).maybeSingle()
+      : { data: null as any };
+    const semStart = (activeSem?.tanggal_mulai ?? null) as string | null;
+    const semEnd = (activeSem?.tanggal_selesai ?? null) as string | null;
+
+    // Recap period range: prefer explicit startDate/endDate; else bulan/tahun
+    let monthStart: string;
+    let monthEnd: string;
+    if (data.startDate && data.endDate) {
+      monthStart = data.startDate;
+      monthEnd = data.endDate;
+    } else {
+      monthStart = `${tahun}-${String(bulan).padStart(2, "0")}-01`;
+      const monthEndDate = new Date(tahun, bulan, 0);
+      monthEnd = `${tahun}-${String(bulan).padStart(2, "0")}-${String(monthEndDate.getDate()).padStart(2, "0")}`;
+    }
+
 
     // Rombel
     const { data: rombel, error: rerr } = await supabase
