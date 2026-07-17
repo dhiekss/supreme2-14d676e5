@@ -279,17 +279,17 @@ function LaporanKeterlambatanPage() {
     : "Pilih tanggal";
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Laporan Keterlambatan</h1>
+    <div className="p-4 sm:p-6 space-y-6">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Laporan Keterlambatan</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Statistik dan data murid yang terlambat
           </p>
         </div>
-        <Button variant="outline" onClick={exportExcel} disabled={students.length === 0}>
-          <Download className="h-4 w-4 mr-2" />
-          Export Excel
+        <Button variant="outline" onClick={exportExcel} disabled={students.length === 0} className="shrink-0">
+          <Download className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Export Excel</span>
         </Button>
       </div>
 
