@@ -280,6 +280,8 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
     let out = sessions.filter((x) => {
       if (statusF !== "all" && x.guru_status !== statusF) return false;
       if (rombelF !== "all" && x.rombel_id !== rombelF) return false;
+      if (dateFrom && (x.tanggal ?? "") < dateFrom) return false;
+      if (dateTo && (x.tanggal ?? "") > dateTo) return false;
       if (!s) return true;
       return (
         (x.guru_nama ?? "").toLowerCase().includes(s) ||
@@ -290,7 +292,10 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
     const cmp = (a: any, b: any) => {
       let va: any = "";
       let vb: any = "";
-      if (sortKey === "jam") {
+      if (sortKey === "tanggal") {
+        va = `${a.tanggal ?? ""}-${String(a.jam_list[0] ?? 0).padStart(2, "0")}`;
+        vb = `${b.tanggal ?? ""}-${String(b.jam_list[0] ?? 0).padStart(2, "0")}`;
+      } else if (sortKey === "jam") {
         va = a.jam_list[0] ?? 0;
         vb = b.jam_list[0] ?? 0;
       } else if (sortKey === "rombel") { va = a.rombel_name; vb = b.rombel_name; }
@@ -301,7 +306,8 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
       return sortDir === "asc" ? r : -r;
     };
     return [...out].sort(cmp);
-  }, [sessions, search, statusF, rombelF, sortKey, sortDir]);
+  }, [sessions, search, statusF, rombelF, dateFrom, dateTo, sortKey, sortDir]);
+
 
   const toggleSort = (k: SortKey) => {
     if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
