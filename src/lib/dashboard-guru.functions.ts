@@ -62,7 +62,7 @@ export const getGuruDashboard = createServerFn({ method: "GET" })
     const hariName = HARI_MAP[today.getDay()];
     const todayIso = today.toISOString().slice(0, 10);
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
-    const thirtyAgo = new Date(today.getTime() - 30 * 86_400_000).toISOString().slice(0, 10);
+    
 
     const [mapel, jadwalAll, rmp, berkas, activeSem, waliRombel] = await Promise.all([
       guru.mata_pelajaran_id
