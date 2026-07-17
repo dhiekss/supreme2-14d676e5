@@ -258,9 +258,9 @@ function AdministrasiPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-2">
             <Select value={rombelId} onValueChange={(v) => { setPage(1); setRombelId(v); }}>
-              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter Rombel" /></SelectTrigger>
+              <SelectTrigger className="w-full lg:w-[180px]"><SelectValue placeholder="Filter Rombel" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Rombel</SelectItem>
                 {(refs?.rombel ?? []).map((r: any) => (
@@ -269,7 +269,7 @@ function AdministrasiPage() {
               </SelectContent>
             </Select>
             <Select value={guruId} onValueChange={(v) => { setPage(1); setGuruId(v); }}>
-              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Filter Guru" /></SelectTrigger>
+              <SelectTrigger className="w-full lg:w-[200px]"><SelectValue placeholder="Filter Guru" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Guru</SelectItem>
                 {(refs?.guru ?? []).map((g: any) => (
@@ -278,7 +278,7 @@ function AdministrasiPage() {
               </SelectContent>
             </Select>
             <Select value={mapelId} onValueChange={(v) => { setPage(1); setMapelId(v); }}>
-              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Filter Mapel" /></SelectTrigger>
+              <SelectTrigger className="w-full lg:w-[200px]"><SelectValue placeholder="Filter Mapel" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Mapel</SelectItem>
                 {(refs?.mapel ?? []).map((m: any) => (
@@ -287,7 +287,7 @@ function AdministrasiPage() {
               </SelectContent>
             </Select>
             <Select value={keterangan} onValueChange={(v) => { setPage(1); setKeterangan(v as any); }}>
-              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter Keterangan" /></SelectTrigger>
+              <SelectTrigger className="w-full lg:w-[180px]"><SelectValue placeholder="Filter Keterangan" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Keterangan</SelectItem>
                 <SelectItem value="belum">Belum Menginput</SelectItem>
@@ -297,7 +297,7 @@ function AdministrasiPage() {
               </SelectContent>
             </Select>
             <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
-              <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full lg:w-[130px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {[10, 20, 50, 100].map((n) => (
                   <SelectItem key={n} value={String(n)}>{n} / halaman</SelectItem>
@@ -305,6 +305,7 @@ function AdministrasiPage() {
               </SelectContent>
             </Select>
           </div>
+
 
           {isAdmin && selectedIds.size > 0 && (
             <div className="flex items-center justify-between gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2">
