@@ -261,7 +261,7 @@ function statusBadge(s: string) {
   return <Badge variant="secondary">{s}</Badge>;
 }
 
-type SortKey = "jam" | "rombel" | "guru" | "mapel" | "status";
+type SortKey = "tanggal" | "jam" | "rombel" | "guru" | "mapel" | "status";
 
 function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelOpts: any[] }) {
   const navigate = useNavigate();
