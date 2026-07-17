@@ -71,7 +71,7 @@ export const getGuruDashboard = createServerFn({ method: "GET" })
       supabase.from("jadwal_pelajaran").select("*").eq("guru_id", data.guruId),
       supabase.from("rombel_mata_pelajaran").select("*").eq("guru_id", data.guruId).is("deleted_at", null),
       supabase.from("berkas_pembelajaran").select("*").eq("guru_id", data.guruId),
-      supabase.from("semester").select("id, nama").eq("is_active", true).maybeSingle(),
+      supabase.from("semester").select("id, nama, tanggal_mulai, tanggal_selesai, tahun_ajaran_id").eq("is_active", true).maybeSingle(),
       guru.nip
         ? supabase.from("rombel").select("id, name").eq("wali_kelas_nip", guru.nip)
         : Promise.resolve({ data: [] }),
