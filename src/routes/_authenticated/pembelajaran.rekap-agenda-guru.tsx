@@ -96,39 +96,39 @@ function RekapAgendaGuruPage() {
   return (
     <div className="p-4 sm:p-6 space-y-4">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <ClipboardList className="h-6 w-6" /> Rekap Agenda Guru
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <ClipboardList className="h-5 w-5 sm:h-6 sm:w-6 shrink-0" /> Rekap Agenda Guru
           </h1>
-          <p className="text-muted-foreground text-sm">Analisis pelaksanaan agenda KBM guru berdasarkan rentang tanggal.</p>
+          <p className="text-muted-foreground text-xs sm:text-sm">Analisis pelaksanaan agenda KBM guru berdasarkan rentang tanggal.</p>
         </div>
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 items-end w-full md:w-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:flex-wrap gap-2 items-end w-full md:w-auto">
           <div>
             <div className="text-xs text-muted-foreground">Dari</div>
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-full sm:w-40" />
+            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-full lg:w-40" />
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Sampai</div>
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-full sm:w-40" />
+            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-full lg:w-40" />
           </div>
           <Select value={guruId} onValueChange={setGuruId}>
-            <SelectTrigger className="w-full sm:w-56 col-span-2 sm:col-auto"><SelectValue placeholder="Semua Guru" /></SelectTrigger>
+            <SelectTrigger className="w-full lg:w-56 col-span-2 sm:col-span-2"><SelectValue placeholder="Semua Guru" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Guru</SelectItem>
               {opts.guru.map((g: any) => <SelectItem key={g.id} value={g.id}>{g.nama}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={rombelId} onValueChange={setRombelId}>
-            <SelectTrigger className="w-full sm:w-48 col-span-2 sm:col-auto"><SelectValue placeholder="Semua Rombel" /></SelectTrigger>
+            <SelectTrigger className="w-full lg:w-48 col-span-2 sm:col-span-2"><SelectValue placeholder="Semua Rombel" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Rombel</SelectItem>
               {opts.rombel.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={() => dataQ.refetch()} disabled={dataQ.isFetching} className="w-full sm:w-auto">
+          <Button variant="outline" onClick={() => dataQ.refetch()} disabled={dataQ.isFetching} className="w-full lg:w-auto">
             <RefreshCw className={`h-4 w-4 mr-1 ${dataQ.isFetching ? "animate-spin" : ""}`} /> Refresh
           </Button>
-          <Button onClick={handleExport} disabled={!d} className="w-full sm:w-auto">
+          <Button onClick={handleExport} disabled={!d} className="w-full lg:w-auto">
             <Download className="h-4 w-4 mr-1" /> Excel
           </Button>
         </div>
