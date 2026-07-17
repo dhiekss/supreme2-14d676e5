@@ -17,14 +17,15 @@ import {
 } from "@/components/ui/dialog";
 import {
   UserSearch, CalendarDays, Clock, BookOpen, CheckCircle2,
-  Upload, Camera, Eraser,
+  Upload, Camera, Eraser, Download, FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { SignaturePad, type SignaturePadHandle } from "@/components/signature-pad";
 import {
-  listGuruForAgenda, listJadwalAgenda, upsertAgendaGuru, getAgendaDetail,
+  listGuruForAgenda, listJadwalAgenda, upsertAgendaGuru, getAgendaDetail, exportAgendaKbm,
 } from "@/lib/agenda-guru.functions";
+import { jsPDF } from "jspdf";
 
 export const Route = createFileRoute("/_authenticated/pembelajaran/agenda-guru")({
   head: () => ({ meta: [{ title: "Agenda Guru — SUPREME XPOES" }] }),
