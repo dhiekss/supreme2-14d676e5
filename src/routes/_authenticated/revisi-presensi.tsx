@@ -185,7 +185,7 @@ function DataPresensiTab({ rombel }: { rombel: any[] }) {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Cari Siswa</Label>
+              <Label>Cari Murid</Label>
               <div className="relative">
                 <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                 <Input placeholder="Nama atau NIS..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
@@ -210,7 +210,7 @@ function DataPresensiTab({ rombel }: { rombel: any[] }) {
               <TableRow>
                 <TableHead className="w-16">No</TableHead>
                 <TableHead className="w-32">NIS</TableHead>
-                <TableHead>Nama Siswa</TableHead>
+                <TableHead>Nama Murid</TableHead>
                 <TableHead className="w-40">Status</TableHead>
                 <TableHead className="w-40 text-right">Aksi</TableHead>
               </TableRow>
@@ -240,7 +240,7 @@ function DataPresensiTab({ rombel }: { rombel: any[] }) {
               ))}
               {rows.length === 0 && (
                 <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                  {students.isLoading ? "Memuat..." : "Tidak ada siswa."}
+                  {students.isLoading ? "Memuat..." : "Tidak ada murid."}
                 </TableCell></TableRow>
               )}
             </TableBody>
@@ -300,7 +300,7 @@ function RevisionDialog({
         {target && (
           <div className="space-y-4">
             <div className="rounded-lg border bg-muted/30 p-3 text-sm">
-              <div><span className="text-muted-foreground">Siswa:</span> <b>{target.name}</b> ({target.nis})</div>
+              <div><span className="text-muted-foreground">Murid:</span> <b>{target.name}</b> ({target.nis})</div>
               <div><span className="text-muted-foreground">Tanggal:</span> {formatDateID(date)}</div>
               <div><span className="text-muted-foreground">Status saat ini:</span>{" "}
                 {target.current ? (
@@ -349,7 +349,7 @@ function RevisionTable({ rows, actions }: { rows: any[]; actions?: (r: any) => R
           <TableHeader>
             <TableRow>
               <TableHead>Tanggal</TableHead>
-              <TableHead>Siswa</TableHead>
+              <TableHead>Murid</TableHead>
               <TableHead>Rombel</TableHead>
               <TableHead className="text-center">Asli → Diminta</TableHead>
               <TableHead>Alasan</TableHead>

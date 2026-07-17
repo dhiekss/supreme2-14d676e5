@@ -41,7 +41,7 @@ function Page() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard Murid</h1>
-        <p className="text-muted-foreground text-sm mt-1">Pilih siswa untuk melihat dashboard mereka</p>
+        <p className="text-muted-foreground text-sm mt-1">Pilih murid untuk melihat dashboard mereka</p>
       </div>
 
       <Card>
@@ -76,12 +76,12 @@ function Page() {
           <div className="px-6 py-4 border-b flex items-center gap-2">
             <Users className="h-5 w-5" />
             <div>
-              <div className="font-semibold">Daftar Siswa</div>
-              <div className="text-xs text-muted-foreground">{rows.length} siswa ditemukan</div>
+              <div className="font-semibold">Daftar Murid</div>
+              <div className="text-xs text-muted-foreground">{rows.length} murid ditemukan</div>
             </div>
           </div>
           {rows.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground text-sm">Tidak ada data siswa.</div>
+            <div className="p-8 text-center text-muted-foreground text-sm">Tidak ada data murid.</div>
           ) : (
             <div className="p-4 space-y-2">
               {rows.slice(0, 200).map((r: any) => (
@@ -107,7 +107,7 @@ function Page() {
               ))}
               {rows.length > 200 && (
                 <div className="p-3 text-center text-xs text-muted-foreground">
-                  Menampilkan 200 dari {rows.length} siswa. Persempit dengan pencarian atau filter rombel.
+                  Menampilkan 200 dari {rows.length} murid. Persempit dengan pencarian atau filter rombel.
                 </div>
               )}
             </div>

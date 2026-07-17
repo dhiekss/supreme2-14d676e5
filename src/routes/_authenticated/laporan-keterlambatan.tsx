@@ -379,10 +379,10 @@ function LaporanKeterlambatanPage() {
       {/* Rankings */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         <RankingCard title="Ranking Konsentrasi Keahlian" icon={<Building2 className="h-4 w-4 text-blue-500" />}
-          items={rankKonsentrasi.slice(0, 3).map((r) => ({ label: r.name, sub: `${r.late} dari ${r.total} siswa`, pct: r.pct }))}
+          items={rankKonsentrasi.slice(0, 3).map((r) => ({ label: r.name, sub: `${r.late} dari ${r.total} murid`, pct: r.pct }))}
           more={rankKonsentrasi.length > 3 ? rankKonsentrasi.length - 3 : 0} />
         <RankingCard title="Ranking Rombel" icon={<UsersRound className="h-4 w-4 text-blue-500" />}
-          items={rankRombel.slice(0, 3).map((r) => ({ label: r.name, sub: `${r.late} dari ${r.total} siswa`, pct: r.pct }))}
+          items={rankRombel.slice(0, 3).map((r) => ({ label: r.name, sub: `${r.late} dari ${r.total} murid`, pct: r.pct }))}
           more={rankRombel.length > 3 ? rankRombel.length - 3 : 0} />
       </div>
 

@@ -220,7 +220,7 @@ function Page() {
                 <div className="text-3xl font-bold mt-1">{data.totalRombel}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">Jumlah Siswa</div>
+                <div className="text-xs text-muted-foreground">Jumlah Murid</div>
                 <div className="text-3xl font-bold mt-1">{data.totalSiswa}</div>
               </div>
               <div>
@@ -355,9 +355,9 @@ function DetailDialog({
     !q.trim() || `${name} ${nis}`.toLowerCase().includes(q.trim().toLowerCase());
 
   const title =
-    kind === "kehadiran" ? "Detail Kehadiran Siswa" :
-    kind === "alfa" ? "Detail Alfa Siswa" :
-    kind === "terlambat" ? "Detail Keterlambatan Siswa" :
+    kind === "kehadiran" ? "Detail Kehadiran Murid" :
+    kind === "alfa" ? "Detail Alfa Murid" :
+    kind === "terlambat" ? "Detail Keterlambatan Murid" :
     kind === "kbm" ? "Detail Realisasi KBM per Rombel" : "";
 
   return (

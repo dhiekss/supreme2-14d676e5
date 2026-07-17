@@ -66,8 +66,8 @@ export const MENU_CATALOG: MenuGroup[] = [
 
       { key: "sarpras", label: "Sarpras" },
       { key: "tpg", label: "TPG" },
-      { key: "verval", label: "Verval Siswa" },
-      { key: "mutasi", label: "Mutasi Siswa" },
+      { key: "verval", label: "Verval Murid" },
+      { key: "mutasi", label: "Mutasi Murid" },
       { key: "kenaikan-kelas", label: "Kenaikan Kelas" },
       { key: "kbm", label: "KBM" },
     ],

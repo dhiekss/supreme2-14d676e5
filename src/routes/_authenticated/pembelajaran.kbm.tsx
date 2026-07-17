@@ -119,7 +119,7 @@ function LaporKbmPage() {
 
   const submitMut = useMutation({
     mutationFn: async () => {
-      if (!rombelId) throw new Error("Pilih rombel siswa");
+      if (!rombelId) throw new Error("Pilih rombel murid");
       if (!mapelId) throw new Error("Pilih mata pelajaran");
       if (!guruId) throw new Error("Pilih nama guru pengajar");
       if (jamList.length === 0) throw new Error("Pilih minimal 1 jam pelajaran");
@@ -201,7 +201,7 @@ function LaporKbmPage() {
                 </div>
               </Field>
 
-              <Field label="Rombel Siswa" required>
+              <Field label="Rombel Murid" required>
                 <Select
                   value={rombelId}
                   onValueChange={(v) => {

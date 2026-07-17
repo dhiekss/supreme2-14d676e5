@@ -152,19 +152,19 @@ function Page() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <StudentListCard
           icon={<AlertCircle className="h-4 w-4 text-rose-500" />}
-          title="Siswa Alfa"
+          title="Murid Alfa"
           subtitle="Semester aktif"
           badge={String(alfaList.reduce((s, a) => s + a.count, 0))}
           items={alfaList.slice(0, 5).map((a) => ({ name: a.name, sub: a.rombel, right: `${a.count}x` }))}
-          empty="Tidak ada siswa alfa"
+          empty="Tidak ada murid alfa"
         />
         <StudentListCard
           icon={<Clock className="h-4 w-4 text-amber-500" />}
-          title="Siswa Terlambat"
+          title="Murid Terlambat"
           subtitle="Semester aktif"
           badge={String(terlambatList.reduce((s, a) => s + a.count, 0))}
           items={terlambatList.slice(0, 5).map((a) => ({ name: a.name, sub: a.rombel, right: `${a.count}x` }))}
-          empty="Tidak ada siswa terlambat"
+          empty="Tidak ada murid terlambat"
         />
         <StudentListCard
           icon={<AlertTriangle className="h-4 w-4 text-amber-500" />}
@@ -196,7 +196,7 @@ function Page() {
                     <div className="text-xs text-muted-foreground line-clamp-1">{k.mapel}</div>
                     {k.konsentrasi && <div className="text-xs text-muted-foreground/70">{k.konsentrasi}</div>}
                   </div>
-                  <Badge variant="outline" className="shrink-0">{k.siswa} siswa</Badge>
+                  <Badge variant="outline" className="shrink-0">{k.siswa} murid</Badge>
                 </div>
               ))}
             </div>

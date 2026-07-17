@@ -201,10 +201,10 @@ function PresensiPage() {
           <CardContent>
             {studentsQuery.isLoading ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
-                <Loader2 className="h-4 w-4 animate-spin" /> Memuat siswa...
+                <Loader2 className="h-4 w-4 animate-spin" /> Memuat murid...
               </div>
             ) : (studentsQuery.data ?? []).length === 0 ? (
-              <div className="text-center text-muted-foreground py-8 text-sm">Belum ada siswa pada rombel ini.</div>
+              <div className="text-center text-muted-foreground py-8 text-sm">Belum ada murid pada rombel ini.</div>
             ) : (
               <div className="space-y-2">
                 {(studentsQuery.data ?? []).map((s, i) => (

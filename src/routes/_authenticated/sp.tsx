@@ -209,7 +209,7 @@ function BpBkPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Manajemen BP/BK</h1>
           <p className="text-sm text-muted-foreground">
-            Kelola Surat Peringatan (SP) untuk siswa
+            Kelola Surat Peringatan (SP) untuk murid
           </p>
         </div>
         <ThresholdSettingsDialog

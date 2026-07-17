@@ -97,7 +97,7 @@ function Page() {
       },
     }),
     onSuccess: (r) => {
-      toast.success(`Berhasil memproses ${r.count} siswa`);
+      toast.success(`Berhasil memproses ${r.count} murid`);
       setItems([]);
       setRombelAsal("");
       setRombelTujuan("");
@@ -186,7 +186,7 @@ function Page() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base">2. Daftar Siswa</CardTitle>
+              <CardTitle className="text-base">2. Daftar Murid</CardTitle>
               <div className="flex gap-2 text-xs">
                 <Badge variant="secondary">Naik: {summary.naik}</Badge>
                 <Badge variant="secondary">Tinggal: {summary.tinggal}</Badge>
@@ -195,9 +195,9 @@ function Page() {
               </div>
             </CardHeader>
             <CardContent>
-              {loadPreview.isPending && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Memuat siswa...</div>}
+              {loadPreview.isPending && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Memuat murid...</div>}
               {!loadPreview.isPending && items.length === 0 && (
-                <div className="text-sm text-muted-foreground text-center py-6">Pilih rombel asal untuk memuat siswa.</div>
+                <div className="text-sm text-muted-foreground text-center py-6">Pilih rombel asal untuk memuat murid.</div>
               )}
               {items.length > 0 && (
                 <Table>
@@ -259,8 +259,8 @@ function Page() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Konfirmasi Kenaikan Kelas</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Akan memproses {items.length} siswa: {summary.naik} naik, {summary.tinggal} tinggal, {summary.lulus} lulus, {summary.keluar} keluar.
-                    Aksi ini akan memperbarui rombel siswa dan menyimpan riwayat.
+                    Akan memproses {items.length}  murid: {summary.naik} naik, {summary.tinggal} tinggal, {summary.lulus} lulus, {summary.keluar} keluar.
+                    Aksi ini akan memperbarui rombel murid dan menyimpan riwayat.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -295,7 +295,7 @@ function RiwayatTab({ batchesFn, undoFn, undoStudentFn, qc }: any) {
   const undoStudent = useMutation({
     mutationFn: (promotion_id: string) => undoStudentFn({ data: { promotion_id } }),
     onSuccess: (r: any) => {
-      toast.success(`${r.student_name ?? "Siswa"} dikembalikan ke kelas asal`);
+      toast.success(`${r.student_name ?? "Murid"} dikembalikan ke kelas asal`);
       invalidateAll();
     },
     onError: (e: any) => toast.error(e.message),
@@ -348,7 +348,7 @@ function RiwayatTab({ batchesFn, undoFn, undoStudentFn, qc }: any) {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Batalkan Batch?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Rombel siswa akan dikembalikan ke rombel asal dan riwayat batch dihapus. Hanya admin yang dapat melakukan ini.
+                              Rombel murid akan dikembalikan ke rombel asal dan riwayat batch dihapus. Hanya admin yang dapat melakukan ini.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -384,7 +384,7 @@ function RiwayatTab({ batchesFn, undoFn, undoStudentFn, qc }: any) {
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                       <AlertDialogHeader>
-                                        <AlertDialogTitle>Kembalikan siswa ini?</AlertDialogTitle>
+                                        <AlertDialogTitle>Kembalikan murid ini?</AlertDialogTitle>
                                         <AlertDialogDescription>
                                           {it.student_name} akan dikembalikan ke rombel asal ({it.rombel_asal_name ?? "—"}) dan baris riwayat ini dihapus. Hanya admin yang dapat melakukan ini.
                                         </AlertDialogDescription>
