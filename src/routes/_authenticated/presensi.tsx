@@ -186,9 +186,9 @@ function PresensiPage() {
       {rombelId && (
         <Card className="border-border/60 shadow-sm">
           <CardHeader className="pb-3">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
-              <CardTitle className="text-lg">Daftar Murid</CardTitle>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+              <CardTitle className="text-lg shrink-0">Daftar Murid</CardTitle>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
                 {STATUS_OPTIONS.map((o) => (
                   <span key={o.value} className={cn("flex items-center gap-1 font-medium", o.textClass)}>
                     <span className={cn("h-2 w-2 rounded-full bg-current")} />
@@ -211,18 +211,20 @@ function PresensiPage() {
                   <div
                     key={s.id}
                     className={cn(
-                      "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-border/50 px-3 py-2.5 transition-colors",
+                      "rounded-lg border border-border/50 px-3 py-2.5 transition-colors",
                       i % 2 === 0 ? "bg-muted/30" : "bg-background",
                     )}
                   >
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-background border text-xs font-semibold text-muted-foreground">
-                      {i + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <div className="font-semibold text-sm truncate uppercase tracking-wide">{s.name}</div>
-                      <div className="text-[11px] text-muted-foreground font-mono">NIS: {s.nis ?? "—"}</div>
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-background border text-xs font-semibold text-muted-foreground">
+                        {i + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-sm truncate uppercase tracking-wide">{s.name}</div>
+                        <div className="text-[11px] text-muted-foreground font-mono">NIS: {s.nis ?? "—"}</div>
+                      </div>
                     </div>
-                    <div className="flex flex-wrap items-center justify-end gap-3 sm:gap-4">
+                    <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2 sm:justify-end sm:mt-0 sm:ml-auto">
                       {STATUS_OPTIONS.map((o) => {
                         const active = statuses[s.id] === o.value;
                         return (
