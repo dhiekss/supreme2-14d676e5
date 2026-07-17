@@ -26,6 +26,7 @@ function Page() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [semesterId, setSemesterId] = useState<string | undefined>(undefined);
+  const [tahunAjaran, setTahunAjaran] = useState<string>("all");
   const fn = useServerFn(getSiswaDashboard);
   const { data, isLoading, error } = useQuery({
     queryKey: ["dashboard-murid", studentId, mode, year, month, semesterId],
@@ -43,6 +44,25 @@ function Page() {
   const periodeLabel = periode.periodeLabel;
   const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1);
   const yearOptions = [now.getFullYear() - 2, now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
+
+  // Distinct tahun ajaran list from semester options (preserve order)
+  const tahunAjaranList: string[] = [];
+  const seenTa = new Set<string>();
+  (semesterOptions ?? []).forEach((s: any) => {
+    const ta = s.tahun_ajaran as string | null;
+    if (ta && !seenTa.has(ta)) {
+      seenTa.add(ta);
+      tahunAjaranList.push(ta);
+    }
+  });
+  const filteredSemesters = (semesterOptions ?? []).filter((s: any) =>
+    tahunAjaran === "all" ? true : s.tahun_ajaran === tahunAjaran,
+  );
+  const semesterLabel = (s: any) => {
+    const base = s.nama ?? "Semester";
+    const ta = s.tahun_ajaran ? ` ${s.tahun_ajaran}` : "";
+    return `${base}${ta}${s.is_active ? " (Aktif)" : ""}`;
+  };
 
   return (
     <div className="space-y-4">
@@ -133,16 +153,29 @@ function Page() {
               </Select>
             </>
           ) : (
-            <Select value={periode.semesterId ?? ""} onValueChange={(v) => setSemesterId(v)}>
-              <SelectTrigger className="w-72"><SelectValue placeholder="Pilih Semester" /></SelectTrigger>
-              <SelectContent>
-                {(semesterOptions ?? []).map((s: any) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.nama}{s.is_active ? " (Aktif)" : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <>
+              {tahunAjaranList.length > 0 && (
+                <Select value={tahunAjaran} onValueChange={setTahunAjaran}>
+                  <SelectTrigger className="w-48"><SelectValue placeholder="Tahun Ajaran" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Tahun Ajaran</SelectItem>
+                    {tahunAjaranList.map((ta) => (
+                      <SelectItem key={ta} value={ta}>{ta}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Select value={periode.semesterId ?? ""} onValueChange={(v) => setSemesterId(v)}>
+                <SelectTrigger className="w-72"><SelectValue placeholder="Pilih Semester" /></SelectTrigger>
+                <SelectContent>
+                  {filteredSemesters.length === 0 ? (
+                    <div className="px-3 py-2 text-xs text-muted-foreground">Tidak ada semester</div>
+                  ) : filteredSemesters.map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>{semesterLabel(s)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
           )}
         </CardContent>
       </Card>
