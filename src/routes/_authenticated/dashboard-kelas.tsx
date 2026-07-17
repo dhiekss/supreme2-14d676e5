@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableHeader, TableRow, TableHead, TableBody, TableCell,
 } from "@/components/ui/table";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   CalendarDays, CheckCircle2, XCircle, Heart, FileText, Clock,
   Users, GraduationCap, AlertTriangle, Search, Download, Eye, BookOpen,
@@ -42,6 +43,8 @@ function Page() {
 
   const [rombelId, setRombelId] = useState<string>("");
   const [date, setDate] = useState<string>(todayISO());
+  // Kehadiran recap range (null = default: current month of `date`)
+  const [kehadiranRange, setKehadiranRange] = useState<{ startDate: string; endDate: string; label: string } | null>(null);
 
   const detailFn = useServerFn(getDashboardKelas);
   const monthYear = useMemo(() => {
@@ -50,8 +53,13 @@ function Page() {
   }, [date]);
   const { data, isLoading, error } = useQuery({
     enabled: !!rombelId,
-    queryKey: ["dashboard-kelas", rombelId, date, monthYear.bulan, monthYear.tahun],
-    queryFn: () => detailFn({ data: { rombelId, date, bulan: monthYear.bulan, tahun: monthYear.tahun } }),
+    queryKey: ["dashboard-kelas", rombelId, date, monthYear.bulan, monthYear.tahun, kehadiranRange?.startDate, kehadiranRange?.endDate],
+    queryFn: () => detailFn({
+      data: {
+        rombelId, date, bulan: monthYear.bulan, tahun: monthYear.tahun,
+        startDate: kehadiranRange?.startDate, endDate: kehadiranRange?.endDate,
+      },
+    }),
   });
 
   const tanggalLabel = useMemo(() => {
@@ -133,7 +141,7 @@ function Page() {
           </TabsContent>
 
           <TabsContent value="kehadiran">
-            <KehadiranTab data={data} />
+            <KehadiranTab data={data} range={kehadiranRange} setRange={setKehadiranRange} />
           </TabsContent>
 
           <TabsContent value="keterlambatan">
@@ -353,7 +361,15 @@ function DaftarSiswaTab({ data }: { data: any }) {
 }
 
 /* ------------------ Kehadiran ------------------ */
-function KehadiranTab({ data }: { data: any }) {
+function KehadiranTab({
+  data,
+  range,
+  setRange,
+}: {
+  data: any;
+  range: { startDate: string; endDate: string; label: string } | null;
+  setRange: (r: { startDate: string; endDate: string; label: string } | null) => void;
+}) {
   const dist = data.distribusi;
   const pieData = [
     { name: "Hadir", value: dist.H, color: "#10b981" },
@@ -362,13 +378,25 @@ function KehadiranTab({ data }: { data: any }) {
     { name: "Alfa", value: dist.A, color: "#ef4444" },
     { name: "PKL", value: dist.P, color: "#8b5cf6" },
   ].filter((d) => d.value > 0);
-  const label = `${BULAN[data.periode.bulan - 1]} ${data.periode.tahun}`;
+  const defaultLabel = `${BULAN[data.periode.bulan - 1]} ${data.periode.tahun}`;
+  const label = range?.label ?? defaultLabel;
+  const semester = data.semester as
+    | { nama: string | null; tanggal_mulai: string | null; tanggal_selesai: string | null; tahun_ajaran: { nama: string | null } | null }
+    | null;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <Card className="lg:col-span-2">
         <CardHeader className="pb-2 flex flex-row items-center justify-between">
           <CardTitle className="text-base">Rekap Kehadiran</CardTitle>
-          <Badge variant="outline">{label}</Badge>
+          <RangePicker
+            label={label}
+            range={range}
+            setRange={setRange}
+            defaultBulan={data.periode.bulan}
+            defaultTahun={data.periode.tahun}
+            semester={semester}
+          />
         </CardHeader>
         <CardContent className="p-0">
           <div className="max-h-[560px] overflow-y-auto">
@@ -654,4 +682,145 @@ function fullStatus(k: string) {
 
 function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
+/* ------------------ Range Picker (Kehadiran) ------------------ */
+function RangePicker({
+  label,
+  range,
+  setRange,
+  defaultBulan,
+  defaultTahun,
+  semester,
+}: {
+  label: string;
+  range: { startDate: string; endDate: string; label: string } | null;
+  setRange: (r: { startDate: string; endDate: string; label: string } | null) => void;
+  defaultBulan: number;
+  defaultTahun: number;
+  semester: { nama: string | null; tanggal_mulai: string | null; tanggal_selesai: string | null; tahun_ajaran: { nama: string | null } | null } | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const [bulan, setBulan] = useState<number>(defaultBulan);
+  const [tahun, setTahun] = useState<number>(defaultTahun);
+  const [customStart, setCustomStart] = useState<string>(range?.startDate ?? "");
+  const [customEnd, setCustomEnd] = useState<string>(range?.endDate ?? "");
+
+  // Month options limited to semester bounds if available
+  const monthOptions = useMemo(() => {
+    const opts: { value: string; label: string; bulan: number; tahun: number }[] = [];
+    if (semester?.tanggal_mulai && semester?.tanggal_selesai) {
+      const s = new Date(semester.tanggal_mulai + "T00:00:00");
+      const e = new Date(semester.tanggal_selesai + "T00:00:00");
+      const cur = new Date(s.getFullYear(), s.getMonth(), 1);
+      while (cur <= e) {
+        const b = cur.getMonth() + 1;
+        const y = cur.getFullYear();
+        opts.push({ value: `${y}-${b}`, label: `${BULAN[b - 1]} ${y}`, bulan: b, tahun: y });
+        cur.setMonth(cur.getMonth() + 1);
+      }
+    } else {
+      // fallback: 12 months around current
+      for (let i = -6; i <= 6; i++) {
+        const d = new Date(defaultTahun, defaultBulan - 1 + i, 1);
+        const b = d.getMonth() + 1;
+        const y = d.getFullYear();
+        opts.push({ value: `${y}-${b}`, label: `${BULAN[b - 1]} ${y}`, bulan: b, tahun: y });
+      }
+    }
+    return opts;
+  }, [semester, defaultBulan, defaultTahun]);
+
+  const applyMonth = (b: number, y: number) => {
+    const start = `${y}-${String(b).padStart(2, "0")}-01`;
+    const last = new Date(y, b, 0).getDate();
+    const end = `${y}-${String(b).padStart(2, "0")}-${String(last).padStart(2, "0")}`;
+    setBulan(b);
+    setTahun(y);
+    setRange({ startDate: start, endDate: end, label: `${BULAN[b - 1]} ${y}` });
+    setOpen(false);
+  };
+
+  const applySemester = () => {
+    if (!semester?.tanggal_mulai || !semester?.tanggal_selesai) return;
+    const ta = semester.tahun_ajaran?.nama ? ` ${semester.tahun_ajaran.nama}` : "";
+    setRange({
+      startDate: semester.tanggal_mulai,
+      endDate: semester.tanggal_selesai,
+      label: `${semester.nama ?? "Semester"}${ta}`,
+    });
+    setOpen(false);
+  };
+
+  const applyCustom = () => {
+    if (!customStart || !customEnd) return;
+    const s = customStart <= customEnd ? customStart : customEnd;
+    const e = customStart <= customEnd ? customEnd : customStart;
+    setRange({ startDate: s, endDate: e, label: `${s} — ${e}` });
+    setOpen(false);
+  };
+
+  const reset = () => {
+    setRange(null);
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 gap-1">
+          <CalendarDays className="h-3.5 w-3.5" />
+          {label}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 space-y-3">
+        <div>
+          <div className="text-xs font-semibold mb-1">Pilih Bulan</div>
+          <div className="grid grid-cols-3 gap-1 max-h-40 overflow-y-auto pr-1">
+            {monthOptions.map((m) => (
+              <Button
+                key={m.value}
+                size="sm"
+                variant={range?.startDate === `${m.tahun}-${String(m.bulan).padStart(2, "0")}-01` ? "default" : "outline"}
+                className="h-8 text-xs"
+                onClick={() => applyMonth(m.bulan, m.tahun)}
+              >
+                {BULAN[m.bulan - 1].slice(0, 3)} {String(m.tahun).slice(2)}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {semester?.tanggal_mulai && semester?.tanggal_selesai ? (
+          <div>
+            <div className="text-xs font-semibold mb-1">Rentang Semester</div>
+            <Button size="sm" variant="secondary" className="w-full h-8 justify-start text-xs" onClick={applySemester}>
+              {semester.nama ?? "Semester"}
+              {semester.tahun_ajaran?.nama ? ` · ${semester.tahun_ajaran.nama}` : ""}
+              <span className="ml-auto text-[10px] text-muted-foreground">
+                {semester.tanggal_mulai} → {semester.tanggal_selesai}
+              </span>
+            </Button>
+          </div>
+        ) : null}
+
+        <div>
+          <div className="text-xs font-semibold mb-1">Rentang Kustom</div>
+          <div className="flex items-center gap-2">
+            <Input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="h-8 text-xs" />
+            <span className="text-xs">—</span>
+            <Input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="h-8 text-xs" />
+          </div>
+          <Button size="sm" className="w-full h-8 mt-2" onClick={applyCustom} disabled={!customStart || !customEnd}>
+            Terapkan Rentang
+          </Button>
+        </div>
+
+        <div className="flex justify-between pt-1 border-t">
+          <Button size="sm" variant="ghost" onClick={reset}>Reset</Button>
+          <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Tutup</Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 }
