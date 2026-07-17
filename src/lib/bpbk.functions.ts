@@ -33,10 +33,25 @@ async function fetchAll<T>(query: any): Promise<T[]> {
   return out;
 }
 
-export const getBpBkData = createServerFn({ method: "GET" })
+export const getBpBkData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: ThresholdInput | undefined) => input ?? {})
+  .handler(async ({ context, data: input }) => {
     const sb = context.supabase;
+    const THRESHOLDS = {
+      1: {
+        alfa: Number.isFinite(input.sp1Alfa) ? Number(input.sp1Alfa) : DEFAULT_THRESHOLDS[1].alfa,
+        telat: Number.isFinite(input.sp1Telat) ? Number(input.sp1Telat) : DEFAULT_THRESHOLDS[1].telat,
+      },
+      2: {
+        alfa: Number.isFinite(input.sp2Alfa) ? Number(input.sp2Alfa) : DEFAULT_THRESHOLDS[2].alfa,
+        telat: Number.isFinite(input.sp2Telat) ? Number(input.sp2Telat) : DEFAULT_THRESHOLDS[2].telat,
+      },
+      3: {
+        alfa: Number.isFinite(input.sp3Alfa) ? Number(input.sp3Alfa) : DEFAULT_THRESHOLDS[3].alfa,
+        telat: Number.isFinite(input.sp3Telat) ? Number(input.sp3Telat) : DEFAULT_THRESHOLDS[3].telat,
+      },
+    };
 
     const [students, rombelRows, lateRows, attendRows, spRows] = await Promise.all([
       fetchAll<any>(sb.from("students").select("id, name, nis, rombel_id").order("name")),
