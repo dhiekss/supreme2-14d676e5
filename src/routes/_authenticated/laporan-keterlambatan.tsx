@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useIsMobile } from "@/hooks/use-mobile";
+
 import { useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import * as XLSX from "xlsx";
