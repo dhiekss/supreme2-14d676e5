@@ -551,8 +551,13 @@ function RekomendasiTable({
   onCreated: () => void;
   thresholds: any;
 }) {
-  const head = levelHeader[level];
   const th = thresholds[level];
+  const head = makeLevelHeader(level, th);
+  const sort = useSort<"name" | "nis" | "rombel_name" | "alfa" | "telat">();
+  const sorted = useMemo(
+    () => sortRows(rows, sort.key as any, sort.dir),
+    [rows, sort.key, sort.dir],
+  );
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3 pb-3">
@@ -571,23 +576,23 @@ function RekomendasiTable({
           <TableHeader>
             <TableRow>
               <TableHead className="w-12">No</TableHead>
-              <TableHead>Nama</TableHead>
-              <TableHead>NIS</TableHead>
-              <TableHead>Rombel</TableHead>
-              <TableHead className="text-center">Jml Alfa</TableHead>
-              <TableHead className="text-center">Jml Terlambat</TableHead>
+              <SortHead label="Nama" sortKey="name" state={sort} />
+              <SortHead label="NIS" sortKey="nis" state={sort} />
+              <SortHead label="Rombel" sortKey="rombel_name" state={sort} />
+              <SortHead label="Jml Alfa" sortKey="alfa" state={sort} className="text-center" />
+              <SortHead label="Jml Terlambat" sortKey="telat" state={sort} className="text-center" />
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.length === 0 ? (
+            {sorted.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
                   Tidak ada rekomendasi
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((r, i) => (
+              sorted.map((r: any, i) => (
                 <TableRow key={r.id}>
                   <TableCell>{i + 1}</TableCell>
                   <TableCell className="font-medium">{r.name}</TableCell>
