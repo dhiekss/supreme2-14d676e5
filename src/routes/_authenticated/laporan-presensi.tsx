@@ -385,7 +385,7 @@ function LaporanPresensi() {
       </div>
 
       {/* Small stat cards */}
-      <div className="grid gap-3 grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
+      <div className="grid gap-2 sm:gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
         <SmallStat icon={<CalendarCheck className="h-5 w-5" />} label="Total Sesi" value={data?.totals.sesi ?? 0} color="bg-slate-600" />
         <SmallStat icon={<CheckCircle2 className="h-5 w-5" />} label="Total Hadir" value={data?.totals.H ?? 0} color="bg-emerald-500" />
         <SmallStat icon={<Thermometer className="h-5 w-5" />} label="Total Sakit" value={data?.totals.S ?? 0} color="bg-amber-500" />
