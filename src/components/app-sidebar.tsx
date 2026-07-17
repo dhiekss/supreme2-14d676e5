@@ -29,9 +29,12 @@ import { resolveLayout, type ResolvedGroup, type ResolvedNode } from "@/lib/side
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const closeOnMobile = () => {
+    if (isMobile) setOpenMobile(false);
+  };
   const navigate = useNavigate();
   const { data: d = getCachedDisplaySettings() } = useQuery({
     queryKey: ["display-settings"],
@@ -91,11 +94,11 @@ export function AppSidebar() {
             <SidebarMenu>
               {nodes.map((item) =>
                 item.kind === "group" ? (
-                  <GroupMenu key={item.id} item={item} collapsed={collapsed} isActive={isActive} />
+                  <GroupMenu key={item.id} item={item} collapsed={collapsed} isActive={isActive} onNavigate={closeOnMobile} />
                 ) : (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                      <Link to={item.url} className="flex items-center gap-2">
+                      <Link to={item.url} onClick={closeOnMobile} className="flex items-center gap-2">
                         <item.icon className="h-4 w-4" />
                         {!collapsed && <span>{item.title}</span>}
                       </Link>
@@ -149,10 +152,12 @@ function GroupMenu({
   item,
   collapsed,
   isActive,
+  onNavigate,
 }: {
   item: ResolvedGroup;
   collapsed: boolean;
   isActive: (url: string) => boolean;
+  onNavigate?: () => void;
 }) {
   const visibleChildren = item.children.filter((c) => !c.hidden);
   const anyActive = visibleChildren.some((c) => isActive(c.url));
@@ -182,7 +187,7 @@ function GroupMenu({
               {visibleChildren.map((c) => (
                 <SidebarMenuSubItem key={c.id}>
                   <SidebarMenuSubButton asChild isActive={isActive(c.url)}>
-                    <Link to={c.url} className="flex items-center gap-2">
+                    <Link to={c.url} onClick={onNavigate} className="flex items-center gap-2">
                       <c.icon className="h-3.5 w-3.5" />
                       <span>{c.title}</span>
                     </Link>
