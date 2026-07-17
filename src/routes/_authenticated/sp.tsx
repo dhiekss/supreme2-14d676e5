@@ -43,8 +43,44 @@ import {
   Pencil,
   Eye,
   FilePlus2,
+  Settings,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
+
+type Thresholds = {
+  sp1Alfa: number;
+  sp1Telat: number;
+  sp2Alfa: number;
+  sp2Telat: number;
+  sp3Alfa: number;
+  sp3Telat: number;
+};
+
+const DEFAULT_TH: Thresholds = {
+  sp1Alfa: 3,
+  sp1Telat: 5,
+  sp2Alfa: 6,
+  sp2Telat: 10,
+  sp3Alfa: 10,
+  sp3Telat: 15,
+};
+
+const TH_STORAGE_KEY = "bpbk-thresholds-v1";
+
+function loadThresholds(): Thresholds {
+  if (typeof window === "undefined") return DEFAULT_TH;
+  try {
+    const raw = localStorage.getItem(TH_STORAGE_KEY);
+    if (!raw) return DEFAULT_TH;
+    const parsed = JSON.parse(raw);
+    return { ...DEFAULT_TH, ...parsed };
+  } catch {
+    return DEFAULT_TH;
+  }
+}
 
 export const Route = createFileRoute("/_authenticated/sp")({
   head: () => ({ meta: [{ title: "Manajemen BP/BK — SUPREME XPOES" }] }),
@@ -125,9 +161,11 @@ function BpBkPage() {
   const getData = useServerFn(getBpBkData);
   const removeFn = useServerFn(deleteSp);
 
+  const [thresholds, setThresholds] = useState<Thresholds>(() => loadThresholds());
+
   const { data: bp } = useSuspenseQuery({
-    queryKey: ["bpbk"],
-    queryFn: () => getData(),
+    queryKey: ["bpbk", thresholds],
+    queryFn: () => getData({ data: thresholds }),
     initialData: data,
   });
 
@@ -167,11 +205,23 @@ function BpBkPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Manajemen BP/BK</h1>
-        <p className="text-sm text-muted-foreground">
-          Kelola Surat Peringatan (SP) untuk siswa
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Manajemen BP/BK</h1>
+          <p className="text-sm text-muted-foreground">
+            Kelola Surat Peringatan (SP) untuk siswa
+          </p>
+        </div>
+        <ThresholdSettingsDialog
+          value={thresholds}
+          onSave={(next) => {
+            setThresholds(next);
+            try {
+              localStorage.setItem(TH_STORAGE_KEY, JSON.stringify(next));
+            } catch {}
+            toast.success("Pengaturan ambang batas SP disimpan");
+          }}
+        />
       </div>
 
       {/* Stat cards */}
@@ -270,23 +320,27 @@ const levelColor: Record<number, string> = {
   3: "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-400",
 };
 
-const levelHeader: Record<number, { title: string; sub: string; btn: string }> = {
-  1: {
-    title: "Rekomendasi SP 1",
-    sub: "Murid dengan jumlah Alfa > 3 dan/atau Terlambat > 5",
-    btn: "Beri SP 1",
-  },
-  2: {
-    title: "Rekomendasi SP 2",
-    sub: "Murid dengan jumlah Alfa > 6 dan/atau Terlambat > 10, sudah memiliki SP 1",
-    btn: "Beri SP 2",
-  },
-  3: {
+function makeLevelHeader(level: 1 | 2 | 3, th: { alfa: number; telat: number }) {
+  if (level === 1) {
+    return {
+      title: "Rekomendasi SP 1",
+      sub: `Murid dengan jumlah Alfa > ${th.alfa} dan/atau Terlambat > ${th.telat}`,
+      btn: "Beri SP 1",
+    };
+  }
+  if (level === 2) {
+    return {
+      title: "Rekomendasi SP 2",
+      sub: `Murid dengan jumlah Alfa > ${th.alfa} dan/atau Terlambat > ${th.telat}, sudah memiliki SP 1`,
+      btn: "Beri SP 2",
+    };
+  }
+  return {
     title: "Rekomendasi Pindah / SP 3",
-    sub: "Murid dengan jumlah Alfa > 10 dan/atau Terlambat > 15, sudah memiliki SP 2",
+    sub: `Murid dengan jumlah Alfa > ${th.alfa} dan/atau Terlambat > ${th.telat}, sudah memiliki SP 2`,
     btn: "Beri SP 3",
-  },
-};
+  };
+}
 
 function CountPill({ value, danger }: { value: number; danger: boolean }) {
   return (
@@ -300,6 +354,192 @@ function CountPill({ value, danger }: { value: number; danger: boolean }) {
   );
 }
 
+type SortDir = "asc" | "desc";
+function useSort<K extends string>(defaultKey: K | null = null) {
+  const [key, setKey] = useState<K | null>(defaultKey);
+  const [dir, setDir] = useState<SortDir>("asc");
+  function toggle(k: K) {
+    if (key === k) {
+      if (dir === "asc") setDir("desc");
+      else {
+        setKey(null);
+        setDir("asc");
+      }
+    } else {
+      setKey(k);
+      setDir("asc");
+    }
+  }
+  return { key, dir, toggle };
+}
+
+function SortHead<K extends string>({
+  label,
+  sortKey,
+  state,
+  className,
+}: {
+  label: string;
+  sortKey: K;
+  state: { key: K | null; dir: SortDir; toggle: (k: K) => void };
+  className?: string;
+}) {
+  const active = state.key === sortKey;
+  return (
+    <TableHead className={className}>
+      <button
+        type="button"
+        onClick={() => state.toggle(sortKey)}
+        className="inline-flex items-center gap-1 hover:text-foreground focus:outline-none"
+      >
+        {label}
+        {active ? (
+          state.dir === "asc" ? (
+            <ArrowUp className="h-3.5 w-3.5" />
+          ) : (
+            <ArrowDown className="h-3.5 w-3.5" />
+          )
+        ) : (
+          <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/70" />
+        )}
+      </button>
+    </TableHead>
+  );
+}
+
+function sortRows<T>(rows: T[], key: keyof T | null, dir: SortDir): T[] {
+  if (!key) return rows;
+  const arr = [...rows];
+  arr.sort((a: any, b: any) => {
+    const va = a[key];
+    const vb = b[key];
+    let cmp = 0;
+    if (typeof va === "number" && typeof vb === "number") cmp = va - vb;
+    else cmp = String(va ?? "").localeCompare(String(vb ?? ""));
+    return dir === "asc" ? cmp : -cmp;
+  });
+  return arr;
+}
+
+function ThresholdSettingsDialog({
+  value,
+  onSave,
+}: {
+  value: Thresholds;
+  onSave: (v: Thresholds) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState<Thresholds>(value);
+
+  function reset() {
+    setForm(DEFAULT_TH);
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) setForm(value);
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Settings className="mr-2 h-4 w-4" />
+          Pengaturan Ambang
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Ambang Batas Rekomendasi SP</DialogTitle>
+        </DialogHeader>
+        <p className="text-xs text-muted-foreground">
+          Murid akan muncul di daftar rekomendasi bila jumlah Alfa <em>atau</em> Terlambat
+          melebihi (&gt;) ambang batas berikut.
+        </p>
+
+        <div className="space-y-4">
+          {([1, 2, 3] as const).map((lv) => {
+            const alfaKey = `sp${lv}Alfa` as keyof Thresholds;
+            const telatKey = `sp${lv}Telat` as keyof Thresholds;
+            const tone =
+              lv === 1
+                ? "border-l-amber-500"
+                : lv === 2
+                  ? "border-l-orange-500"
+                  : "border-l-red-500";
+            return (
+              <div key={lv} className={`rounded-md border border-l-4 ${tone} p-3`}>
+                <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                  <AlertTriangle
+                    className={`h-4 w-4 ${
+                      lv === 1
+                        ? "text-amber-500"
+                        : lv === 2
+                          ? "text-orange-500"
+                          : "text-red-500"
+                    }`}
+                  />
+                  SP {lv}
+                  {lv === 3 && (
+                    <span className="text-xs font-normal text-muted-foreground">
+                      (Rekomendasi pindah)
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Alfa &gt;</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={form[alfaKey]}
+                      onChange={(e) =>
+                        setForm({ ...form, [alfaKey]: Number(e.target.value) })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Terlambat &gt;</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={form[telatKey]}
+                      onChange={(e) =>
+                        setForm({ ...form, [telatKey]: Number(e.target.value) })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <DialogFooter className="flex-row justify-between sm:justify-between">
+          <Button variant="ghost" onClick={reset}>
+            Kembalikan default
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Batal
+            </Button>
+            <Button
+              onClick={() => {
+                onSave(form);
+                setOpen(false);
+              }}
+            >
+              Simpan
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
 function RekomendasiTable({
   level,
   rows,
@@ -311,8 +551,13 @@ function RekomendasiTable({
   onCreated: () => void;
   thresholds: any;
 }) {
-  const head = levelHeader[level];
   const th = thresholds[level];
+  const head = makeLevelHeader(level, th);
+  const sort = useSort<"name" | "nis" | "rombel_name" | "alfa" | "telat">();
+  const sorted = useMemo(
+    () => sortRows(rows, sort.key as any, sort.dir),
+    [rows, sort.key, sort.dir],
+  );
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3 pb-3">
@@ -331,23 +576,23 @@ function RekomendasiTable({
           <TableHeader>
             <TableRow>
               <TableHead className="w-12">No</TableHead>
-              <TableHead>Nama</TableHead>
-              <TableHead>NIS</TableHead>
-              <TableHead>Rombel</TableHead>
-              <TableHead className="text-center">Jml Alfa</TableHead>
-              <TableHead className="text-center">Jml Terlambat</TableHead>
+              <SortHead label="Nama" sortKey="name" state={sort} />
+              <SortHead label="NIS" sortKey="nis" state={sort} />
+              <SortHead label="Rombel" sortKey="rombel_name" state={sort} />
+              <SortHead label="Jml Alfa" sortKey="alfa" state={sort} className="text-center" />
+              <SortHead label="Jml Terlambat" sortKey="telat" state={sort} className="text-center" />
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.length === 0 ? (
+            {sorted.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
                   Tidak ada rekomendasi
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((r, i) => (
+              sorted.map((r: any, i) => (
                 <TableRow key={r.id}>
                   <TableCell>{i + 1}</TableCell>
                   <TableCell className="font-medium">{r.name}</TableCell>
@@ -515,6 +760,13 @@ function MuridSpTable({
   onDelete: (id: string) => void;
 }) {
   const [detail, setDetail] = useState<any | null>(null);
+  const sort = useSort<
+    "student_name" | "student_nis" | "rombel_name" | "tanggal_rekaman" | "jumlah_alfa" | "jumlah_terlambat"
+  >();
+  const sorted = useMemo(
+    () => sortRows(rows, sort.key as any, sort.dir),
+    [rows, sort.key, sort.dir],
+  );
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -528,25 +780,25 @@ function MuridSpTable({
           <TableHeader>
             <TableRow>
               <TableHead className="w-12">No</TableHead>
-              <TableHead>Nama</TableHead>
-              <TableHead>NIS</TableHead>
-              <TableHead>Rombel</TableHead>
-              <TableHead>Tanggal SP {level}</TableHead>
+              <SortHead label="Nama" sortKey="student_name" state={sort} />
+              <SortHead label="NIS" sortKey="student_nis" state={sort} />
+              <SortHead label="Rombel" sortKey="rombel_name" state={sort} />
+              <SortHead label={`Tanggal SP ${level}`} sortKey="tanggal_rekaman" state={sort} />
               <TableHead>Alasan</TableHead>
-              <TableHead className="text-center">Jml Alfa</TableHead>
-              <TableHead className="text-center">Jml Terlambat</TableHead>
+              <SortHead label="Jml Alfa" sortKey="jumlah_alfa" state={sort} className="text-center" />
+              <SortHead label="Jml Terlambat" sortKey="jumlah_terlambat" state={sort} className="text-center" />
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.length === 0 ? (
+            {sorted.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="py-10 text-center text-muted-foreground">
                   Belum ada catatan SP {level}
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((r, i) => (
+              sorted.map((r: any, i) => (
                 <TableRow key={r.id}>
                   <TableCell>{i + 1}</TableCell>
                   <TableCell className="font-medium">{r.student_name}</TableCell>
