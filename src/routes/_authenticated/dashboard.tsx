@@ -13,9 +13,10 @@ const statsQO = queryOptions({
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Halaman Utama — SUPREME XPOES" }] }),
   loader: ({ context }) => {
-    // Prime cache without blocking navigation — component suspends on useSuspenseQuery
-    // and falls back to pendingComponent while data streams in.
+    // Fire prefetch but don't block navigation — useSuspenseQuery will suspend
+    // the component and show pendingComponent instead of a white screen.
     void context.queryClient.prefetchQuery(statsQO);
+    return null;
   },
   pendingMs: 0,
   pendingComponent: DashboardSkeleton,
