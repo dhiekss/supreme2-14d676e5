@@ -268,8 +268,11 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
   const [search, setSearch] = useState("");
   const [statusF, setStatusF] = useState<string>("all");
   const [rombelF, setRombelF] = useState<string>("all");
-  const [sortKey, setSortKey] = useState<SortKey>("jam");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [sortKey, setSortKey] = useState<SortKey>("tanggal");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
   const [detail, setDetail] = useState<any | null>(null);
 
   const rows = useMemo(() => {
