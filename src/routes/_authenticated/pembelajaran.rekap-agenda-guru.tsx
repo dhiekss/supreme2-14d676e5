@@ -96,39 +96,39 @@ function RekapAgendaGuruPage() {
   return (
     <div className="p-4 sm:p-6 space-y-4">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <ClipboardList className="h-6 w-6" /> Rekap Agenda Guru
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <ClipboardList className="h-5 w-5 sm:h-6 sm:w-6 shrink-0" /> Rekap Agenda Guru
           </h1>
-          <p className="text-muted-foreground text-sm">Analisis pelaksanaan agenda KBM guru berdasarkan rentang tanggal.</p>
+          <p className="text-muted-foreground text-xs sm:text-sm">Analisis pelaksanaan agenda KBM guru berdasarkan rentang tanggal.</p>
         </div>
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 items-end w-full md:w-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:flex-wrap gap-2 items-end w-full md:w-auto">
           <div>
             <div className="text-xs text-muted-foreground">Dari</div>
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-full sm:w-40" />
+            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-full lg:w-40" />
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Sampai</div>
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-full sm:w-40" />
+            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-full lg:w-40" />
           </div>
           <Select value={guruId} onValueChange={setGuruId}>
-            <SelectTrigger className="w-full sm:w-56 col-span-2 sm:col-auto"><SelectValue placeholder="Semua Guru" /></SelectTrigger>
+            <SelectTrigger className="w-full lg:w-56 col-span-2 sm:col-span-2"><SelectValue placeholder="Semua Guru" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Guru</SelectItem>
               {opts.guru.map((g: any) => <SelectItem key={g.id} value={g.id}>{g.nama}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={rombelId} onValueChange={setRombelId}>
-            <SelectTrigger className="w-full sm:w-48 col-span-2 sm:col-auto"><SelectValue placeholder="Semua Rombel" /></SelectTrigger>
+            <SelectTrigger className="w-full lg:w-48 col-span-2 sm:col-span-2"><SelectValue placeholder="Semua Rombel" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Rombel</SelectItem>
               {opts.rombel.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={() => dataQ.refetch()} disabled={dataQ.isFetching} className="w-full sm:w-auto">
+          <Button variant="outline" onClick={() => dataQ.refetch()} disabled={dataQ.isFetching} className="w-full lg:w-auto">
             <RefreshCw className={`h-4 w-4 mr-1 ${dataQ.isFetching ? "animate-spin" : ""}`} /> Refresh
           </Button>
-          <Button onClick={handleExport} disabled={!d} className="w-full sm:w-auto">
+          <Button onClick={handleExport} disabled={!d} className="w-full lg:w-auto">
             <Download className="h-4 w-4 mr-1" /> Excel
           </Button>
         </div>
@@ -146,8 +146,8 @@ function RekapAgendaGuruPage() {
       </div>
 
       <Tabs defaultValue="tabel">
-        <TabsList>
-          <TabsTrigger value="tabel"><TableIcon className="h-4 w-4 mr-1" />Tabel</TabsTrigger>
+        <TabsList className="grid grid-cols-3 w-full sm:w-auto sm:inline-flex">
+          <TabsTrigger value="tabel"><TableIcon className="h-4 w-4 sm:mr-1" /><span className="hidden sm:inline">Tabel</span></TabsTrigger>
           <TabsTrigger value="per-guru">Per Guru</TabsTrigger>
           <TabsTrigger value="detail">Detail</TabsTrigger>
         </TabsList>
@@ -328,23 +328,23 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-2">
-          <div>
-            <CardTitle className="flex items-center gap-2"><TableIcon className="h-5 w-5" />Tabel Kehadiran Guru</CardTitle>
-            <div className="text-sm text-muted-foreground mt-1">Detail kehadiran guru per sesi pembelajaran</div>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+          <div className="min-w-0">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg"><TableIcon className="h-5 w-5 shrink-0" />Tabel Kehadiran Guru</CardTitle>
+            <div className="text-xs sm:text-sm text-muted-foreground mt-1">Detail kehadiran guru per sesi pembelajaran</div>
           </div>
-          <Button variant="outline" onClick={exportExcel}>
+          <Button variant="outline" onClick={exportExcel} className="w-full sm:w-auto shrink-0">
             <Download className="h-4 w-4 mr-1" /> Export Excel
           </Button>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex flex-wrap gap-2 items-center">
-            <div className="relative flex-1 min-w-[220px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-2 items-center">
+            <div className="relative sm:col-span-2 lg:flex-1 lg:min-w-[220px]">
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari guru, rombel, atau mapel..." className="pl-9" />
             </div>
             <Select value={statusF} onValueChange={setStatusF}>
-              <SelectTrigger className="w-44"><SelectValue placeholder="Semua Status" /></SelectTrigger>
+              <SelectTrigger className="w-full lg:w-44"><SelectValue placeholder="Semua Status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Status</SelectItem>
                 <SelectItem value="masuk">Masuk</SelectItem>
@@ -353,7 +353,7 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
               </SelectContent>
             </Select>
             <Select value={rombelF} onValueChange={setRombelF}>
-              <SelectTrigger className="w-44"><SelectValue placeholder="Semua Rombel" /></SelectTrigger>
+              <SelectTrigger className="w-full lg:w-44"><SelectValue placeholder="Semua Rombel" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Rombel</SelectItem>
                 {rombelOpts.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
@@ -361,14 +361,14 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
             </Select>
             <div className="flex items-center gap-1">
               <label className="text-xs text-muted-foreground whitespace-nowrap">Dari</label>
-              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40" />
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="flex-1 lg:w-40" />
             </div>
             <div className="flex items-center gap-1">
               <label className="text-xs text-muted-foreground whitespace-nowrap">Sampai</label>
-              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-40" />
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="flex-1 lg:w-40" />
             </div>
             {(dateFrom || dateTo) && (
-              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); }}>Reset</Button>
+              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); }} className="w-full sm:w-auto">Reset</Button>
             )}
 
 
@@ -490,7 +490,7 @@ function DetailDialog({ session, onClose }: { session: any | null; onClose: () =
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Detail Isian Agenda KBM</DialogTitle>
         </DialogHeader>

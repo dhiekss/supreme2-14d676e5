@@ -173,12 +173,12 @@ function AdministrasiPage() {
   return (
     <div className="p-4 sm:p-6 space-y-4">
       <div className="flex items-start gap-3">
-        <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
+        <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center shrink-0">
           <FileText className="h-5 w-5 text-muted-foreground" />
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">Administrasi Pembelajaran</h1>
-          <p className="text-sm text-muted-foreground">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold">Administrasi Pembelajaran</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Input berkas pembelajaran (Analisis CP &amp; ATP, Prota, Promes, RPA, Modul Ajar / PP)
           </p>
         </div>
@@ -235,8 +235,8 @@ function AdministrasiPage() {
       <Card>
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <h2 className="font-semibold">Daftar Berkas Pembelajaran</h2>
-            <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-sm sm:text-base">Daftar Berkas Pembelajaran</h2>
+            <div className="flex items-center gap-2 flex-wrap">
               {isAdmin && guruId !== "all" && (
                 <Button
                   variant="outline"
@@ -249,11 +249,11 @@ function AdministrasiPage() {
                     setConfirmReset({ kind: "guru", ids, guruName: g?.nama ?? "guru terpilih" });
                   }}
                 >
-                  <RotateCcw className="h-4 w-4 mr-2" />Reset Guru Ini
+                  <RotateCcw className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Reset Guru Ini</span>
                 </Button>
               )}
               <Button variant="outline" size="sm" onClick={exportExcel}>
-                <Download className="h-4 w-4 mr-2" />Export Excel
+                <Download className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Export Excel</span>
               </Button>
             </div>
           </div>
@@ -613,7 +613,7 @@ function EditDialog({ row, onOpenChange, onSubmit, loading }: {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-xl w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Input Berkas Pembelajaran</DialogTitle>
         </DialogHeader>

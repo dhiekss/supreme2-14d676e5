@@ -260,22 +260,22 @@ function LaporanPresensi() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Laporan Presensi</h1>
-          <p className="text-sm text-muted-foreground">Rekap kehadiran seluruh rombel dalam rentang tanggal.</p>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Laporan Presensi</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Rekap kehadiran seluruh rombel dalam rentang tanggal.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={downloadTemplate} className="gap-2">
-            <FileSpreadsheet className="h-4 w-4" /> Unduh Template
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={downloadTemplate} className="gap-2 flex-1 sm:flex-none">
+            <FileSpreadsheet className="h-4 w-4" /> <span className="hidden sm:inline">Unduh</span> Template
           </Button>
           <Dialog open={importOpen} onOpenChange={(o) => { setImportOpen(o); if (!o) { setParsedRows(null); setParseError(null); setImportResult(null); setImportProgress(null); } }}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2"><Upload className="h-4 w-4" /> Import Record</Button>
+              <Button variant="outline" className="gap-2 flex-1 sm:flex-none"><Upload className="h-4 w-4" /> Import<span className="hidden sm:inline"> Record</span></Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Import Record Presensi</DialogTitle>
                 <DialogDescription>
@@ -326,12 +326,12 @@ function LaporanPresensi() {
                   </div>
                 )}
               </div>
-              <DialogFooter>
-                <Button variant="ghost" onClick={() => setImportOpen(false)}>Tutup</Button>
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button variant="ghost" onClick={() => setImportOpen(false)} className="w-full sm:w-auto">Tutup</Button>
                 <Button
                   onClick={() => importMut.mutate()}
                   disabled={!parsedRows || importMut.isPending}
-                  className="gap-2"
+                  className="gap-2 w-full sm:w-auto"
                 >
                   {importMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                   Import {parsedRows ? `(${parsedRows.length})` : ""}
@@ -339,8 +339,8 @@ function LaporanPresensi() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <Button onClick={exportCsv} disabled={!data} className="gap-2">
-            <Download className="h-4 w-4" /> Ekspor Data CSV
+          <Button onClick={exportCsv} disabled={!data} className="gap-2 flex-1 sm:flex-none">
+            <Download className="h-4 w-4" /> <span className="hidden sm:inline">Ekspor Data</span> CSV
           </Button>
         </div>
       </div>
@@ -348,8 +348,8 @@ function LaporanPresensi() {
 
       {/* Filters */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
+        <CardContent className="pt-6 p-4 sm:p-6">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
             <div className="space-y-2">
               <Label>Tanggal Awal</Label>
               <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
@@ -375,7 +375,7 @@ function LaporanPresensi() {
       </Card>
 
       {/* Big colorful stat cards */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
         <BigStat icon={<School className="h-6 w-6" />} label="Total Kelas" value={data?.stats.totalKelas ?? 0}
           gradient="from-blue-500 to-cyan-500" />
         <BigStat icon={<Users className="h-6 w-6" />} label="Total Pengajar" value={data?.stats.totalPengajar ?? 0}
@@ -385,7 +385,7 @@ function LaporanPresensi() {
       </div>
 
       {/* Small stat cards */}
-      <div className="grid gap-3 grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
+      <div className="grid gap-2 sm:gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
         <SmallStat icon={<CalendarCheck className="h-5 w-5" />} label="Total Sesi" value={data?.totals.sesi ?? 0} color="bg-slate-600" />
         <SmallStat icon={<CheckCircle2 className="h-5 w-5" />} label="Total Hadir" value={data?.totals.H ?? 0} color="bg-emerald-500" />
         <SmallStat icon={<Thermometer className="h-5 w-5" />} label="Total Sakit" value={data?.totals.S ?? 0} color="bg-amber-500" />

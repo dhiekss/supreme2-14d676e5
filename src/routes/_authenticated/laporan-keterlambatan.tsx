@@ -279,17 +279,17 @@ function LaporanKeterlambatanPage() {
     : "Pilih tanggal";
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Laporan Keterlambatan</h1>
+    <div className="p-4 sm:p-6 space-y-6">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Laporan Keterlambatan</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Statistik dan data murid yang terlambat
           </p>
         </div>
-        <Button variant="outline" onClick={exportExcel} disabled={students.length === 0}>
-          <Download className="h-4 w-4 mr-2" />
-          Export Excel
+        <Button variant="outline" onClick={exportExcel} disabled={students.length === 0} className="shrink-0">
+          <Download className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Export Excel</span>
         </Button>
       </div>
 
@@ -301,14 +301,14 @@ function LaporanKeterlambatanPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Rentang Tanggal</label>
               <Popover open={dateOpen} onOpenChange={setDateOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("w-full justify-start font-normal", !range?.from && "text-muted-foreground")}>
-                    <CalendarIcon className="h-4 w-4 mr-2 text-primary" />
-                    {rangeLabel}
+                    <CalendarIcon className="h-4 w-4 mr-2 text-primary shrink-0" />
+                    <span className="truncate">{rangeLabel}</span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -342,8 +342,8 @@ function LaporanKeterlambatanPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-end">
-              <Button variant="ghost" onClick={resetFilter} className="text-muted-foreground">
+            <div className="flex sm:items-end">
+              <Button variant="ghost" onClick={resetFilter} className="text-muted-foreground w-full sm:w-auto">
                 <X className="h-4 w-4 mr-1" /> Reset
               </Button>
             </div>
@@ -392,8 +392,8 @@ function LaporanKeterlambatanPage() {
 
       {/* Table */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Daftar Murid Terlambat</CardTitle>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <CardTitle className="text-base sm:text-lg">Daftar Murid Terlambat</CardTitle>
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">Tampilkan:</span>
             <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
@@ -455,19 +455,19 @@ function LaporanKeterlambatanPage() {
           </div>
 
           {students.length > 0 && (
-            <div className="flex items-center justify-center gap-1 p-4 border-t">
-              <Button size="sm" variant="ghost" disabled={pageClamped === 1} onClick={() => setPage(pageClamped - 1)}>‹ Previous</Button>
+            <div className="flex items-center justify-center gap-1 p-3 border-t flex-wrap">
+              <Button size="sm" variant="ghost" disabled={pageClamped === 1} onClick={() => setPage(pageClamped - 1)}>‹</Button>
               {getPageNumbers(pageClamped, totalPages).map((p, idx) =>
                 p === "…" ? (
-                  <span key={idx} className="px-2 text-muted-foreground">…</span>
+                  <span key={idx} className="px-1 text-muted-foreground">…</span>
                 ) : (
                   <Button key={idx} size="sm" variant={p === pageClamped ? "default" : "ghost"} onClick={() => setPage(p as number)}
-                    className={cn("w-9", p === pageClamped && "bg-primary text-primary-foreground")}>
+                    className={cn("w-8 h-8 p-0", p === pageClamped && "bg-primary text-primary-foreground")}>
                     {p}
                   </Button>
                 ),
               )}
-              <Button size="sm" variant="ghost" disabled={pageClamped === totalPages} onClick={() => setPage(pageClamped + 1)}>Next ›</Button>
+              <Button size="sm" variant="ghost" disabled={pageClamped === totalPages} onClick={() => setPage(pageClamped + 1)}>›</Button>
             </div>
           )}
         </CardContent>
@@ -475,7 +475,7 @@ function LaporanKeterlambatanPage() {
 
       {/* Detail dialog */}
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Riwayat Keterlambatan</DialogTitle>
           </DialogHeader>
@@ -487,7 +487,7 @@ function LaporanKeterlambatanPage() {
                 <div className="mt-1">Total: <span className="font-semibold">{detail.count}x</span></div>
               </div>
               <div className="max-h-80 overflow-auto rounded-md border">
-                <Table>
+                <Table className="min-w-[380px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Tanggal</TableHead>
