@@ -146,8 +146,8 @@ function RekapAgendaGuruPage() {
       </div>
 
       <Tabs defaultValue="tabel">
-        <TabsList>
-          <TabsTrigger value="tabel"><TableIcon className="h-4 w-4 mr-1" />Tabel</TabsTrigger>
+        <TabsList className="grid grid-cols-3 w-full sm:w-auto sm:inline-flex">
+          <TabsTrigger value="tabel"><TableIcon className="h-4 w-4 sm:mr-1" /><span className="hidden sm:inline">Tabel</span></TabsTrigger>
           <TabsTrigger value="per-guru">Per Guru</TabsTrigger>
           <TabsTrigger value="detail">Detail</TabsTrigger>
         </TabsList>
