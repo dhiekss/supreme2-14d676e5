@@ -140,7 +140,7 @@ function Page() {
                   <SelectContent>
                     {rombelList.map((r: any) => (
                       <SelectItem key={r.id} value={r.id}>
-                        {r.name} {r.tingkat ? `(${r.tingkat})` : ""} — {r.siswa_count} siswa
+                        {r.name} {r.tingkat ? `(${r.tingkat})` : ""} — {r.siswa_count} murid
                       </SelectItem>
                     ))}
                   </SelectContent>
