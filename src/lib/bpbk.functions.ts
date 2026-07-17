@@ -53,11 +53,12 @@ export const getBpBkData = createServerFn({ method: "POST" })
       },
     };
 
-    const [students, rombelRows, lateRows, attendRows, spRows] = await Promise.all([
+    const [students, rombelRows, lateRows, attendDetails, attendRecords, spRows] = await Promise.all([
       fetchAll<any>(sb.from("students").select("id, name, nis, rombel_id").order("name")),
       fetchAll<any>(sb.from("rombel").select("id, name, konsentrasi_keahlian")),
-      fetchAll<any>(sb.from("late_records").select("student_id")),
-      fetchAll<any>(sb.from("attendance_details").select("student_id, status")),
+      fetchAll<any>(sb.from("late_records").select("student_id, record_date")),
+      fetchAll<any>(sb.from("attendance_details").select("student_id, status, attendance_record_id")),
+      fetchAll<any>(sb.from("attendance_records").select("id, date")),
       fetchAll<any>(
         sb.from("sp_records").select(
           "id, student_id, sp_level, alasan, jumlah_alfa, jumlah_terlambat, dokumen_pendukung, tanggal_rekaman, created_at",
@@ -66,31 +67,53 @@ export const getBpBkData = createServerFn({ method: "POST" })
     ]);
 
     const rMap = new Map<string, any>((rombelRows ?? []).map((r: any) => [r.id, r]));
+    const arDateMap = new Map<string, string>((attendRecords ?? []).map((a: any) => [a.id, a.date]));
 
-    // Count alfa & telat per student
-    const alfaCount = new Map<string, number>();
-    for (const a of attendRows) {
+    // Build per-student event lists with dates
+    const alfaByStudent = new Map<string, string[]>();
+    for (const a of attendDetails) {
       const st = (a.status ?? "").toString().toLowerCase();
-      if (st === "a" || st === "alfa") {
-        alfaCount.set(a.student_id, (alfaCount.get(a.student_id) ?? 0) + 1);
-      }
+      if (st !== "a" && st !== "alfa") continue;
+      const d = arDateMap.get(a.attendance_record_id);
+      if (!d || !a.student_id) continue;
+      const arr = alfaByStudent.get(a.student_id) ?? [];
+      arr.push(d);
+      alfaByStudent.set(a.student_id, arr);
     }
-    const telatCount = new Map<string, number>();
+    const telatByStudent = new Map<string, string[]>();
     for (const l of lateRows) {
-      if (!l.student_id) continue;
-      telatCount.set(l.student_id, (telatCount.get(l.student_id) ?? 0) + 1);
+      if (!l.student_id || !l.record_date) continue;
+      const arr = telatByStudent.get(l.student_id) ?? [];
+      arr.push(l.record_date);
+      telatByStudent.set(l.student_id, arr);
     }
 
-    // Existing SP levels per student
+    // Existing SP levels + dates per student
     const spByStudent = new Map<string, Set<number>>();
+    const spDateByStudent = new Map<string, Record<number, string>>();
     for (const s of spRows) {
       if (!s.student_id) continue;
+      const lv = Number(s.sp_level);
       const set = spByStudent.get(s.student_id) ?? new Set<number>();
-      set.add(Number(s.sp_level));
+      set.add(lv);
       spByStudent.set(s.student_id, set);
+      const dates = spDateByStudent.get(s.student_id) ?? {};
+      const cur = dates[lv];
+      const d = s.tanggal_rekaman as string | null;
+      // Keep the latest date per level (in case of duplicates)
+      if (d && (!cur || d > cur)) dates[lv] = d;
+      spDateByStudent.set(s.student_id, dates);
     }
 
-    const enrichStudent = (s: any) => {
+    const countSince = (dates: string[] | undefined, cutoff: string | undefined) => {
+      if (!dates) return 0;
+      if (!cutoff) return dates.length;
+      let n = 0;
+      for (const d of dates) if (d > cutoff) n++;
+      return n;
+    };
+
+    const baseEnrich = (s: any) => {
       const r = s.rombel_id ? rMap.get(s.rombel_id) : null;
       return {
         id: s.id,
@@ -99,23 +122,25 @@ export const getBpBkData = createServerFn({ method: "POST" })
         rombel_id: s.rombel_id ?? null,
         rombel_name: r?.name ?? "—",
         konsentrasi: r?.konsentrasi_keahlian ?? "—",
-        alfa: alfaCount.get(s.id) ?? 0,
-        telat: telatCount.get(s.id) ?? 0,
       };
     };
 
-    // Recommendations
+    // Recommendations — for SP2/SP3 count only alfa/telat AFTER the previous SP date
     const rekomendasi: Record<1 | 2 | 3, any[]> = { 1: [], 2: [], 3: [] };
     for (const s of students) {
-      const enriched = enrichStudent(s);
       const hasSp = spByStudent.get(s.id) ?? new Set<number>();
+      const spDates = spDateByStudent.get(s.id) ?? {};
+      const alfaDates = alfaByStudent.get(s.id);
+      const telatDates = telatByStudent.get(s.id);
       for (const lv of [1, 2, 3] as const) {
+        if (hasSp.has(lv)) continue;
+        if (lv > 1 && !hasSp.has((lv - 1) as 1 | 2)) continue;
+        const cutoff = lv === 1 ? undefined : spDates[lv - 1];
+        const alfa = countSince(alfaDates, cutoff);
+        const telat = countSince(telatDates, cutoff);
         const th = THRESHOLDS[lv];
-        const meets = enriched.alfa > th.alfa || enriched.telat > th.telat;
-        if (!meets) continue;
-        if (hasSp.has(lv)) continue; // already given at this level
-        if (lv > 1 && !hasSp.has((lv - 1) as 1 | 2)) continue; // must have previous level
-        rekomendasi[lv].push(enriched);
+        if (alfa <= th.alfa && telat <= th.telat) continue;
+        rekomendasi[lv].push({ ...baseEnrich(s), alfa, telat, sejak: cutoff ?? null });
       }
     }
 
