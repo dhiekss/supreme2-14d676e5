@@ -144,11 +144,19 @@ function RekapAgendaGuruPage() {
         <KpiCard icon={<XCircle className="h-4 w-4 text-red-600" />} label="Tidak Masuk" value={kpi.tidakTanpa} />
       </div>
 
-      <Tabs defaultValue="per-guru">
+      <Tabs defaultValue="tabel">
         <TabsList>
+          <TabsTrigger value="tabel"><TableIcon className="h-4 w-4 mr-1" />Tabel</TabsTrigger>
           <TabsTrigger value="per-guru">Per Guru</TabsTrigger>
           <TabsTrigger value="detail">Detail</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="tabel">
+          <TabelKehadiranGuru
+            sessions={d?.sessions ?? []}
+            rombelOpts={opts.rombel}
+          />
+        </TabsContent>
 
         <TabsContent value="per-guru">
           <Card>
