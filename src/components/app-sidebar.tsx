@@ -22,7 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { fetchDisplaySettings, DEFAULT_DISPLAY } from "@/lib/display-settings";
+import { fetchDisplaySettings, getCachedDisplaySettings } from "@/lib/display-settings";
 import { getMyMenuLayout } from "@/lib/menu-layout.functions";
 import { getMyProfile } from "@/lib/me.functions";
 import { resolveLayout, type ResolvedGroup, type ResolvedNode } from "@/lib/sidebar-menu";
