@@ -173,9 +173,15 @@ function AgendaGuruPage() {
                       Jam ke-{slot.jam_ke_start}{slot.jam_ke_end !== slot.jam_ke_start ? ` – ${slot.jam_ke_end}` : ""}
                     </div>
                     {slot.sudah_diisi ? (
-                      <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
-                        <CheckCircle2 className="h-3 w-3 mr-1" /> Sudah Diisi
-                      </Badge>
+                      slot.lengkap ? (
+                        <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
+                          <CheckCircle2 className="h-3 w-3 mr-1" /> Sudah Lengkap
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100">
+                          Belum Lengkap
+                        </Badge>
+                      )
                     ) : (<Badge variant="outline">Belum Diisi</Badge>)}
                   </div>
                   {(slot.jam_mulai || slot.jam_selesai) && (
