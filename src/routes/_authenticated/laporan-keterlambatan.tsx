@@ -455,19 +455,19 @@ function LaporanKeterlambatanPage() {
           </div>
 
           {students.length > 0 && (
-            <div className="flex items-center justify-center gap-1 p-4 border-t">
-              <Button size="sm" variant="ghost" disabled={pageClamped === 1} onClick={() => setPage(pageClamped - 1)}>‹ Previous</Button>
+            <div className="flex items-center justify-center gap-1 p-3 border-t flex-wrap">
+              <Button size="sm" variant="ghost" disabled={pageClamped === 1} onClick={() => setPage(pageClamped - 1)}>‹</Button>
               {getPageNumbers(pageClamped, totalPages).map((p, idx) =>
                 p === "…" ? (
-                  <span key={idx} className="px-2 text-muted-foreground">…</span>
+                  <span key={idx} className="px-1 text-muted-foreground">…</span>
                 ) : (
                   <Button key={idx} size="sm" variant={p === pageClamped ? "default" : "ghost"} onClick={() => setPage(p as number)}
-                    className={cn("w-9", p === pageClamped && "bg-primary text-primary-foreground")}>
+                    className={cn("w-8 h-8 p-0", p === pageClamped && "bg-primary text-primary-foreground")}>
                     {p}
                   </Button>
                 ),
               )}
-              <Button size="sm" variant="ghost" disabled={pageClamped === totalPages} onClick={() => setPage(pageClamped + 1)}>Next ›</Button>
+              <Button size="sm" variant="ghost" disabled={pageClamped === totalPages} onClick={() => setPage(pageClamped + 1)}>›</Button>
             </div>
           )}
         </CardContent>
