@@ -392,8 +392,8 @@ function LaporanKeterlambatanPage() {
 
       {/* Table */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Daftar Murid Terlambat</CardTitle>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <CardTitle className="text-base sm:text-lg">Daftar Murid Terlambat</CardTitle>
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">Tampilkan:</span>
             <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
