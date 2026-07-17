@@ -301,14 +301,14 @@ function LaporanKeterlambatanPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Rentang Tanggal</label>
               <Popover open={dateOpen} onOpenChange={setDateOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("w-full justify-start font-normal", !range?.from && "text-muted-foreground")}>
-                    <CalendarIcon className="h-4 w-4 mr-2 text-primary" />
-                    {rangeLabel}
+                    <CalendarIcon className="h-4 w-4 mr-2 text-primary shrink-0" />
+                    <span className="truncate">{rangeLabel}</span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -342,8 +342,8 @@ function LaporanKeterlambatanPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-end">
-              <Button variant="ghost" onClick={resetFilter} className="text-muted-foreground">
+            <div className="flex sm:items-end">
+              <Button variant="ghost" onClick={resetFilter} className="text-muted-foreground w-full sm:w-auto">
                 <X className="h-4 w-4 mr-1" /> Reset
               </Button>
             </div>
