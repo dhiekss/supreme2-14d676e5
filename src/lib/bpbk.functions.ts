@@ -1,15 +1,21 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-// Threshold rekomendasi per level.
-// SP1: alfa > 3 OR terlambat > 5
-// SP2: alfa > 6 OR terlambat > 10
-// SP3 (rekomendasi pindah): alfa > 10 OR terlambat > 15
-const THRESHOLDS = {
+// Default threshold rekomendasi per level (dapat di-override oleh input).
+const DEFAULT_THRESHOLDS = {
   1: { alfa: 3, telat: 5 },
   2: { alfa: 6, telat: 10 },
   3: { alfa: 10, telat: 15 },
 } as const;
+
+type ThresholdInput = {
+  sp1Alfa?: number;
+  sp1Telat?: number;
+  sp2Alfa?: number;
+  sp2Telat?: number;
+  sp3Alfa?: number;
+  sp3Telat?: number;
+};
 
 async function fetchAll<T>(query: any): Promise<T[]> {
   const pageSize = 1000;
