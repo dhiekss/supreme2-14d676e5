@@ -98,8 +98,10 @@ export const listAdministrasi = createServerFn({ method: "GET" })
       }
     }
 
-    // Also restrict by Akses Rombel (non-privileged only)
-    const allowed = privileged ? null : await getAllowedRombelIds(s, context.userId);
+    // Akses Rombel restriction applies to privileged-but-scoped admins (none here)
+    // and to non-privileged non-guru users. A non-privileged guru always sees
+    // their own teaching assignments regardless of Akses Rombel.
+    const allowed = privileged ? null : (ownGuruId ? null : await getAllowedRombelIds(s, context.userId));
     if (allowed !== null && allowed.length === 0) {
       return { rows: [], total: 0, page: 1, pageSize: data?.pageSize ?? 20, stats: { total: 0, sudah_input: 0, belum_input: 0, valid: 0, lengkap_100: 0, menunggu: 0, perbaikan: 0, parsial: 0 } };
     }
