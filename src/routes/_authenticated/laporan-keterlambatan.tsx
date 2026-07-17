@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useIsMobile } from "@/hooks/use-mobile";
+
 import { useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import * as XLSX from "xlsx";
@@ -65,6 +67,8 @@ function LaporanKeterlambatanPage() {
   const [filterKonsentrasi, setFilterKonsentrasi] = useState<string>("all");
   const [filterRombel, setFilterRombel] = useState<string>("all");
   const [dateOpen, setDateOpen] = useState(false);
+  const isMobile = useIsMobile();
+
 
   const from = range?.from ? toISO(range.from) : "";
   const to = range?.to ? toISO(range.to) : from;
@@ -310,7 +314,7 @@ function LaporanKeterlambatanPage() {
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="range"
-                    numberOfMonths={2}
+                    numberOfMonths={isMobile ? 1 : 2}
                     selected={range}
                     onSelect={(v) => { setRange(v); setPage(1); }}
                     defaultMonth={range?.from}
@@ -401,52 +405,55 @@ function LaporanKeterlambatanPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-14">No</TableHead>
-                <TableHead>
-                  <button onClick={() => toggleSort("name")} className="inline-flex items-center gap-1 hover:text-foreground">
-                    Nama Murid <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </TableHead>
-                <TableHead>NIS</TableHead>
-                <TableHead>
-                  <button onClick={() => toggleSort("rombel")} className="inline-flex items-center gap-1 hover:text-foreground">
-                    Rombel <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </TableHead>
-                <TableHead>
-                  <button onClick={() => toggleSort("count")} className="inline-flex items-center gap-1 hover:text-foreground">
-                    Total Terlambat <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </TableHead>
-                <TableHead>Penginput Terakhir</TableHead>
-                <TableHead className="text-right">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pageRows.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-10">Tidak ada data</TableCell></TableRow>
-              ) : pageRows.map((s, i) => (
-                <TableRow key={s.student_id}>
-                  <TableCell className="text-muted-foreground">{(pageClamped - 1) * pageSize + i + 1}</TableCell>
-                  <TableCell className="font-semibold">{s.student_name}</TableCell>
-                  <TableCell className="text-muted-foreground">{s.student_nis}</TableCell>
-                  <TableCell>{s.rombel_name}</TableCell>
-                  <TableCell>
-                    <Badge className="bg-rose-100 text-rose-600 hover:bg-rose-100 rounded-full">{s.count}x</Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{s.penginput_terakhir}</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="sm" variant="outline" onClick={() => setDetail(s)}>
-                      <Eye className="h-3.5 w-3.5 mr-1" /> View
-                    </Button>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-14">No</TableHead>
+                  <TableHead>
+                    <button onClick={() => toggleSort("name")} className="inline-flex items-center gap-1 hover:text-foreground">
+                      Nama Murid <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </TableHead>
+                  <TableHead>NIS</TableHead>
+                  <TableHead>
+                    <button onClick={() => toggleSort("rombel")} className="inline-flex items-center gap-1 hover:text-foreground">
+                      Rombel <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </TableHead>
+                  <TableHead>
+                    <button onClick={() => toggleSort("count")} className="inline-flex items-center gap-1 hover:text-foreground whitespace-nowrap">
+                      Total Terlambat <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap">Penginput Terakhir</TableHead>
+                  <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {pageRows.length === 0 ? (
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-10">Tidak ada data</TableCell></TableRow>
+                ) : pageRows.map((s, i) => (
+                  <TableRow key={s.student_id}>
+                    <TableCell className="text-muted-foreground">{(pageClamped - 1) * pageSize + i + 1}</TableCell>
+                    <TableCell className="font-semibold whitespace-nowrap">{s.student_name}</TableCell>
+                    <TableCell className="text-muted-foreground whitespace-nowrap">{s.student_nis}</TableCell>
+                    <TableCell className="whitespace-nowrap">{s.rombel_name}</TableCell>
+                    <TableCell>
+                      <Badge className="bg-rose-100 text-rose-600 hover:bg-rose-100 rounded-full">{s.count}x</Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground whitespace-nowrap">{s.penginput_terakhir}</TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" variant="outline" onClick={() => setDetail(s)}>
+                        <Eye className="h-3.5 w-3.5 mr-1" /> View
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
           {students.length > 0 && (
             <div className="flex items-center justify-center gap-1 p-4 border-t">
               <Button size="sm" variant="ghost" disabled={pageClamped === 1} onClick={() => setPage(pageClamped - 1)}>‹ Previous</Button>

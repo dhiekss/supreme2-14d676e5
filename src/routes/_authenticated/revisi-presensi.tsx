@@ -205,47 +205,50 @@ function DataPresensiTab({ rombel }: { rombel: any[] }) {
           <CardTitle className="text-base">Data Presensi — {formatDateID(date)}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">No</TableHead>
-                <TableHead className="w-32">NIS</TableHead>
-                <TableHead>Nama Murid</TableHead>
-                <TableHead className="w-40">Status</TableHead>
-                <TableHead className="w-40 text-right">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((s: any, i: number) => (
-                <TableRow key={s.id}>
-                  <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                  <TableCell className="font-mono text-xs">{s.nis ?? "-"}</TableCell>
-                  <TableCell className="font-medium">{s.name}</TableCell>
-                  <TableCell>
-                    {s.status ? (
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${STATUS_TONE[s.status] ?? ""}`}>
-                        {STATUS_LABEL[s.status] ?? s.status}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground italic">Belum diinput</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button size="sm" variant="outline" className="gap-1.5"
-                      onClick={() => setTarget({ studentId: s.id, name: s.name, nis: s.nis, current: s.status ?? undefined })}>
-                      <Pencil className="h-3.5 w-3.5" /> Ajukan Revisi
-                    </Button>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-16">No</TableHead>
+                  <TableHead className="w-32">NIS</TableHead>
+                  <TableHead>Nama Murid</TableHead>
+                  <TableHead className="w-40">Status</TableHead>
+                  <TableHead className="w-40 text-right">Aksi</TableHead>
                 </TableRow>
-              ))}
-              {rows.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                  {students.isLoading ? "Memuat..." : "Tidak ada murid."}
-                </TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {rows.map((s: any, i: number) => (
+                  <TableRow key={s.id}>
+                    <TableCell className="text-muted-foreground">{i + 1}</TableCell>
+                    <TableCell className="font-mono text-xs whitespace-nowrap">{s.nis ?? "-"}</TableCell>
+                    <TableCell className="font-medium whitespace-nowrap">{s.name}</TableCell>
+                    <TableCell>
+                      {s.status ? (
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${STATUS_TONE[s.status] ?? ""}`}>
+                          {STATUS_LABEL[s.status] ?? s.status}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">Belum diinput</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" variant="outline" className="gap-1.5"
+                        onClick={() => setTarget({ studentId: s.id, name: s.name, nis: s.nis, current: s.status ?? undefined })}>
+                        <Pencil className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Ajukan </span>Revisi
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {rows.length === 0 && (
+                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    {students.isLoading ? "Memuat..." : "Tidak ada murid."}
+                  </TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
+
       </Card>
 
       <RevisionDialog
@@ -345,42 +348,45 @@ function RevisionTable({ rows, actions }: { rows: any[]; actions?: (r: any) => R
   return (
     <Card>
       <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Tanggal</TableHead>
-              <TableHead>Murid</TableHead>
-              <TableHead>Rombel</TableHead>
-              <TableHead className="text-center">Asli → Diminta</TableHead>
-              <TableHead>Alasan</TableHead>
-              <TableHead>Status</TableHead>
-              {actions && <TableHead className="text-right">Aksi</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((r) => (
-              <TableRow key={r.id}>
-                <TableCell className="whitespace-nowrap">{r.attendance_date}</TableCell>
-                <TableCell>
-                  <div className="font-medium">{r.student_name}</div>
-                  <div className="text-xs text-muted-foreground">{r.student_nis}</div>
-                </TableCell>
-                <TableCell>{r.rombel_name}</TableCell>
-                <TableCell className="text-center">
-                  <span className="font-mono">{r.original_status ?? "—"} → <b>{r.requested_status}</b></span>
-                </TableCell>
-                <TableCell className="max-w-xs truncate" title={r.alasan}>{r.alasan}</TableCell>
-                <TableCell>
-                  <Badge variant={r.status === "approved" ? "default" : r.status === "rejected" ? "destructive" : "secondary"}>
-                    {r.status}
-                  </Badge>
-                </TableCell>
-                {actions && <TableCell className="text-right">{r.status === "pending" ? actions(r) : null}</TableCell>}
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="whitespace-nowrap">Tanggal</TableHead>
+                <TableHead>Murid</TableHead>
+                <TableHead>Rombel</TableHead>
+                <TableHead className="text-center whitespace-nowrap">Asli → Diminta</TableHead>
+                <TableHead>Alasan</TableHead>
+                <TableHead>Status</TableHead>
+                {actions && <TableHead className="text-right">Aksi</TableHead>}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {rows.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="whitespace-nowrap">{r.attendance_date}</TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <div className="font-medium">{r.student_name}</div>
+                    <div className="text-xs text-muted-foreground">{r.student_nis}</div>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">{r.rombel_name}</TableCell>
+                  <TableCell className="text-center whitespace-nowrap">
+                    <span className="font-mono">{r.original_status ?? "—"} → <b>{r.requested_status}</b></span>
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate" title={r.alasan}>{r.alasan}</TableCell>
+                  <TableCell>
+                    <Badge variant={r.status === "approved" ? "default" : r.status === "rejected" ? "destructive" : "secondary"}>
+                      {r.status}
+                    </Badge>
+                  </TableCell>
+                  {actions && <TableCell className="text-right">{r.status === "pending" ? actions(r) : null}</TableCell>}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
+
     </Card>
   );
 }

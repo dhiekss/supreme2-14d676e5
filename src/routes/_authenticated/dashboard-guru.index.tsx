@@ -58,7 +58,7 @@ function Page() {
 
       <Card>
         <CardContent className="p-0">
-          <div className="grid grid-cols-[1fr_1fr_auto] gap-4 px-6 py-4 text-sm text-muted-foreground border-b">
+          <div className="hidden sm:grid grid-cols-[1fr_1fr_auto] gap-4 px-6 py-4 text-sm text-muted-foreground border-b">
             <div>Nama</div>
             <div>NIP</div>
             <div className="text-right pr-2">Aksi</div>
@@ -69,17 +69,20 @@ function Page() {
             rows.map((r: any) => (
               <div
                 key={r.id}
-                className="grid grid-cols-[1fr_1fr_auto] gap-4 items-center px-6 py-3 border-b last:border-b-0 hover:bg-muted/30"
+                className="flex flex-col gap-3 px-4 py-3 border-b last:border-b-0 hover:bg-muted/30 sm:grid sm:grid-cols-[1fr_1fr_auto] sm:gap-4 sm:items-center sm:px-6"
               >
-                <div className="font-medium">{r.nama}</div>
-                <div className="text-sm">{r.nip ?? "—"}</div>
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" size="sm" onClick={() => setQrFor({ id: r.id, nama: r.nama })}>
-                    <QrCode className="h-4 w-4 mr-2" /> Tampilkan QR Code
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{r.nama}</div>
+                  <div className="text-xs text-muted-foreground sm:hidden">{r.nip ?? "—"}</div>
+                </div>
+                <div className="hidden sm:block text-sm truncate">{r.nip ?? "—"}</div>
+                <div className="flex flex-wrap gap-2 sm:justify-end">
+                  <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => setQrFor({ id: r.id, nama: r.nama })}>
+                    <QrCode className="h-4 w-4 mr-2" /> <span className="sm:inline">QR Code</span>
                   </Button>
-                  <Button variant="outline" size="sm" asChild>
+                  <Button variant="outline" size="sm" asChild className="flex-1 sm:flex-none">
                     <Link to="/dashboard-guru/$guruId" params={{ guruId: r.id }}>
-                      <Eye className="h-4 w-4 mr-2" /> Lihat Dashboard
+                      <Eye className="h-4 w-4 mr-2" /> Dashboard
                     </Link>
                   </Button>
                 </div>
@@ -88,6 +91,7 @@ function Page() {
           )}
         </CardContent>
       </Card>
+
 
       <QrDialog
         open={!!qrFor}

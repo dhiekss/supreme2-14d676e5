@@ -40,14 +40,14 @@ function Page() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard Murid</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard Murid</h1>
         <p className="text-muted-foreground text-sm mt-1">Pilih murid untuk melihat dashboard mereka</p>
       </div>
 
       <Card>
         <CardContent className="p-4">
-          <div className="flex gap-3">
-            <div className="relative flex-1">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={q}
@@ -57,7 +57,7 @@ function Page() {
               />
             </div>
             <Select value={rombelId} onValueChange={setRombelId}>
-              <SelectTrigger className="w-56 h-11 bg-muted/30 border-0">
+              <SelectTrigger className="w-full sm:w-56 h-11 bg-muted/30 border-0">
                 <SelectValue placeholder="Semua Rombel" />
               </SelectTrigger>
               <SelectContent>
@@ -73,9 +73,9 @@ function Page() {
 
       <Card>
         <CardContent className="p-0">
-          <div className="px-6 py-4 border-b flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            <div>
+          <div className="px-4 sm:px-6 py-4 border-b flex items-center gap-2">
+            <Users className="h-5 w-5 shrink-0" />
+            <div className="min-w-0">
               <div className="font-semibold">Daftar Murid</div>
               <div className="text-xs text-muted-foreground">{rows.length} murid ditemukan</div>
             </div>
@@ -83,22 +83,22 @@ function Page() {
           {rows.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground text-sm">Tidak ada data murid.</div>
           ) : (
-            <div className="p-4 space-y-2">
+            <div className="p-3 sm:p-4 space-y-2">
               {rows.slice(0, 200).map((r: any) => (
                 <div
                   key={r.id}
-                  className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/30"
+                  className="flex flex-col gap-3 p-3 rounded-lg border hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                       <User className="h-5 w-5" />
                     </div>
-                    <div>
-                      <div className="font-medium">{r.name}</div>
-                      <div className="text-xs text-muted-foreground">NIS: {r.nis} • {r.rombel_name}</div>
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{r.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">NIS: {r.nis} • {r.rombel_name}</div>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" asChild>
+                  <Button variant="outline" size="sm" asChild className="w-full sm:w-auto shrink-0">
                     <Link to="/dashboard-murid/$studentId" params={{ studentId: r.id }}>
                       <Eye className="h-4 w-4 mr-2" /> Lihat Dashboard
                     </Link>
@@ -115,5 +115,6 @@ function Page() {
         </CardContent>
       </Card>
     </div>
+
   );
 }

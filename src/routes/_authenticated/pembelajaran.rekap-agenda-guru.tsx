@@ -102,36 +102,37 @@ function RekapAgendaGuruPage() {
           </h1>
           <p className="text-muted-foreground text-sm">Analisis pelaksanaan agenda KBM guru berdasarkan rentang tanggal.</p>
         </div>
-        <div className="flex flex-wrap gap-2 items-end">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 items-end w-full md:w-auto">
           <div>
             <div className="text-xs text-muted-foreground">Dari</div>
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
+            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-full sm:w-40" />
           </div>
           <div>
             <div className="text-xs text-muted-foreground">Sampai</div>
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" />
+            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-full sm:w-40" />
           </div>
           <Select value={guruId} onValueChange={setGuruId}>
-            <SelectTrigger className="w-56"><SelectValue placeholder="Semua Guru" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-56 col-span-2 sm:col-auto"><SelectValue placeholder="Semua Guru" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Guru</SelectItem>
               {opts.guru.map((g: any) => <SelectItem key={g.id} value={g.id}>{g.nama}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={rombelId} onValueChange={setRombelId}>
-            <SelectTrigger className="w-48"><SelectValue placeholder="Semua Rombel" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-48 col-span-2 sm:col-auto"><SelectValue placeholder="Semua Rombel" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Rombel</SelectItem>
               {opts.rombel.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={() => dataQ.refetch()} disabled={dataQ.isFetching}>
+          <Button variant="outline" onClick={() => dataQ.refetch()} disabled={dataQ.isFetching} className="w-full sm:w-auto">
             <RefreshCw className={`h-4 w-4 mr-1 ${dataQ.isFetching ? "animate-spin" : ""}`} /> Refresh
           </Button>
-          <Button onClick={handleExport} disabled={!d}>
+          <Button onClick={handleExport} disabled={!d} className="w-full sm:w-auto">
             <Download className="h-4 w-4 mr-1" /> Excel
           </Button>
         </div>
+
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">

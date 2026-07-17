@@ -83,9 +83,9 @@ function Page() {
             <p className="text-sm text-muted-foreground mt-1">Pilih kelas untuk menampilkan dashboard</p>
           )}
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:flex-wrap">
           <Select value={rombelId} onValueChange={setRombelId}>
-            <SelectTrigger className="w-56 h-10">
+            <SelectTrigger className="w-full sm:w-56 h-10">
               <SelectValue placeholder="Pilih Kelas" />
             </SelectTrigger>
             <SelectContent>
@@ -97,16 +97,17 @@ function Page() {
               ))}
             </SelectContent>
           </Select>
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="pl-9 h-10 w-52"
+              className="pl-9 h-10 w-full sm:w-52"
             />
           </div>
         </div>
+
       </div>
 
       {!rombelId ? (
@@ -219,32 +220,35 @@ function RingkasanTab({ data, tanggalLabel }: { data: any; tanggalLabel: string 
           {data.jadwalHariIni.length === 0 ? (
             <div className="text-center text-sm text-muted-foreground py-6">Tidak ada jadwal untuk hari ini.</div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-16">Jam</TableHead>
-                  <TableHead className="w-40">Waktu</TableHead>
-                  <TableHead>Mata Pelajaran</TableHead>
-                  <TableHead>Guru</TableHead>
-                  <TableHead className="w-32">Status KBM</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.jadwalHariIni.map((j: any) => (
-                  <TableRow key={j.id}>
-                    <TableCell>{j.jam_ke ?? "—"}</TableCell>
-                    <TableCell className="whitespace-nowrap text-xs">
-                      {(j.jam_mulai ?? "—")} – {(j.jam_selesai ?? "—")}
-                    </TableCell>
-                    <TableCell>{j.mapel}</TableCell>
-                    <TableCell>{j.guru}</TableCell>
-                    <TableCell><KbmBadge status={j.kbm_status} /></TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16">Jam</TableHead>
+                    <TableHead className="w-40">Waktu</TableHead>
+                    <TableHead>Mata Pelajaran</TableHead>
+                    <TableHead>Guru</TableHead>
+                    <TableHead className="w-32">Status KBM</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {data.jadwalHariIni.map((j: any) => (
+                    <TableRow key={j.id}>
+                      <TableCell>{j.jam_ke ?? "—"}</TableCell>
+                      <TableCell className="whitespace-nowrap text-xs">
+                        {(j.jam_mulai ?? "—")} – {(j.jam_selesai ?? "—")}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{j.mapel}</TableCell>
+                      <TableCell className="whitespace-nowrap">{j.guru}</TableCell>
+                      <TableCell><KbmBadge status={j.kbm_status} /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
+
       </Card>
 
       <Card>
@@ -305,11 +309,12 @@ function DaftarSiswaTab({ data }: { data: any }) {
     <Card>
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pb-2">
         <CardTitle className="text-base">Daftar Murid</CardTitle>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
+        <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
+          <div className="relative flex-1 min-w-[10rem] md:flex-none">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama/NIS…" className="pl-9 h-9 w-56" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari nama/NIS…" className="pl-9 h-9 w-full md:w-56" />
           </div>
+
           <Select value={gender} onValueChange={setGender}>
             <SelectTrigger className="h-9 w-28"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -325,37 +330,40 @@ function DaftarSiswaTab({ data }: { data: any }) {
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">No</TableHead>
-              <TableHead className="w-28">NIS</TableHead>
-              <TableHead>Nama</TableHead>
-              <TableHead className="w-16">L/P</TableHead>
-              <TableHead className="w-20 text-right">Aksi</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-6">Tidak ada murid.</TableCell></TableRow>
-            ) : filtered.map((s: any, i: number) => (
-              <TableRow key={s.id}>
-                <TableCell className="text-primary font-medium">{i + 1}</TableCell>
-                <TableCell>{s.nis ?? "—"}</TableCell>
-                <TableCell className="font-medium">{s.name ?? "—"}</TableCell>
-                <TableCell>{s.gender ?? "—"}</TableCell>
-                <TableCell className="text-right">
-                  <Button asChild size="icon" variant="ghost" className="h-8 w-8">
-                    <Link to="/dashboard-murid/$studentId" params={{ studentId: s.id }}>
-                      <Eye className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </TableCell>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">No</TableHead>
+                <TableHead className="w-28">NIS</TableHead>
+                <TableHead>Nama</TableHead>
+                <TableHead className="w-16">L/P</TableHead>
+                <TableHead className="w-20 text-right">Aksi</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filtered.length === 0 ? (
+                <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-6">Tidak ada murid.</TableCell></TableRow>
+              ) : filtered.map((s: any, i: number) => (
+                <TableRow key={s.id}>
+                  <TableCell className="text-primary font-medium">{i + 1}</TableCell>
+                  <TableCell className="whitespace-nowrap">{s.nis ?? "—"}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{s.name ?? "—"}</TableCell>
+                  <TableCell>{s.gender ?? "—"}</TableCell>
+                  <TableCell className="text-right">
+                    <Button asChild size="icon" variant="ghost" className="h-8 w-8">
+                      <Link to="/dashboard-murid/$studentId" params={{ studentId: s.id }}>
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
+
     </Card>
   );
 }
@@ -399,7 +407,8 @@ function KehadiranTab({
           />
         </CardHeader>
         <CardContent className="p-0">
-          <div className="max-h-[560px] overflow-y-auto">
+          <div className="max-h-[560px] overflow-auto">
+
             <Table>
               <TableHeader>
                 <TableRow>
