@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableHeader, TableRow, TableHead, TableBody, TableCell,
 } from "@/components/ui/table";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   CalendarDays, CheckCircle2, XCircle, Heart, FileText, Clock,
   Users, GraduationCap, AlertTriangle, Search, Download, Eye, BookOpen,
