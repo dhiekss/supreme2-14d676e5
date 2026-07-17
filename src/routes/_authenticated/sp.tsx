@@ -205,11 +205,23 @@ function BpBkPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Manajemen BP/BK</h1>
-        <p className="text-sm text-muted-foreground">
-          Kelola Surat Peringatan (SP) untuk siswa
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Manajemen BP/BK</h1>
+          <p className="text-sm text-muted-foreground">
+            Kelola Surat Peringatan (SP) untuk siswa
+          </p>
+        </div>
+        <ThresholdSettingsDialog
+          value={thresholds}
+          onSave={(next) => {
+            setThresholds(next);
+            try {
+              localStorage.setItem(TH_STORAGE_KEY, JSON.stringify(next));
+            } catch {}
+            toast.success("Pengaturan ambang batas SP disimpan");
+          }}
+        />
       </div>
 
       {/* Stat cards */}
