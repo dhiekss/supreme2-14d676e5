@@ -487,7 +487,7 @@ function LaporanKeterlambatanPage() {
                 <div className="mt-1">Total: <span className="font-semibold">{detail.count}x</span></div>
               </div>
               <div className="max-h-80 overflow-auto rounded-md border">
-                <Table>
+                <Table className="min-w-[380px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Tanggal</TableHead>
