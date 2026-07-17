@@ -12,10 +12,34 @@ const statsQO = queryOptions({
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Halaman Utama — SUPREME XPOES" }] }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(statsQO),
+  loader: ({ context }) => {
+    // Prime cache without blocking navigation — component suspends on useSuspenseQuery
+    // and falls back to pendingComponent while data streams in.
+    void context.queryClient.prefetchQuery(statsQO);
+  },
+  pendingMs: 0,
+  pendingComponent: DashboardSkeleton,
   component: Dashboard,
   errorComponent: ({ error }) => <div className="text-destructive">Gagal memuat: {error.message}</div>,
+  notFoundComponent: () => <div>Halaman tidak ditemukan.</div>,
 });
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="h-8 w-48 bg-muted rounded" />
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-32 bg-muted rounded-lg" />)}
+      </div>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 bg-muted rounded-lg" />)}
+      </div>
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-32 bg-muted rounded-lg" />)}
+      </div>
+    </div>
+  );
+}
 
 const dateLong = new Date().toLocaleDateString("id-ID", {
   weekday: "long", day: "numeric", month: "long", year: "numeric",
