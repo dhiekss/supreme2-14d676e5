@@ -199,8 +199,201 @@ function AgendaGuruPage() {
         </CardContent>
       </Card>
 
+      <ExportAgendaCard guruId={guruId} guruNama={selectedGuru?.nama ?? ""} guruNip={selectedGuru?.nip ?? ""} defaultTanggal={tanggal} />
+
       <AgendaDialog slot={openSlot} guruId={guruId} guruNama={selectedGuru?.nama ?? ""} tanggal={tanggal} onClose={() => setOpenSlot(null)} />
     </div>
+  );
+}
+
+const G_LABEL_EXPORT: Record<string, string> = {
+  masuk: "Masuk",
+  tidak_masuk_dengan_tugas: "Tidak Masuk + Tugas",
+  tidak_masuk_tanpa_tugas: "Tidak Masuk Tanpa Tugas",
+};
+
+function ExportAgendaCard({
+  guruId, guruNama, guruNip, defaultTanggal,
+}: { guruId: string; guruNama: string; guruNip: string; defaultTanggal: string }) {
+  const [from, setFrom] = useState<string>(defaultTanggal);
+  const [to, setTo] = useState<string>(defaultTanggal);
+  const [busy, setBusy] = useState<"csv" | "pdf" | null>(null);
+  const runExport = useServerFn(exportAgendaKbm);
+
+  useEffect(() => {
+    setFrom(defaultTanggal);
+    setTo(defaultTanggal);
+  }, [defaultTanggal]);
+
+  const doFetch = async () => {
+    if (!guruId) throw new Error("Pilih guru terlebih dahulu");
+    if (!from || !to) throw new Error("Tanggal wajib diisi");
+    if (from > to) throw new Error("Tanggal awal tidak boleh lebih besar dari tanggal akhir");
+    return runExport({ data: { guruId, from, to } });
+  };
+
+  const exportCsv = async () => {
+    setBusy("csv");
+    try {
+      const res = await doFetch();
+      const header = [
+        "Tanggal", "Jam ke", "Kelas", "Mata Pelajaran", "Status Guru",
+        "Tujuan Pembelajaran", "Materi",
+        "Hadir", "Sakit", "Izin", "Alfa", "Dispensasi", "Bolos",
+      ];
+      const esc = (v: any) => {
+        const s = String(v ?? "");
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      const lines = [header.join(",")];
+      for (const r of res.rows) {
+        lines.push([
+          r.tanggal, r.jam_ke, r.rombel, r.mapel, G_LABEL_EXPORT[r.guru_status] ?? r.guru_status,
+          r.tp, r.materi, r.hadir, r.sakit, r.izin, r.alfa, r.dispensasi, r.bolos_kelas,
+        ].map(esc).join(","));
+      }
+      const csv = "\uFEFF" + lines.join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `agenda-kbm_${(guruNama || "guru").replace(/\s+/g, "-")}_${from}_${to}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Berhasil mengunduh ${res.rows.length} baris`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal ekspor CSV");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const exportPdf = async () => {
+    setBusy("pdf");
+    try {
+      const res = await doFetch();
+      const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const marginX = 32;
+      let y = 40;
+
+      doc.setFont("helvetica", "bold"); doc.setFontSize(14);
+      doc.text("Rekap Agenda KBM", pageW / 2, y, { align: "center" });
+      y += 18;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+      doc.text(`Guru: ${guruNama}${guruNip ? ` (${guruNip})` : ""}`, marginX, y); y += 14;
+      doc.text(`Periode: ${from} s.d. ${to}`, marginX, y); y += 14;
+      doc.text(`Total baris: ${res.rows.length}`, marginX, y); y += 16;
+
+      // Column widths
+      const cols = [
+        { key: "tanggal", label: "Tanggal", w: 70 },
+        { key: "jam_ke", label: "Jam", w: 30 },
+        { key: "rombel", label: "Kelas", w: 80 },
+        { key: "mapel", label: "Mata Pelajaran", w: 110 },
+        { key: "guru_status", label: "Status", w: 70 },
+        { key: "materi", label: "Materi", w: 200 },
+        { key: "kehadiran", label: "H/S/I/A/D/B", w: 90 },
+      ];
+
+      const drawHeader = () => {
+        doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+        let x = marginX;
+        doc.setFillColor(230, 230, 230);
+        doc.rect(x, y - 10, cols.reduce((a, c) => a + c.w, 0), 16, "F");
+        for (const c of cols) {
+          doc.text(c.label, x + 3, y);
+          x += c.w;
+        }
+        y += 8;
+        doc.setFont("helvetica", "normal");
+      };
+      drawHeader();
+
+      doc.setFontSize(8);
+      for (const r of res.rows) {
+        const cells: Record<string, string> = {
+          tanggal: r.tanggal,
+          jam_ke: String(r.jam_ke),
+          rombel: r.rombel,
+          mapel: r.mapel,
+          guru_status: G_LABEL_EXPORT[r.guru_status] ?? r.guru_status,
+          materi: r.materi || "-",
+          kehadiran: `${r.hadir}/${r.sakit}/${r.izin}/${r.alfa}/${r.dispensasi}/${r.bolos_kelas}`,
+        };
+        // wrap materi
+        const wrapped: Record<string, string[]> = {};
+        let maxLines = 1;
+        for (const c of cols) {
+          const txt = cells[c.key] ?? "";
+          const lines = doc.splitTextToSize(txt, c.w - 6);
+          wrapped[c.key] = lines;
+          if (lines.length > maxLines) maxLines = lines.length;
+        }
+        const rowH = maxLines * 10 + 4;
+        if (y + rowH > pageH - 30) {
+          doc.addPage();
+          y = 40;
+          drawHeader();
+        }
+        let x = marginX;
+        doc.setDrawColor(200);
+        doc.rect(marginX, y - 8, cols.reduce((a, c) => a + c.w, 0), rowH);
+        for (const c of cols) {
+          const lines = wrapped[c.key];
+          lines.forEach((ln, i) => doc.text(ln, x + 3, y + i * 10));
+          x += c.w;
+        }
+        y += rowH;
+      }
+
+      if (res.rows.length === 0) {
+        doc.text("Tidak ada data pada periode ini.", marginX, y + 10);
+      }
+
+      doc.save(`agenda-kbm_${(guruNama || "guru").replace(/\s+/g, "-")}_${from}_${to}.pdf`);
+      toast.success(`Berhasil mengunduh PDF (${res.rows.length} baris)`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal ekspor PDF");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-4 space-y-4">
+        <div>
+          <div className="font-semibold flex items-center gap-2">
+            <Download className="h-4 w-4 text-muted-foreground" /> Ekspor / Unduh Agenda KBM
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Unduh rekap agenda mengajar untuk guru yang dipilih pada rentang tanggal tertentu.
+          </p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Dari Tanggal</Label>
+            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-10" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Sampai Tanggal</Label>
+            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-10" />
+          </div>
+          <div className="flex items-end gap-2">
+            <Button variant="outline" className="flex-1" onClick={exportCsv} disabled={busy !== null || !guruId}>
+              <FileText className="h-4 w-4 mr-2" />
+              {busy === "csv" ? "Menyiapkan..." : "Unduh CSV"}
+            </Button>
+            <Button className="flex-1" onClick={exportPdf} disabled={busy !== null || !guruId}>
+              <Download className="h-4 w-4 mr-2" />
+              {busy === "pdf" ? "Menyiapkan..." : "Unduh PDF"}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
