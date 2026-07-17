@@ -281,8 +281,8 @@ export const getKakonliDashboard = createServerFn({ method: "GET" })
 function emptyResult(
   konsentrasi: string,
   meta: {
-    semester: { id: string; nama: string; tanggal_mulai: string | null; tanggal_selesai: string | null } | null;
-    tahunAjaran: { id: string; nama: string } | null;
+    semester: { id: string; nama: string | null; tanggal_mulai: string | null; tanggal_selesai: string | null } | null;
+    tahunAjaran: { id: string; nama: string | null } | null;
     range: { startDate: string; endDate: string };
   },
 ) {
