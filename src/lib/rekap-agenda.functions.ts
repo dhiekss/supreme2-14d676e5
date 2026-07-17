@@ -17,10 +17,11 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
 
     let q = supabase
       .from("kbm_agenda")
-      .select("id, tanggal, jam_ke, guru_id, rombel_id, mata_pelajaran_id, guru_status, materi_detail, tp_manual")
+      .select("id, tanggal, jam_ke, guru_id, rombel_id, mata_pelajaran_id, guru_status, materi_detail, tp_manual, foto_dokumentasi, ttd_guru")
       .gte("tanggal", data.from)
       .lte("tanggal", data.to)
-      .order("tanggal", { ascending: false });
+      .order("tanggal", { ascending: false })
+      .order("jam_ke", { ascending: true });
     if (data.guruId) q = q.eq("guru_id", data.guruId);
     if (data.rombelId) q = q.eq("rombel_id", data.rombelId);
 
@@ -30,15 +31,31 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
     const guruIds = [...new Set((rows ?? []).map((r) => r.guru_id).filter(Boolean))] as string[];
     const rombelIds = [...new Set((rows ?? []).map((r) => r.rombel_id).filter(Boolean))] as string[];
     const mapelIds = [...new Set((rows ?? []).map((r) => r.mata_pelajaran_id).filter(Boolean))] as string[];
+    const agendaIds = (rows ?? []).map((r) => r.id);
 
-    const [guru, rombel, mapel] = await Promise.all([
+    const [guru, rombel, mapel, keh] = await Promise.all([
       guruIds.length ? supabase.from("guru").select("id, nama, nip").in("id", guruIds) : Promise.resolve({ data: [] as any[] }),
       rombelIds.length ? supabase.from("rombel").select("id, name").in("id", rombelIds) : Promise.resolve({ data: [] as any[] }),
       mapelIds.length ? supabase.from("mata_pelajaran").select("id, nama").in("id", mapelIds) : Promise.resolve({ data: [] as any[] }),
+      agendaIds.length ? supabase.from("kbm_agenda_kehadiran").select("kbm_agenda_id, status").in("kbm_agenda_id", agendaIds) : Promise.resolve({ data: [] as any[] }),
     ]);
     const gMap = new Map((guru.data ?? []).map((x: any) => [x.id, x]));
     const rMap = new Map((rombel.data ?? []).map((x: any) => [x.id, x.name]));
     const mMap = new Map((mapel.data ?? []).map((x: any) => [x.id, x.nama]));
+
+    // Kehadiran per agenda_id
+    const kehPerAgenda = new Map<string, { hadir: number; sakit: number; izin: number; alfa: number; dispensasi: number; bolos: number; total: number }>();
+    for (const k of (keh.data ?? []) as any[]) {
+      const cur = kehPerAgenda.get(k.kbm_agenda_id) ?? { hadir: 0, sakit: 0, izin: 0, alfa: 0, dispensasi: 0, bolos: 0, total: 0 };
+      cur.total += 1;
+      if (k.status === "hadir") cur.hadir += 1;
+      else if (k.status === "sakit") cur.sakit += 1;
+      else if (k.status === "izin") cur.izin += 1;
+      else if (k.status === "alfa") cur.alfa += 1;
+      else if (k.status === "dispensasi") cur.dispensasi += 1;
+      else if (k.status === "bolos_kelas") cur.bolos += 1;
+      kehPerAgenda.set(k.kbm_agenda_id, cur);
+    }
 
     const enriched = (rows ?? []).map((r) => ({
       id: r.id,
@@ -47,12 +64,62 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
       guru_id: r.guru_id,
       guru_nama: r.guru_id ? gMap.get(r.guru_id)?.nama ?? "—" : "—",
       guru_nip: r.guru_id ? gMap.get(r.guru_id)?.nip ?? "" : "",
+      rombel_id: r.rombel_id,
       rombel_name: r.rombel_id ? rMap.get(r.rombel_id) ?? "—" : "—",
+      mapel_id: r.mata_pelajaran_id,
       mapel_nama: r.mata_pelajaran_id ? mMap.get(r.mata_pelajaran_id) ?? "—" : "—",
       guru_status: r.guru_status ?? "masuk",
       materi_detail: r.materi_detail ?? "",
       tp_manual: r.tp_manual ?? "",
+      foto_dokumentasi: r.foto_dokumentasi ?? "",
+      ttd_guru: r.ttd_guru ?? "",
     }));
+
+    // Group into sessions: same tanggal|guru|rombel|mapel|status
+    const sessionMap = new Map<string, any>();
+    for (const r of enriched) {
+      const key = `${r.tanggal}|${r.guru_id ?? ""}|${r.rombel_id ?? ""}|${r.mapel_id ?? ""}|${r.guru_status}`;
+      const cur = sessionMap.get(key);
+      if (!cur) {
+        const kh = kehPerAgenda.get(r.id) ?? { hadir: 0, sakit: 0, izin: 0, alfa: 0, dispensasi: 0, bolos: 0, total: 0 };
+        sessionMap.set(key, {
+          key,
+          tanggal: r.tanggal,
+          guru_id: r.guru_id,
+          guru_nama: r.guru_nama,
+          guru_nip: r.guru_nip,
+          rombel_id: r.rombel_id,
+          rombel_name: r.rombel_name,
+          mapel_id: r.mapel_id,
+          mapel_nama: r.mapel_nama,
+          guru_status: r.guru_status,
+          jam_list: [r.jam_ke],
+          agenda_ids: [r.id],
+          materi_detail: r.materi_detail,
+          tp_manual: r.tp_manual,
+          foto_dokumentasi: r.foto_dokumentasi,
+          ttd_guru: r.ttd_guru,
+          hadir: kh.hadir,
+          sakit: kh.sakit,
+          izin: kh.izin,
+          alfa: kh.alfa,
+          dispensasi: kh.dispensasi,
+          bolos: kh.bolos,
+          jml: kh.total,
+        });
+      } else {
+        cur.jam_list.push(r.jam_ke);
+        cur.agenda_ids.push(r.id);
+      }
+    }
+    const sessions = [...sessionMap.values()].map((s) => {
+      s.jam_list.sort((a: number, b: number) => a - b);
+      const min = s.jam_list[0];
+      const max = s.jam_list[s.jam_list.length - 1];
+      const contiguous = s.jam_list.every((j: number, i: number) => i === 0 || j === s.jam_list[i - 1] + 1);
+      s.jam_label = s.jam_list.length === 1 ? String(min) : contiguous ? `${min}-${max}` : s.jam_list.join(",");
+      return s;
+    });
 
     const total = enriched.length;
     const masuk = enriched.filter((x) => x.guru_status === "masuk").length;
@@ -98,6 +165,7 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
       },
       perGuru,
       rows: enriched,
+      sessions,
     };
   });
 
