@@ -161,9 +161,11 @@ function BpBkPage() {
   const getData = useServerFn(getBpBkData);
   const removeFn = useServerFn(deleteSp);
 
+  const [thresholds, setThresholds] = useState<Thresholds>(() => loadThresholds());
+
   const { data: bp } = useSuspenseQuery({
-    queryKey: ["bpbk"],
-    queryFn: () => getData(),
+    queryKey: ["bpbk", thresholds],
+    queryFn: () => getData({ data: thresholds }),
     initialData: data,
   });
 
