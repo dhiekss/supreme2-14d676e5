@@ -68,6 +68,7 @@ function AdministrasiPage() {
   const refsFn = useServerFn(getAdministrasiRefs);
   const listFn = useServerFn(listAdministrasi);
   const upsertFn = useServerFn(upsertAdministrasi);
+  const resetFn = useServerFn(resetAdministrasi);
 
   const [rombelId, setRombelId] = useState("all");
   const [mapelId, setMapelId] = useState("all");
@@ -77,6 +78,13 @@ function AdministrasiPage() {
   const [pageSize, setPageSize] = useState(20);
   const [sort, setSort] = useState<SortKey>("rombel_asc");
   const [editRow, setEditRow] = useState<any | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirmReset, setConfirmReset] = useState<
+    | { kind: "single"; ids: string[]; label: string }
+    | { kind: "bulk"; ids: string[] }
+    | { kind: "guru"; ids: string[]; guruName: string }
+    | null
+  >(null);
 
   const { data: refs } = useQuery({
     queryKey: ["administrasi-refs"],
@@ -98,6 +106,18 @@ function AdministrasiPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const resetM = useMutation({
+    mutationFn: (ids: string[]) => resetFn({ data: { rombel_mata_pelajaran_ids: ids } }),
+    onSuccess: (r: any) => {
+      toast.success(`Berhasil mereset ${r?.reset ?? 0} data (${r?.files_removed ?? 0} berkas dihapus)`);
+      setSelectedIds(new Set());
+      setConfirmReset(null);
+      qc.invalidateQueries({ queryKey: ["administrasi"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const isAdmin = Boolean((refs as any)?.is_admin);
   const total = list?.total ?? 0;
   const stats = list?.stats;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
