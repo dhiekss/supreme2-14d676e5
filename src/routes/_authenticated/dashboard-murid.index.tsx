@@ -81,7 +81,11 @@ function Page() {
             </div>
           </div>
           {rows.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground text-sm">Tidak ada data murid.</div>
+            <EmptyState
+              isStaff={!!data?.isStaff}
+              hasAccess={data?.hasAccess ?? true}
+              hasFilter={q.trim().length > 0 || rombelId !== "all"}
+            />
           ) : (
             <div className="p-3 sm:p-4 space-y-2">
               {rows.slice(0, 200).map((r: any) => (
