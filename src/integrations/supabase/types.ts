@@ -2618,6 +2618,10 @@ export type Database = {
     }
     Functions: {
       auto_reserve_nomor_surat: { Args: never; Returns: Json }
+      can_access_rombel: {
+        Args: { _rombel_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
