@@ -22,7 +22,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { fetchDisplaySettings, getCachedDisplaySettings } from "@/lib/display-settings";
+import {
+  awaitDisplaySettingsHydration,
+  fetchDisplaySettings,
+  getCachedDisplaySettings,
+} from "@/lib/display-settings";
 import { getMyMenuLayout } from "@/lib/menu-layout.functions";
 import { getMyProfile } from "@/lib/me.functions";
 import { resolveLayout, type ResolvedGroup, type ResolvedNode } from "@/lib/sidebar-menu";
@@ -40,16 +44,21 @@ export function AppSidebar() {
   const { data: d = getCachedDisplaySettings() } = useQuery({
     queryKey: ["display-settings"],
     queryFn: fetchDisplaySettings,
-    initialData: getCachedDisplaySettings,
+    placeholderData: getCachedDisplaySettings,
     staleTime: 5 * 60_000,
   });
   useEffect(() => {
-    qc.setQueryData(["display-settings"], getCachedDisplaySettings());
+    let active = true;
     const onHydrated = () => {
+      if (!active) return;
       qc.setQueryData(["display-settings"], getCachedDisplaySettings());
     };
+    void awaitDisplaySettingsHydration().then(onHydrated);
     window.addEventListener("display-settings-hydrated", onHydrated);
-    return () => window.removeEventListener("display-settings-hydrated", onHydrated);
+    return () => {
+      active = false;
+      window.removeEventListener("display-settings-hydrated", onHydrated);
+    };
   }, [qc]);
 
 
