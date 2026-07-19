@@ -202,7 +202,8 @@ function JadwalPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden">
+
         <CardHeader className="pb-3 flex-row items-center justify-between gap-3 space-y-0 flex-wrap">
           <CardTitle className="text-base">
             Jadwal {rombelName ? `— ${rombelName}` : ""}
