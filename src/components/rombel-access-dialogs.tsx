@@ -196,6 +196,43 @@ function RombelPicker({
   );
 }
 
+function ActiveRombelInfo({
+  activeIds,
+  rombels,
+}: {
+  activeIds: string[];
+  rombels: Rombel[];
+}) {
+  const active = useMemo(() => {
+    const set = new Set(activeIds);
+    return rombels.filter((r) => set.has(r.id));
+  }, [activeIds, rombels]);
+
+  return (
+    <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="text-xs font-medium text-muted-foreground">
+          Rombel aktif saat ini
+        </div>
+        <Badge variant="secondary">{active.length} rombel</Badge>
+      </div>
+      {active.length === 0 ? (
+        <p className="text-xs text-muted-foreground italic">
+          Belum ada akses rombel yang diterapkan pada akun ini.
+        </p>
+      ) : (
+        <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+          {active.map((r) => (
+            <Badge key={r.id} variant="outline" className="font-normal">
+              {r.name}
+            </Badge>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ============================ Individual ============================
 export function RombelAccessDialog({
   user,
@@ -257,7 +294,13 @@ export function RombelAccessDialog({
         {isFetching ? (
           <div className="py-8 text-center text-sm text-muted-foreground">Memuat…</div>
         ) : (
-          <RombelPicker rombels={rombels} selected={selected} onChange={setSelected} />
+          <>
+            <ActiveRombelInfo
+              activeIds={data?.rombel_ids ?? []}
+              rombels={rombels}
+            />
+            <RombelPicker rombels={rombels} selected={selected} onChange={setSelected} />
+          </>
         )}
 
         <DialogFooter>
