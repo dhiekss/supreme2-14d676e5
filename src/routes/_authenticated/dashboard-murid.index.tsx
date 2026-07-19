@@ -6,13 +6,54 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Eye, Search, Users, User } from "lucide-react";
+import { Eye, Search, Users, User, AlertCircle } from "lucide-react";
 import { listSiswaForDashboard } from "@/lib/dashboard-murid.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard-murid/")({
   head: () => ({ meta: [{ title: "Dashboard Murid — SUPREME XPOES" }] }),
   component: Page,
 });
+
+function EmptyState({ isStaff, hasAccess, hasFilter }: { isStaff: boolean; hasAccess: boolean; hasFilter: boolean }) {
+  if (hasFilter) {
+    return (
+      <div className="p-8 text-center text-muted-foreground text-sm">
+        Tidak ada murid yang cocok dengan pencarian/filter saat ini.
+      </div>
+    );
+  }
+  if (isStaff && !hasAccess) {
+    return (
+      <div className="p-8 text-center">
+        <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-amber-100 text-amber-600 mb-3">
+          <AlertCircle className="h-6 w-6" />
+        </div>
+        <h3 className="text-sm font-semibold text-foreground">Tidak ada rombel yang di-assign</h3>
+        <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+          Anda belum memiliki akses rombel yang diterapkan pada akun ini. Silakan hubungi admin untuk mengatur Akses Rombel agar daftar murid dapat tampil.
+        </p>
+      </div>
+    );
+  }
+  if (!isStaff && !hasAccess) {
+    return (
+      <div className="p-8 text-center">
+        <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-amber-100 text-amber-600 mb-3">
+          <AlertCircle className="h-6 w-6" />
+        </div>
+        <h3 className="text-sm font-semibold text-foreground">Data murid tidak ditemukan</h3>
+        <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+          Akun Anda belum terhubung dengan data murid. Silakan hubungi admin untuk memastikan NIS Anda sudah terdaftar.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="p-8 text-center text-muted-foreground text-sm">
+      Tidak ada data murid.
+    </div>
+  );
+}
 
 function Page() {
   const fn = useServerFn(listSiswaForDashboard);
@@ -81,7 +122,11 @@ function Page() {
             </div>
           </div>
           {rows.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground text-sm">Tidak ada data murid.</div>
+            <EmptyState
+              isStaff={!!data?.isStaff}
+              hasAccess={data?.hasAccess ?? true}
+              hasFilter={q.trim().length > 0 || rombelId !== "all"}
+            />
           ) : (
             <div className="p-3 sm:p-4 space-y-2">
               {rows.slice(0, 200).map((r: any) => (

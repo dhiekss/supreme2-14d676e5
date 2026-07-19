@@ -34,10 +34,14 @@ export const listSiswaForDashboard = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const staff = await isStaff(supabase, userId);
 
+    let hasAccess = true;
     let query = supabase.from("students").select("id, name, nis, rombel_id").order("name").limit(3000);
     if (!staff) {
       const nis = await getSelfNis(supabase, userId);
-      if (!nis) return { isStaff: false, rows: [], rombelOptions: [] };
+      if (!nis) {
+        hasAccess = false;
+        return { isStaff: false, hasAccess: false, rows: [], rombelOptions: [] };
+      }
       query = query.eq("nis", nis);
     } else {
       // Non-admin staff: batasi berdasarkan Akses Rombel (user_rombel + wali kelas).
@@ -46,7 +50,10 @@ export const listSiswaForDashboard = createServerFn({ method: "GET" })
         if (allowed.length === 0) {
           // Tidak ada akses rombel — fallback ke murid milik sendiri (jika NIS-nya cocok).
           const nis = await getSelfNis(supabase, userId);
-          if (!nis) return { isStaff: true, rows: [], rombelOptions: [] };
+          if (!nis) {
+            hasAccess = false;
+            return { isStaff: true, hasAccess: false, rows: [], rombelOptions: [] };
+          }
           query = query.eq("nis", nis);
         } else {
           query = query.in("rombel_id", allowed);
@@ -71,7 +78,7 @@ export const listSiswaForDashboard = createServerFn({ method: "GET" })
     const rombelOptions = (rombelRows ?? [])
       .map((r: any) => ({ id: r.id, name: r.name }))
       .sort((a: any, b: any) => a.name.localeCompare(b.name));
-    return { isStaff: staff, rows, rombelOptions };
+    return { isStaff: staff, hasAccess, rows, rombelOptions };
   });
 
 export const getSiswaDashboard = createServerFn({ method: "GET" })
