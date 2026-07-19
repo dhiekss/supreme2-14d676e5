@@ -52,27 +52,43 @@ function writeLocalMeta(meta: Partial<DisplaySettings>) {
   }
 }
 
+let hydrated = false;
+let hydrationPromise: Promise<void> | null = null;
+
 /** Kick off async hydration of the large images from IndexedDB into the
  *  in-memory cache so subsequent `getCachedDisplaySettings()` calls return
  *  them synchronously. Safe to call multiple times. */
-async function hydrateFromIdb() {
-  if (typeof window === "undefined") return;
-  try {
-    const [logo, bg] = await Promise.all([
-      idbGet<string>(IDB_LOGO),
-      idbGet<string>(IDB_BG),
-    ]);
-    memCache = {
-      ...DEFAULT_DISPLAY,
-      ...readLocalMeta(),
-      ...(logo ? { logo_url: logo } : {}),
-      ...(bg ? { bg_url: bg } : {}),
-    };
-    // Notify subscribers (e.g. React components) that cached images are ready.
-    window.dispatchEvent(new CustomEvent("display-settings-hydrated"));
-  } catch {
-    /* ignore */
-  }
+function hydrateFromIdb(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (hydrationPromise) return hydrationPromise;
+  hydrationPromise = (async () => {
+    try {
+      const [logo, bg] = await Promise.all([
+        idbGet<string>(IDB_LOGO),
+        idbGet<string>(IDB_BG),
+      ]);
+      memCache = {
+        ...DEFAULT_DISPLAY,
+        ...readLocalMeta(),
+        ...(logo ? { logo_url: logo } : {}),
+        ...(bg ? { bg_url: bg } : {}),
+      };
+    } catch {
+      /* ignore */
+    } finally {
+      hydrated = true;
+      window.dispatchEvent(new CustomEvent("display-settings-hydrated"));
+    }
+  })();
+  return hydrationPromise;
+}
+
+export function isDisplaySettingsHydrated() {
+  return hydrated;
+}
+
+export async function awaitDisplaySettingsHydration() {
+  await hydrateFromIdb();
 }
 
 // Fire-and-forget hydration on module load so images are ready ASAP.
@@ -84,9 +100,6 @@ if (typeof window !== "undefined") {
 export function getCachedDisplaySettings(): DisplaySettings {
   if (typeof window === "undefined") return DEFAULT_DISPLAY;
   if (memCache) return memCache;
-  // Return metadata from localStorage even if IndexedDB hydration hasn't
-  // finished yet — the images will appear as soon as hydration completes
-  // and the query result arrives.
   return { ...DEFAULT_DISPLAY, ...readLocalMeta() };
 }
 

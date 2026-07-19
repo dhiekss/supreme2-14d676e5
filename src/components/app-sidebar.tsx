@@ -44,6 +44,7 @@ export function AppSidebar() {
     staleTime: 5 * 60_000,
   });
   useEffect(() => {
+    qc.setQueryData(["display-settings"], getCachedDisplaySettings());
     const onHydrated = () => {
       qc.setQueryData(["display-settings"], getCachedDisplaySettings());
     };
