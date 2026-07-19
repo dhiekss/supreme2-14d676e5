@@ -27,7 +27,8 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { data: d = getCachedDisplaySettings(), refetch: refetchDisplay } = useQuery({
+  const qc = useQueryClient();
+  const { data: d = getCachedDisplaySettings() } = useQuery({
     queryKey: ["display-settings"],
     queryFn: fetchDisplaySettings,
     initialData: getCachedDisplaySettings,
@@ -35,10 +36,13 @@ function AuthPage() {
   });
 
   useEffect(() => {
-    const onHydrated = () => refetchDisplay();
+    const onHydrated = () => {
+      qc.setQueryData(["display-settings"], getCachedDisplaySettings());
+    };
     window.addEventListener("display-settings-hydrated", onHydrated);
     return () => window.removeEventListener("display-settings-hydrated", onHydrated);
-  }, [refetchDisplay]);
+  }, [qc]);
+
 
 
   useEffect(() => {
