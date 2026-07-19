@@ -36,6 +36,9 @@ function AuthPage() {
   });
 
   useEffect(() => {
+    // If IDB hydration finished before this effect ran, the event was missed —
+    // sync the latest cached values immediately.
+    qc.setQueryData(["display-settings"], getCachedDisplaySettings());
     const onHydrated = () => {
       qc.setQueryData(["display-settings"], getCachedDisplaySettings());
     };
