@@ -257,7 +257,13 @@ export function RombelAccessDialog({
         {isFetching ? (
           <div className="py-8 text-center text-sm text-muted-foreground">Memuat…</div>
         ) : (
-          <RombelPicker rombels={rombels} selected={selected} onChange={setSelected} />
+          <>
+            <ActiveRombelInfo
+              activeIds={data?.rombel_ids ?? []}
+              rombels={rombels}
+            />
+            <RombelPicker rombels={rombels} selected={selected} onChange={setSelected} />
+          </>
         )}
 
         <DialogFooter>
