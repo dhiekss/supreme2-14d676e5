@@ -100,6 +100,14 @@ export const getSiswaDashboard = createServerFn({ method: "GET" })
     if (!staff) {
       const selfNis = await getSelfNis(supabase, userId);
       if (!selfNis || selfNis !== student.nis) throw new Error("Forbidden");
+    } else {
+      const allowed = await getAllowedRombelIds(supabase, userId);
+      if (allowed !== null) {
+        if (!student.rombel_id || !allowed.includes(student.rombel_id)) {
+          const selfNis = await getSelfNis(supabase, userId);
+          if (!selfNis || selfNis !== student.nis) throw new Error("Forbidden: murid di luar akses rombel Anda");
+        }
+      }
     }
 
     // Semester options (with tahun ajaran)
