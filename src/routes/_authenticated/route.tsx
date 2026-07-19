@@ -6,19 +6,15 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { fetchDisplaySettings, DEFAULT_DISPLAY } from "@/lib/display-settings";
 import { ActivityTracker } from "@/components/activity-tracker";
+import { UndefinedErrorBoundary } from "@/components/undefined-error-boundary";
 
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    try {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session?.user) throw redirect({ to: "/auth" });
-      return { user: data.session.user };
-    } catch (e) {
-      console.log("[BL AUTHENTICATED THROW]", e, typeof e, JSON.stringify(e));
-      throw e ?? new Error("auth beforeLoad threw undefined");
-    }
+    const { data } = await supabase.auth.getSession();
+    if (!data.session?.user) throw redirect({ to: "/auth" });
+    return { user: data.session.user };
   },
   component: AuthedLayout,
 });
@@ -41,10 +37,13 @@ function AuthedLayout() {
             <div className="font-semibold text-foreground">SUPREME XPOES</div>
           </header>
           <main className="flex-1 p-6">
-            <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Memuat…</div>}>
-              <Outlet />
-            </Suspense>
+            <UndefinedErrorBoundary>
+              <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Memuat…</div>}>
+                <Outlet />
+              </Suspense>
+            </UndefinedErrorBoundary>
           </main>
+
 
           <footer className="border-t bg-card text-center text-xs text-muted-foreground py-3 px-4">
             {d.footer}
