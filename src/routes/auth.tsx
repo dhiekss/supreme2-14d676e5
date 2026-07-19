@@ -27,12 +27,19 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { data: d = getCachedDisplaySettings() } = useQuery({
+  const { data: d = getCachedDisplaySettings(), refetch: refetchDisplay } = useQuery({
     queryKey: ["display-settings"],
     queryFn: fetchDisplaySettings,
     initialData: getCachedDisplaySettings,
     staleTime: 5 * 60_000,
   });
+
+  useEffect(() => {
+    const onHydrated = () => refetchDisplay();
+    window.addEventListener("display-settings-hydrated", onHydrated);
+    return () => window.removeEventListener("display-settings-hydrated", onHydrated);
+  }, [refetchDisplay]);
+
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
