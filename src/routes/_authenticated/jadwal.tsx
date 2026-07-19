@@ -66,8 +66,9 @@ function Combobox({
 }
 
 
-const HARI = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"] as const;
+const HARI = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"] as const;
 type Hari = (typeof HARI)[number];
+const JAM_PER_HARI = 9;
 
 type SlotKey = string; // `${hari}#${jam}`
 const slotKey = (h: string, j: number): SlotKey => `${h}#${j}`;
