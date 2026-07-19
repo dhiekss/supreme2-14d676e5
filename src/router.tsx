@@ -91,7 +91,52 @@ export const getRouter = () => {
     defaultPreloadStaleTime: 30_000,
     defaultPendingMs: 200,
     defaultPendingMinMs: 0,
+    defaultErrorComponent: ({ error }: { error: unknown }) => {
+      const msg =
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+            ? error
+            : (() => {
+                try {
+                  return JSON.stringify(error);
+                } catch {
+                  return String(error);
+                }
+              })();
+      if (typeof window !== "undefined") {
+        // eslint-disable-next-line no-console
+        console.error("[router:defaultErrorComponent]", error);
+      }
+      return (
+        <div className="p-6">
+          <h2 className="text-lg font-semibold text-destructive">Gagal memuat halaman</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{msg || "Terjadi kesalahan tidak diketahui."}</p>
+          <div className="mt-4 flex gap-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground"
+            >
+              Muat ulang
+            </button>
+            <a
+              href="/dashboard"
+              className="inline-flex items-center rounded-md border px-3 py-1.5 text-sm"
+            >
+              Ke Dashboard
+            </a>
+          </div>
+        </div>
+      );
+    },
+    defaultNotFoundComponent: () => (
+      <div className="p-6">
+        <h2 className="text-lg font-semibold">Halaman tidak ditemukan</h2>
+        <a href="/dashboard" className="mt-3 inline-block underline">Kembali ke Dashboard</a>
+      </div>
+    ),
   });
+
 
   return router;
 };

@@ -74,11 +74,18 @@ type SlotKey = string; // `${hari}#${jam}`
 const slotKey = (h: string, j: number): SlotKey => `${h}#${j}`;
 
 export const Route = createFileRoute("/_authenticated/jadwal")({
+  ssr: false,
   head: () => ({ meta: [{ title: "Jadwal Pelajaran — SUPREME XPOES" }] }),
-  loader: async () => ({ opts: await jadwalOptions() }),
+  loader: async () => {
+    const opts = await jadwalOptions();
+    return { opts };
+  },
   component: JadwalPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error?.message ?? String(error)}</div>,
 });
+
+
+
 
 function JadwalPage() {
   const { opts } = Route.useLoaderData();
