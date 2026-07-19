@@ -68,6 +68,8 @@ async function hydrateFromIdb() {
       ...(logo ? { logo_url: logo } : {}),
       ...(bg ? { bg_url: bg } : {}),
     };
+    // Notify subscribers (e.g. React components) that cached images are ready.
+    window.dispatchEvent(new CustomEvent("display-settings-hydrated"));
   } catch {
     /* ignore */
   }
@@ -77,6 +79,7 @@ async function hydrateFromIdb() {
 if (typeof window !== "undefined") {
   void hydrateFromIdb();
 }
+
 
 export function getCachedDisplaySettings(): DisplaySettings {
   if (typeof window === "undefined") return DEFAULT_DISPLAY;
