@@ -255,7 +255,7 @@ function JadwalPage() {
                     const disableEmpty = selFilled.size > 0 || !filterRombel;
                     if (isEmpty) {
                       return (
-                        <td key={jam} className="border p-1 align-top min-w-[170px]">
+                        <td key={jam} className="border p-1 align-top min-w-[140px] sm:min-w-[160px]">
                           <button
                             type="button"
                             onClick={() => toggleEmpty(h, jam)}
@@ -277,7 +277,7 @@ function JadwalPage() {
                       );
                     }
                     return (
-                      <td key={jam} className="border p-1 align-top min-w-[170px]">
+                      <td key={jam} className="border p-1 align-top min-w-[140px] sm:min-w-[160px]">
                         {rows.map((s: any) => {
                           const selected = selFilled.has(s.id);
                           const disable = selEmpty.size > 0;
