@@ -14,6 +14,47 @@ export const Route = createFileRoute("/_authenticated/dashboard-murid/")({
   component: Page,
 });
 
+function EmptyState({ isStaff, hasAccess, hasFilter }: { isStaff: boolean; hasAccess: boolean; hasFilter: boolean }) {
+  if (hasFilter) {
+    return (
+      <div className="p-8 text-center text-muted-foreground text-sm">
+        Tidak ada murid yang cocok dengan pencarian/filter saat ini.
+      </div>
+    );
+  }
+  if (isStaff && !hasAccess) {
+    return (
+      <div className="p-8 text-center">
+        <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-amber-100 text-amber-600 mb-3">
+          <AlertCircle className="h-6 w-6" />
+        </div>
+        <h3 className="text-sm font-semibold text-foreground">Tidak ada rombel yang di-assign</h3>
+        <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+          Anda belum memiliki akses rombel yang diterapkan pada akun ini. Silakan hubungi admin untuk mengatur Akses Rombel agar daftar murid dapat tampil.
+        </p>
+      </div>
+    );
+  }
+  if (!isStaff && !hasAccess) {
+    return (
+      <div className="p-8 text-center">
+        <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-amber-100 text-amber-600 mb-3">
+          <AlertCircle className="h-6 w-6" />
+        </div>
+        <h3 className="text-sm font-semibold text-foreground">Data murid tidak ditemukan</h3>
+        <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+          Akun Anda belum terhubung dengan data murid. Silakan hubungi admin untuk memastikan NIS Anda sudah terdaftar.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="p-8 text-center text-muted-foreground text-sm">
+      Tidak ada data murid.
+    </div>
+  );
+}
+
 function Page() {
   const fn = useServerFn(listSiswaForDashboard);
   const { data } = useQuery({ queryKey: ["dashboard-murid-list"], queryFn: () => fn() });
