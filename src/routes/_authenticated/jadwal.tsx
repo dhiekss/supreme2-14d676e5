@@ -159,7 +159,7 @@ function JadwalPage() {
   const rombelName = opts.rombel.find((r: any) => r.id === filterRombel)?.name;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0 max-w-full">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Jadwal Pelajaran</h1>
@@ -202,7 +202,8 @@ function JadwalPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden">
+
         <CardHeader className="pb-3 flex-row items-center justify-between gap-3 space-y-0 flex-wrap">
           <CardTitle className="text-base">
             Jadwal {rombelName ? `— ${rombelName}` : ""}
