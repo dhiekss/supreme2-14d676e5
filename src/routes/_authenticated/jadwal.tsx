@@ -233,20 +233,20 @@ function JadwalPage() {
             )}
           </div>
         </CardHeader>
-        <CardContent className="overflow-x-auto p-0">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="bg-muted/50">
-                <th className="border p-2 text-left w-24">Hari</th>
+        <CardContent className="overflow-auto p-0 max-h-[75vh]">
+          <table className="text-sm border-collapse w-max min-w-full">
+            <thead className="sticky top-0 z-20">
+              <tr>
+                <th className="border p-2 text-left w-20 sm:w-24 sticky left-0 z-30 bg-muted">Hari</th>
                 {Array.from({ length: grid.maxJam }, (_, i) => i + 1).map((jam) => (
-                  <th key={jam} className="border p-2 text-left">Jam {jam}</th>
+                  <th key={jam} className="border p-2 text-left min-w-[140px] sm:min-w-[160px] bg-muted">Jam {jam}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {HARI.map((h) => (
                 <tr key={h}>
-                  <td className="border p-2 font-medium align-top bg-muted/30">{h}</td>
+                  <td className="border p-2 font-medium align-top bg-muted/60 sticky left-0 z-10 w-20 sm:w-24">{h}</td>
                   {Array.from({ length: grid.maxJam }, (_, i) => i + 1).map((jam) => {
                     const rows = grid.cells[h][jam] ?? [];
                     const isEmpty = rows.length === 0;
