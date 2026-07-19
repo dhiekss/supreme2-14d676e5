@@ -107,7 +107,7 @@ function JadwalPage() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["jadwal"] });
 
   const grid = useMemo(() => {
-    const maxJam = Math.max(8, ...data.map((d) => Number(d.jam_ke ?? 0)));
+    const maxJam = Math.max(JAM_PER_HARI, ...data.map((d) => Number(d.jam_ke ?? 0)));
     const cells: Record<string, Record<number, any[]>> = {};
     for (const h of HARI) cells[h] = {};
     for (const r of data) {
