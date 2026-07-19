@@ -1,22 +1,28 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { fetchDisplaySettings, DEFAULT_DISPLAY } from "@/lib/display-settings";
 import { ActivityTracker } from "@/components/activity-tracker";
 
+
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    // getSession() reads localStorage synchronously (no network) — instant gate.
-    // requireSupabaseAuth on server fns still validates the bearer server-side.
-    const { data } = await supabase.auth.getSession();
-    if (!data.session?.user) throw redirect({ to: "/auth" });
-    return { user: data.session.user };
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session?.user) throw redirect({ to: "/auth" });
+      return { user: data.session.user };
+    } catch (e) {
+      console.log("[BL AUTHENTICATED THROW]", e, typeof e, JSON.stringify(e));
+      throw e ?? new Error("auth beforeLoad threw undefined");
+    }
   },
   component: AuthedLayout,
 });
+
 
 function AuthedLayout() {
   const { data: d = DEFAULT_DISPLAY } = useQuery({
@@ -35,8 +41,11 @@ function AuthedLayout() {
             <div className="font-semibold text-foreground">SUPREME XPOES</div>
           </header>
           <main className="flex-1 p-6">
-            <Outlet />
+            <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Memuat…</div>}>
+              <Outlet />
+            </Suspense>
           </main>
+
           <footer className="border-t bg-card text-center text-xs text-muted-foreground py-3 px-4">
             {d.footer}
           </footer>
