@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getAllowedRombelIds } from "@/lib/rombel-access";
 import { z } from "zod";
 
 async function isAdmin(supabase: any, userId: string) {
@@ -38,6 +39,19 @@ export const listSiswaForDashboard = createServerFn({ method: "GET" })
       const nis = await getSelfNis(supabase, userId);
       if (!nis) return { isStaff: false, rows: [], rombelOptions: [] };
       query = query.eq("nis", nis);
+    } else {
+      // Non-admin staff: batasi berdasarkan Akses Rombel (user_rombel + wali kelas).
+      const allowed = await getAllowedRombelIds(supabase, userId);
+      if (allowed !== null) {
+        if (allowed.length === 0) {
+          // Tidak ada akses rombel — fallback ke murid milik sendiri (jika NIS-nya cocok).
+          const nis = await getSelfNis(supabase, userId);
+          if (!nis) return { isStaff: true, rows: [], rombelOptions: [] };
+          query = query.eq("nis", nis);
+        } else {
+          query = query.in("rombel_id", allowed);
+        }
+      }
     }
     const { data, error } = await query;
     if (error) throw new Error(error.message);
