@@ -77,17 +77,13 @@ export const Route = createFileRoute("/_authenticated/jadwal")({
   ssr: false,
   head: () => ({ meta: [{ title: "Jadwal Pelajaran — SUPREME XPOES" }] }),
   loader: async () => {
-    try {
-      const opts = await jadwalOptions();
-      return { opts };
-    } catch (e) {
-      console.log("[LOADER JADWAL THROW]", e, typeof e, JSON.stringify(e));
-      throw e ?? new Error("jadwal loader threw undefined");
-    }
+    const opts = await jadwalOptions();
+    return { opts };
   },
   component: JadwalPage,
   errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error?.message ?? String(error)}</div>,
 });
+
 
 
 
