@@ -36,12 +36,21 @@ export function AppSidebar() {
     if (isMobile) setOpenMobile(false);
   };
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { data: d = getCachedDisplaySettings() } = useQuery({
     queryKey: ["display-settings"],
     queryFn: fetchDisplaySettings,
     initialData: getCachedDisplaySettings,
     staleTime: 5 * 60_000,
   });
+  useEffect(() => {
+    const onHydrated = () => {
+      qc.setQueryData(["display-settings"], getCachedDisplaySettings());
+    };
+    window.addEventListener("display-settings-hydrated", onHydrated);
+    return () => window.removeEventListener("display-settings-hydrated", onHydrated);
+  }, [qc]);
+
 
   const getLayout = useServerFn(getMyMenuLayout);
   const { data: layoutRes } = useQuery({
