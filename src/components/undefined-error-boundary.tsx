@@ -1,46 +1,42 @@
 import { Component, type ReactNode } from "react";
 
 /**
- * Some React 19 + TanStack Router hydration paths surface an "undefined"
- * thrown value that TanStack's built-in CatchBoundary can't handle
- * (it treats `state.error === undefined` as "no error caught"), causing
- * an infinite re-render → "Uncaught undefined" and a blank page on hard
- * reload of authenticated routes.
+ * React 19 + TanStack Router hydration on `ssr: false` subtrees can surface
+ * a thrown `undefined` value. TanStack's built-in CatchBoundary treats
+ * `state.error === undefined` as "no error caught" and re-renders the same
+ * children, so the throw repeats → React reports "Uncaught undefined" and
+ * the page renders blank on hard reload.
  *
- * This boundary sits above the route tree and, when it catches such an
- * undefined error, schedules a one-tick reset so the subtree remounts
- * after hydration completes. Real Error instances are re-thrown so the
- * normal TanStack route error components still handle them.
+ * This boundary sits above the authenticated Outlet: when it catches an
+ * undefined-ish error, it schedules a one-tick remount so the subtree
+ * hydrates cleanly. Any real Error instance is left alone (state stays as
+ * `caught: false`), so React continues bubbling to TanStack's per-route
+ * `errorComponent`.
  */
-type State = { key: number };
+type State = { key: number; caught: boolean };
 
 export class UndefinedErrorBoundary extends Component<{ children: ReactNode }, State> {
-  state: State = { key: 0 };
-  private retried = false;
+  state: State = { key: 0, caught: false };
 
-  static getDerivedStateFromError(error: unknown) {
-    if (error == null || typeof error === "undefined") {
-      // Force subtree remount by bumping key
-      return {};
+  static getDerivedStateFromError(error: unknown): Partial<State> | null {
+    if (error == null) {
+      // Handle the undefined-throw case — mark caught, remount happens in componentDidCatch.
+      return { caught: true };
     }
+    // Real error: bubble to TanStack's route error boundaries.
     return null;
   }
 
   componentDidCatch(error: unknown) {
-    if (error != null) {
-      // Real errors propagate so TanStack's per-route errorComponent handles them
-      throw error;
-    }
-    if (this.retried) return;
-    this.retried = true;
-    // Schedule remount after hydration finishes
+    if (error != null) return;
+    // Schedule remount after current tick so hydration finishes.
     setTimeout(() => {
-      this.setState((s) => ({ key: s.key + 1 }));
-      this.retried = false;
+      this.setState((s) => ({ key: s.key + 1, caught: false }));
     }, 0);
   }
 
   render() {
-    return <div key={this.state.key}>{this.props.children}</div>;
+    if (this.state.caught) return null;
+    return <div key={this.state.key} className="contents">{this.props.children}</div>;
   }
 }
