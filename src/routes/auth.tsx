@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,12 +27,23 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const qc = useQueryClient();
   const { data: d = getCachedDisplaySettings() } = useQuery({
     queryKey: ["display-settings"],
     queryFn: fetchDisplaySettings,
     initialData: getCachedDisplaySettings,
     staleTime: 5 * 60_000,
   });
+
+  useEffect(() => {
+    const onHydrated = () => {
+      qc.setQueryData(["display-settings"], getCachedDisplaySettings());
+    };
+    window.addEventListener("display-settings-hydrated", onHydrated);
+    return () => window.removeEventListener("display-settings-hydrated", onHydrated);
+  }, [qc]);
+
+
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {

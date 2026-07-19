@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LogOut, GraduationCap, ChevronDown } from "lucide-react";
 import {
   Sidebar,
@@ -20,7 +20,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchDisplaySettings, getCachedDisplaySettings } from "@/lib/display-settings";
 import { getMyMenuLayout } from "@/lib/menu-layout.functions";
@@ -36,12 +36,21 @@ export function AppSidebar() {
     if (isMobile) setOpenMobile(false);
   };
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { data: d = getCachedDisplaySettings() } = useQuery({
     queryKey: ["display-settings"],
     queryFn: fetchDisplaySettings,
     initialData: getCachedDisplaySettings,
     staleTime: 5 * 60_000,
   });
+  useEffect(() => {
+    const onHydrated = () => {
+      qc.setQueryData(["display-settings"], getCachedDisplaySettings());
+    };
+    window.addEventListener("display-settings-hydrated", onHydrated);
+    return () => window.removeEventListener("display-settings-hydrated", onHydrated);
+  }, [qc]);
+
 
   const getLayout = useServerFn(getMyMenuLayout);
   const { data: layoutRes } = useQuery({
