@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchDisplaySettings, getCachedDisplaySettings } from "@/lib/display-settings";
 
 function NotFoundComponent() {
   return (
@@ -118,27 +119,21 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function DynamicFavicon() {
   const { data } = useQuery({
-    queryKey: ["favicon-logo"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("app_settings")
-        .select("value")
-        .eq("key", "display.logo_url")
-        .maybeSingle();
-      return data?.value ?? null;
-    },
-    refetchInterval: 30_000,
+    queryKey: ["display-settings"],
+    queryFn: fetchDisplaySettings,
+    placeholderData: getCachedDisplaySettings,
+    staleTime: 5 * 60_000,
   });
   useEffect(() => {
-    if (!data) return;
+    if (!data?.logo_url) return;
     let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
     if (!link) {
       link = document.createElement("link");
       link.rel = "icon";
       document.head.appendChild(link);
     }
-    link.href = data;
-  }, [data]);
+    link.href = data.logo_url;
+  }, [data?.logo_url]);
   return null;
 }
 

@@ -7,7 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Eye, EyeOff, Megaphone, Image as ImageIcon } from "lucide-react";
-import { fetchDisplaySettings, getCachedDisplaySettings } from "@/lib/display-settings";
+import {
+  awaitDisplaySettingsHydration,
+  fetchDisplaySettings,
+  getCachedDisplaySettings,
+} from "@/lib/display-settings";
 import { resolveLoginEmail } from "@/lib/auth-lookup.functions";
 
 export const Route = createFileRoute("/auth")({
@@ -31,19 +35,22 @@ function AuthPage() {
   const { data: d = getCachedDisplaySettings() } = useQuery({
     queryKey: ["display-settings"],
     queryFn: fetchDisplaySettings,
-    initialData: getCachedDisplaySettings,
+    placeholderData: getCachedDisplaySettings,
     staleTime: 5 * 60_000,
   });
 
   useEffect(() => {
-    // If IDB hydration finished before this effect ran, the event was missed —
-    // sync the latest cached values immediately.
-    qc.setQueryData(["display-settings"], getCachedDisplaySettings());
+    let active = true;
     const onHydrated = () => {
+      if (!active) return;
       qc.setQueryData(["display-settings"], getCachedDisplaySettings());
     };
+    void awaitDisplaySettingsHydration().then(onHydrated);
     window.addEventListener("display-settings-hydrated", onHydrated);
-    return () => window.removeEventListener("display-settings-hydrated", onHydrated);
+    return () => {
+      active = false;
+      window.removeEventListener("display-settings-hydrated", onHydrated);
+    };
   }, [qc]);
 
 
