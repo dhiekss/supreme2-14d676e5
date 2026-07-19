@@ -237,15 +237,17 @@ function JadwalPage() {
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="bg-muted/50">
-                <th className="border p-2 text-left w-20">Jam</th>
-                {HARI.map((h) => <th key={h} className="border p-2 text-left">{h}</th>)}
+                <th className="border p-2 text-left w-24">Hari</th>
+                {Array.from({ length: grid.maxJam }, (_, i) => i + 1).map((jam) => (
+                  <th key={jam} className="border p-2 text-left">Jam {jam}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {Array.from({ length: grid.maxJam }, (_, i) => i + 1).map((jam) => (
-                <tr key={jam}>
-                  <td className="border p-2 font-medium align-top bg-muted/30">Jam {jam}</td>
-                  {HARI.map((h) => {
+              {HARI.map((h) => (
+                <tr key={h}>
+                  <td className="border p-2 font-medium align-top bg-muted/30">{h}</td>
+                  {Array.from({ length: grid.maxJam }, (_, i) => i + 1).map((jam) => {
                     const rows = grid.cells[h][jam] ?? [];
                     const isEmpty = rows.length === 0;
                     const k = slotKey(h, jam);
@@ -253,7 +255,7 @@ function JadwalPage() {
                     const disableEmpty = selFilled.size > 0 || !filterRombel;
                     if (isEmpty) {
                       return (
-                        <td key={h} className="border p-1 align-top min-w-[170px]">
+                        <td key={jam} className="border p-1 align-top min-w-[170px]">
                           <button
                             type="button"
                             onClick={() => toggleEmpty(h, jam)}
@@ -275,7 +277,7 @@ function JadwalPage() {
                       );
                     }
                     return (
-                      <td key={h} className="border p-1 align-top min-w-[170px]">
+                      <td key={jam} className="border p-1 align-top min-w-[170px]">
                         {rows.map((s: any) => {
                           const selected = selFilled.has(s.id);
                           const disable = selEmpty.size > 0;
