@@ -221,12 +221,32 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
 export const listRekapOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const [guru, rombel] = await Promise.all([
-      context.supabase.from("guru").select("id, nama").order("nama"),
-      context.supabase.from("rombel").select("id, name").order("name"),
+    const { supabase, userId } = context;
+    const [{ data: roleRows }, { data: profile }] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", userId),
+      supabase.from("profiles").select("nip").eq("id", userId).maybeSingle(),
     ]);
-    return { guru: guru.data ?? [], rombel: rombel.data ?? [] };
+    const roles = new Set((roleRows ?? []).map((r: any) => r.role));
+    const isPrivileged = roles.has("admin") || roles.has("superadmin");
+
+    if (!isPrivileged) {
+      const nip = profile?.nip ?? null;
+      let guruList: any[] = [];
+      if (nip) {
+        const { data: g } = await supabase.from("guru").select("id, nama").eq("nip", nip);
+        guruList = g ?? [];
+      }
+      const rombel = await supabase.from("rombel").select("id, name").order("name");
+      return { guru: guruList, rombel: rombel.data ?? [], isPrivileged };
+    }
+
+    const [guru, rombel] = await Promise.all([
+      supabase.from("guru").select("id, nama").order("nama"),
+      supabase.from("rombel").select("id, name").order("name"),
+    ]);
+    return { guru: guru.data ?? [], rombel: rombel.data ?? [], isPrivileged };
   });
+
 
 export const bulkDeleteAgenda = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
