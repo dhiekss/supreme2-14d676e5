@@ -12,6 +12,7 @@ import {
   type PembimbingRef,
 } from "@/lib/kelompok-belajar.functions";
 import { CrudTable } from "@/components/crud-table";
+import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
