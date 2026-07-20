@@ -213,8 +213,10 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
       perGuru,
       rows: enriched,
       sessions,
+      scope: { isPrivileged, restrictedGuruId },
     };
   });
+
 
 export const listRekapOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
