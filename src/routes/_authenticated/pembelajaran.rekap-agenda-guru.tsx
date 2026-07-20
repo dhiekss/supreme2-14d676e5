@@ -8,11 +8,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BookOpen, CheckCircle2, XCircle, AlertCircle, Users, Download, RefreshCw, ClipboardList, Search, Eye, Pencil, TableIcon, ArrowUpDown } from "lucide-react";
-import { getRekapAgendaGuru, listRekapOptions } from "@/lib/rekap-agenda.functions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { BookOpen, CheckCircle2, XCircle, AlertCircle, Users, Download, RefreshCw, ClipboardList, Search, Eye, Pencil, TableIcon, ArrowUpDown, Trash2 } from "lucide-react";
+import { getRekapAgendaGuru, listRekapOptions, bulkDeleteAgenda, bulkUpdateAgendaStatus } from "@/lib/rekap-agenda.functions";
 import { getAgendaDetail } from "@/lib/agenda-guru.functions";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
 function firstOfMonth(d = new Date()) {
