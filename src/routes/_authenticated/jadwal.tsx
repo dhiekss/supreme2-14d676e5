@@ -89,10 +89,14 @@ export const Route = createFileRoute("/_authenticated/jadwal")({
 
 function JadwalPage() {
   const { opts } = Route.useLoaderData();
+  const [target, setTarget] = useState<"rombel" | "kelompok">("rombel");
   const [filterRombel, setFilterRombel] = useState<string>(opts.rombel[0]?.id ?? "");
+  const [filterKelompok, setFilterKelompok] = useState<string>(opts.kelompok?.[0]?.id ?? "");
   const [filterGuru, setFilterGuru] = useState<string>("all");
   const qc = useQueryClient();
   const fetchList = useServerFn(listJadwal);
+
+  const activeTargetId = target === "rombel" ? filterRombel : filterKelompok;
 
   // selection: either empty slots or filled ids — never mixed
   const [selEmpty, setSelEmpty] = useState<Set<SlotKey>>(new Set());
@@ -101,10 +105,11 @@ function JadwalPage() {
   const [openEdit, setOpenEdit] = useState(false);
 
   const { data } = useSuspenseQuery({
-    queryKey: ["jadwal", filterRombel, filterGuru],
+    queryKey: ["jadwal", target, activeTargetId, filterGuru],
     queryFn: () => fetchList({
       data: {
-        rombelId: filterRombel || undefined,
+        rombelId: target === "rombel" ? (filterRombel || undefined) : undefined,
+        kelompokId: target === "kelompok" ? (filterKelompok || undefined) : undefined,
         guruId: filterGuru === "all" ? undefined : filterGuru,
       },
     }),
