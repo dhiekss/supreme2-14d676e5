@@ -243,14 +243,14 @@ function JadwalPage() {
       <Card>
         <CardHeader className="pb-3 flex-row items-center justify-between gap-3 space-y-0 flex-wrap">
           <CardTitle className="text-base">
-            Jadwal {rombelName ? `— ${rombelName}` : ""}
+            Jadwal {activeTargetName ? `— ${activeTargetName}` : ""}
           </CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
             {selEmpty.size > 0 && (
               <>
                 <Badge variant="secondary" className="rounded-full">{selEmpty.size} slot kosong dipilih</Badge>
                 <Button variant="outline" size="sm" onClick={clearSel}><X className="h-4 w-4 mr-1" /> Batal</Button>
-                <Button size="sm" onClick={() => setOpenAdd(true)} disabled={!filterRombel}>
+                <Button size="sm" onClick={() => setOpenAdd(true)} disabled={!activeTargetId}>
                   <Plus className="h-4 w-4 mr-1" /> Tambah Mapel
                 </Button>
               </>
