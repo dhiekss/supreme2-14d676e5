@@ -205,3 +205,49 @@ export const bulkDeleteJadwal = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, deleted: data.ids.length };
   });
+
+export const listAlokasiWaktu = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("jadwal_alokasi_waktu")
+      .select("id, hari, jam_ke, jam_mulai, jam_selesai")
+      .order("hari").order("jam_ke");
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+const AlokasiRowSchema = z.object({
+  hari: z.enum(HARI),
+  jamKe: z.number().int().min(1).max(20),
+  jamMulai: z.string().min(1),
+  jamSelesai: z.string().min(1),
+});
+
+export const upsertAlokasiWaktu = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ rows: z.array(AlokasiRowSchema).min(1) }).parse)
+  .handler(async ({ context, data }) => {
+    const { data: isAdm } = await context.supabase
+      .from("user_roles").select("role").eq("user_id", context.userId)
+      .in("role", ["admin", "superadmin"]).maybeSingle();
+    if (!isAdm) throw new Error("Hanya admin yang boleh mengubah alokasi waktu");
+
+    for (const r of data.rows) {
+      const { data: existing } = await context.supabase
+        .from("jadwal_alokasi_waktu").select("id")
+        .eq("hari", r.hari).eq("jam_ke", r.jamKe).maybeSingle();
+      if (existing?.id) {
+        const { error } = await context.supabase.from("jadwal_alokasi_waktu")
+          .update({ jam_mulai: r.jamMulai, jam_selesai: r.jamSelesai, updated_at: new Date().toISOString() })
+          .eq("id", existing.id);
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await context.supabase.from("jadwal_alokasi_waktu")
+          .insert({ hari: r.hari, jam_ke: r.jamKe, jam_mulai: r.jamMulai, jam_selesai: r.jamSelesai, created_by: context.userId });
+        if (error) throw new Error(error.message);
+      }
+    }
+    return { ok: true, count: data.rows.length };
+  });
+

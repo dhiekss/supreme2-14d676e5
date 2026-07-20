@@ -75,6 +75,16 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
       .order("jam_ke");
     if (error) throw new Error(error.message);
 
+    // Alokasi waktu (source of truth for jam mulai/selesai per hari+jam_ke)
+    const { data: alokasiRows } = await supabase
+      .from("jadwal_alokasi_waktu")
+      .select("jam_ke, jam_mulai, jam_selesai")
+      .eq("hari", hariName);
+    const alokasiMap = new Map<number, { jam_mulai?: string; jam_selesai?: string }>();
+    (alokasiRows ?? []).forEach((a: any) =>
+      alokasiMap.set(Number(a.jam_ke), { jam_mulai: a.jam_mulai, jam_selesai: a.jam_selesai }),
+    );
+
 
     const rombelIds = [...new Set((jadwal ?? []).map((j: any) => j.rombel_id).filter(Boolean))] as string[];
     const kelompokIds = [...new Set((jadwal ?? []).map((j: any) => j.kelompok_belajar_id).filter(Boolean))] as string[];
@@ -113,10 +123,12 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
 
     const slots = (jadwal ?? []).map((j: any) => {
       const isKelompok = !!j.kelompok_belajar_id;
+      const jamKe = Number(j.jam_ke ?? 0);
+      const alok = alokasiMap.get(jamKe);
       return {
-        jam_ke: Number(j.jam_ke ?? 0),
-        jam_mulai: j.jam_mulai,
-        jam_selesai: j.jam_selesai,
+        jam_ke: jamKe,
+        jam_mulai: alok?.jam_mulai ?? j.jam_mulai,
+        jam_selesai: alok?.jam_selesai ?? j.jam_selesai,
         is_kelompok: isKelompok,
         rombel_id: j.rombel_id,
         kelompok_belajar_id: j.kelompok_belajar_id,
