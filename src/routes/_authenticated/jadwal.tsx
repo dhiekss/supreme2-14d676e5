@@ -1,20 +1,22 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import {
   listJadwal, jadwalOptions, clearJadwal,
   bulkCreateJadwal, bulkUpdateJadwal, bulkDeleteJadwal,
+  listAlokasiWaktu, upsertAlokasiWaktu,
 } from "@/lib/jadwal.functions";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Eraser, Plus, Pencil, Trash2, X, CheckCircle2, Circle, Check, ChevronsUpDown } from "lucide-react";
+import { Eraser, Plus, Pencil, Trash2, X, CheckCircle2, Circle, Check, ChevronsUpDown, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
