@@ -533,14 +533,18 @@ function BulkEditDialog({
 }
 
 function ClearJadwalDialog({
-  rombelId, guruId, rombelName, onDone,
-}: { rombelId: string; guruId?: string; rombelName?: string; onDone: () => void }) {
+  target, rombelId, kelompokId, guruId, targetName, onDone,
+}: { target: "rombel" | "kelompok"; rombelId: string; kelompokId: string; guruId?: string; targetName?: string; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const [scope, setScope] = useState<"filtered" | "all">("filtered");
   const clearFn = useServerFn(clearJadwal);
 
   const run = useMutation({
-    mutationFn: () => clearFn({ data: { rombelId: rombelId || undefined, guruId, scope } }),
+    mutationFn: () => clearFn({ data: {
+      rombelId: target === "rombel" ? (rombelId || undefined) : undefined,
+      kelompokId: target === "kelompok" ? (kelompokId || undefined) : undefined,
+      guruId, scope,
+    } }),
     onSuccess: (r: any) => { toast.success(`${r.deleted ?? 0} slot dihapus`); setOpen(false); onDone(); },
     onError: (e: any) => toast.error(e.message),
   });
