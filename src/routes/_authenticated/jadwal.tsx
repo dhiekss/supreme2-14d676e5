@@ -389,9 +389,10 @@ function slotLabel(hari: string, jam: number) {
 }
 
 function BulkAddDialog({
-  open, onOpenChange, opts, rombelId, slots, onDone,
+  open, onOpenChange, opts, target, rombelId, kelompokId, slots, onDone,
 }: {
-  open: boolean; onOpenChange: (v: boolean) => void; opts: any; rombelId: string;
+  open: boolean; onOpenChange: (v: boolean) => void; opts: any;
+  target: "rombel" | "kelompok"; rombelId: string; kelompokId: string;
   slots: { hari: Hari; jamKe: number; jamMulai?: string; jamSelesai?: string }[];
   onDone: () => void;
 }) {
@@ -399,7 +400,11 @@ function BulkAddDialog({
   const [guruId, setGuruId] = useState("");
   const createFn = useServerFn(bulkCreateJadwal);
   const mut = useMutation({
-    mutationFn: () => createFn({ data: { rombelId, mataPelajaranId: mapelId, guruId, slots } }),
+    mutationFn: () => createFn({ data: {
+      rombelId: target === "rombel" ? rombelId : undefined,
+      kelompokId: target === "kelompok" ? kelompokId : undefined,
+      mataPelajaranId: mapelId, guruId, slots,
+    } }),
     onSuccess: (r: any) => { toast.success(`${r.inserted ?? 0} slot ditambahkan`); setMapelId(""); setGuruId(""); onOpenChange(false); onDone(); },
     onError: (e: any) => toast.error(e.message),
   });
