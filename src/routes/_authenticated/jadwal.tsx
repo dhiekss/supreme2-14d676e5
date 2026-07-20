@@ -290,7 +290,7 @@ function JadwalPage() {
                     const isEmpty = rows.length === 0;
                     const k = slotKey(h, jam);
                     const emptySelected = selEmpty.has(k);
-                    const disableEmpty = selFilled.size > 0 || !filterRombel;
+                    const disableEmpty = selFilled.size > 0 || !activeTargetId;
                     if (isEmpty) {
                       return (
                         <td key={jam} className="border p-1 align-top min-w-[170px]">
