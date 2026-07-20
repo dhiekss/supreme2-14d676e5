@@ -338,11 +338,8 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
     XLSX.writeFile(wb, `tabel-kehadiran-guru.xlsx`);
   };
 
-  const allAgendaIds = useMemo(
-    () => rows.flatMap((r: any) => r.agenda_ids ?? []),
-    [rows],
-  );
-  void allAgendaIds;
+
+
 
   const selectedAgendaIds = useMemo(() => {
     const ids: string[] = [];
