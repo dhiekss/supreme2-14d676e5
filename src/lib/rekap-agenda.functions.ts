@@ -63,12 +63,38 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
     const mapelIds = [...new Set((rows ?? []).map((r) => r.mata_pelajaran_id).filter(Boolean))] as string[];
     const agendaIds = (rows ?? []).map((r) => r.id);
 
-    const [guru, rombel, mapel, keh] = await Promise.all([
+    const fetchKehadiran = async () => {
+      if (!agendaIds.length) return [] as any[];
+      const all: any[] = [];
+      const CHUNK = 200;
+      const PAGE = 1000;
+      for (let i = 0; i < agendaIds.length; i += CHUNK) {
+        const slice = agendaIds.slice(i, i + CHUNK);
+        let from = 0;
+        while (true) {
+          const { data, error } = await supabase
+            .from("kbm_agenda_kehadiran")
+            .select("kbm_agenda_id, status")
+            .in("kbm_agenda_id", slice)
+            .range(from, from + PAGE - 1);
+          if (error) throw new Error(error.message);
+          const batch = data ?? [];
+          all.push(...batch);
+          if (batch.length < PAGE) break;
+          from += PAGE;
+        }
+      }
+      return all;
+    };
+
+    const [guru, rombel, mapel, kehRows] = await Promise.all([
       guruIds.length ? supabase.from("guru").select("id, nama, nip").in("id", guruIds) : Promise.resolve({ data: [] as any[] }),
       rombelIds.length ? supabase.from("rombel").select("id, name").in("id", rombelIds) : Promise.resolve({ data: [] as any[] }),
       mapelIds.length ? supabase.from("mata_pelajaran").select("id, nama").in("id", mapelIds) : Promise.resolve({ data: [] as any[] }),
-      agendaIds.length ? supabase.from("kbm_agenda_kehadiran").select("kbm_agenda_id, status").in("kbm_agenda_id", agendaIds) : Promise.resolve({ data: [] as any[] }),
+      fetchKehadiran(),
     ]);
+    const keh = { data: kehRows } as { data: any[] };
+
     const gMap = new Map((guru.data ?? []).map((x: any) => [x.id, x]));
     const rMap = new Map((rombel.data ?? []).map((x: any) => [x.id, x.name]));
     const mMap = new Map((mapel.data ?? []).map((x: any) => [x.id, x.nama]));
