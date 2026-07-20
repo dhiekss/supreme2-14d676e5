@@ -411,8 +411,14 @@ function AgendaDialog({
   const detailFn = useServerFn(getAgendaDetail);
 
   const detailQ = useQuery({
-    queryKey: ["agenda-detail", guruId, tanggal, slot?.rombel_id, slot?.mata_pelajaran_id, slot?.jam_list?.join(",")],
-    queryFn: () => detailFn({ data: { guruId, tanggal, rombelId: slot.rombel_id, mataPelajaranId: slot.mata_pelajaran_id, jamList: slot.jam_list } }),
+    queryKey: ["agenda-detail", guruId, tanggal, slot?.rombel_id, slot?.kelompok_belajar_id, slot?.mata_pelajaran_id, slot?.jam_list?.join(",")],
+    queryFn: () => detailFn({ data: {
+      guruId, tanggal,
+      rombelId: slot.is_kelompok ? undefined : slot.rombel_id,
+      kelompokBelajarId: slot.is_kelompok ? slot.kelompok_belajar_id : undefined,
+      mataPelajaranId: slot.mata_pelajaran_id,
+      jamList: slot.jam_list,
+    } }),
     enabled: !!slot,
   });
 
@@ -449,7 +455,9 @@ function AgendaDialog({
       return saveFn({
         data: {
           guruId, tanggal,
-          rombelId: slot.rombel_id, mataPelajaranId: slot.mata_pelajaran_id,
+          rombelId: slot.is_kelompok ? undefined : slot.rombel_id,
+          kelompokBelajarId: slot.is_kelompok ? slot.kelompok_belajar_id : undefined,
+          mataPelajaranId: slot.mata_pelajaran_id,
           jamList: slot.jam_list,
           perJamStatus,
           tpManual: tpId,

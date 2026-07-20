@@ -69,7 +69,7 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
     // entries would see an empty schedule.
     const { data: jadwal, error } = await supabase
       .from("jadwal_pelajaran")
-      .select("id, hari, jam_ke, jam_mulai, jam_selesai, rombel_id, mata_pelajaran_id")
+      .select("id, hari, jam_ke, jam_mulai, jam_selesai, rombel_id, kelompok_belajar_id, mata_pelajaran_id")
       .eq("guru_id", data.guruId)
       .eq("hari", hariName)
       .order("jam_ke");
@@ -77,22 +77,28 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
 
 
     const rombelIds = [...new Set((jadwal ?? []).map((j: any) => j.rombel_id).filter(Boolean))] as string[];
+    const kelompokIds = [...new Set((jadwal ?? []).map((j: any) => j.kelompok_belajar_id).filter(Boolean))] as string[];
     const mapelIds = [...new Set((jadwal ?? []).map((j: any) => j.mata_pelajaran_id).filter(Boolean))] as string[];
-    const [rombel, mapel] = await Promise.all([
+    const [rombel, kelompok, mapel] = await Promise.all([
       rombelIds.length ? supabase.from("rombel").select("id, name").in("id", rombelIds) : Promise.resolve({ data: [] }),
+      kelompokIds.length ? supabase.from("kelompok_belajar").select("id, nama").in("id", kelompokIds) : Promise.resolve({ data: [] }),
       mapelIds.length ? supabase.from("mata_pelajaran").select("id, nama").in("id", mapelIds) : Promise.resolve({ data: [] }),
     ]);
     const rMap = new Map((rombel.data ?? []).map((r: any) => [r.id, r.name]));
+    const kMap = new Map((kelompok.data ?? []).map((k: any) => [k.id, k.nama]));
     const mMap = new Map((mapel.data ?? []).map((m: any) => [m.id, m.nama]));
 
     const { data: agenda } = await supabase
       .from("kbm_agenda")
-      .select("id, jam_ke, rombel_id, mata_pelajaran_id, materi_detail, guru_status, tp_manual, foto_dokumentasi, ttd_guru")
+      .select("id, jam_ke, rombel_id, kelompok_belajar_id, mata_pelajaran_id, materi_detail, guru_status, tp_manual, foto_dokumentasi, ttd_guru")
       .eq("guru_id", data.guruId)
       .eq("tanggal", data.tanggal);
     const aMap = new Map<string, any>();
     (agenda ?? []).forEach((a: any) => {
-      aMap.set(`${a.rombel_id}|${a.mata_pelajaran_id}|${a.jam_ke}`, a);
+      const key = a.kelompok_belajar_id
+        ? `k:${a.kelompok_belajar_id}|${a.mata_pelajaran_id}|${a.jam_ke}`
+        : `r:${a.rombel_id}|${a.mata_pelajaran_id}|${a.jam_ke}`;
+      aMap.set(key, a);
     });
 
     const agendaIds = (agenda ?? []).map((a: any) => a.id);
@@ -105,15 +111,22 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
       (keh ?? []).forEach((k: any) => kehSet.add(k.kbm_agenda_id));
     }
 
-    const slots = (jadwal ?? []).map((j: any) => ({
-      jam_ke: Number(j.jam_ke ?? 0),
-      jam_mulai: j.jam_mulai,
-      jam_selesai: j.jam_selesai,
-      rombel_id: j.rombel_id,
-      rombel_name: j.rombel_id ? rMap.get(j.rombel_id) ?? "—" : "—",
-      mata_pelajaran_id: j.mata_pelajaran_id,
-      mapel_nama: j.mata_pelajaran_id ? mMap.get(j.mata_pelajaran_id) ?? "—" : "—",
-    })).sort((a, b) => a.jam_ke - b.jam_ke);
+    const slots = (jadwal ?? []).map((j: any) => {
+      const isKelompok = !!j.kelompok_belajar_id;
+      return {
+        jam_ke: Number(j.jam_ke ?? 0),
+        jam_mulai: j.jam_mulai,
+        jam_selesai: j.jam_selesai,
+        is_kelompok: isKelompok,
+        rombel_id: j.rombel_id,
+        kelompok_belajar_id: j.kelompok_belajar_id,
+        rombel_name: isKelompok
+          ? (kMap.get(j.kelompok_belajar_id) ?? "—")
+          : (j.rombel_id ? rMap.get(j.rombel_id) ?? "—" : "—"),
+        mata_pelajaran_id: j.mata_pelajaran_id,
+        mapel_nama: j.mata_pelajaran_id ? mMap.get(j.mata_pelajaran_id) ?? "—" : "—",
+      };
+    }).sort((a, b) => a.jam_ke - b.jam_ke);
 
     const groups: any[] = [];
     for (const s of slots) {
@@ -121,6 +134,7 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
       if (
         last &&
         last.rombel_id === s.rombel_id &&
+        last.kelompok_belajar_id === s.kelompok_belajar_id &&
         last.mata_pelajaran_id === s.mata_pelajaran_id &&
         last.jam_ke_end + 1 === s.jam_ke
       ) {
@@ -134,7 +148,9 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
           jam_list: [s.jam_ke],
           jam_mulai: s.jam_mulai,
           jam_selesai: s.jam_selesai,
+          is_kelompok: s.is_kelompok,
           rombel_id: s.rombel_id,
+          kelompok_belajar_id: s.kelompok_belajar_id,
           rombel_name: s.rombel_name,
           mata_pelajaran_id: s.mata_pelajaran_id,
           mapel_nama: s.mapel_nama,
@@ -143,8 +159,11 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
     }
 
     return groups.map((g) => {
+      const keyPrefix = g.is_kelompok
+        ? `k:${g.kelompok_belajar_id}`
+        : `r:${g.rombel_id}`;
       const existing = g.jam_list
-        .map((j: number) => aMap.get(`${g.rombel_id}|${g.mata_pelajaran_id}|${j}`))
+        .map((j: number) => aMap.get(`${keyPrefix}|${g.mata_pelajaran_id}|${j}`))
         .filter(Boolean);
       const sudah = existing.length > 0;
       const first = existing[0];
@@ -170,7 +189,8 @@ export const getAgendaDetail = createServerFn({ method: "GET" })
     z.object({
       guruId: z.string().uuid(),
       tanggal: z.string(),
-      rombelId: z.string().uuid(),
+      rombelId: z.string().uuid().optional(),
+      kelompokBelajarId: z.string().uuid().optional(),
       mataPelajaranId: z.string().uuid(),
       jamList: z.array(z.number().int()).min(1),
     }).parse,
@@ -179,14 +199,31 @@ export const getAgendaDetail = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     await assertGuruAccess(supabase, userId, data.guruId);
 
-    const [{ data: students }, { data: agendaRows }] = await Promise.all([
-      supabase.from("students").select("id, name, nis").eq("rombel_id", data.rombelId).order("name"),
-      supabase.from("kbm_agenda")
-        .select("id, jam_ke, guru_status, materi_detail, tp_manual, foto_dokumentasi, ttd_guru")
-        .eq("guru_id", data.guruId).eq("tanggal", data.tanggal)
-        .eq("rombel_id", data.rombelId).eq("mata_pelajaran_id", data.mataPelajaranId)
-        .in("jam_ke", data.jamList),
-    ]);
+    // Students: rombel members or kelompok belajar anggota
+    let students: any[] = [];
+    if (data.kelompokBelajarId) {
+      const { data: rows } = await supabase
+        .from("kelompok_belajar_anggota")
+        .select("student_id")
+        .eq("kelompok_id", data.kelompokBelajarId);
+      const ids = (rows ?? []).map((r: any) => r.student_id);
+      if (ids.length) {
+        const { data: s } = await supabase.from("students").select("id, name, nis").in("id", ids).order("name");
+        students = s ?? [];
+      }
+    } else if (data.rombelId) {
+      const { data: s } = await supabase.from("students").select("id, name, nis").eq("rombel_id", data.rombelId).order("name");
+      students = s ?? [];
+    }
+
+    let agendaQ = supabase.from("kbm_agenda")
+      .select("id, jam_ke, guru_status, materi_detail, tp_manual, foto_dokumentasi, ttd_guru")
+      .eq("guru_id", data.guruId).eq("tanggal", data.tanggal)
+      .eq("mata_pelajaran_id", data.mataPelajaranId)
+      .in("jam_ke", data.jamList);
+    if (data.kelompokBelajarId) agendaQ = agendaQ.eq("kelompok_belajar_id", data.kelompokBelajarId);
+    else if (data.rombelId) agendaQ = agendaQ.eq("rombel_id", data.rombelId);
+    const { data: agendaRows } = await agendaQ;
 
     const perJam: Record<number, any> = {};
     for (const j of data.jamList) perJam[j] = { guru_status: "masuk" };
@@ -208,7 +245,7 @@ export const getAgendaDetail = createServerFn({ method: "GET" })
     }
 
     return {
-      students: students ?? [],
+      students,
       perJam,
       tp_manual: first?.tp_manual ?? "",
       materi_detail: first?.materi_detail ?? "",
@@ -219,13 +256,15 @@ export const getAgendaDetail = createServerFn({ method: "GET" })
   });
 
 
+
 export const upsertAgendaGuru = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({
       guruId: z.string().uuid(),
       tanggal: z.string(),
-      rombelId: z.string().uuid(),
+      rombelId: z.string().uuid().optional(),
+      kelompokBelajarId: z.string().uuid().optional(),
       mataPelajaranId: z.string().uuid(),
       jamList: z.array(z.number().int().min(1).max(20)).min(1),
       perJamStatus: z.record(z.string(), z.enum(["masuk", "tidak_masuk_dengan_tugas", "tidak_masuk_tanpa_tugas"])),
@@ -245,18 +284,18 @@ export const upsertAgendaGuru = createServerFn({ method: "POST" })
     const agendaIds: string[] = [];
     for (const jam of data.jamList) {
       const status = data.perJamStatus[String(jam)] ?? "masuk";
-      const { data: existing } = await supabase
-        .from("kbm_agenda")
-        .select("id")
+      let existQ = supabase.from("kbm_agenda").select("id")
         .eq("guru_id", data.guruId).eq("tanggal", data.tanggal)
-        .eq("rombel_id", data.rombelId).eq("mata_pelajaran_id", data.mataPelajaranId)
-        .eq("jam_ke", jam)
-        .maybeSingle();
+        .eq("mata_pelajaran_id", data.mataPelajaranId).eq("jam_ke", jam);
+      if (data.kelompokBelajarId) existQ = existQ.eq("kelompok_belajar_id", data.kelompokBelajarId);
+      else if (data.rombelId) existQ = existQ.eq("rombel_id", data.rombelId);
+      const { data: existing } = await existQ.maybeSingle();
 
       const payload: any = {
         guru_id: data.guruId,
         tanggal: data.tanggal,
-        rombel_id: data.rombelId,
+        rombel_id: data.rombelId ?? null,
+        kelompok_belajar_id: data.kelompokBelajarId ?? null,
         mata_pelajaran_id: data.mataPelajaranId,
         jam_ke: jam,
         materi_detail: data.materiDetail ?? "",

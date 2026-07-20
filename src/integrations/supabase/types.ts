@@ -680,6 +680,7 @@ export type Database = {
           jam_ke: number | null
           jam_mulai: string | null
           jam_selesai: string | null
+          kelompok_belajar_id: string | null
           mata_pelajaran_id: string | null
           rombel_id: string | null
           updated_at: string | null
@@ -693,6 +694,7 @@ export type Database = {
           jam_ke?: number | null
           jam_mulai?: string | null
           jam_selesai?: string | null
+          kelompok_belajar_id?: string | null
           mata_pelajaran_id?: string | null
           rombel_id?: string | null
           updated_at?: string | null
@@ -706,11 +708,20 @@ export type Database = {
           jam_ke?: number | null
           jam_mulai?: string | null
           jam_selesai?: string | null
+          kelompok_belajar_id?: string | null
           mata_pelajaran_id?: string | null
           rombel_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "jadwal_pelajaran_kelompok_belajar_id_fkey"
+            columns: ["kelompok_belajar_id"]
+            isOneToOne: false
+            referencedRelation: "kelompok_belajar"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       kbm_agenda: {
         Row: {
@@ -721,6 +732,7 @@ export type Database = {
           guru_status: string | null
           id: string
           jam_ke: number | null
+          kelompok_belajar_id: string | null
           mata_pelajaran_id: string | null
           materi_detail: string | null
           rombel_id: string | null
@@ -739,6 +751,7 @@ export type Database = {
           guru_status?: string | null
           id?: string
           jam_ke?: number | null
+          kelompok_belajar_id?: string | null
           mata_pelajaran_id?: string | null
           materi_detail?: string | null
           rombel_id?: string | null
@@ -757,6 +770,7 @@ export type Database = {
           guru_status?: string | null
           id?: string
           jam_ke?: number | null
+          kelompok_belajar_id?: string | null
           mata_pelajaran_id?: string | null
           materi_detail?: string | null
           rombel_id?: string | null
@@ -767,7 +781,15 @@ export type Database = {
           tujuan_pembelajaran_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "kbm_agenda_kelompok_belajar_id_fkey"
+            columns: ["kelompok_belajar_id"]
+            isOneToOne: false
+            referencedRelation: "kelompok_belajar"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       kbm_agenda_kehadiran: {
         Row: {

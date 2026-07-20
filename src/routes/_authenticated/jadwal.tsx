@@ -89,10 +89,14 @@ export const Route = createFileRoute("/_authenticated/jadwal")({
 
 function JadwalPage() {
   const { opts } = Route.useLoaderData();
+  const [target, setTarget] = useState<"rombel" | "kelompok">("rombel");
   const [filterRombel, setFilterRombel] = useState<string>(opts.rombel[0]?.id ?? "");
+  const [filterKelompok, setFilterKelompok] = useState<string>(opts.kelompok?.[0]?.id ?? "");
   const [filterGuru, setFilterGuru] = useState<string>("all");
   const qc = useQueryClient();
   const fetchList = useServerFn(listJadwal);
+
+  const activeTargetId = target === "rombel" ? filterRombel : filterKelompok;
 
   // selection: either empty slots or filled ids — never mixed
   const [selEmpty, setSelEmpty] = useState<Set<SlotKey>>(new Set());
@@ -101,10 +105,11 @@ function JadwalPage() {
   const [openEdit, setOpenEdit] = useState(false);
 
   const { data } = useSuspenseQuery({
-    queryKey: ["jadwal", filterRombel, filterGuru],
+    queryKey: ["jadwal", target, activeTargetId, filterGuru],
     queryFn: () => fetchList({
       data: {
-        rombelId: filterRombel || undefined,
+        rombelId: target === "rombel" ? (filterRombel || undefined) : undefined,
+        kelompokId: target === "kelompok" ? (filterKelompok || undefined) : undefined,
         guruId: filterGuru === "all" ? undefined : filterGuru,
       },
     }),
@@ -164,6 +169,8 @@ function JadwalPage() {
   });
 
   const rombelName = opts.rombel.find((r: any) => r.id === filterRombel)?.name;
+  const kelompokName = opts.kelompok?.find((k: any) => k.id === filterKelompok)?.nama;
+  const activeTargetName = target === "rombel" ? rombelName : kelompokName;
 
   return (
     <div className="space-y-6">
@@ -174,9 +181,11 @@ function JadwalPage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <ClearJadwalDialog
+            target={target}
             rombelId={filterRombel}
+            kelompokId={filterKelompok}
             guruId={filterGuru === "all" ? undefined : filterGuru}
-            rombelName={rombelName}
+            targetName={activeTargetName}
             onDone={invalidate}
           />
         </div>
@@ -185,16 +194,38 @@ function JadwalPage() {
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-base">Filter</CardTitle></CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <Label>Rombel</Label>
-              <Select value={filterRombel} onValueChange={(v) => { clearSel(); setFilterRombel(v); }}>
-                <SelectTrigger><SelectValue placeholder="Pilih rombel" /></SelectTrigger>
+              <Label>Jenis</Label>
+              <Select value={target} onValueChange={(v) => { clearSel(); setTarget(v as any); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {opts.rombel.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                  <SelectItem value="rombel">Rombel</SelectItem>
+                  <SelectItem value="kelompok">Kelompok Belajar</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {target === "rombel" ? (
+              <div className="space-y-2">
+                <Label>Rombel</Label>
+                <Select value={filterRombel} onValueChange={(v) => { clearSel(); setFilterRombel(v); }}>
+                  <SelectTrigger><SelectValue placeholder="Pilih rombel" /></SelectTrigger>
+                  <SelectContent>
+                    {opts.rombel.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Kelompok Belajar</Label>
+                <Select value={filterKelompok} onValueChange={(v) => { clearSel(); setFilterKelompok(v); }}>
+                  <SelectTrigger><SelectValue placeholder="Pilih kelompok" /></SelectTrigger>
+                  <SelectContent>
+                    {(opts.kelompok ?? []).map((k: any) => <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Guru</Label>
               <Select value={filterGuru} onValueChange={(v) => { clearSel(); setFilterGuru(v); }}>
@@ -212,14 +243,14 @@ function JadwalPage() {
       <Card>
         <CardHeader className="pb-3 flex-row items-center justify-between gap-3 space-y-0 flex-wrap">
           <CardTitle className="text-base">
-            Jadwal {rombelName ? `— ${rombelName}` : ""}
+            Jadwal {activeTargetName ? `— ${activeTargetName}` : ""}
           </CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
             {selEmpty.size > 0 && (
               <>
                 <Badge variant="secondary" className="rounded-full">{selEmpty.size} slot kosong dipilih</Badge>
                 <Button variant="outline" size="sm" onClick={clearSel}><X className="h-4 w-4 mr-1" /> Batal</Button>
-                <Button size="sm" onClick={() => setOpenAdd(true)} disabled={!filterRombel}>
+                <Button size="sm" onClick={() => setOpenAdd(true)} disabled={!activeTargetId}>
                   <Plus className="h-4 w-4 mr-1" /> Tambah Mapel
                 </Button>
               </>
@@ -259,7 +290,7 @@ function JadwalPage() {
                     const isEmpty = rows.length === 0;
                     const k = slotKey(h, jam);
                     const emptySelected = selEmpty.has(k);
-                    const disableEmpty = selFilled.size > 0 || !filterRombel;
+                    const disableEmpty = selFilled.size > 0 || !activeTargetId;
                     if (isEmpty) {
                       return (
                         <td key={jam} className="border p-1 align-top min-w-[170px]">
@@ -311,7 +342,7 @@ function JadwalPage() {
                               <span className="min-w-0 flex-1">
                                 <span className="block font-medium leading-tight truncate">{s.mapel_nama}</span>
                                 <span className="block text-muted-foreground leading-tight truncate">{s.guru_nama}</span>
-                                {filterGuru !== "all" || !filterRombel ? (
+                                {filterGuru !== "all" || !activeTargetId ? (
                                   <span className="block text-muted-foreground leading-tight truncate">{s.rombel_name}</span>
                                 ) : null}
                               </span>
@@ -332,7 +363,9 @@ function JadwalPage() {
         open={openAdd}
         onOpenChange={setOpenAdd}
         opts={opts}
+        target={target}
         rombelId={filterRombel}
+        kelompokId={filterKelompok}
         slots={Array.from(selEmpty).map((k) => {
           const [h, j] = k.split("#");
           const a = alokasiMap.get(k);
@@ -356,9 +389,10 @@ function slotLabel(hari: string, jam: number) {
 }
 
 function BulkAddDialog({
-  open, onOpenChange, opts, rombelId, slots, onDone,
+  open, onOpenChange, opts, target, rombelId, kelompokId, slots, onDone,
 }: {
-  open: boolean; onOpenChange: (v: boolean) => void; opts: any; rombelId: string;
+  open: boolean; onOpenChange: (v: boolean) => void; opts: any;
+  target: "rombel" | "kelompok"; rombelId: string; kelompokId: string;
   slots: { hari: Hari; jamKe: number; jamMulai?: string; jamSelesai?: string }[];
   onDone: () => void;
 }) {
@@ -366,7 +400,11 @@ function BulkAddDialog({
   const [guruId, setGuruId] = useState("");
   const createFn = useServerFn(bulkCreateJadwal);
   const mut = useMutation({
-    mutationFn: () => createFn({ data: { rombelId, mataPelajaranId: mapelId, guruId, slots } }),
+    mutationFn: () => createFn({ data: {
+      rombelId: target === "rombel" ? rombelId : undefined,
+      kelompokId: target === "kelompok" ? kelompokId : undefined,
+      mataPelajaranId: mapelId, guruId, slots,
+    } }),
     onSuccess: (r: any) => { toast.success(`${r.inserted ?? 0} slot ditambahkan`); setMapelId(""); setGuruId(""); onOpenChange(false); onDone(); },
     onError: (e: any) => toast.error(e.message),
   });
@@ -495,14 +533,18 @@ function BulkEditDialog({
 }
 
 function ClearJadwalDialog({
-  rombelId, guruId, rombelName, onDone,
-}: { rombelId: string; guruId?: string; rombelName?: string; onDone: () => void }) {
+  target, rombelId, kelompokId, guruId, targetName, onDone,
+}: { target: "rombel" | "kelompok"; rombelId: string; kelompokId: string; guruId?: string; targetName?: string; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const [scope, setScope] = useState<"filtered" | "all">("filtered");
   const clearFn = useServerFn(clearJadwal);
 
   const run = useMutation({
-    mutationFn: () => clearFn({ data: { rombelId: rombelId || undefined, guruId, scope } }),
+    mutationFn: () => clearFn({ data: {
+      rombelId: target === "rombel" ? (rombelId || undefined) : undefined,
+      kelompokId: target === "kelompok" ? (kelompokId || undefined) : undefined,
+      guruId, scope,
+    } }),
     onSuccess: (r: any) => { toast.success(`${r.deleted ?? 0} slot dihapus`); setOpen(false); onDone(); },
     onError: (e: any) => toast.error(e.message),
   });
@@ -525,7 +567,7 @@ function ClearJadwalDialog({
             <div>
               <div className="font-medium">Hanya sesuai filter aktif</div>
               <div className="text-xs text-muted-foreground">
-                Rombel: {rombelName ?? "—"}{guruId ? " • Guru dipilih" : ""}
+                {target === "rombel" ? "Rombel" : "Kelompok"}: {targetName ?? "—"}{guruId ? " • Guru dipilih" : ""}
               </div>
             </div>
           </label>
