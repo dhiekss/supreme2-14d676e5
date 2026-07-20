@@ -363,7 +363,9 @@ function JadwalPage() {
         open={openAdd}
         onOpenChange={setOpenAdd}
         opts={opts}
+        target={target}
         rombelId={filterRombel}
+        kelompokId={filterKelompok}
         slots={Array.from(selEmpty).map((k) => {
           const [h, j] = k.split("#");
           const a = alokasiMap.get(k);
