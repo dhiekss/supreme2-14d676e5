@@ -269,6 +269,9 @@ type SortKey = "tanggal" | "jam" | "rombel" | "guru" | "mapel" | "status";
 
 function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelOpts: any[] }) {
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const doBulkDelete = useServerFn(bulkDeleteAgenda);
+  const doBulkUpdate = useServerFn(bulkUpdateAgendaStatus);
   const [search, setSearch] = useState("");
   const [statusF, setStatusF] = useState<string>("all");
   const [rombelF, setRombelF] = useState<string>("all");
@@ -276,6 +279,12 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
   const [dateTo, setDateTo] = useState<string>("");
   const [sortKey, setSortKey] = useState<SortKey>("tanggal");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [bulkStatus, setBulkStatus] = useState<string>("masuk");
+  const [busy, setBusy] = useState(false);
 
   const [detail, setDetail] = useState<any | null>(null);
 
