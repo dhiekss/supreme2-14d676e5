@@ -118,8 +118,25 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
       const max = s.jam_list[s.jam_list.length - 1];
       const contiguous = s.jam_list.every((j: number, i: number) => i === 0 || j === s.jam_list[i - 1] + 1);
       s.jam_label = s.jam_list.length === 1 ? String(min) : contiguous ? `${min}-${max}` : s.jam_list.join(",");
+
+      // Aggregate kehadiran across all agenda_ids in the session.
+      // Kehadiran biasanya hanya diisi di salah satu jam; ambil baris dengan total terbanyak
+      // agar Jml/H/S/I/D/B/A mencerminkan isian sebenarnya (tidak menjumlahkan duplikat per jam).
+      let best = { hadir: 0, sakit: 0, izin: 0, alfa: 0, dispensasi: 0, bolos: 0, total: 0 };
+      for (const aid of s.agenda_ids as string[]) {
+        const kh = kehPerAgenda.get(aid);
+        if (kh && kh.total > best.total) best = kh;
+      }
+      s.hadir = best.hadir;
+      s.sakit = best.sakit;
+      s.izin = best.izin;
+      s.alfa = best.alfa;
+      s.dispensasi = best.dispensasi;
+      s.bolos = best.bolos;
+      s.jml = best.total;
       return s;
     });
+
 
     const total = enriched.length;
     const masuk = enriched.filter((x) => x.guru_status === "masuk").length;
