@@ -13,7 +13,35 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
     }).parse,
   )
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+
+    // Role-based scope: non-admin/superadmin dibatasi hanya ke data guru miliknya sendiri
+    // (matched via profiles.nip -> guru.nip).
+    const [{ data: roleRows }, { data: profile }] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", userId),
+      supabase.from("profiles").select("nip, full_name").eq("id", userId).maybeSingle(),
+    ]);
+    const roles = new Set((roleRows ?? []).map((r: any) => r.role));
+    const isPrivileged = roles.has("admin") || roles.has("superadmin");
+
+    let restrictedGuruId: string | null = null;
+    if (!isPrivileged) {
+      const nip = profile?.nip ?? null;
+      if (nip) {
+        const { data: g } = await supabase.from("guru").select("id").eq("nip", nip).maybeSingle();
+        restrictedGuruId = g?.id ?? null;
+      }
+      // Jika tidak ada guru yang cocok, kembalikan hasil kosong (bukan error) agar UI tetap render.
+      if (!restrictedGuruId) {
+        return {
+          kpi: { total: 0, masuk: 0, tidakTugas: 0, tidakTanpa: 0, withTp: 0, guruAktif: 0, rombelAktif: 0, kehadiranPct: 0 },
+          perGuru: [],
+          rows: [],
+          sessions: [],
+          scope: { isPrivileged, restrictedGuruId: null as string | null },
+        };
+      }
+    }
 
     let q = supabase
       .from("kbm_agenda")
@@ -22,8 +50,10 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
       .lte("tanggal", data.to)
       .order("tanggal", { ascending: false })
       .order("jam_ke", { ascending: true });
-    if (data.guruId) q = q.eq("guru_id", data.guruId);
+    if (restrictedGuruId) q = q.eq("guru_id", restrictedGuruId);
+    else if (data.guruId) q = q.eq("guru_id", data.guruId);
     if (data.rombelId) q = q.eq("rombel_id", data.rombelId);
+
 
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
@@ -183,18 +213,40 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
       perGuru,
       rows: enriched,
       sessions,
+      scope: { isPrivileged, restrictedGuruId },
     };
   });
+
 
 export const listRekapOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const [guru, rombel] = await Promise.all([
-      context.supabase.from("guru").select("id, nama").order("nama"),
-      context.supabase.from("rombel").select("id, name").order("name"),
+    const { supabase, userId } = context;
+    const [{ data: roleRows }, { data: profile }] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", userId),
+      supabase.from("profiles").select("nip").eq("id", userId).maybeSingle(),
     ]);
-    return { guru: guru.data ?? [], rombel: rombel.data ?? [] };
+    const roles = new Set((roleRows ?? []).map((r: any) => r.role));
+    const isPrivileged = roles.has("admin") || roles.has("superadmin");
+
+    if (!isPrivileged) {
+      const nip = profile?.nip ?? null;
+      let guruList: any[] = [];
+      if (nip) {
+        const { data: g } = await supabase.from("guru").select("id, nama").eq("nip", nip);
+        guruList = g ?? [];
+      }
+      const rombel = await supabase.from("rombel").select("id, name").order("name");
+      return { guru: guruList, rombel: rombel.data ?? [], isPrivileged };
+    }
+
+    const [guru, rombel] = await Promise.all([
+      supabase.from("guru").select("id, nama").order("nama"),
+      supabase.from("rombel").select("id, name").order("name"),
+    ]);
+    return { guru: guru.data ?? [], rombel: rombel.data ?? [], isPrivileged };
   });
+
 
 export const bulkDeleteAgenda = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
