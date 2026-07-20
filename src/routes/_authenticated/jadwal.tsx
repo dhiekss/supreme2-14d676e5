@@ -182,6 +182,7 @@ function JadwalPage() {
           <p className="text-sm text-muted-foreground">Klik slot untuk memilih. Bisa satuan atau banyak sekaligus.</p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <AlokasiWaktuDialog />
           <ClearJadwalDialog
             target={target}
             rombelId={filterRombel}
