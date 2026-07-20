@@ -8,11 +8,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BookOpen, CheckCircle2, XCircle, AlertCircle, Users, Download, RefreshCw, ClipboardList, Search, Eye, Pencil, TableIcon, ArrowUpDown } from "lucide-react";
-import { getRekapAgendaGuru, listRekapOptions } from "@/lib/rekap-agenda.functions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { BookOpen, CheckCircle2, XCircle, AlertCircle, Users, Download, RefreshCw, ClipboardList, Search, Eye, Pencil, TableIcon, ArrowUpDown, Trash2 } from "lucide-react";
+import { getRekapAgendaGuru, listRekapOptions, bulkDeleteAgenda, bulkUpdateAgendaStatus } from "@/lib/rekap-agenda.functions";
 import { getAgendaDetail } from "@/lib/agenda-guru.functions";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
 function firstOfMonth(d = new Date()) {
@@ -265,6 +269,9 @@ type SortKey = "tanggal" | "jam" | "rombel" | "guru" | "mapel" | "status";
 
 function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelOpts: any[] }) {
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const doBulkDelete = useServerFn(bulkDeleteAgenda);
+  const doBulkUpdate = useServerFn(bulkUpdateAgendaStatus);
   const [search, setSearch] = useState("");
   const [statusF, setStatusF] = useState<string>("all");
   const [rombelF, setRombelF] = useState<string>("all");
@@ -272,6 +279,12 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
   const [dateTo, setDateTo] = useState<string>("");
   const [sortKey, setSortKey] = useState<SortKey>("tanggal");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [bulkStatus, setBulkStatus] = useState<string>("masuk");
+  const [busy, setBusy] = useState(false);
 
   const [detail, setDetail] = useState<any | null>(null);
 
@@ -325,6 +338,70 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
     XLSX.writeFile(wb, `tabel-kehadiran-guru.xlsx`);
   };
 
+
+
+
+  const selectedAgendaIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const r of rows as any[]) {
+      if (selected.has(r.key)) ids.push(...(r.agenda_ids ?? []));
+    }
+    return ids;
+  }, [rows, selected]);
+  const allSelected = rows.length > 0 && rows.every((r: any) => selected.has(r.key));
+  const someSelected = selected.size > 0 && !allSelected;
+
+  const toggleAll = () => {
+    if (allSelected) setSelected(new Set());
+    else setSelected(new Set(rows.map((r: any) => r.key)));
+  };
+  const toggleOne = (key: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const refreshData = async () => {
+    await qc.invalidateQueries({ queryKey: ["rekap-agenda-guru"] });
+    setSelected(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedAgendaIds.length === 0) return;
+    setBusy(true);
+    try {
+      const res = await doBulkDelete({ data: { agendaIds: selectedAgendaIds } });
+      toast.success(`${res.deleted} baris agenda dihapus.`);
+      setConfirmDelete(false);
+      await refreshData();
+    } catch (e: any) {
+      toast.error(`Gagal menghapus: ${e.message || e}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleBulkUpdate = async () => {
+    if (selectedAgendaIds.length === 0) return;
+    setBusy(true);
+    try {
+      const res = await doBulkUpdate({
+        data: { agendaIds: selectedAgendaIds, guru_status: bulkStatus as any },
+      });
+      toast.success(`${res.updated} baris agenda diperbarui.`);
+      setEditOpen(false);
+      await refreshData();
+    } catch (e: any) {
+      toast.error(`Gagal memperbarui: ${e.message || e}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+
   return (
     <>
       <Card>
@@ -374,10 +451,35 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
 
           </div>
 
+          {selected.size > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 rounded-md border bg-muted/40 p-2">
+              <div className="text-sm">
+                <span className="font-semibold">{selected.size}</span> sesi terpilih
+                <span className="text-muted-foreground"> · {selectedAgendaIds.length} baris agenda</span>
+              </div>
+              <div className="flex flex-wrap gap-2 sm:ml-auto">
+                <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
+                  <Pencil className="h-4 w-4 mr-1" /> Ubah Status
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(true)}>
+                  <Trash2 className="h-4 w-4 mr-1" /> Hapus
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Batal</Button>
+              </div>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                      onCheckedChange={toggleAll}
+                      aria-label="Pilih semua"
+                    />
+                  </TableHead>
                   <SortHead label="Tanggal" active={sortKey === "tanggal"} dir={sortDir} onClick={() => toggleSort("tanggal")} />
                   <SortHead label="Jam" active={sortKey === "jam"} dir={sortDir} onClick={() => toggleSort("jam")} />
 
@@ -397,10 +499,17 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
               </TableHeader>
               <TableBody>
                 {rows.length === 0 && (
-                  <TableRow><TableCell colSpan={14} className="text-center text-muted-foreground">Tidak ada data.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={15} className="text-center text-muted-foreground">Tidak ada data.</TableCell></TableRow>
                 )}
                 {rows.map((r) => (
-                  <TableRow key={r.key}>
+                  <TableRow key={r.key} data-state={selected.has(r.key) ? "selected" : undefined}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selected.has(r.key)}
+                        onCheckedChange={() => toggleOne(r.key)}
+                        aria-label="Pilih baris"
+                      />
+                    </TableCell>
                     <TableCell className="whitespace-nowrap">{r.tanggal}</TableCell>
                     <TableCell>{r.jam_label}</TableCell>
 
@@ -443,9 +552,52 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
         </CardContent>
       </Card>
 
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus {selected.size} sesi agenda?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini akan menghapus {selectedAgendaIds.length} baris agenda beserta data kehadiran murid terkait. Tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Batal</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {busy ? "Menghapus…" : "Hapus"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="w-[95vw] max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ubah Status Kehadiran Guru</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              Terapkan status baru pada {selected.size} sesi ({selectedAgendaIds.length} baris agenda).
+            </div>
+            <Select value={bulkStatus} onValueChange={setBulkStatus}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="masuk">Masuk</SelectItem>
+                <SelectItem value="tidak_masuk_dengan_tugas">Tidak Masuk + Tugas</SelectItem>
+                <SelectItem value="tidak_masuk_tanpa_tugas">Tidak Masuk</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditOpen(false)} disabled={busy}>Batal</Button>
+            <Button onClick={handleBulkUpdate} disabled={busy}>{busy ? "Menyimpan…" : "Simpan"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <DetailDialog session={detail} onClose={() => setDetail(null)} />
     </>
   );
+
 }
 
 function SortHead({ label, active, dir, onClick }: { label: string; active: boolean; dir: "asc" | "desc"; onClick: () => void }) {
