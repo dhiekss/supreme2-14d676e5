@@ -154,10 +154,10 @@ function EditorDialog({
   onOpenChange: (v: boolean) => void;
   editing: Row | null;
   refs: {
-    rombel: { id: string; name: string; tingkat: string; konsentrasi_keahlian: string | null }[];
-    students: { id: string; name: string; nis: string; rombel_id: string | null }[];
-    guru: { id: string; nama: string; nip: string | null }[];
-    tendik: { id: string; nama: string; nip: string | null }[];
+    rombel: { id: string; name: string | null; tingkat: string | null; konsentrasi_keahlian: string | null }[];
+    students: { id: string; name: string | null; nis: string | null; rombel_id: string | null }[];
+    guru: { id: string; nama: string | null; nip: string | null }[];
+    tendik: { id: string; nama: string | null; nip: string | null }[];
   };
   onSave: (v: { id?: string; nama: string; pembimbings: PembimbingRef[]; anggota_ids: string[] }) => void;
   saving: boolean;
