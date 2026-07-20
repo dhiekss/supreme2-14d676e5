@@ -342,7 +342,7 @@ function JadwalPage() {
                               <span className="min-w-0 flex-1">
                                 <span className="block font-medium leading-tight truncate">{s.mapel_nama}</span>
                                 <span className="block text-muted-foreground leading-tight truncate">{s.guru_nama}</span>
-                                {filterGuru !== "all" || !filterRombel ? (
+                                {filterGuru !== "all" || !activeTargetId ? (
                                   <span className="block text-muted-foreground leading-tight truncate">{s.rombel_name}</span>
                                 ) : null}
                               </span>
