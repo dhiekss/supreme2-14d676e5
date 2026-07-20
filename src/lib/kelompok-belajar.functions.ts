@@ -53,6 +53,82 @@ export const listKelompokBelajar = createServerFn({ method: "GET" })
     return groups;
   });
 
+export const getKelompokBelajarDetail = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: kb, error } = await supabase
+      .from("kelompok_belajar")
+      .select("id, nama, created_at, updated_at")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!kb) throw new Error("Kelompok belajar tidak ditemukan");
+
+    const [pemb, ang] = await Promise.all([
+      supabase.from("kelompok_belajar_pembimbing").select("pembimbing_type, pembimbing_id").eq("kelompok_id", data.id),
+      supabase.from("kelompok_belajar_anggota").select("student_id").eq("kelompok_id", data.id),
+    ]);
+
+    const guruIds = (pemb.data ?? []).filter((p: any) => p.pembimbing_type === "guru").map((p: any) => p.pembimbing_id);
+    const tendikIds = (pemb.data ?? []).filter((p: any) => p.pembimbing_type === "tendik").map((p: any) => p.pembimbing_id);
+    const studentIds = (ang.data ?? []).map((a: any) => a.student_id);
+
+    const [guru, tendik, students] = await Promise.all([
+      guruIds.length
+        ? supabase.from("guru").select("id, nama, nip").in("id", guruIds)
+        : Promise.resolve({ data: [] as any[] }),
+      tendikIds.length
+        ? supabase.from("tendik").select("id, nama, nip").in("id", tendikIds)
+        : Promise.resolve({ data: [] as any[] }),
+      studentIds.length
+        ? supabase.from("students").select("id, name, nis, rombel_id").in("id", studentIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const rombelIds = Array.from(new Set(((students.data ?? []) as any[]).map((s) => s.rombel_id).filter(Boolean)));
+    const rombel = rombelIds.length
+      ? await supabase.from("rombel").select("id, name, tingkat").in("id", rombelIds)
+      : { data: [] as any[] };
+    const rombelMap = new Map(((rombel.data ?? []) as any[]).map((r) => [r.id, r]));
+
+    const guruMap = new Map(((guru.data ?? []) as any[]).map((g) => [g.id, g]));
+    const tendikMap = new Map(((tendik.data ?? []) as any[]).map((t) => [t.id, t]));
+
+    const pembimbings = (pemb.data ?? []).map((p: any) => {
+      const src = p.pembimbing_type === "guru" ? guruMap.get(p.pembimbing_id) : tendikMap.get(p.pembimbing_id);
+      return {
+        type: p.pembimbing_type as "guru" | "tendik",
+        id: p.pembimbing_id as string,
+        nama: (src as any)?.nama ?? "(tidak ditemukan)",
+        nip: (src as any)?.nip ?? null,
+      };
+    });
+
+    const anggota = ((students.data ?? []) as any[])
+      .map((s) => {
+        const r = s.rombel_id ? rombelMap.get(s.rombel_id) : null;
+        return {
+          id: s.id as string,
+          name: (s.name as string) ?? "",
+          nis: (s.nis as string) ?? null,
+          rombel_name: (r as any)?.name ?? null,
+          rombel_tingkat: (r as any)?.tingkat ?? null,
+        };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    return {
+      id: kb.id as string,
+      nama: kb.nama as string,
+      created_at: kb.created_at as string,
+      updated_at: kb.updated_at as string,
+      pembimbings,
+      anggota,
+    };
+  });
+
 export const listRombelWithStudents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

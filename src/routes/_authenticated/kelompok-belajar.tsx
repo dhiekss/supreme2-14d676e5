@@ -12,6 +12,7 @@ import {
   type PembimbingRef,
 } from "@/lib/kelompok-belajar.functions";
 import { CrudTable } from "@/components/crud-table";
+import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,7 +103,15 @@ function KelompokBelajarPage() {
         columns={[
           {
             header: "Nama Kelompok",
-            cell: (r) => <span className="font-medium">{r.nama}</span>,
+            cell: (r) => (
+              <Link
+                to="/kelompok-belajar/$id"
+                params={{ id: r.id }}
+                className="font-medium text-primary hover:underline"
+              >
+                {r.nama}
+              </Link>
+            ),
             sort: (a, b) => a.nama.localeCompare(b.nama),
           },
           {
@@ -126,6 +135,19 @@ function KelompokBelajarPage() {
             cell: (r) => <span>{r.anggota_count}</span>,
             sort: (a, b) => a.anggota_count - b.anggota_count,
             className: "w-[140px]",
+          },
+          {
+            header: "Detail",
+            cell: (r) => (
+              <Link
+                to="/kelompok-belajar/$id"
+                params={{ id: r.id }}
+                className="text-sm text-primary hover:underline"
+              >
+                Lihat detail
+              </Link>
+            ),
+            className: "w-[120px]",
           },
         ]}
       />

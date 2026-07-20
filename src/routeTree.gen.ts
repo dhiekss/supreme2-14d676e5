@@ -70,6 +70,7 @@ import { Route as AuthenticatedPembelajaranKbmRouteImport } from './routes/_auth
 import { Route as AuthenticatedPembelajaranDashboardNilaiRouteImport } from './routes/_authenticated/pembelajaran.dashboard-nilai'
 import { Route as AuthenticatedPembelajaranAgendaGuruRouteImport } from './routes/_authenticated/pembelajaran.agenda-guru'
 import { Route as AuthenticatedPembelajaranAdministrasiRouteImport } from './routes/_authenticated/pembelajaran.administrasi'
+import { Route as AuthenticatedKelompokBelajarIdRouteImport } from './routes/_authenticated/kelompok-belajar.$id'
 import { Route as AuthenticatedDashboardMuridStudentIdRouteImport } from './routes/_authenticated/dashboard-murid.$studentId'
 import { Route as AuthenticatedDashboardGuruGuruIdRouteImport } from './routes/_authenticated/dashboard-guru.$guruId'
 
@@ -411,6 +412,12 @@ const AuthenticatedPembelajaranAdministrasiRoute =
     path: '/pembelajaran/administrasi',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedKelompokBelajarIdRoute =
+  AuthenticatedKelompokBelajarIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedKelompokBelajarRoute,
+  } as any)
 const AuthenticatedDashboardMuridStudentIdRoute =
   AuthenticatedDashboardMuridStudentIdRouteImport.update({
     id: '/dashboard-murid/$studentId',
@@ -438,7 +445,7 @@ export interface FileRoutesByFullPath {
   '/hari-efektif': typeof AuthenticatedHariEfektifRoute
   '/import': typeof AuthenticatedImportRoute
   '/jadwal': typeof AuthenticatedJadwalRoute
-  '/kelompok-belajar': typeof AuthenticatedKelompokBelajarRoute
+  '/kelompok-belajar': typeof AuthenticatedKelompokBelajarRouteWithChildren
   '/kenaikan-kelas': typeof AuthenticatedKenaikanKelasRoute
   '/keterlambatan': typeof AuthenticatedKeterlambatanRoute
   '/konsentrasi': typeof AuthenticatedKonsentrasiRoute
@@ -465,6 +472,7 @@ export interface FileRoutesByFullPath {
   '/verval': typeof AuthenticatedVervalRoute
   '/dashboard-guru/$guruId': typeof AuthenticatedDashboardGuruGuruIdRoute
   '/dashboard-murid/$studentId': typeof AuthenticatedDashboardMuridStudentIdRoute
+  '/kelompok-belajar/$id': typeof AuthenticatedKelompokBelajarIdRoute
   '/pembelajaran/administrasi': typeof AuthenticatedPembelajaranAdministrasiRoute
   '/pembelajaran/agenda-guru': typeof AuthenticatedPembelajaranAgendaGuruRoute
   '/pembelajaran/dashboard-nilai': typeof AuthenticatedPembelajaranDashboardNilaiRoute
@@ -502,7 +510,7 @@ export interface FileRoutesByTo {
   '/hari-efektif': typeof AuthenticatedHariEfektifRoute
   '/import': typeof AuthenticatedImportRoute
   '/jadwal': typeof AuthenticatedJadwalRoute
-  '/kelompok-belajar': typeof AuthenticatedKelompokBelajarRoute
+  '/kelompok-belajar': typeof AuthenticatedKelompokBelajarRouteWithChildren
   '/kenaikan-kelas': typeof AuthenticatedKenaikanKelasRoute
   '/keterlambatan': typeof AuthenticatedKeterlambatanRoute
   '/konsentrasi': typeof AuthenticatedKonsentrasiRoute
@@ -529,6 +537,7 @@ export interface FileRoutesByTo {
   '/verval': typeof AuthenticatedVervalRoute
   '/dashboard-guru/$guruId': typeof AuthenticatedDashboardGuruGuruIdRoute
   '/dashboard-murid/$studentId': typeof AuthenticatedDashboardMuridStudentIdRoute
+  '/kelompok-belajar/$id': typeof AuthenticatedKelompokBelajarIdRoute
   '/pembelajaran/administrasi': typeof AuthenticatedPembelajaranAdministrasiRoute
   '/pembelajaran/agenda-guru': typeof AuthenticatedPembelajaranAgendaGuruRoute
   '/pembelajaran/dashboard-nilai': typeof AuthenticatedPembelajaranDashboardNilaiRoute
@@ -568,7 +577,7 @@ export interface FileRoutesById {
   '/_authenticated/hari-efektif': typeof AuthenticatedHariEfektifRoute
   '/_authenticated/import': typeof AuthenticatedImportRoute
   '/_authenticated/jadwal': typeof AuthenticatedJadwalRoute
-  '/_authenticated/kelompok-belajar': typeof AuthenticatedKelompokBelajarRoute
+  '/_authenticated/kelompok-belajar': typeof AuthenticatedKelompokBelajarRouteWithChildren
   '/_authenticated/kenaikan-kelas': typeof AuthenticatedKenaikanKelasRoute
   '/_authenticated/keterlambatan': typeof AuthenticatedKeterlambatanRoute
   '/_authenticated/konsentrasi': typeof AuthenticatedKonsentrasiRoute
@@ -595,6 +604,7 @@ export interface FileRoutesById {
   '/_authenticated/verval': typeof AuthenticatedVervalRoute
   '/_authenticated/dashboard-guru/$guruId': typeof AuthenticatedDashboardGuruGuruIdRoute
   '/_authenticated/dashboard-murid/$studentId': typeof AuthenticatedDashboardMuridStudentIdRoute
+  '/_authenticated/kelompok-belajar/$id': typeof AuthenticatedKelompokBelajarIdRoute
   '/_authenticated/pembelajaran/administrasi': typeof AuthenticatedPembelajaranAdministrasiRoute
   '/_authenticated/pembelajaran/agenda-guru': typeof AuthenticatedPembelajaranAgendaGuruRoute
   '/_authenticated/pembelajaran/dashboard-nilai': typeof AuthenticatedPembelajaranDashboardNilaiRoute
@@ -661,6 +671,7 @@ export interface FileRouteTypes {
     | '/verval'
     | '/dashboard-guru/$guruId'
     | '/dashboard-murid/$studentId'
+    | '/kelompok-belajar/$id'
     | '/pembelajaran/administrasi'
     | '/pembelajaran/agenda-guru'
     | '/pembelajaran/dashboard-nilai'
@@ -725,6 +736,7 @@ export interface FileRouteTypes {
     | '/verval'
     | '/dashboard-guru/$guruId'
     | '/dashboard-murid/$studentId'
+    | '/kelompok-belajar/$id'
     | '/pembelajaran/administrasi'
     | '/pembelajaran/agenda-guru'
     | '/pembelajaran/dashboard-nilai'
@@ -790,6 +802,7 @@ export interface FileRouteTypes {
     | '/_authenticated/verval'
     | '/_authenticated/dashboard-guru/$guruId'
     | '/_authenticated/dashboard-murid/$studentId'
+    | '/_authenticated/kelompok-belajar/$id'
     | '/_authenticated/pembelajaran/administrasi'
     | '/_authenticated/pembelajaran/agenda-guru'
     | '/_authenticated/pembelajaran/dashboard-nilai'
@@ -1249,6 +1262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPembelajaranAdministrasiRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/kelompok-belajar/$id': {
+      id: '/_authenticated/kelompok-belajar/$id'
+      path: '/$id'
+      fullPath: '/kelompok-belajar/$id'
+      preLoaderRoute: typeof AuthenticatedKelompokBelajarIdRouteImport
+      parentRoute: typeof AuthenticatedKelompokBelajarRoute
+    }
     '/_authenticated/dashboard-murid/$studentId': {
       id: '/_authenticated/dashboard-murid/$studentId'
       path: '/dashboard-murid/$studentId'
@@ -1265,6 +1285,20 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthenticatedKelompokBelajarRouteChildren {
+  AuthenticatedKelompokBelajarIdRoute: typeof AuthenticatedKelompokBelajarIdRoute
+}
+
+const AuthenticatedKelompokBelajarRouteChildren: AuthenticatedKelompokBelajarRouteChildren =
+  {
+    AuthenticatedKelompokBelajarIdRoute: AuthenticatedKelompokBelajarIdRoute,
+  }
+
+const AuthenticatedKelompokBelajarRouteWithChildren =
+  AuthenticatedKelompokBelajarRoute._addFileChildren(
+    AuthenticatedKelompokBelajarRouteChildren,
+  )
 
 interface AuthenticatedPengaturanRouteChildren {
   AuthenticatedPengaturanAnalyticsRoute: typeof AuthenticatedPengaturanAnalyticsRoute
@@ -1301,7 +1335,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHariEfektifRoute: typeof AuthenticatedHariEfektifRoute
   AuthenticatedImportRoute: typeof AuthenticatedImportRoute
   AuthenticatedJadwalRoute: typeof AuthenticatedJadwalRoute
-  AuthenticatedKelompokBelajarRoute: typeof AuthenticatedKelompokBelajarRoute
+  AuthenticatedKelompokBelajarRoute: typeof AuthenticatedKelompokBelajarRouteWithChildren
   AuthenticatedKenaikanKelasRoute: typeof AuthenticatedKenaikanKelasRoute
   AuthenticatedKeterlambatanRoute: typeof AuthenticatedKeterlambatanRoute
   AuthenticatedKonsentrasiRoute: typeof AuthenticatedKonsentrasiRoute
@@ -1359,7 +1393,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHariEfektifRoute: AuthenticatedHariEfektifRoute,
   AuthenticatedImportRoute: AuthenticatedImportRoute,
   AuthenticatedJadwalRoute: AuthenticatedJadwalRoute,
-  AuthenticatedKelompokBelajarRoute: AuthenticatedKelompokBelajarRoute,
+  AuthenticatedKelompokBelajarRoute:
+    AuthenticatedKelompokBelajarRouteWithChildren,
   AuthenticatedKenaikanKelasRoute: AuthenticatedKenaikanKelasRoute,
   AuthenticatedKeterlambatanRoute: AuthenticatedKeterlambatanRoute,
   AuthenticatedKonsentrasiRoute: AuthenticatedKonsentrasiRoute,
