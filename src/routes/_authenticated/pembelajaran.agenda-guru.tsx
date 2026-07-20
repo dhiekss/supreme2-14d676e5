@@ -455,7 +455,9 @@ function AgendaDialog({
       return saveFn({
         data: {
           guruId, tanggal,
-          rombelId: slot.rombel_id, mataPelajaranId: slot.mata_pelajaran_id,
+          rombelId: slot.is_kelompok ? undefined : slot.rombel_id,
+          kelompokBelajarId: slot.is_kelompok ? slot.kelompok_belajar_id : undefined,
+          mataPelajaranId: slot.mata_pelajaran_id,
           jamList: slot.jam_list,
           perJamStatus,
           tpManual: tpId,
