@@ -263,7 +263,8 @@ export const upsertAgendaGuru = createServerFn({ method: "POST" })
     z.object({
       guruId: z.string().uuid(),
       tanggal: z.string(),
-      rombelId: z.string().uuid(),
+      rombelId: z.string().uuid().optional(),
+      kelompokBelajarId: z.string().uuid().optional(),
       mataPelajaranId: z.string().uuid(),
       jamList: z.array(z.number().int().min(1).max(20)).min(1),
       perJamStatus: z.record(z.string(), z.enum(["masuk", "tidak_masuk_dengan_tugas", "tidak_masuk_tanpa_tugas"])),
@@ -283,18 +284,18 @@ export const upsertAgendaGuru = createServerFn({ method: "POST" })
     const agendaIds: string[] = [];
     for (const jam of data.jamList) {
       const status = data.perJamStatus[String(jam)] ?? "masuk";
-      const { data: existing } = await supabase
-        .from("kbm_agenda")
-        .select("id")
+      let existQ = supabase.from("kbm_agenda").select("id")
         .eq("guru_id", data.guruId).eq("tanggal", data.tanggal)
-        .eq("rombel_id", data.rombelId).eq("mata_pelajaran_id", data.mataPelajaranId)
-        .eq("jam_ke", jam)
-        .maybeSingle();
+        .eq("mata_pelajaran_id", data.mataPelajaranId).eq("jam_ke", jam);
+      if (data.kelompokBelajarId) existQ = existQ.eq("kelompok_belajar_id", data.kelompokBelajarId);
+      else if (data.rombelId) existQ = existQ.eq("rombel_id", data.rombelId);
+      const { data: existing } = await existQ.maybeSingle();
 
       const payload: any = {
         guru_id: data.guruId,
         tanggal: data.tanggal,
-        rombel_id: data.rombelId,
+        rombel_id: data.rombelId ?? null,
+        kelompok_belajar_id: data.kelompokBelajarId ?? null,
         mata_pelajaran_id: data.mataPelajaranId,
         jam_ke: jam,
         materi_detail: data.materiDetail ?? "",
