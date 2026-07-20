@@ -102,6 +102,7 @@ export const DEFAULT_SIDEBAR: DefaultNode[] = [
     children: [
       { id: "rombel", title: "Manajemen Rombel", url: "/rombel", icon: GraduationCap },
       { id: "rombel-khusus", title: "Rombel Khusus", url: "/rombel-khusus", icon: Layers },
+      { id: "kelompok-belajar", title: "Kelompok Belajar", url: "/kelompok-belajar", icon: Users },
       { id: "konsentrasi", title: "Konsentrasi Keahlian", url: "/konsentrasi", icon: Briefcase },
       { id: "mapel", title: "Manajemen Mata Pelajaran", url: "/mapel", icon: BookOpen },
       { id: "guru", title: "Manajemen Guru", url: "/guru", icon: Users },

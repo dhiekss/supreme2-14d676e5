@@ -948,6 +948,95 @@ export type Database = {
         }
         Relationships: []
       }
+      kelompok_belajar: {
+        Row: {
+          created_at: string
+          id: string
+          nama: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nama: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nama?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      kelompok_belajar_anggota: {
+        Row: {
+          created_at: string
+          id: string
+          kelompok_id: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kelompok_id: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kelompok_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kelompok_belajar_anggota_kelompok_id_fkey"
+            columns: ["kelompok_id"]
+            isOneToOne: false
+            referencedRelation: "kelompok_belajar"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kelompok_belajar_anggota_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kelompok_belajar_pembimbing: {
+        Row: {
+          created_at: string
+          id: string
+          kelompok_id: string
+          pembimbing_id: string
+          pembimbing_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kelompok_id: string
+          pembimbing_id: string
+          pembimbing_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kelompok_id?: string
+          pembimbing_id?: string
+          pembimbing_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kelompok_belajar_pembimbing_kelompok_id_fkey"
+            columns: ["kelompok_id"]
+            isOneToOne: false
+            referencedRelation: "kelompok_belajar"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       konsentrasi_keahlian: {
         Row: {
           created_at: string | null

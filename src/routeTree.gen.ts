@@ -36,6 +36,7 @@ import { Route as AuthenticatedLaporanKeterlambatanRouteImport } from './routes/
 import { Route as AuthenticatedKonsentrasiRouteImport } from './routes/_authenticated/konsentrasi'
 import { Route as AuthenticatedKeterlambatanRouteImport } from './routes/_authenticated/keterlambatan'
 import { Route as AuthenticatedKenaikanKelasRouteImport } from './routes/_authenticated/kenaikan-kelas'
+import { Route as AuthenticatedKelompokBelajarRouteImport } from './routes/_authenticated/kelompok-belajar'
 import { Route as AuthenticatedJadwalRouteImport } from './routes/_authenticated/jadwal'
 import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
 import { Route as AuthenticatedHariEfektifRouteImport } from './routes/_authenticated/hari-efektif'
@@ -212,6 +213,12 @@ const AuthenticatedKenaikanKelasRoute =
   AuthenticatedKenaikanKelasRouteImport.update({
     id: '/kenaikan-kelas',
     path: '/kenaikan-kelas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedKelompokBelajarRoute =
+  AuthenticatedKelompokBelajarRouteImport.update({
+    id: '/kelompok-belajar',
+    path: '/kelompok-belajar',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedJadwalRoute = AuthenticatedJadwalRouteImport.update({
@@ -431,6 +438,7 @@ export interface FileRoutesByFullPath {
   '/hari-efektif': typeof AuthenticatedHariEfektifRoute
   '/import': typeof AuthenticatedImportRoute
   '/jadwal': typeof AuthenticatedJadwalRoute
+  '/kelompok-belajar': typeof AuthenticatedKelompokBelajarRoute
   '/kenaikan-kelas': typeof AuthenticatedKenaikanKelasRoute
   '/keterlambatan': typeof AuthenticatedKeterlambatanRoute
   '/konsentrasi': typeof AuthenticatedKonsentrasiRoute
@@ -494,6 +502,7 @@ export interface FileRoutesByTo {
   '/hari-efektif': typeof AuthenticatedHariEfektifRoute
   '/import': typeof AuthenticatedImportRoute
   '/jadwal': typeof AuthenticatedJadwalRoute
+  '/kelompok-belajar': typeof AuthenticatedKelompokBelajarRoute
   '/kenaikan-kelas': typeof AuthenticatedKenaikanKelasRoute
   '/keterlambatan': typeof AuthenticatedKeterlambatanRoute
   '/konsentrasi': typeof AuthenticatedKonsentrasiRoute
@@ -559,6 +568,7 @@ export interface FileRoutesById {
   '/_authenticated/hari-efektif': typeof AuthenticatedHariEfektifRoute
   '/_authenticated/import': typeof AuthenticatedImportRoute
   '/_authenticated/jadwal': typeof AuthenticatedJadwalRoute
+  '/_authenticated/kelompok-belajar': typeof AuthenticatedKelompokBelajarRoute
   '/_authenticated/kenaikan-kelas': typeof AuthenticatedKenaikanKelasRoute
   '/_authenticated/keterlambatan': typeof AuthenticatedKeterlambatanRoute
   '/_authenticated/konsentrasi': typeof AuthenticatedKonsentrasiRoute
@@ -624,6 +634,7 @@ export interface FileRouteTypes {
     | '/hari-efektif'
     | '/import'
     | '/jadwal'
+    | '/kelompok-belajar'
     | '/kenaikan-kelas'
     | '/keterlambatan'
     | '/konsentrasi'
@@ -687,6 +698,7 @@ export interface FileRouteTypes {
     | '/hari-efektif'
     | '/import'
     | '/jadwal'
+    | '/kelompok-belajar'
     | '/kenaikan-kelas'
     | '/keterlambatan'
     | '/konsentrasi'
@@ -751,6 +763,7 @@ export interface FileRouteTypes {
     | '/_authenticated/hari-efektif'
     | '/_authenticated/import'
     | '/_authenticated/jadwal'
+    | '/_authenticated/kelompok-belajar'
     | '/_authenticated/kenaikan-kelas'
     | '/_authenticated/keterlambatan'
     | '/_authenticated/konsentrasi'
@@ -996,6 +1009,13 @@ declare module '@tanstack/react-router' {
       path: '/kenaikan-kelas'
       fullPath: '/kenaikan-kelas'
       preLoaderRoute: typeof AuthenticatedKenaikanKelasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/kelompok-belajar': {
+      id: '/_authenticated/kelompok-belajar'
+      path: '/kelompok-belajar'
+      fullPath: '/kelompok-belajar'
+      preLoaderRoute: typeof AuthenticatedKelompokBelajarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/jadwal': {
@@ -1281,6 +1301,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHariEfektifRoute: typeof AuthenticatedHariEfektifRoute
   AuthenticatedImportRoute: typeof AuthenticatedImportRoute
   AuthenticatedJadwalRoute: typeof AuthenticatedJadwalRoute
+  AuthenticatedKelompokBelajarRoute: typeof AuthenticatedKelompokBelajarRoute
   AuthenticatedKenaikanKelasRoute: typeof AuthenticatedKenaikanKelasRoute
   AuthenticatedKeterlambatanRoute: typeof AuthenticatedKeterlambatanRoute
   AuthenticatedKonsentrasiRoute: typeof AuthenticatedKonsentrasiRoute
@@ -1338,6 +1359,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHariEfektifRoute: AuthenticatedHariEfektifRoute,
   AuthenticatedImportRoute: AuthenticatedImportRoute,
   AuthenticatedJadwalRoute: AuthenticatedJadwalRoute,
+  AuthenticatedKelompokBelajarRoute: AuthenticatedKelompokBelajarRoute,
   AuthenticatedKenaikanKelasRoute: AuthenticatedKenaikanKelasRoute,
   AuthenticatedKeterlambatanRoute: AuthenticatedKeterlambatanRoute,
   AuthenticatedKonsentrasiRoute: AuthenticatedKonsentrasiRoute,
@@ -1406,13 +1428,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
