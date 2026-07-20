@@ -123,10 +123,12 @@ export const listJadwalAgenda = createServerFn({ method: "GET" })
 
     const slots = (jadwal ?? []).map((j: any) => {
       const isKelompok = !!j.kelompok_belajar_id;
+      const jamKe = Number(j.jam_ke ?? 0);
+      const alok = alokasiMap.get(jamKe);
       return {
-        jam_ke: Number(j.jam_ke ?? 0),
-        jam_mulai: j.jam_mulai,
-        jam_selesai: j.jam_selesai,
+        jam_ke: jamKe,
+        jam_mulai: alok?.jam_mulai ?? j.jam_mulai,
+        jam_selesai: alok?.jam_selesai ?? j.jam_selesai,
         is_kelompok: isKelompok,
         rombel_id: j.rombel_id,
         kelompok_belajar_id: j.kelompok_belajar_id,
