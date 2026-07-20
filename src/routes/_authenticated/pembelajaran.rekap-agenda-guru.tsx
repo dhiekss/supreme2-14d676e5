@@ -451,10 +451,35 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
 
           </div>
 
+          {selected.size > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 rounded-md border bg-muted/40 p-2">
+              <div className="text-sm">
+                <span className="font-semibold">{selected.size}</span> sesi terpilih
+                <span className="text-muted-foreground"> · {selectedAgendaIds.length} baris agenda</span>
+              </div>
+              <div className="flex flex-wrap gap-2 sm:ml-auto">
+                <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
+                  <Pencil className="h-4 w-4 mr-1" /> Ubah Status
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(true)}>
+                  <Trash2 className="h-4 w-4 mr-1" /> Hapus
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Batal</Button>
+              </div>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                      onCheckedChange={toggleAll}
+                      aria-label="Pilih semua"
+                    />
+                  </TableHead>
                   <SortHead label="Tanggal" active={sortKey === "tanggal"} dir={sortDir} onClick={() => toggleSort("tanggal")} />
                   <SortHead label="Jam" active={sortKey === "jam"} dir={sortDir} onClick={() => toggleSort("jam")} />
 
@@ -474,10 +499,17 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
               </TableHeader>
               <TableBody>
                 {rows.length === 0 && (
-                  <TableRow><TableCell colSpan={14} className="text-center text-muted-foreground">Tidak ada data.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={15} className="text-center text-muted-foreground">Tidak ada data.</TableCell></TableRow>
                 )}
                 {rows.map((r) => (
-                  <TableRow key={r.key}>
+                  <TableRow key={r.key} data-state={selected.has(r.key) ? "selected" : undefined}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selected.has(r.key)}
+                        onCheckedChange={() => toggleOne(r.key)}
+                        aria-label="Pilih baris"
+                      />
+                    </TableCell>
                     <TableCell className="whitespace-nowrap">{r.tanggal}</TableCell>
                     <TableCell>{r.jam_label}</TableCell>
 
@@ -520,9 +552,52 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
         </CardContent>
       </Card>
 
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus {selected.size} sesi agenda?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini akan menghapus {selectedAgendaIds.length} baris agenda beserta data kehadiran murid terkait. Tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Batal</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {busy ? "Menghapus…" : "Hapus"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="w-[95vw] max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ubah Status Kehadiran Guru</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              Terapkan status baru pada {selected.size} sesi ({selectedAgendaIds.length} baris agenda).
+            </div>
+            <Select value={bulkStatus} onValueChange={setBulkStatus}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="masuk">Masuk</SelectItem>
+                <SelectItem value="tidak_masuk_dengan_tugas">Tidak Masuk + Tugas</SelectItem>
+                <SelectItem value="tidak_masuk_tanpa_tugas">Tidak Masuk</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditOpen(false)} disabled={busy}>Batal</Button>
+            <Button onClick={handleBulkUpdate} disabled={busy}>{busy ? "Menyimpan…" : "Simpan"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <DetailDialog session={detail} onClose={() => setDetail(null)} />
     </>
   );
+
 }
 
 function SortHead({ label, active, dir, onClick }: { label: string; active: boolean; dir: "asc" | "desc"; onClick: () => void }) {
