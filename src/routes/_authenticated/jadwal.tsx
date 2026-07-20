@@ -592,3 +592,127 @@ function ClearJadwalDialog({
     </Dialog>
   );
 }
+
+const ALOKASI_HARI = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"] as const;
+const ALOKASI_JAM = Array.from({ length: 9 }, (_, i) => i + 1);
+
+function fmtHM(v?: string) {
+  if (!v) return "";
+  return v.length >= 5 ? v.slice(0, 5) : v;
+}
+
+function AlokasiWaktuDialog() {
+  const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const qc = useQueryClient();
+  const listFn = useServerFn(listAlokasiWaktu);
+  const saveFn = useServerFn(upsertAlokasiWaktu);
+
+  type Cell = { jam_mulai: string; jam_selesai: string };
+  const [grid, setGrid] = useState<Record<string, Cell>>({});
+
+  const load = async () => {
+    const rows: any[] = await listFn();
+    const g: Record<string, Cell> = {};
+    for (const h of ALOKASI_HARI) for (const j of ALOKASI_JAM) g[`${h}#${j}`] = { jam_mulai: "", jam_selesai: "" };
+    for (const r of rows) {
+      const key = `${r.hari}#${r.jam_ke}`;
+      if (key in g) g[key] = { jam_mulai: fmtHM(r.jam_mulai), jam_selesai: fmtHM(r.jam_selesai) };
+    }
+    setGrid(g);
+  };
+
+  useEffect(() => { if (open) load(); /* eslint-disable-next-line */ }, [open]);
+
+  const setCell = (h: string, j: number, patch: Partial<Cell>) => {
+    setGrid((s) => ({ ...s, [`${h}#${j}`]: { ...s[`${h}#${j}`], ...patch } }));
+  };
+
+  const copyDown = (j: number) => {
+    const src = grid[`${ALOKASI_HARI[0]}#${j}`];
+    if (!src?.jam_mulai && !src?.jam_selesai) return;
+    setGrid((s) => {
+      const n = { ...s };
+      for (const h of ALOKASI_HARI) n[`${h}#${j}`] = { ...src };
+      return n;
+    });
+  };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const rows: any[] = [];
+      for (const h of ALOKASI_HARI) for (const j of ALOKASI_JAM) {
+        const c = grid[`${h}#${j}`];
+        if (c?.jam_mulai && c?.jam_selesai) {
+          rows.push({ hari: h, jamKe: j, jamMulai: c.jam_mulai, jamSelesai: c.jam_selesai });
+        }
+      }
+      if (!rows.length) throw new Error("Belum ada waktu yang diisi");
+      return saveFn({ data: { rows } });
+    },
+    onSuccess: (r: any) => {
+      toast.success(`${r.count ?? 0} alokasi tersimpan`);
+      setOpen(false);
+      qc.invalidateQueries();
+      router.invalidate();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline"><Clock className="h-4 w-4 mr-1" /> Alokasi Waktu</Button>
+      </DialogTrigger>
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Alokasi Waktu Jam Pelajaran</DialogTitle>
+          <DialogDescription>
+            Atur jam mulai & jam selesai untuk jam 1–9 Senin–Jumat. Nilai ini menjadi acuan pada Jadwal Pelajaran dan Agenda Guru.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-muted/50">
+                <th className="border p-2 text-left sticky left-0 bg-muted/50 z-10">Hari</th>
+                {ALOKASI_JAM.map((j) => (
+                  <th key={j} className="border p-2 text-center min-w-[140px]">
+                    <div className="font-semibold">Jam {j}</div>
+                    <button type="button" onClick={() => copyDown(j)} className="text-[10px] text-primary hover:underline mt-0.5">
+                      salin ke bawah
+                    </button>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ALOKASI_HARI.map((h) => (
+                <tr key={h}>
+                  <td className="border p-2 font-medium bg-muted/30 sticky left-0 z-10">{h}</td>
+                  {ALOKASI_JAM.map((j) => {
+                    const c = grid[`${h}#${j}`] ?? { jam_mulai: "", jam_selesai: "" };
+                    return (
+                      <td key={j} className="border p-1 align-top">
+                        <div className="flex flex-col gap-1">
+                          <Input type="time" value={c.jam_mulai} onChange={(e) => setCell(h, j, { jam_mulai: e.target.value })} className="h-8 text-xs" />
+                          <Input type="time" value={c.jam_selesai} onChange={(e) => setCell(h, j, { jam_selesai: e.target.value })} className="h-8 text-xs" />
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Batal</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? "Menyimpan..." : "Simpan"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
