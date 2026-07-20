@@ -133,17 +133,34 @@ export const listRombelWithStudents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
-    const [rombel, students] = await Promise.all([
-      supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian").order("tingkat").order("name"),
-      supabase.from("students").select("id, name, nis, rombel_id").order("name"),
-    ]);
-    if (rombel.error) throw new Error(rombel.error.message);
-    if (students.error) throw new Error(students.error.message);
+    const rombelRes = await supabase
+      .from("rombel")
+      .select("id, name, tingkat, konsentrasi_keahlian")
+      .order("tingkat")
+      .order("name");
+    if (rombelRes.error) throw new Error(rombelRes.error.message);
+
+    const pageSize = 1000;
+    const students: any[] = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("students")
+        .select("id, name, nis, rombel_id")
+        .order("name")
+        .range(from, from + pageSize - 1);
+      if (error) throw new Error(error.message);
+      const batch = data ?? [];
+      students.push(...batch);
+      if (batch.length < pageSize) break;
+      from += pageSize;
+    }
     return {
-      rombel: rombel.data ?? [],
-      students: students.data ?? [],
+      rombel: rombelRes.data ?? [],
+      students,
     };
   });
+
 
 export const listPembimbingCandidates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
