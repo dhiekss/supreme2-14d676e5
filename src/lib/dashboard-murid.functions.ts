@@ -35,34 +35,54 @@ export const listSiswaForDashboard = createServerFn({ method: "GET" })
     const staff = await isStaff(supabase, userId);
 
     let hasAccess = true;
-    let query = supabase.from("students").select("id, name, nis, rombel_id").order("name").limit(3000);
+    const buildQuery = () => {
+      let q = supabase.from("students").select("id, name, nis, rombel_id").order("name");
+      if (!staff) {
+        // handled below
+      } else {
+        // allowed filter applied by caller
+      }
+      return q;
+    };
+
+    // Determine filter
+    let nisFilter: string | null = null;
+    let rombelFilter: string[] | null = null;
     if (!staff) {
       const nis = await getSelfNis(supabase, userId);
       if (!nis) {
-        hasAccess = false;
         return { isStaff: false, hasAccess: false, rows: [], rombelOptions: [] };
       }
-      query = query.eq("nis", nis);
+      nisFilter = nis;
     } else {
-      // Non-admin staff: batasi berdasarkan Akses Rombel (user_rombel + wali kelas).
       const allowed = await getAllowedRombelIds(supabase, userId);
       if (allowed !== null) {
         if (allowed.length === 0) {
-          // Tidak ada akses rombel — fallback ke murid milik sendiri (jika NIS-nya cocok).
           const nis = await getSelfNis(supabase, userId);
           if (!nis) {
-            hasAccess = false;
             return { isStaff: true, hasAccess: false, rows: [], rombelOptions: [] };
           }
-          query = query.eq("nis", nis);
+          nisFilter = nis;
         } else {
-          query = query.in("rombel_id", allowed);
+          rombelFilter = allowed;
         }
       }
     }
-    const { data, error } = await query;
-    if (error) throw new Error(error.message);
-    const students = data ?? [];
+
+    // Paginate to bypass PostgREST default 1000-row cap
+    const PAGE = 1000;
+    const all: any[] = [];
+    for (let from = 0; ; from += PAGE) {
+      let q = supabase.from("students").select("id, name, nis, rombel_id").order("name").range(from, from + PAGE - 1);
+      if (nisFilter) q = q.eq("nis", nisFilter);
+      if (rombelFilter) q = q.in("rombel_id", rombelFilter);
+      const { data, error } = await q;
+      if (error) throw new Error(error.message);
+      const batch = data ?? [];
+      all.push(...batch);
+      if (batch.length < PAGE) break;
+    }
+    const students = all;
     const rombelIds = [...new Set(students.map((s: any) => s.rombel_id).filter(Boolean))] as string[];
     const { data: rombelRows } = rombelIds.length
       ? await supabase.from("rombel").select("id, name").in("id", rombelIds)
