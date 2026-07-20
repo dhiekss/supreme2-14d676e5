@@ -178,3 +178,31 @@ export const listRekapOptions = createServerFn({ method: "GET" })
     ]);
     return { guru: guru.data ?? [], rombel: rombel.data ?? [] };
   });
+
+export const bulkDeleteAgenda = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ agendaIds: z.array(z.string().uuid()).min(1) }).parse)
+  .handler(async ({ context, data }) => {
+    // Remove child kehadiran first, then agenda rows
+    await context.supabase.from("kbm_agenda_kehadiran").delete().in("kbm_agenda_id", data.agendaIds);
+    const { error } = await context.supabase.from("kbm_agenda").delete().in("id", data.agendaIds);
+    if (error) throw new Error(error.message);
+    return { ok: true, deleted: data.agendaIds.length };
+  });
+
+export const bulkUpdateAgendaStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      agendaIds: z.array(z.string().uuid()).min(1),
+      guru_status: z.enum(["masuk", "tidak_masuk_dengan_tugas", "tidak_masuk_tanpa_tugas"]),
+    }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    const { error } = await context.supabase
+      .from("kbm_agenda")
+      .update({ guru_status: data.guru_status })
+      .in("id", data.agendaIds);
+    if (error) throw new Error(error.message);
+    return { ok: true, updated: data.agendaIds.length };
+  });
