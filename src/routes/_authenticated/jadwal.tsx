@@ -567,7 +567,7 @@ function ClearJadwalDialog({
             <div>
               <div className="font-medium">Hanya sesuai filter aktif</div>
               <div className="text-xs text-muted-foreground">
-                Rombel: {rombelName ?? "—"}{guruId ? " • Guru dipilih" : ""}
+                {target === "rombel" ? "Rombel" : "Kelompok"}: {targetName ?? "—"}{guruId ? " • Guru dipilih" : ""}
               </div>
             </div>
           </label>
