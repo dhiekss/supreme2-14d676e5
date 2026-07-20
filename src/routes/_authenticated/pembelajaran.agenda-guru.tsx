@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   UserSearch, CalendarDays, Clock, BookOpen, CheckCircle2,
-  Upload, Camera, Eraser, Download, FileText,
+  Upload, Camera, Eraser,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
