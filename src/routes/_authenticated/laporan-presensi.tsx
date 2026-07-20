@@ -53,8 +53,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 function LaporanPresensi() {
   const today = new Date().toISOString().slice(0, 10);
-  const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
-  const [from, setFrom] = useState(monthAgo);
+  const startDate = "2026-07-20";
+  const [from, setFrom] = useState(startDate);
   const [to, setTo] = useState(today);
   const [konsentrasi, setKonsentrasi] = useState<string>("__all");
 
