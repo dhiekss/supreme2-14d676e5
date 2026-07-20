@@ -23,9 +23,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { SignaturePad, type SignaturePadHandle } from "@/components/signature-pad";
 import {
-  listGuruForAgenda, listJadwalAgenda, upsertAgendaGuru, getAgendaDetail, exportAgendaKbm,
+  listGuruForAgenda, listJadwalAgenda, upsertAgendaGuru, getAgendaDetail,
 } from "@/lib/agenda-guru.functions";
-import { jsPDF } from "jspdf";
 
 export const Route = createFileRoute("/_authenticated/pembelajaran/agenda-guru")({
   head: () => ({ meta: [{ title: "Agenda Guru — SUPREME XPOES" }] }),
@@ -204,8 +203,6 @@ function AgendaGuruPage() {
           )}
         </CardContent>
       </Card>
-
-      <ExportAgendaCard guruId={guruId} guruNama={selectedGuru?.nama ?? ""} guruNip={selectedGuru?.nip ?? ""} defaultTanggal={tanggal} />
 
       <AgendaDialog slot={openSlot} guruId={guruId} guruNama={selectedGuru?.nama ?? ""} tanggal={tanggal} onClose={() => setOpenSlot(null)} />
     </div>
