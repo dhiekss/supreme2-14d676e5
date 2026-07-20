@@ -188,7 +188,7 @@ function EditorDialog({
     const q = searchStudent.trim().toLowerCase();
     return refs.students
       .filter((s) => s.rombel_id === selectedRombel)
-      .filter((s) => !q || s.name.toLowerCase().includes(q) || s.nis?.toLowerCase().includes(q));
+      .filter((s) => !q || (s.name ?? "").toLowerCase().includes(q) || (s.nis ?? "").toLowerCase().includes(q));
   }, [refs.students, selectedRombel, searchStudent]);
 
   const selectedStudents = useMemo(
