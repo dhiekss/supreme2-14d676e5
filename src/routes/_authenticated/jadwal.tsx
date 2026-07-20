@@ -169,6 +169,8 @@ function JadwalPage() {
   });
 
   const rombelName = opts.rombel.find((r: any) => r.id === filterRombel)?.name;
+  const kelompokName = opts.kelompok?.find((k: any) => k.id === filterKelompok)?.nama;
+  const activeTargetName = target === "rombel" ? rombelName : kelompokName;
 
   return (
     <div className="space-y-6">
@@ -179,9 +181,11 @@ function JadwalPage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <ClearJadwalDialog
+            target={target}
             rombelId={filterRombel}
+            kelompokId={filterKelompok}
             guruId={filterGuru === "all" ? undefined : filterGuru}
-            rombelName={rombelName}
+            targetName={activeTargetName}
             onDone={invalidate}
           />
         </div>
@@ -190,16 +194,38 @@ function JadwalPage() {
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-base">Filter</CardTitle></CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <Label>Rombel</Label>
-              <Select value={filterRombel} onValueChange={(v) => { clearSel(); setFilterRombel(v); }}>
-                <SelectTrigger><SelectValue placeholder="Pilih rombel" /></SelectTrigger>
+              <Label>Jenis</Label>
+              <Select value={target} onValueChange={(v) => { clearSel(); setTarget(v as any); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {opts.rombel.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                  <SelectItem value="rombel">Rombel</SelectItem>
+                  <SelectItem value="kelompok">Kelompok Belajar</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {target === "rombel" ? (
+              <div className="space-y-2">
+                <Label>Rombel</Label>
+                <Select value={filterRombel} onValueChange={(v) => { clearSel(); setFilterRombel(v); }}>
+                  <SelectTrigger><SelectValue placeholder="Pilih rombel" /></SelectTrigger>
+                  <SelectContent>
+                    {opts.rombel.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Kelompok Belajar</Label>
+                <Select value={filterKelompok} onValueChange={(v) => { clearSel(); setFilterKelompok(v); }}>
+                  <SelectTrigger><SelectValue placeholder="Pilih kelompok" /></SelectTrigger>
+                  <SelectContent>
+                    {(opts.kelompok ?? []).map((k: any) => <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Guru</Label>
               <Select value={filterGuru} onValueChange={(v) => { clearSel(); setFilterGuru(v); }}>
