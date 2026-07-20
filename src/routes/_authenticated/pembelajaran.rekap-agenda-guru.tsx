@@ -342,6 +342,8 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
     () => rows.flatMap((r: any) => r.agenda_ids ?? []),
     [rows],
   );
+  void allAgendaIds;
+
   const selectedAgendaIds = useMemo(() => {
     const ids: string[] = [];
     for (const r of rows as any[]) {
