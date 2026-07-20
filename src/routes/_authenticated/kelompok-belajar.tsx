@@ -64,7 +64,8 @@ function KelompokBelajarPage() {
   const [open, setOpen] = useState(false);
 
   const saveMut = useMutation({
-    mutationFn: (v: Parameters<typeof save>[0]["data"]) => save({ data: v }),
+    mutationFn: (v: { id?: string; nama: string; pembimbings: PembimbingRef[]; anggota_ids: string[] }) =>
+      save({ data: v }),
     onSuccess: () => {
       toast.success("Kelompok belajar tersimpan");
       qc.invalidateQueries({ queryKey: ["kelompok-belajar"] });
