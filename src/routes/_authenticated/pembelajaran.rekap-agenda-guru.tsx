@@ -338,6 +338,71 @@ function TabelKehadiranGuru({ sessions, rombelOpts }: { sessions: any[]; rombelO
     XLSX.writeFile(wb, `tabel-kehadiran-guru.xlsx`);
   };
 
+  const allAgendaIds = useMemo(
+    () => rows.flatMap((r: any) => r.agenda_ids ?? []),
+    [rows],
+  );
+  const selectedAgendaIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const r of rows as any[]) {
+      if (selected.has(r.key)) ids.push(...(r.agenda_ids ?? []));
+    }
+    return ids;
+  }, [rows, selected]);
+  const allSelected = rows.length > 0 && rows.every((r: any) => selected.has(r.key));
+  const someSelected = selected.size > 0 && !allSelected;
+
+  const toggleAll = () => {
+    if (allSelected) setSelected(new Set());
+    else setSelected(new Set(rows.map((r: any) => r.key)));
+  };
+  const toggleOne = (key: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const refreshData = async () => {
+    await qc.invalidateQueries({ queryKey: ["rekap-agenda-guru"] });
+    setSelected(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedAgendaIds.length === 0) return;
+    setBusy(true);
+    try {
+      const res = await doBulkDelete({ data: { agendaIds: selectedAgendaIds } });
+      toast.success(`${res.deleted} baris agenda dihapus.`);
+      setConfirmDelete(false);
+      await refreshData();
+    } catch (e: any) {
+      toast.error(`Gagal menghapus: ${e.message || e}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleBulkUpdate = async () => {
+    if (selectedAgendaIds.length === 0) return;
+    setBusy(true);
+    try {
+      const res = await doBulkUpdate({
+        data: { agendaIds: selectedAgendaIds, guru_status: bulkStatus as any },
+      });
+      toast.success(`${res.updated} baris agenda diperbarui.`);
+      setEditOpen(false);
+      await refreshData();
+    } catch (e: any) {
+      toast.error(`Gagal memperbarui: ${e.message || e}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+
   return (
     <>
       <Card>
