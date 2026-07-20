@@ -189,7 +189,8 @@ export const getAgendaDetail = createServerFn({ method: "GET" })
     z.object({
       guruId: z.string().uuid(),
       tanggal: z.string(),
-      rombelId: z.string().uuid(),
+      rombelId: z.string().uuid().optional(),
+      kelompokBelajarId: z.string().uuid().optional(),
       mataPelajaranId: z.string().uuid(),
       jamList: z.array(z.number().int()).min(1),
     }).parse,
@@ -198,14 +199,31 @@ export const getAgendaDetail = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     await assertGuruAccess(supabase, userId, data.guruId);
 
-    const [{ data: students }, { data: agendaRows }] = await Promise.all([
-      supabase.from("students").select("id, name, nis").eq("rombel_id", data.rombelId).order("name"),
-      supabase.from("kbm_agenda")
-        .select("id, jam_ke, guru_status, materi_detail, tp_manual, foto_dokumentasi, ttd_guru")
-        .eq("guru_id", data.guruId).eq("tanggal", data.tanggal)
-        .eq("rombel_id", data.rombelId).eq("mata_pelajaran_id", data.mataPelajaranId)
-        .in("jam_ke", data.jamList),
-    ]);
+    // Students: rombel members or kelompok belajar anggota
+    let students: any[] = [];
+    if (data.kelompokBelajarId) {
+      const { data: rows } = await supabase
+        .from("kelompok_belajar_anggota")
+        .select("student_id")
+        .eq("kelompok_id", data.kelompokBelajarId);
+      const ids = (rows ?? []).map((r: any) => r.student_id);
+      if (ids.length) {
+        const { data: s } = await supabase.from("students").select("id, name, nis").in("id", ids).order("name");
+        students = s ?? [];
+      }
+    } else if (data.rombelId) {
+      const { data: s } = await supabase.from("students").select("id, name, nis").eq("rombel_id", data.rombelId).order("name");
+      students = s ?? [];
+    }
+
+    let agendaQ = supabase.from("kbm_agenda")
+      .select("id, jam_ke, guru_status, materi_detail, tp_manual, foto_dokumentasi, ttd_guru")
+      .eq("guru_id", data.guruId).eq("tanggal", data.tanggal)
+      .eq("mata_pelajaran_id", data.mataPelajaranId)
+      .in("jam_ke", data.jamList);
+    if (data.kelompokBelajarId) agendaQ = agendaQ.eq("kelompok_belajar_id", data.kelompokBelajarId);
+    else if (data.rombelId) agendaQ = agendaQ.eq("rombel_id", data.rombelId);
+    const { data: agendaRows } = await agendaQ;
 
     const perJam: Record<number, any> = {};
     for (const j of data.jamList) perJam[j] = { guru_status: "masuk" };
@@ -227,7 +245,7 @@ export const getAgendaDetail = createServerFn({ method: "GET" })
     }
 
     return {
-      students: students ?? [],
+      students,
       perJam,
       tp_manual: first?.tp_manual ?? "",
       materi_detail: first?.materi_detail ?? "",
@@ -236,6 +254,7 @@ export const getAgendaDetail = createServerFn({ method: "GET" })
       kehadiran,
     };
   });
+
 
 
 export const upsertAgendaGuru = createServerFn({ method: "POST" })
