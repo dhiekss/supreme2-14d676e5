@@ -138,8 +138,9 @@ function Page() {
           </TabsList>
 
           <TabsContent value="ringkasan" className="space-y-4">
-            <RingkasanTab data={data} tanggalLabel={tanggalLabel} />
+            <RingkasanTab data={data} tanggalLabel={tanggalLabel} trendRange={trendRange} setTrendRange={setTrendRange} />
           </TabsContent>
+
 
           <TabsContent value="daftar">
             <DaftarSiswaTab data={data} />
