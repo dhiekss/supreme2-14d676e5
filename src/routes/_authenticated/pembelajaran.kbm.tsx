@@ -324,7 +324,7 @@ function LaporKbmPage() {
               </Field>
 
               <Field label="Nama Guru Pengajar" required>
-                <Select value={guruId} onValueChange={setGuruId} disabled={!mapelId}>
+                <Select value={guruId} onValueChange={setGuruId} disabled={!mapelId || locked}>
                   <SelectTrigger>
                     <SelectValue
                       placeholder={
