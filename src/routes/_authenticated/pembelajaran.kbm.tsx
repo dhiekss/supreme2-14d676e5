@@ -43,6 +43,10 @@ const HOURS = Array.from({ length: 10 }, (_, i) => i + 1);
 
 function LaporKbmPage() {
   const { data: rombelList } = useSuspenseQuery(rombelQO);
+  const meQ = useQuery({ queryKey: ["me"], queryFn: () => getMyProfile() });
+  const isAdmin = !!meQ.data?.roles?.some((r) => r === "admin" || r === "superadmin");
+  const [autoFilled, setAutoFilled] = useState(false);
+  const locked = autoFilled && !isAdmin;
   const qc = useQueryClient();
 
   const today = new Date().toISOString().slice(0, 10);
