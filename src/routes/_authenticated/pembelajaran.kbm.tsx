@@ -234,6 +234,9 @@ function LaporKbmPage() {
                     setRombelId(v);
                     setMapelId("");
                     setGuruId("");
+                    setJamList([]);
+                    setJamStatus({});
+                    setAutoFilled(false);
                   }}
                 >
                   <SelectTrigger>
