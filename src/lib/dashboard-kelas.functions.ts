@@ -419,7 +419,10 @@ export const getDashboardKelas = createServerFn({ method: "GET" })
       todaySummary: { H: tHadir, S: tSakit, I: tIzin, A: tAlfa, P: tPkl, terlambat: terlambatHariIni },
       rekapKehadiran,
       distribusi,
-      weeklyTrend,
+      weeklyTrend: trend,
+      trend,
+      trendRange: { start: trendStart, end: trendEnd, granularity: useDaily ? "daily" : "weekly" },
+
       keterlambatan: {
         total: keterlambatanTotal,
         bulanIni: keterlambatanBulanIni,
