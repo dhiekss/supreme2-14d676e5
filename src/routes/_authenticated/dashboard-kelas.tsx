@@ -168,7 +168,7 @@ function Page() {
 }
 
 /* ------------------ Ringkasan ------------------ */
-function RingkasanTab({ data, tanggalLabel }: { data: any; tanggalLabel: string }) {
+function RingkasanTab({ data, tanggalLabel, trendRange, setTrendRange }: { data: any; tanggalLabel: string; trendRange: { start: string; end: string; label: string } | null; setTrendRange: (r: { start: string; end: string; label: string } | null) => void }) {
   const s = data.todaySummary;
   const total = data.totalSiswa || 1;
   const pct = (n: number) => Math.round((n / total) * 100);
