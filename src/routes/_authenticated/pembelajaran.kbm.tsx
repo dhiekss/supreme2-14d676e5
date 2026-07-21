@@ -241,6 +241,45 @@ function LaporKbmPage() {
                 </Select>
               </Field>
 
+              <Field label="Sesi Terjadwal">
+                <Select
+                  value={
+                    mapelId && guruId ? `${mapelId}::${guruId}` : ""
+                  }
+                  onValueChange={applySession}
+                  disabled={!rombelId || !tanggal}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        !rombelId || !tanggal
+                          ? "Pilih tanggal & rombel dahulu"
+                          : jadwalQ.isLoading
+                            ? "Memuat jadwal..."
+                            : (jadwalQ.data?.sessions ?? []).length === 0
+                              ? `Tidak ada jadwal ${jadwalQ.data?.hari ?? ""}`
+                              : `Pilih sesi (${jadwalQ.data?.hari ?? ""})`
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(jadwalQ.data?.sessions ?? []).map((s: any) => (
+                      <SelectItem
+                        key={`${s.mata_pelajaran_id}::${s.guru_id}`}
+                        value={`${s.mata_pelajaran_id}::${s.guru_id}`}
+                      >
+                        Jam {s.jam_list.join(",")} — {s.mapel_nama} · {s.guru_nama}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Memilih sesi akan otomatis mengisi Mata Pelajaran, Guru, dan Jam Pelajaran.
+                </p>
+              </Field>
+
+
+
               <Field label="Mata Pelajaran" required>
                 <Select
                   value={mapelId}
