@@ -362,11 +362,13 @@ function LaporKbmPage() {
                       key={n}
                       type="button"
                       onClick={() => toggleJam(n)}
+                      disabled={locked}
                       className={cn(
                         "px-3 py-2 rounded-md border text-sm font-medium transition-colors",
                         active
                           ? "bg-primary text-primary-foreground border-primary shadow-sm"
                           : "bg-background hover:bg-muted border-input",
+                        locked && "opacity-60 cursor-not-allowed",
                       )}
                     >
                       Jam {n}
