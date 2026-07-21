@@ -298,7 +298,7 @@ function LaporKbmPage() {
                     setMapelId(v);
                     setGuruId("");
                   }}
-                  disabled={!rombelId}
+                  disabled={!rombelId || locked}
                 >
                   <SelectTrigger>
                     <SelectValue
