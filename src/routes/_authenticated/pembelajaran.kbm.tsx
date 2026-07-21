@@ -22,6 +22,7 @@ import {
   uploadKbmMedia,
   createLaporanKbm,
 } from "@/lib/lapor-kbm.functions";
+import { getMyProfile } from "@/lib/me.functions";
 import { BookOpen, Camera, ImageIcon, Save, RotateCcw, Eraser, X } from "lucide-react";
 import { SignaturePad, type SignaturePadHandle } from "@/components/signature-pad";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,10 @@ const HOURS = Array.from({ length: 10 }, (_, i) => i + 1);
 
 function LaporKbmPage() {
   const { data: rombelList } = useSuspenseQuery(rombelQO);
+  const meQ = useQuery({ queryKey: ["me"], queryFn: () => getMyProfile() });
+  const isAdmin = !!meQ.data?.roles?.some((r) => r === "admin" || r === "superadmin");
+  const [autoFilled, setAutoFilled] = useState(false);
+  const locked = autoFilled && !isAdmin;
   const qc = useQueryClient();
 
   const today = new Date().toISOString().slice(0, 10);
@@ -90,9 +95,11 @@ function LaporKbmPage() {
     setGuruId(s.guru_id);
     setJamList([...s.jam_list].sort((a: number, b: number) => a - b));
     setJamStatus(Object.fromEntries(s.jam_list.map((j: number) => [j, "M" as const])));
+    setAutoFilled(true);
   };
 
   const toggleJam = (n: number) => {
+    if (locked) return;
     setJamList((p) => (p.includes(n) ? p.filter((x) => x !== n) : [...p, n].sort((a, b) => a - b)));
     setJamStatus((p) => {
       const next = { ...p };
@@ -133,6 +140,7 @@ function LaporKbmPage() {
     setFotoDataUrl("");
     setFotoExt("");
     sigRef.current?.clear();
+    setAutoFilled(false);
   };
 
   const submitMut = useMutation({
@@ -226,6 +234,9 @@ function LaporKbmPage() {
                     setRombelId(v);
                     setMapelId("");
                     setGuruId("");
+                    setJamList([]);
+                    setJamStatus({});
+                    setAutoFilled(false);
                   }}
                 >
                   <SelectTrigger>
@@ -275,6 +286,7 @@ function LaporKbmPage() {
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
                   Memilih sesi akan otomatis mengisi Mata Pelajaran, Guru, dan Jam Pelajaran.
+                  {locked && " Terkunci — hanya admin yang dapat mengubah."}
                 </p>
               </Field>
 
@@ -287,7 +299,7 @@ function LaporKbmPage() {
                     setMapelId(v);
                     setGuruId("");
                   }}
-                  disabled={!rombelId}
+                  disabled={!rombelId || locked}
                 >
                   <SelectTrigger>
                     <SelectValue
@@ -313,7 +325,7 @@ function LaporKbmPage() {
               </Field>
 
               <Field label="Nama Guru Pengajar" required>
-                <Select value={guruId} onValueChange={setGuruId} disabled={!mapelId}>
+                <Select value={guruId} onValueChange={setGuruId} disabled={!mapelId || locked}>
                   <SelectTrigger>
                     <SelectValue
                       placeholder={
@@ -351,11 +363,13 @@ function LaporKbmPage() {
                       key={n}
                       type="button"
                       onClick={() => toggleJam(n)}
+                      disabled={locked}
                       className={cn(
                         "px-3 py-2 rounded-md border text-sm font-medium transition-colors",
                         active
                           ? "bg-primary text-primary-foreground border-primary shadow-sm"
                           : "bg-background hover:bg-muted border-input",
+                        locked && "opacity-60 cursor-not-allowed",
                       )}
                     >
                       Jam {n}
