@@ -64,6 +64,56 @@ export const listGuruByRombelMapel = createServerFn({ method: "POST" })
     return guru ?? [];
   });
 
+const HARI_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"] as const;
+
+export const listJadwalForKbm = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ rombel_id: z.string().uuid(), tanggal: z.string().min(1) }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const dow = new Date(data.tanggal + "T00:00:00").getDay();
+    const hari = HARI_ID[dow];
+    const { data: rows, error } = await context.supabase
+      .from("jadwal_pelajaran")
+      .select("id, hari, jam_ke, jam_mulai, jam_selesai, mata_pelajaran_id, guru_id")
+      .eq("rombel_id", data.rombel_id)
+      .eq("hari", hari)
+      .order("jam_ke");
+    if (error) throw new Error(error.message);
+    const mIds = [...new Set((rows ?? []).map((r: any) => r.mata_pelajaran_id).filter(Boolean))];
+    const gIds = [...new Set((rows ?? []).map((r: any) => r.guru_id).filter(Boolean))];
+    const [mapel, guru] = await Promise.all([
+      mIds.length ? context.supabase.from("mata_pelajaran").select("id, nama").in("id", mIds) : Promise.resolve({ data: [] as any[] }),
+      gIds.length ? context.supabase.from("guru").select("id, nama").in("id", gIds) : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const mMap = new Map((mapel.data ?? []).map((x: any) => [x.id, x.nama]));
+    const gMap = new Map((guru.data ?? []).map((x: any) => [x.id, x.nama]));
+    // Group by mata_pelajaran_id + guru_id → merge consecutive jam_ke
+    const groups = new Map<string, { mata_pelajaran_id: string; guru_id: string; mapel_nama: string; guru_nama: string; jam_list: number[]; jam_mulai: string | null; jam_selesai: string | null }>();
+    for (const r of rows ?? []) {
+      if (!r.mata_pelajaran_id || !r.guru_id || r.jam_ke == null) continue;
+      const jam = r.jam_ke as number;
+      const key = `${r.mata_pelajaran_id}::${r.guru_id}`;
+      const g = groups.get(key);
+      if (g) {
+        g.jam_list.push(jam);
+        if (r.jam_selesai) g.jam_selesai = r.jam_selesai;
+      } else {
+        groups.set(key, {
+          mata_pelajaran_id: r.mata_pelajaran_id,
+          guru_id: r.guru_id,
+          mapel_nama: mMap.get(r.mata_pelajaran_id) ?? "—",
+          guru_nama: gMap.get(r.guru_id) ?? "—",
+          jam_list: [jam],
+          jam_mulai: r.jam_mulai,
+          jam_selesai: r.jam_selesai,
+        });
+      }
+    }
+    return { hari, sessions: Array.from(groups.values()).map((g) => ({ ...g, jam_list: [...new Set(g.jam_list)].sort((a, b) => a - b) })) };
+  });
+
 // Kept for Rekap KBM filters (all guru/mapel/rombel)
 export const listLaporanKbmOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

@@ -18,6 +18,7 @@ import {
   listRombelForKbm,
   listMapelByRombel,
   listGuruByRombelMapel,
+  listJadwalForKbm,
   uploadKbmMedia,
   createLaporanKbm,
 } from "@/lib/lapor-kbm.functions";
@@ -59,6 +60,7 @@ function LaporKbmPage() {
 
   const mapelFn = useServerFn(listMapelByRombel);
   const guruFn = useServerFn(listGuruByRombelMapel);
+  const jadwalFn = useServerFn(listJadwalForKbm);
   const uploadFn = useServerFn(uploadKbmMedia);
   const createFn = useServerFn(createLaporanKbm);
 
@@ -73,6 +75,22 @@ function LaporKbmPage() {
     queryFn: () => guruFn({ data: { rombel_id: rombelId, mata_pelajaran_id: mapelId } }),
     enabled: !!rombelId && !!mapelId,
   });
+
+  const jadwalQ = useQuery({
+    queryKey: ["lapor-kbm-jadwal", rombelId, tanggal],
+    queryFn: () => jadwalFn({ data: { rombel_id: rombelId, tanggal } }),
+    enabled: !!rombelId && !!tanggal,
+  });
+
+  const applySession = (key: string) => {
+    const sessions = jadwalQ.data?.sessions ?? [];
+    const s = sessions.find((x: any) => `${x.mata_pelajaran_id}::${x.guru_id}` === key);
+    if (!s) return;
+    setMapelId(s.mata_pelajaran_id);
+    setGuruId(s.guru_id);
+    setJamList([...s.jam_list].sort((a: number, b: number) => a - b));
+    setJamStatus(Object.fromEntries(s.jam_list.map((j: number) => [j, "M" as const])));
+  };
 
   const toggleJam = (n: number) => {
     setJamList((p) => (p.includes(n) ? p.filter((x) => x !== n) : [...p, n].sort((a, b) => a - b)));
@@ -222,6 +240,45 @@ function LaporKbmPage() {
                   </SelectContent>
                 </Select>
               </Field>
+
+              <Field label="Sesi Terjadwal">
+                <Select
+                  value={
+                    mapelId && guruId ? `${mapelId}::${guruId}` : ""
+                  }
+                  onValueChange={applySession}
+                  disabled={!rombelId || !tanggal}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        !rombelId || !tanggal
+                          ? "Pilih tanggal & rombel dahulu"
+                          : jadwalQ.isLoading
+                            ? "Memuat jadwal..."
+                            : (jadwalQ.data?.sessions ?? []).length === 0
+                              ? `Tidak ada jadwal ${jadwalQ.data?.hari ?? ""}`
+                              : `Pilih sesi (${jadwalQ.data?.hari ?? ""})`
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(jadwalQ.data?.sessions ?? []).map((s: any) => (
+                      <SelectItem
+                        key={`${s.mata_pelajaran_id}::${s.guru_id}`}
+                        value={`${s.mata_pelajaran_id}::${s.guru_id}`}
+                      >
+                        Jam {s.jam_list.join(",")} — {s.mapel_nama} · {s.guru_nama}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Memilih sesi akan otomatis mengisi Mata Pelajaran, Guru, dan Jam Pelajaran.
+                </p>
+              </Field>
+
+
 
               <Field label="Mata Pelajaran" required>
                 <Select
