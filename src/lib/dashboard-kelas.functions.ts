@@ -43,8 +43,11 @@ export const getDashboardKelas = createServerFn({ method: "GET" })
       tahun: z.number().int().optional(),
       startDate: z.string().optional(), // recap range start (overrides bulan/tahun)
       endDate: z.string().optional(),
+      trendStart: z.string().optional(), // trend chart range
+      trendEnd: z.string().optional(),
     }).parse,
   )
+
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const allowed = await getAllowedRombelIds(supabase, userId);
