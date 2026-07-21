@@ -99,6 +99,7 @@ function LaporKbmPage() {
   };
 
   const toggleJam = (n: number) => {
+    if (locked) return;
     setJamList((p) => (p.includes(n) ? p.filter((x) => x !== n) : [...p, n].sort((a, b) => a - b)));
     setJamStatus((p) => {
       const next = { ...p };
