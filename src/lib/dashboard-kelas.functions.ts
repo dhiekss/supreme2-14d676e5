@@ -239,6 +239,17 @@ export const getDashboardKelas = createServerFn({ method: "GET" })
       .from("jadwal_pelajaran")
       .select("id, hari, jam_ke, jam_mulai, jam_selesai, mata_pelajaran_id, guru_id")
       .eq("rombel_id", data.rombelId);
+
+    // Alokasi waktu override
+    const { data: alokasiRows } = await supabase
+      .from("jadwal_alokasi_waktu")
+      .select("hari, jam_ke, jam_mulai, jam_selesai");
+    const alokasiMap = new Map<string, { jam_mulai?: string; jam_selesai?: string }>();
+    (alokasiRows ?? []).forEach((a: any) =>
+      alokasiMap.set(`${String(a.hari ?? "").toLowerCase()}|${Number(a.jam_ke)}`, {
+        jam_mulai: a.jam_mulai, jam_selesai: a.jam_selesai,
+      }),
+    );
     const mapelIds = [...new Set((jadwalAll ?? []).map((j: any) => j.mata_pelajaran_id).filter(Boolean))];
     const guruIds = [...new Set((jadwalAll ?? []).map((j: any) => j.guru_id).filter(Boolean))];
     const [mpRes, grRes] = await Promise.all([
