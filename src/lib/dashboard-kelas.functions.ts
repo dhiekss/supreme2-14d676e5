@@ -43,8 +43,11 @@ export const getDashboardKelas = createServerFn({ method: "GET" })
       tahun: z.number().int().optional(),
       startDate: z.string().optional(), // recap range start (overrides bulan/tahun)
       endDate: z.string().optional(),
+      trendStart: z.string().optional(), // trend chart range
+      trendEnd: z.string().optional(),
     }).parse,
   )
+
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const allowed = await getAllowedRombelIds(supabase, userId);
@@ -154,36 +157,95 @@ export const getDashboardKelas = createServerFn({ method: "GET" })
       : { data: [] as any[] };
     const perStudent = new Map<string, { H: number; S: number; I: number; A: number; P: number }>();
     students.forEach((s) => perStudent.set(s.id, { H: 0, S: 0, I: 0, A: 0, P: 0 }));
-    // weekly trend (Sen..Sab of current week around `tanggal`)
+    // Trend range (default: current week Sen..Sab around `tanggal`)
     const weekStart = new Date(dateObj);
-    const day = weekStart.getDay(); // 0..6
-    const diffToMon = day === 0 ? -6 : 1 - day;
+    const dayOfWeek = weekStart.getDay(); // 0..6
+    const diffToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     weekStart.setDate(weekStart.getDate() + diffToMon);
-    const weekDays: string[] = [];
-    for (let i = 0; i < 6; i++) {
-      const d = new Date(weekStart);
-      d.setDate(weekStart.getDate() + i);
-      weekDays.push(d.toISOString().slice(0, 10));
+    const defaultTrendStart = weekStart.toISOString().slice(0, 10);
+    const defTrendEndDate = new Date(weekStart);
+    defTrendEndDate.setDate(weekStart.getDate() + 5);
+    const defaultTrendEnd = defTrendEndDate.toISOString().slice(0, 10);
+    const trendStart = data.trendStart ?? defaultTrendStart;
+    const trendEnd = data.trendEnd ?? defaultTrendEnd;
+    const tsDate = new Date(trendStart + "T00:00:00");
+    const teDate = new Date(trendEnd + "T00:00:00");
+    const dayDiff = Math.max(1, Math.round((teDate.getTime() - tsDate.getTime()) / 86400000) + 1);
+    const useDaily = dayDiff <= 31;
+
+    type TrendBucket = { key: string; label: string; date: string; H: number; S: number; I: number; A: number; P: number };
+    const trend: TrendBucket[] = [];
+    if (useDaily) {
+      for (let i = 0; i < dayDiff; i++) {
+        const d = new Date(tsDate);
+        d.setDate(tsDate.getDate() + i);
+        const iso = d.toISOString().slice(0, 10);
+        const label = dayDiff <= 7
+          ? ["Min","Sen","Sel","Rab","Kam","Jum","Sab"][d.getDay()]
+          : `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;
+        trend.push({ key: iso, label, date: iso, H: 0, S: 0, I: 0, A: 0, P: 0 });
+      }
+    } else {
+      // Weekly buckets starting Monday
+      const cur = new Date(tsDate);
+      const dw = cur.getDay();
+      const dm = dw === 0 ? -6 : 1 - dw;
+      cur.setDate(cur.getDate() + dm);
+      let idx = 1;
+      while (cur <= teDate) {
+        const iso = cur.toISOString().slice(0, 10);
+        const endW = new Date(cur); endW.setDate(cur.getDate() + 6);
+        const label = `${String(cur.getDate()).padStart(2,"0")}/${String(cur.getMonth()+1).padStart(2,"0")}`;
+        trend.push({ key: iso, label, date: iso, H: 0, S: 0, I: 0, A: 0, P: 0 });
+        cur.setDate(cur.getDate() + 7);
+        idx++;
+      }
     }
-    const weeklyTrend = weekDays.map((d) => ({
-      day: ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab"][weekDays.indexOf(d)],
-      date: d,
-      H: 0, S: 0, I: 0, A: 0, P: 0,
-    }));
+
+    const findBucket = (recDate: string): TrendBucket | null => {
+      if (useDaily) return trend.find((b) => b.key === recDate) ?? null;
+      const dt = new Date(recDate + "T00:00:00").getTime();
+      let hit: TrendBucket | null = null;
+      for (const b of trend) {
+        if (new Date(b.key + "T00:00:00").getTime() <= dt) hit = b;
+        else break;
+      }
+      return hit;
+    };
+
+    // Fetch trend attendance separately
+    const { data: trendRecs } = await supabase
+      .from("attendance_records")
+      .select("id, date")
+      .eq("rombel_id", data.rombelId)
+      .gte("date", trendStart)
+      .lte("date", trendEnd);
+    const trendRecIds = (trendRecs ?? []).map((r: any) => r.id);
+    const trendDateById = new Map<string, string>((trendRecs ?? []).map((r: any) => [r.id, r.date]));
+    const { data: trendDetails } = trendRecIds.length
+      ? await supabase
+          .from("attendance_details")
+          .select("attendance_record_id, status")
+          .in("attendance_record_id", trendRecIds)
+      : { data: [] as any[] };
+    (trendDetails ?? []).forEach((d: any) => {
+      const s = normalizeStatus(d.status);
+      const rd = trendDateById.get(d.attendance_record_id);
+      if (!rd) return;
+      const b = findBucket(rd);
+      if (b && (s === "H" || s === "S" || s === "I" || s === "A" || s === "P")) {
+        (b as any)[s]++;
+      }
+    });
+
     (monthDetails ?? []).forEach((d: any) => {
       const s = normalizeStatus(d.status);
       const bucket = perStudent.get(d.student_id);
       if (bucket && (s === "H" || s === "S" || s === "I" || s === "A" || s === "P")) {
         (bucket as any)[s]++;
       }
-      const recDate = dateMap.get(d.attendance_record_id);
-      if (recDate) {
-        const idx = weekDays.indexOf(recDate);
-        if (idx >= 0 && (s === "H" || s === "S" || s === "I" || s === "A" || s === "P")) {
-          (weeklyTrend[idx] as any)[s]++;
-        }
-      }
     });
+
     const rekapKehadiran = students.map((s) => {
       const b = perStudent.get(s.id) ?? { H: 0, S: 0, I: 0, A: 0, P: 0 };
       const total = b.H + b.S + b.I + b.A + b.P;
@@ -357,7 +419,10 @@ export const getDashboardKelas = createServerFn({ method: "GET" })
       todaySummary: { H: tHadir, S: tSakit, I: tIzin, A: tAlfa, P: tPkl, terlambat: terlambatHariIni },
       rekapKehadiran,
       distribusi,
-      weeklyTrend,
+      weeklyTrend: trend,
+      trend,
+      trendRange: { start: trendStart, end: trendEnd, granularity: useDaily ? "daily" : "weekly" },
+
       keterlambatan: {
         total: keterlambatanTotal,
         bulanIni: keterlambatanBulanIni,
