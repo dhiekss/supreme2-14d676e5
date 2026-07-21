@@ -60,6 +60,7 @@ function LaporKbmPage() {
 
   const mapelFn = useServerFn(listMapelByRombel);
   const guruFn = useServerFn(listGuruByRombelMapel);
+  const jadwalFn = useServerFn(listJadwalForKbm);
   const uploadFn = useServerFn(uploadKbmMedia);
   const createFn = useServerFn(createLaporanKbm);
 
@@ -74,6 +75,22 @@ function LaporKbmPage() {
     queryFn: () => guruFn({ data: { rombel_id: rombelId, mata_pelajaran_id: mapelId } }),
     enabled: !!rombelId && !!mapelId,
   });
+
+  const jadwalQ = useQuery({
+    queryKey: ["lapor-kbm-jadwal", rombelId, tanggal],
+    queryFn: () => jadwalFn({ data: { rombel_id: rombelId, tanggal } }),
+    enabled: !!rombelId && !!tanggal,
+  });
+
+  const applySession = (key: string) => {
+    const sessions = jadwalQ.data?.sessions ?? [];
+    const s = sessions.find((x: any) => `${x.mata_pelajaran_id}::${x.guru_id}` === key);
+    if (!s) return;
+    setMapelId(s.mata_pelajaran_id);
+    setGuruId(s.guru_id);
+    setJamList([...s.jam_list].sort((a: number, b: number) => a - b));
+    setJamStatus(Object.fromEntries(s.jam_list.map((j: number) => [j, "M" as const])));
+  };
 
   const toggleJam = (n: number) => {
     setJamList((p) => (p.includes(n) ? p.filter((x) => x !== n) : [...p, n].sort((a, b) => a - b)));
