@@ -92,11 +92,12 @@ export const listJadwalForKbm = createServerFn({ method: "POST" })
     // Group by mata_pelajaran_id + guru_id → merge consecutive jam_ke
     const groups = new Map<string, { mata_pelajaran_id: string; guru_id: string; mapel_nama: string; guru_nama: string; jam_list: number[]; jam_mulai: string | null; jam_selesai: string | null }>();
     for (const r of rows ?? []) {
-      if (!r.mata_pelajaran_id || !r.guru_id) continue;
+      if (!r.mata_pelajaran_id || !r.guru_id || r.jam_ke == null) continue;
+      const jam = r.jam_ke as number;
       const key = `${r.mata_pelajaran_id}::${r.guru_id}`;
       const g = groups.get(key);
       if (g) {
-        g.jam_list.push(r.jam_ke);
+        g.jam_list.push(jam);
         if (r.jam_selesai) g.jam_selesai = r.jam_selesai;
       } else {
         groups.set(key, {
@@ -104,7 +105,7 @@ export const listJadwalForKbm = createServerFn({ method: "POST" })
           guru_id: r.guru_id,
           mapel_nama: mMap.get(r.mata_pelajaran_id) ?? "—",
           guru_nama: gMap.get(r.guru_id) ?? "—",
-          jam_list: [r.jam_ke],
+          jam_list: [jam],
           jam_mulai: r.jam_mulai,
           jam_selesai: r.jam_selesai,
         });
