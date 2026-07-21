@@ -286,6 +286,7 @@ function LaporKbmPage() {
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
                   Memilih sesi akan otomatis mengisi Mata Pelajaran, Guru, dan Jam Pelajaran.
+                  {locked && " Terkunci — hanya admin yang dapat mengubah."}
                 </p>
               </Field>
 
