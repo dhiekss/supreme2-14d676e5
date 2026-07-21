@@ -140,6 +140,7 @@ function LaporKbmPage() {
     setFotoDataUrl("");
     setFotoExt("");
     sigRef.current?.clear();
+    setAutoFilled(false);
   };
 
   const submitMut = useMutation({
