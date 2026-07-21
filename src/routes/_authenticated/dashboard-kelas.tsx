@@ -257,14 +257,21 @@ function RingkasanTab({ data, tanggalLabel, trendRange, setTrendRange }: { data:
       </Card>
 
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Tren Kehadiran Mingguan</CardTitle>
+        <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
+          <CardTitle className="text-base">Tren Kehadiran</CardTitle>
+          <TrendRangePicker
+            label={trendRange?.label ?? "Minggu Ini"}
+            range={trendRange}
+            setRange={setTrendRange}
+            currentDate={data.periode.tanggal}
+            semester={data.semester}
+          />
         </CardHeader>
         <CardContent className="h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data.weeklyTrend}>
+            <LineChart data={data.trend ?? data.weeklyTrend}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
+              <XAxis dataKey="label" />
               <YAxis allowDecimals={false} />
               <Tooltip />
               <Legend />
@@ -277,6 +284,7 @@ function RingkasanTab({ data, tanggalLabel, trendRange, setTrendRange }: { data:
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
     </>
   );
 }
