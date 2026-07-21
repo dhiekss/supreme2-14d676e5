@@ -846,3 +846,114 @@ function RangePicker({
     </Popover>
   );
 }
+
+/* ------------------ Trend Range Picker ------------------ */
+function TrendRangePicker({
+  label,
+  range,
+  setRange,
+  currentDate,
+  semester,
+}: {
+  label: string;
+  range: { start: string; end: string; label: string } | null;
+  setRange: (r: { start: string; end: string; label: string } | null) => void;
+  currentDate: string;
+  semester: { nama: string | null; tanggal_mulai: string | null; tanggal_selesai: string | null; tahun_ajaran: { nama: string | null } | null } | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const [customStart, setCustomStart] = useState<string>(range?.start ?? "");
+  const [customEnd, setCustomEnd] = useState<string>(range?.end ?? "");
+
+  const applyWeek = () => {
+    const d = new Date(currentDate + "T00:00:00");
+    const dw = d.getDay();
+    const diffMon = dw === 0 ? -6 : 1 - dw;
+    const ws = new Date(d); ws.setDate(d.getDate() + diffMon);
+    const we = new Date(ws); we.setDate(ws.getDate() + 5);
+    setRange({ start: ws.toISOString().slice(0, 10), end: we.toISOString().slice(0, 10), label: "Minggu Ini" });
+    setOpen(false);
+  };
+
+  const applyMonth = () => {
+    const d = new Date(currentDate + "T00:00:00");
+    const y = d.getFullYear(); const m = d.getMonth();
+    const s = `${y}-${String(m + 1).padStart(2, "0")}-01`;
+    const last = new Date(y, m + 1, 0).getDate();
+    const e = `${y}-${String(m + 1).padStart(2, "0")}-${String(last).padStart(2, "0")}`;
+    setRange({ start: s, end: e, label: `${BULAN[m]} ${y}` });
+    setOpen(false);
+  };
+
+  const applySemester = () => {
+    if (!semester?.tanggal_mulai || !semester?.tanggal_selesai) return;
+    const ta = semester.tahun_ajaran?.nama ? ` ${semester.tahun_ajaran.nama}` : "";
+    setRange({
+      start: semester.tanggal_mulai,
+      end: semester.tanggal_selesai,
+      label: `${semester.nama ?? "Semester"}${ta}`,
+    });
+    setOpen(false);
+  };
+
+  const applyCustom = () => {
+    if (!customStart || !customEnd) return;
+    const s = customStart <= customEnd ? customStart : customEnd;
+    const e = customStart <= customEnd ? customEnd : customStart;
+    setRange({ start: s, end: e, label: `${s} — ${e}` });
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 gap-1">
+          <CalendarDays className="h-3.5 w-3.5" />
+          {label}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-72 space-y-3">
+        <div>
+          <div className="text-xs font-semibold mb-1">Preset</div>
+          <div className="grid grid-cols-3 gap-1">
+            <Button size="sm" variant="outline" className="h-8 text-xs" onClick={applyWeek}>Minggu</Button>
+            <Button size="sm" variant="outline" className="h-8 text-xs" onClick={applyMonth}>Bulan</Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs"
+              onClick={applySemester}
+              disabled={!semester?.tanggal_mulai || !semester?.tanggal_selesai}
+            >
+              Semester
+            </Button>
+          </div>
+          {semester?.nama && (
+            <div className="text-[10px] text-muted-foreground mt-1">
+              Semester aktif: {semester.nama}
+              {semester.tahun_ajaran?.nama ? ` · ${semester.tahun_ajaran.nama}` : ""}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <div className="text-xs font-semibold mb-1">Rentang Kustom</div>
+          <div className="flex items-center gap-2">
+            <Input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="h-8 text-xs" />
+            <span className="text-xs">—</span>
+            <Input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="h-8 text-xs" />
+          </div>
+          <Button size="sm" className="w-full h-8 mt-2" onClick={applyCustom} disabled={!customStart || !customEnd}>
+            Terapkan Rentang
+          </Button>
+        </div>
+
+        <div className="flex justify-between pt-1 border-t">
+          <Button size="sm" variant="ghost" onClick={() => { setRange(null); setOpen(false); }}>Reset</Button>
+          <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Tutup</Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
