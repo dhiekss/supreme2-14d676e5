@@ -95,6 +95,7 @@ function LaporKbmPage() {
     setGuruId(s.guru_id);
     setJamList([...s.jam_list].sort((a: number, b: number) => a - b));
     setJamStatus(Object.fromEntries(s.jam_list.map((j: number) => [j, "M" as const])));
+    setAutoFilled(true);
   };
 
   const toggleJam = (n: number) => {
