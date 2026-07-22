@@ -45,7 +45,7 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
 
     let q = supabase
       .from("kbm_agenda")
-      .select("id, tanggal, jam_ke, guru_id, rombel_id, mata_pelajaran_id, guru_status, materi_detail, tp_manual, foto_dokumentasi, ttd_guru")
+      .select("id, tanggal, jam_ke, guru_id, rombel_id, mata_pelajaran_id, guru_status, materi_detail, tp_manual")
       .gte("tanggal", data.from)
       .lte("tanggal", data.to)
       .order("tanggal", { ascending: false })
@@ -65,26 +65,30 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
 
     const fetchKehadiran = async () => {
       if (!agendaIds.length) return [] as any[];
-      const all: any[] = [];
-      const CHUNK = 200;
-      const PAGE = 1000;
-      for (let i = 0; i < agendaIds.length; i += CHUNK) {
-        const slice = agendaIds.slice(i, i + CHUNK);
-        let from = 0;
-        while (true) {
-          const { data, error } = await supabase
-            .from("kbm_agenda_kehadiran")
-            .select("kbm_agenda_id, status")
-            .in("kbm_agenda_id", slice)
-            .range(from, from + PAGE - 1);
-          if (error) throw new Error(error.message);
-          const batch = data ?? [];
-          all.push(...batch);
-          if (batch.length < PAGE) break;
-          from += PAGE;
-        }
-      }
-      return all;
+      const CHUNK = 300;
+      const chunks: string[][] = [];
+      for (let i = 0; i < agendaIds.length; i += CHUNK) chunks.push(agendaIds.slice(i, i + CHUNK));
+      const results = await Promise.all(
+        chunks.map(async (slice) => {
+          const acc: any[] = [];
+          const PAGE = 1000;
+          let from = 0;
+          while (true) {
+            const { data, error } = await supabase
+              .from("kbm_agenda_kehadiran")
+              .select("kbm_agenda_id, status")
+              .in("kbm_agenda_id", slice)
+              .range(from, from + PAGE - 1);
+            if (error) throw new Error(error.message);
+            const batch = data ?? [];
+            acc.push(...batch);
+            if (batch.length < PAGE) break;
+            from += PAGE;
+          }
+          return acc;
+        }),
+      );
+      return results.flat();
     };
 
     const [guru, rombel, mapel, kehRows] = await Promise.all([
@@ -127,8 +131,6 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
       guru_status: r.guru_status ?? "masuk",
       materi_detail: r.materi_detail ?? "",
       tp_manual: r.tp_manual ?? "",
-      foto_dokumentasi: r.foto_dokumentasi ?? "",
-      ttd_guru: r.ttd_guru ?? "",
     }));
 
     // Group into sessions: same tanggal|guru|rombel|mapel|status
@@ -153,8 +155,6 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
           agenda_ids: [r.id],
           materi_detail: r.materi_detail,
           tp_manual: r.tp_manual,
-          foto_dokumentasi: r.foto_dokumentasi,
-          ttd_guru: r.ttd_guru,
           hadir: kh.hadir,
           sakit: kh.sakit,
           izin: kh.izin,

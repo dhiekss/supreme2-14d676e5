@@ -666,17 +666,17 @@ function DetailDialog({ session, onClose }: { session: any | null; onClose: () =
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <FieldBlock label="Foto Dokumentasi">
-                {session.foto_dokumentasi ? (
-                  <img src={session.foto_dokumentasi} alt="Foto" className="max-h-48 rounded border" />
+                {dQ.data?.foto_dokumentasi ? (
+                  <img src={dQ.data.foto_dokumentasi} alt="Foto" className="max-h-48 rounded border" />
                 ) : (
-                  <span className="text-muted-foreground text-sm">Belum diunggah</span>
+                  <span className="text-muted-foreground text-sm">{dQ.isLoading ? "Memuat…" : "Belum diunggah"}</span>
                 )}
               </FieldBlock>
               <FieldBlock label="TTD Guru">
-                {session.ttd_guru ? (
-                  <img src={session.ttd_guru} alt="TTD" className="max-h-32 rounded border bg-white" />
+                {dQ.data?.ttd_guru ? (
+                  <img src={dQ.data.ttd_guru} alt="TTD" className="max-h-32 rounded border bg-white" />
                 ) : (
-                  <span className="text-muted-foreground text-sm">Belum ditandatangani</span>
+                  <span className="text-muted-foreground text-sm">{dQ.isLoading ? "Memuat…" : "Belum ditandatangani"}</span>
                 )}
               </FieldBlock>
             </div>
