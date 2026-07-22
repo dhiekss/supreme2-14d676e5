@@ -131,8 +131,6 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
       guru_status: r.guru_status ?? "masuk",
       materi_detail: r.materi_detail ?? "",
       tp_manual: r.tp_manual ?? "",
-      foto_dokumentasi: r.foto_dokumentasi ?? "",
-      ttd_guru: r.ttd_guru ?? "",
     }));
 
     // Group into sessions: same tanggal|guru|rombel|mapel|status
