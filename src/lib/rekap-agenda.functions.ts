@@ -155,8 +155,6 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
           agenda_ids: [r.id],
           materi_detail: r.materi_detail,
           tp_manual: r.tp_manual,
-          foto_dokumentasi: r.foto_dokumentasi,
-          ttd_guru: r.ttd_guru,
           hadir: kh.hadir,
           sakit: kh.sakit,
           izin: kh.izin,
