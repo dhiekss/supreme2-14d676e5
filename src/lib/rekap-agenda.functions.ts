@@ -45,7 +45,7 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
 
     let q = supabase
       .from("kbm_agenda")
-      .select("id, tanggal, jam_ke, guru_id, rombel_id, mata_pelajaran_id, guru_status, materi_detail, tp_manual, foto_dokumentasi, ttd_guru")
+      .select("id, tanggal, jam_ke, guru_id, rombel_id, mata_pelajaran_id, guru_status, materi_detail, tp_manual")
       .gte("tanggal", data.from)
       .lte("tanggal", data.to)
       .order("tanggal", { ascending: false })
