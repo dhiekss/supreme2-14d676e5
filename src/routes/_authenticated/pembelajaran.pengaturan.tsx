@@ -17,10 +17,12 @@ import { withDateSuffix } from "@/lib/utils";
 import {
   Settings, CalendarClock, QrCode, Plus, Trash2, Download, Upload, RotateCcw,
   ChevronLeft, ChevronRight, ArrowUpDown, RefreshCw, ArchiveRestore, Eraser, Pencil,
+  FileUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   getPembelajaranSettings, saveDeadline, setKbmQrValidation,
+  setAdministrasiUploadEnabled,
   listPembelajaranRefs, listRombelMapel, createRombelMapel,
   updateRombelMapel, bulkUpdateRombelMapel,
   softDeleteRombelMapel, restoreRombelMapel, purgeRombelMapel,
