@@ -118,6 +118,8 @@ function AdministrasiPage() {
   });
 
   const isAdmin = Boolean((refs as any)?.is_admin);
+  const uploadEnabled = (refs as any)?.upload_enabled !== false;
+  const canEdit = isAdmin || uploadEnabled;
   const total = list?.total ?? 0;
   const stats = list?.stats;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
