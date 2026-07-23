@@ -126,6 +126,15 @@ function PengaturanPembelajaranPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const toggleUploadM = useMutation({
+    mutationFn: (v: boolean) => setUploadEnabledFn({ data: { enabled: v } }),
+    onSuccess: (_r, v) => {
+      toast.success(v ? "Fitur pelaporan diaktifkan" : "Fitur pelaporan dinonaktifkan");
+      qc.invalidateQueries({ queryKey: ["pembelajaran-settings"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const createM = useMutation({
     mutationFn: (v: { rombel_id: string; mata_pelajaran_id: string; guru_id: string }) =>
       createFn({ data: v }),
