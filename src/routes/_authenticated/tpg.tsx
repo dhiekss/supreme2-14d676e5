@@ -371,3 +371,182 @@ function LaporanFormDialog({ guru, referensi, item, onSaved }: { guru: any[]; re
     </Dialog>
   );
 }
+
+function PeriodeFilter({ bulan, setBulan, tahun, setTahun }: any) {
+  return (
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+      <div className="space-y-2">
+        <Label>Bulan</Label>
+        <Select value={bulan} onValueChange={setBulan}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua</SelectItem>
+            {BULAN.map((b, i) => <SelectItem key={i} value={String(i+1)}>{b}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label>Tahun</Label>
+        <Input type="number" value={tahun} onChange={(e) => setTahun(e.target.value)} />
+      </div>
+    </div>
+  );
+}
+
+function AdministrasiPanel() {
+  const today = new Date();
+  const [bulan, setBulan] = useState<string>(String(today.getMonth() + 1));
+  const [tahun, setTahun] = useState<string>(String(today.getFullYear()));
+  const fetchFn = useServerFn(listAdministrasi);
+  const { data: rows } = useSuspenseQuery({
+    queryKey: ["tpg-adm", bulan, tahun],
+    queryFn: () => fetchFn({ data: {
+      bulan: bulan === "all" ? undefined : Number(bulan),
+      tahun: Number(tahun),
+    } }),
+  });
+  const total = rows.reduce((s: number, r: any) => s + Number(r.nominal_iuran ?? 0), 0);
+  const sudah = rows.filter((r: any) => r.sudah_administrasi).length;
+  return (
+    <>
+      <Card>
+        <CardHeader><CardTitle className="text-base">Filter</CardTitle></CardHeader>
+        <CardContent><PeriodeFilter bulan={bulan} setBulan={setBulan} tahun={tahun} setTahun={setTahun} /></CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
+          <CardTitle className="text-base">Administrasi — {rows.length} entri ({sudah} sudah)</CardTitle>
+          <div className="text-sm font-semibold">Total Iuran: {fmtRp(total)}</div>
+        </CardHeader>
+        <CardContent className="p-0 overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>NIP</TableHead>
+                <TableHead>Nama Guru</TableHead>
+                <TableHead>Periode</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Nominal Iuran</TableHead>
+                <TableHead>Tgl Administrasi</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.length === 0 ? (
+                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Tidak ada data</TableCell></TableRow>
+              ) : rows.map((r: any) => (
+                <TableRow key={r.id}>
+                  <TableCell>{r.guru_nip}</TableCell>
+                  <TableCell>{r.guru_nama}</TableCell>
+                  <TableCell>{BULAN[r.bulan-1]} {r.tahun}</TableCell>
+                  <TableCell>
+                    {r.sudah_administrasi ? (
+                      <Badge variant="default" className="gap-1"><CheckCircle2 className="h-3 w-3" /> Sudah</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="gap-1"><XCircle className="h-3 w-3" /> Belum</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>{fmtRp(r.nominal_iuran)}</TableCell>
+                  <TableCell>{r.tanggal_administrasi ? new Date(r.tanggal_administrasi).toLocaleDateString("id-ID") : "—"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+function IuranPanel() {
+  const today = new Date();
+  const [bulan, setBulan] = useState<string>("all");
+  const [tahun, setTahun] = useState<string>(String(today.getFullYear()));
+  const fetchFn = useServerFn(listPenyerahanIuran);
+  const { data: rows } = useSuspenseQuery({
+    queryKey: ["tpg-iur", bulan, tahun],
+    queryFn: () => fetchFn({ data: {
+      bulan: bulan === "all" ? undefined : Number(bulan),
+      tahun: Number(tahun),
+    } }),
+  });
+  const total = rows.reduce((s: number, r: any) => s + Number(r.nominal ?? 0), 0);
+  return (
+    <>
+      <Card>
+        <CardHeader><CardTitle className="text-base">Filter</CardTitle></CardHeader>
+        <CardContent><PeriodeFilter bulan={bulan} setBulan={setBulan} tahun={tahun} setTahun={setTahun} /></CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
+          <CardTitle className="text-base">Penyerahan Iuran — {rows.length} entri</CardTitle>
+          <div className="text-sm font-semibold">Total: {fmtRp(total)}</div>
+        </CardHeader>
+        <CardContent className="p-0 overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tanggal</TableHead>
+                <TableHead>Periode</TableHead>
+                <TableHead>Keperluan</TableHead>
+                <TableHead>Nominal</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.length === 0 ? (
+                <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Tidak ada data</TableCell></TableRow>
+              ) : rows.map((r: any) => (
+                <TableRow key={r.id}>
+                  <TableCell>{r.tanggal_penyerahan ? new Date(r.tanggal_penyerahan).toLocaleDateString("id-ID") : "—"}</TableCell>
+                  <TableCell>{BULAN[r.bulan-1]} {r.tahun}</TableCell>
+                  <TableCell className="capitalize">{(r.keperluan ?? "—").replace(/_/g, " ")}</TableCell>
+                  <TableCell>{fmtRp(r.nominal)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+function PeriodePanel() {
+  const fetchFn = useServerFn(listPeriodeAktif);
+  const { data: rows } = useSuspenseQuery({
+    queryKey: ["tpg-periode"], queryFn: () => fetchFn(),
+  });
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">Periode Aktif — {rows.length}</CardTitle></CardHeader>
+      <CardContent className="p-0 overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Periode</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Dibuat</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.length === 0 ? (
+              <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">Tidak ada data</TableCell></TableRow>
+            ) : rows.map((r: any) => (
+              <TableRow key={r.id}>
+                <TableCell>{BULAN[r.bulan-1]} {r.tahun}</TableCell>
+                <TableCell>
+                  {r.is_active ? (
+                    <Badge variant="default" className="gap-1"><CheckCircle2 className="h-3 w-3" /> Aktif</Badge>
+                  ) : (
+                    <Badge variant="secondary">Nonaktif</Badge>
+                  )}
+                </TableCell>
+                <TableCell>{r.created_at ? new Date(r.created_at).toLocaleDateString("id-ID") : "—"}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
