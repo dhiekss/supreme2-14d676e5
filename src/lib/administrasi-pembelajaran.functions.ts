@@ -5,6 +5,7 @@ import { z } from "zod";
 
 
 const SETTING_DEADLINE = "berkas_pembelajaran_deadline";
+const SETTING_UPLOAD_ENABLED = "berkas_pembelajaran_upload_enabled";
 
 type Ket = "belum" | "menunggu" | "valid" | "perbaikan";
 
