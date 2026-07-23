@@ -78,10 +78,24 @@ function TpgPage() {
       </div>
 
       <Tabs defaultValue="laporan">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="laporan">Laporan TPG</TabsTrigger>
+          <TabsTrigger value="administrasi">Administrasi</TabsTrigger>
+          <TabsTrigger value="iuran">Penyerahan Iuran</TabsTrigger>
+          <TabsTrigger value="periode">Periode Aktif</TabsTrigger>
           <TabsTrigger value="referensi">Referensi</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="administrasi" className="space-y-4">
+          <AdministrasiPanel />
+        </TabsContent>
+        <TabsContent value="iuran" className="space-y-4">
+          <IuranPanel />
+        </TabsContent>
+        <TabsContent value="periode" className="space-y-4">
+          <PeriodePanel />
+        </TabsContent>
+
 
         <TabsContent value="laporan" className="space-y-4">
           <Card>
