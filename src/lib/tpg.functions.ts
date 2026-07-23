@@ -147,3 +147,60 @@ export const deleteLaporan = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const listAdministrasi = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({ bulan: z.number().int().optional(), tahun: z.number().int().optional() }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    let q = context.supabase
+      .from("tpg_administrasi")
+      .select("id, guru_id, laporan_tpg_id, bulan, tahun, sudah_administrasi, nominal_iuran, tanggal_administrasi")
+      .order("tahun", { ascending: false })
+      .order("bulan", { ascending: false });
+    if (data.bulan) q = q.eq("bulan", data.bulan);
+    if (data.tahun) q = q.eq("tahun", data.tahun);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    const ids = [...new Set((rows ?? []).map((r: any) => r.guru_id).filter(Boolean))];
+    const gMap = new Map<string, any>();
+    if (ids.length) {
+      const { data: g } = await context.supabase.from("guru").select("id, nama, nip").in("id", ids);
+      (g ?? []).forEach((x: any) => gMap.set(x.id, x));
+    }
+    return (rows ?? []).map((r: any) => ({
+      ...r,
+      guru_nama: gMap.get(r.guru_id)?.nama ?? "—",
+      guru_nip: gMap.get(r.guru_id)?.nip ?? "—",
+    }));
+  });
+
+export const listPenyerahanIuran = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({ bulan: z.number().int().optional(), tahun: z.number().int().optional() }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    let q = context.supabase
+      .from("tpg_penyerahan_iuran")
+      .select("id, bulan, tahun, keperluan, nominal, tanggal_penyerahan")
+      .order("tanggal_penyerahan", { ascending: false });
+    if (data.bulan) q = q.eq("bulan", data.bulan);
+    if (data.tahun) q = q.eq("tahun", data.tahun);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const listPeriodeAktif = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("tpg_periode_aktif")
+      .select("id, bulan, tahun, is_active, created_at")
+      .order("tahun", { ascending: false })
+      .order("bulan", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
