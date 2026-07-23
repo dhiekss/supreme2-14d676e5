@@ -413,7 +413,14 @@ function AdministrasiPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setEditRow(r)} title="Edit">
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-8 w-8"
+                          onClick={() => setEditRow(r)}
+                          title={canEdit ? "Edit" : "Fitur pelaporan sedang dinonaktifkan oleh admin"}
+                          disabled={!canEdit}
+                        >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         {isAdmin && r.kelengkapan > 0 && (
