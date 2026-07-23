@@ -421,6 +421,33 @@ function PengaturanPembelajaranPage() {
         </CardContent>
       </Card>
 
+      {/* Pengaturan Upload Administrasi Pembelajaran */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FileUp className="h-4 w-4 text-emerald-600" />
+            Pelaporan Administrasi Pembelajaran
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-start justify-between gap-4">
+            <div className="max-w-2xl">
+              <div className="font-medium text-sm">Izinkan Guru Melaporkan Berkas</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Jika dinonaktifkan, hanya admin dan superadmin yang dapat menyimpan atau mengunggah
+                berkas di halaman Administrasi Pembelajaran. Guru dan role lain tidak dapat
+                melaporkan berkasnya sampai fitur ini kembali diaktifkan.
+              </p>
+            </div>
+            <Switch
+              checked={settings?.upload_enabled !== false}
+              onCheckedChange={(v) => toggleUploadM.mutate(v)}
+              disabled={toggleUploadM.isPending}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Daftar Mata Pelajaran */}
       <Card>
         <CardHeader className="pb-3">
