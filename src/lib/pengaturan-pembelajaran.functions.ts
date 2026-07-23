@@ -4,6 +4,7 @@ import { z } from "zod";
 
 const SETTING_DEADLINE = "berkas_pembelajaran_deadline";
 const SETTING_KBM_QR = "kbm_qr_validation_enabled";
+const SETTING_UPLOAD_ENABLED = "berkas_pembelajaran_upload_enabled";
 
 // ============ Settings ============
 
@@ -13,13 +14,15 @@ export const getPembelajaranSettings = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("app_settings")
       .select("key, value")
-      .in("key", [SETTING_DEADLINE, SETTING_KBM_QR]);
+      .in("key", [SETTING_DEADLINE, SETTING_KBM_QR, SETTING_UPLOAD_ENABLED]);
     if (error) throw new Error(error.message);
     const map: Record<string, string> = {};
     for (const r of data ?? []) map[(r as any).key] = (r as any).value;
     return {
       deadline: map[SETTING_DEADLINE] ?? "",
       kbm_qr_enabled: map[SETTING_KBM_QR] === "true",
+      // Default ON when unset so existing behavior is preserved.
+      upload_enabled: map[SETTING_UPLOAD_ENABLED] !== "false",
     };
   });
 
@@ -58,6 +61,22 @@ export const setKbmQrValidation = createServerFn({ method: "POST" })
     await upsertSetting(context.supabase, SETTING_KBM_QR, data.enabled ? "true" : "false");
     return { ok: true };
   });
+
+export const setAdministrasiUploadEnabled = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ enabled: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    // Admin/superadmin only
+    const s = context.supabase;
+    const [{ data: isAdmin }, { data: isSuper }] = await Promise.all([
+      s.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+      s.rpc("has_role", { _user_id: context.userId, _role: "superadmin" }),
+    ]);
+    if (!isAdmin && !isSuper) throw new Error("Hanya admin yang dapat mengubah pengaturan ini");
+    await upsertSetting(s, SETTING_UPLOAD_ENABLED, data.enabled ? "true" : "false");
+    return { ok: true };
+  });
+
 
 // ============ References for dropdowns ============
 
