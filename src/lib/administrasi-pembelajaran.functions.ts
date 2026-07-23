@@ -5,6 +5,7 @@ import { z } from "zod";
 
 
 const SETTING_DEADLINE = "berkas_pembelajaran_deadline";
+const SETTING_UPLOAD_ENABLED = "berkas_pembelajaran_upload_enabled";
 
 type Ket = "belum" | "menunggu" | "valid" | "perbaikan";
 
@@ -67,27 +68,37 @@ export const getAdministrasiRefs = createServerFn({ method: "GET" })
     let rombelQ = s.from("rombel").select("id, name").order("name");
     if (rombelIds !== null) {
       if (rombelIds.length === 0) {
-        const [{ data: mapel }, { data: guru }, { data: setting }] = await Promise.all([
+        const [{ data: mapel }, { data: guru }, { data: settingsRows }] = await Promise.all([
           s.from("mata_pelajaran").select("id, nama").order("nama"),
           s.from("guru").select("id, nama, nip").order("nama"),
-          s.from("app_settings").select("value").eq("key", SETTING_DEADLINE).maybeSingle(),
+          s.from("app_settings").select("key, value").in("key", [SETTING_DEADLINE, SETTING_UPLOAD_ENABLED]),
         ]);
-        return { rombel: [], mapel: mapel ?? [], guru: guru ?? [], deadline: (setting as any)?.value ?? "", is_admin: privileged };
+        const sm: Record<string, string> = {};
+        for (const r of settingsRows ?? []) sm[(r as any).key] = (r as any).value;
+        return {
+          rombel: [], mapel: mapel ?? [], guru: guru ?? [],
+          deadline: sm[SETTING_DEADLINE] ?? "",
+          is_admin: privileged,
+          upload_enabled: sm[SETTING_UPLOAD_ENABLED] !== "false",
+        };
       }
       rombelQ = rombelQ.in("id", rombelIds);
     }
-    const [{ data: rombel }, { data: mapel }, { data: guru }, { data: setting }] = await Promise.all([
+    const [{ data: rombel }, { data: mapel }, { data: guru }, { data: settingsRows }] = await Promise.all([
       rombelQ,
       s.from("mata_pelajaran").select("id, nama").order("nama"),
       s.from("guru").select("id, nama, nip").order("nama"),
-      s.from("app_settings").select("value").eq("key", SETTING_DEADLINE).maybeSingle(),
+      s.from("app_settings").select("key, value").in("key", [SETTING_DEADLINE, SETTING_UPLOAD_ENABLED]),
     ]);
+    const sm: Record<string, string> = {};
+    for (const r of settingsRows ?? []) sm[(r as any).key] = (r as any).value;
     return {
       rombel: rombel ?? [],
       mapel: mapel ?? [],
       guru: guru ?? [],
-      deadline: (setting as any)?.value ?? "",
+      deadline: sm[SETTING_DEADLINE] ?? "",
       is_admin: privileged,
+      upload_enabled: sm[SETTING_UPLOAD_ENABLED] !== "false",
     };
   });
 
@@ -263,6 +274,25 @@ export const upsertAdministrasi = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     const s = context.supabase;
+
+    // Enforce admin toggle: when disabled, only admin/superadmin can save.
+    const [{ data: isAdmin }, { data: isSuper }] = await Promise.all([
+      s.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+      s.rpc("has_role", { _user_id: context.userId, _role: "superadmin" }),
+    ]);
+    const privileged = Boolean(isAdmin) || Boolean(isSuper);
+    if (!privileged) {
+      const { data: setting } = await s
+        .from("app_settings")
+        .select("value")
+        .eq("key", SETTING_UPLOAD_ENABLED)
+        .maybeSingle();
+      const enabled = (setting as any)?.value !== "false";
+      if (!enabled) {
+        throw new Error("Fitur pelaporan administrasi pembelajaran sedang dinonaktifkan oleh admin");
+      }
+    }
+
     const { data: rmp, error: rmpErr } = await s
       .from("rombel_mata_pelajaran")
       .select("guru_id")

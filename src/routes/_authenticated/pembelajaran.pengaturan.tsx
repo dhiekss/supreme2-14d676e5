@@ -17,10 +17,12 @@ import { withDateSuffix } from "@/lib/utils";
 import {
   Settings, CalendarClock, QrCode, Plus, Trash2, Download, Upload, RotateCcw,
   ChevronLeft, ChevronRight, ArrowUpDown, RefreshCw, ArchiveRestore, Eraser, Pencil,
+  FileUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   getPembelajaranSettings, saveDeadline, setKbmQrValidation,
+  setAdministrasiUploadEnabled,
   listPembelajaranRefs, listRombelMapel, createRombelMapel,
   updateRombelMapel, bulkUpdateRombelMapel,
   softDeleteRombelMapel, restoreRombelMapel, purgeRombelMapel,
@@ -48,6 +50,7 @@ function PengaturanPembelajaranPage() {
   const getSettingsFn = useServerFn(getPembelajaranSettings);
   const saveDeadlineFn = useServerFn(saveDeadline);
   const setQrFn = useServerFn(setKbmQrValidation);
+  const setUploadEnabledFn = useServerFn(setAdministrasiUploadEnabled);
   const listRefsFn = useServerFn(listPembelajaranRefs);
   const listFn = useServerFn(listRombelMapel);
   const createFn = useServerFn(createRombelMapel);
@@ -120,6 +123,15 @@ function PengaturanPembelajaranPage() {
   const toggleQrM = useMutation({
     mutationFn: (v: boolean) => setQrFn({ data: { enabled: v } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["pembelajaran-settings"] }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const toggleUploadM = useMutation({
+    mutationFn: (v: boolean) => setUploadEnabledFn({ data: { enabled: v } }),
+    onSuccess: (_r, v) => {
+      toast.success(v ? "Fitur pelaporan diaktifkan" : "Fitur pelaporan dinonaktifkan");
+      qc.invalidateQueries({ queryKey: ["pembelajaran-settings"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -404,6 +416,33 @@ function PengaturanPembelajaranPage() {
               checked={!!settings?.kbm_qr_enabled}
               onCheckedChange={(v) => toggleQrM.mutate(v)}
               disabled={toggleQrM.isPending}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pengaturan Upload Administrasi Pembelajaran */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FileUp className="h-4 w-4 text-emerald-600" />
+            Pelaporan Administrasi Pembelajaran
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-start justify-between gap-4">
+            <div className="max-w-2xl">
+              <div className="font-medium text-sm">Izinkan Guru Melaporkan Berkas</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Jika dinonaktifkan, hanya admin dan superadmin yang dapat menyimpan atau mengunggah
+                berkas di halaman Administrasi Pembelajaran. Guru dan role lain tidak dapat
+                melaporkan berkasnya sampai fitur ini kembali diaktifkan.
+              </p>
+            </div>
+            <Switch
+              checked={settings?.upload_enabled !== false}
+              onCheckedChange={(v) => toggleUploadM.mutate(v)}
+              disabled={toggleUploadM.isPending}
             />
           </div>
         </CardContent>

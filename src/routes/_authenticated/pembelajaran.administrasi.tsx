@@ -118,6 +118,8 @@ function AdministrasiPage() {
   });
 
   const isAdmin = Boolean((refs as any)?.is_admin);
+  const uploadEnabled = (refs as any)?.upload_enabled !== false;
+  const canEdit = isAdmin || uploadEnabled;
   const total = list?.total ?? 0;
   const stats = list?.stats;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -214,6 +216,16 @@ function AdministrasiPage() {
           </CardContent>
         </Card>
       </div>
+
+      {!canEdit && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 text-amber-800 p-3 text-sm">
+          <div className="font-medium">Fitur pelaporan sedang dinonaktifkan</div>
+          <p className="text-xs mt-1">
+            Admin telah mematikan fitur upload administrasi pembelajaran. Anda tidak dapat
+            menyimpan atau mengunggah berkas untuk sementara waktu. Silakan hubungi admin.
+          </p>
+        </div>
+      )}
 
 
       <Card className="bg-muted/40">
@@ -411,7 +423,14 @@ function AdministrasiPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setEditRow(r)} title="Edit">
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-8 w-8"
+                          onClick={() => setEditRow(r)}
+                          title={canEdit ? "Edit" : "Fitur pelaporan sedang dinonaktifkan oleh admin"}
+                          disabled={!canEdit}
+                        >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         {isAdmin && r.kelengkapan > 0 && (
