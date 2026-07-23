@@ -15,8 +15,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   listGuru, listReferensi, upsertReferensi, deleteReferensi,
   listLaporan, upsertLaporan, deleteLaporan,
+  listAdministrasi, listPenyerahanIuran, listPeriodeAktif,
 } from "@/lib/tpg.functions";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckCircle2, XCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/tpg")({
