@@ -50,6 +50,7 @@ function PengaturanPembelajaranPage() {
   const getSettingsFn = useServerFn(getPembelajaranSettings);
   const saveDeadlineFn = useServerFn(saveDeadline);
   const setQrFn = useServerFn(setKbmQrValidation);
+  const setUploadEnabledFn = useServerFn(setAdministrasiUploadEnabled);
   const listRefsFn = useServerFn(listPembelajaranRefs);
   const listFn = useServerFn(listRombelMapel);
   const createFn = useServerFn(createRombelMapel);
