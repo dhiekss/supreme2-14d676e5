@@ -217,6 +217,16 @@ function AdministrasiPage() {
         </Card>
       </div>
 
+      {!canEdit && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 text-amber-800 p-3 text-sm">
+          <div className="font-medium">Fitur pelaporan sedang dinonaktifkan</div>
+          <p className="text-xs mt-1">
+            Admin telah mematikan fitur upload administrasi pembelajaran. Anda tidak dapat
+            menyimpan atau mengunggah berkas untuk sementara waktu. Silakan hubungi admin.
+          </p>
+        </div>
+      )}
+
 
       <Card className="bg-muted/40">
         <CardContent className="p-4 text-sm space-y-2">
