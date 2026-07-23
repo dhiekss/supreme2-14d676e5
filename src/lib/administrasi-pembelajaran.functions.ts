@@ -274,6 +274,25 @@ export const upsertAdministrasi = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     const s = context.supabase;
+
+    // Enforce admin toggle: when disabled, only admin/superadmin can save.
+    const [{ data: isAdmin }, { data: isSuper }] = await Promise.all([
+      s.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+      s.rpc("has_role", { _user_id: context.userId, _role: "superadmin" }),
+    ]);
+    const privileged = Boolean(isAdmin) || Boolean(isSuper);
+    if (!privileged) {
+      const { data: setting } = await s
+        .from("app_settings")
+        .select("value")
+        .eq("key", SETTING_UPLOAD_ENABLED)
+        .maybeSingle();
+      const enabled = (setting as any)?.value !== "false";
+      if (!enabled) {
+        throw new Error("Fitur pelaporan administrasi pembelajaran sedang dinonaktifkan oleh admin");
+      }
+    }
+
     const { data: rmp, error: rmpErr } = await s
       .from("rombel_mata_pelajaran")
       .select("guru_id")
