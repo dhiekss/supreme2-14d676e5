@@ -714,6 +714,7 @@ function LinkCell({ value, row }: { value: string | null; row?: any }) {
   const signFn = useServerFn(getBerkasSignedUrl);
   const [loading, setLoading] = useState(false);
   const [zipLoading, setZipLoading] = useState(false);
+  const [zipProgress, setZipProgress] = useState<ZipProgress | null>(null);
   const [open, setOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [rawUrl, setRawUrl] = useState<string>("");
