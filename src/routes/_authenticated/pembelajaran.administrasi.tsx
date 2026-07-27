@@ -422,7 +422,7 @@ function AdministrasiPage() {
                     <TableCell className="font-medium">{r.rombel_name}</TableCell>
                     <TableCell className="text-sm">{r.mapel_nama}</TableCell>
                     <TableCell className="text-sm">{r.guru_nama}</TableCell>
-                    {DOC_KEYS.map((k) => <LinkCell key={k} value={r[k]} />)}
+                    {DOC_KEYS.map((k) => <LinkCell key={k} value={r[k]} row={r} />)}
                     <TableCell>
                       <div className="flex items-center gap-2 w-[110px]">
                         <Progress value={r.kelengkapan} className="h-2 flex-1" />
