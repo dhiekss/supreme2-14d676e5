@@ -714,6 +714,7 @@ function LinkCell({ value, row }: { value: string | null; row?: any }) {
   const signFn = useServerFn(getBerkasSignedUrl);
   const [loading, setLoading] = useState(false);
   const [zipLoading, setZipLoading] = useState(false);
+  const [zipProgress, setZipProgress] = useState<ZipProgress | null>(null);
   const [open, setOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [rawUrl, setRawUrl] = useState<string>("");
@@ -750,8 +751,9 @@ function LinkCell({ value, row }: { value: string | null; row?: any }) {
   const handleDownloadAll = async () => {
     if (!row) return;
     setZipLoading(true);
+    setZipProgress({ phase: "fetching", current: 0, total: rowDocCount });
     try {
-      const { ok, failed } = await bundleRowAsZip(row, signFn);
+      const { ok, failed } = await bundleRowAsZip(row, signFn, setZipProgress);
       if (ok === 0) toast.error(`Gagal mengunduh berkas${failed.length ? `: ${failed.join(", ")}` : ""}`);
       else if (failed.length > 0) toast.warning(`Diunduh ${ok} berkas, ${failed.length} gagal`);
       else toast.success(`Diunduh ${ok} berkas dalam satu ZIP`);
@@ -759,8 +761,15 @@ function LinkCell({ value, row }: { value: string | null; row?: any }) {
       toast.error(e?.message ?? "Gagal membuat ZIP");
     } finally {
       setZipLoading(false);
+      setZipProgress(null);
     }
   };
+
+  const zipPct = zipProgress
+    ? zipProgress.phase === "zipping"
+      ? zipProgress.zipPercent ?? 0
+      : zipProgress.total > 0 ? Math.round((zipProgress.current / zipProgress.total) * 100) : 0
+    : 0;
 
   return (
     <TableCell className="text-center">
@@ -774,17 +783,39 @@ function LinkCell({ value, row }: { value: string | null; row?: any }) {
           <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
             <DialogTitle className="text-base">Pratinjau Dokumen</DialogTitle>
             <div className="flex items-center gap-2 mr-6">
-              <Button size="sm" variant="outline" onClick={handleDownload} disabled={!rawUrl}>
+              <Button size="sm" variant="outline" onClick={handleDownload} disabled={!rawUrl || zipLoading}>
                 <Download className="h-3.5 w-3.5 mr-1" /> Unduh
               </Button>
               {row && rowDocCount > 1 && (
                 <Button size="sm" onClick={handleDownloadAll} disabled={zipLoading}>
                   {zipLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}
-                  Unduh Semua (ZIP)
+                  {zipLoading
+                    ? zipProgress?.phase === "zipping"
+                      ? `Membuat ZIP ${zipPct}%`
+                      : `Mengunduh ${zipProgress?.current ?? 0}/${zipProgress?.total ?? rowDocCount}`
+                    : "Unduh Semua (ZIP)"}
                 </Button>
               )}
             </div>
           </DialogHeader>
+          {zipLoading && zipProgress && (
+            <div className="px-4 pb-2">
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
+                <span>
+                  {zipProgress.phase === "zipping"
+                    ? "Mengompres berkas ke ZIP…"
+                    : `Mengunduh ${zipProgress.current}/${zipProgress.total}${zipProgress.label ? ` — ${zipProgress.label}` : ""}`}
+                </span>
+                <span className="tabular-nums">{zipPct}%</span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-blue-600 transition-all duration-200"
+                  style={{ width: `${zipPct}%` }}
+                />
+              </div>
+            </div>
+          )}
           <div className="flex-1 min-h-0 border-t bg-muted/30">
             {previewUrl ? (
               <iframe
@@ -844,10 +875,19 @@ function extFromUrlOrKey(url: string, key: DocKey): string {
   return "pdf";
 }
 
+export type ZipProgress = {
+  phase: "idle" | "fetching" | "zipping" | "done";
+  current: number; // items processed
+  total: number;   // total items
+  label?: string;  // current item name
+  zipPercent?: number; // 0-100 for zipping phase
+};
+
 /** Fetch every document on a row and bundle into one ZIP. Returns { ok, failed }. */
 async function bundleRowAsZip(
   row: any,
   signFn: (args: { data: { path: string } }) => Promise<{ url: string }>,
+  onProgress?: (p: ZipProgress) => void,
 ): Promise<{ ok: number; failed: string[] }> {
   const items = DOC_KEYS
     .map((k) => ({ key: k, value: row[k] as string | null }))
@@ -858,9 +898,14 @@ async function bundleRowAsZip(
   const rombelName = sanitizeSegment(row.rombel_name ?? "Rombel");
   let ok = 0;
   const failed: string[] = [];
+  const total = items.length;
 
-  for (const it of items) {
+  onProgress?.({ phase: "fetching", current: 0, total });
+
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
     const jenis = sanitizeSegment(DOC_LABELS[it.key]);
+    onProgress?.({ phase: "fetching", current: i, total, label: DOC_LABELS[it.key] });
     let url = it.value!;
     const isStorage = url.startsWith("storage://");
     try {
@@ -882,52 +927,85 @@ async function bundleRowAsZip(
     } catch (e: any) {
       failed.push(`${jenis} (${e?.message ?? "gagal"})`);
     }
+    onProgress?.({ phase: "fetching", current: i + 1, total, label: DOC_LABELS[it.key] });
   }
 
   if (ok > 0) {
-    const zipBlob = await zip.generateAsync({ type: "blob" });
+    onProgress?.({ phase: "zipping", current: total, total, zipPercent: 0 });
+    const zipBlob = await zip.generateAsync({ type: "blob" }, (meta) => {
+      onProgress?.({ phase: "zipping", current: total, total, zipPercent: Math.round(meta.percent) });
+    });
     const zipUrl = URL.createObjectURL(zipBlob);
     const zipName = `${guruName}-${mapelName}-${rombelName}.zip`;
     triggerDownload(zipUrl, zipName);
     setTimeout(() => URL.revokeObjectURL(zipUrl), 30_000);
   }
+  onProgress?.({ phase: "done", current: total, total });
   return { ok, failed };
 }
+
 
 /** Download all uploaded documents for a single row as one ZIP file. */
 function RowDownloadButton({ row }: { row: any }) {
   const signFn = useServerFn(getBerkasSignedUrl);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState<ZipProgress | null>(null);
   const items = DOC_KEYS.filter((k) => typeof row[k] === "string" && (row[k] as string).trim().length > 0);
   if (items.length === 0) return null;
 
   const handleDownloadAll = async () => {
     setLoading(true);
+    setProgress({ phase: "fetching", current: 0, total: items.length });
+    const toastId = toast.loading(`Menyiapkan 0/${items.length} berkas…`);
     try {
-      const { ok, failed } = await bundleRowAsZip(row, signFn);
+      const { ok, failed } = await bundleRowAsZip(row, signFn, (p) => {
+        setProgress(p);
+        if (p.phase === "fetching") {
+          toast.loading(`Mengunduh ${p.current}/${p.total} berkas${p.label ? ` — ${p.label}` : ""}`, { id: toastId });
+        } else if (p.phase === "zipping") {
+          toast.loading(`Membuat ZIP… ${p.zipPercent ?? 0}%`, { id: toastId });
+        }
+      });
+      toast.dismiss(toastId);
       if (ok === 0) toast.error(`Gagal mengunduh berkas${failed.length ? `: ${failed.join(", ")}` : ""}`);
       else if (failed.length > 0) toast.warning(`Diunduh ${ok} berkas, ${failed.length} gagal`);
       else toast.success(`Diunduh ${ok} berkas dalam satu ZIP`);
     } catch (e: any) {
+      toast.dismiss(toastId);
       toast.error(e?.message ?? "Gagal membuat ZIP");
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   };
 
+  const pct = progress
+    ? progress.phase === "zipping"
+      ? progress.zipPercent ?? 0
+      : progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0
+    : 0;
+
   return (
-    <Button
-      size="icon"
-      variant="outline"
-      className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-      title={`Unduh semua dokumen dalam satu ZIP (${items.length})`}
-      onClick={handleDownloadAll}
-      disabled={loading}
-    >
-      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-    </Button>
+    <div className="inline-flex items-center gap-2">
+      <Button
+        size="icon"
+        variant="outline"
+        className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+        title={`Unduh semua dokumen dalam satu ZIP (${items.length})`}
+        onClick={handleDownloadAll}
+        disabled={loading}
+      >
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+      </Button>
+      {loading && progress && (
+        <span className="text-[10px] tabular-nums text-muted-foreground whitespace-nowrap">
+          {progress.phase === "zipping" ? `ZIP ${pct}%` : `${progress.current}/${progress.total}`}
+        </span>
+      )}
+    </div>
   );
 }
+
 
 
 
