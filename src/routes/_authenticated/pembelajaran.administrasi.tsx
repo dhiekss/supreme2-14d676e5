@@ -428,6 +428,16 @@ function AdministrasiPage() {
                         <span className="text-xs text-muted-foreground w-9 text-right">{r.kelengkapan}%</span>
                       </div>
                     </TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">
+                      {r.tanggal_upload ? (
+                        <div>
+                          <div>{new Date(r.tanggal_upload).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</div>
+                          <div className="text-muted-foreground">
+                            {new Date(r.tanggal_upload).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                        </div>
+                      ) : <span className="text-muted-foreground">-</span>}
+                    </TableCell>
                     <TableCell><KetBadge ket={r.keterangan} /></TableCell>
                     <TableCell className="text-xs">
                       {r.diperiksa_oleh_nama ? (
@@ -453,6 +463,29 @@ function AdministrasiPage() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        {isAdmin && r.berkas_id && (
+                          <>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                              title="Tandai Valid"
+                              onClick={() => validateM.mutate({ rombel_mata_pelajaran_id: r.id, keputusan: "valid" })}
+                              disabled={validateM.isPending}
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                              title="Perlu Perbaikan"
+                              onClick={() => { setCatatanValidasi(r.catatan_perbaikan ?? ""); setValidateRow({ row: r, keputusan: "perbaikan" }); }}
+                            >
+                              <AlertTriangle className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                         {isAdmin && r.kelengkapan > 0 && (
                           <Button
                             size="icon"
