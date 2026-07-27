@@ -668,16 +668,58 @@ function toEmbedUrl(url: string): string {
   } catch { return url; }
 }
 
+function toDownloadUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("drive.google.com")) {
+      const m = u.pathname.match(/\/file\/d\/([^/]+)/);
+      const id = m ? m[1] : u.searchParams.get("id");
+      if (id) return `https://drive.google.com/uc?export=download&id=${id}`;
+    }
+    if (u.hostname.includes("docs.google.com")) {
+      const m = u.pathname.match(/\/(document|spreadsheets|presentation)\/d\/([^/]+)/);
+      if (m) {
+        const kind = m[1];
+        const fmt = kind === "spreadsheets" ? "xlsx" : kind === "presentation" ? "pptx" : "docx";
+        return `https://docs.google.com/${kind}/d/${m[2]}/export?format=${fmt}`;
+      }
+    }
+    return url;
+  } catch { return url; }
+}
+
+/** Trigger a background download without opening a visible tab. */
+function triggerDownload(url: string, filename?: string) {
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    if (filename) a.download = filename;
+    a.rel = "noopener";
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 1000);
+  } catch {
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = url;
+    document.body.appendChild(iframe);
+    setTimeout(() => iframe.remove(), 60_000);
+  }
+}
+
 function LinkCell({ value }: { value: string | null }) {
   const signFn = useServerFn(getBerkasSignedUrl);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [rawUrl, setRawUrl] = useState<string>("");
   if (!value) return <TableCell className="text-center text-muted-foreground">-</TableCell>;
 
   const isStorage = value.startsWith("storage://");
   const handleOpen = async () => {
     if (!isStorage) {
+      setRawUrl(value);
       setPreviewUrl(toEmbedUrl(value));
       setOpen(true);
       return;
@@ -686,10 +728,16 @@ function LinkCell({ value }: { value: string | null }) {
     try {
       const path = value.replace(/^storage:\/\//, "");
       const res = await signFn({ data: { path } });
-      if (res.url) { setPreviewUrl(res.url); setOpen(true); }
+      if (res.url) { setRawUrl(res.url); setPreviewUrl(res.url); setOpen(true); }
     } catch (e: any) {
       toast.error(e.message ?? "Gagal membuka berkas");
     } finally { setLoading(false); }
+  };
+
+  const handleDownload = () => {
+    if (!rawUrl) return;
+    const dl = isStorage ? rawUrl : toDownloadUrl(rawUrl);
+    triggerDownload(dl);
   };
 
   return (
@@ -701,16 +749,13 @@ function LinkCell({ value }: { value: string | null }) {
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-5xl w-[95vw] h-[85vh] p-0 flex flex-col">
-          <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
+          <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
             <DialogTitle className="text-base">Pratinjau Dokumen</DialogTitle>
-            <a
-              href={previewUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-blue-600 hover:underline inline-flex items-center gap-1 mr-6"
-            >
-              <ExternalLink className="h-3 w-3" /> Buka di tab baru
-            </a>
+            <div className="flex items-center gap-2 mr-6">
+              <Button size="sm" variant="outline" onClick={handleDownload} disabled={!rawUrl}>
+                <Download className="h-3.5 w-3.5 mr-1" /> Unduh
+              </Button>
+            </div>
           </DialogHeader>
           <div className="flex-1 min-h-0 border-t bg-muted/30">
             {previewUrl ? (
@@ -727,6 +772,57 @@ function LinkCell({ value }: { value: string | null }) {
     </TableCell>
   );
 }
+
+/** Download all uploaded documents belonging to a single row (one guru assignment). */
+function RowDownloadButton({ row }: { row: any }) {
+  const signFn = useServerFn(getBerkasSignedUrl);
+  const [loading, setLoading] = useState(false);
+  const items = DOC_KEYS
+    .map((k) => ({ key: k, value: row[k] as string | null }))
+    .filter((x) => typeof x.value === "string" && x.value.trim().length > 0);
+
+  if (items.length === 0) return null;
+
+  const handleDownloadAll = async () => {
+    setLoading(true);
+    try {
+      let i = 0;
+      for (const it of items) {
+        let url = it.value!;
+        if (url.startsWith("storage://")) {
+          const path = url.replace(/^storage:\/\//, "");
+          const res = await signFn({ data: { path } });
+          if (!res.url) continue;
+          url = res.url;
+        } else {
+          url = toDownloadUrl(url);
+        }
+        triggerDownload(url, DOC_SHORT[it.key]);
+        await new Promise((r) => setTimeout(r, 600));
+        i++;
+      }
+      toast.success(`Mengunduh ${i} dokumen`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Gagal mengunduh berkas");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Button
+      size="icon"
+      variant="outline"
+      className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+      title={`Unduh semua dokumen (${items.length})`}
+      onClick={handleDownloadAll}
+      disabled={loading}
+    >
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+    </Button>
+  );
+}
+
 
 function labelKet(k: Ket) {
   return k === "valid" ? "Valid"
