@@ -710,9 +710,10 @@ function triggerDownload(url: string, filename?: string) {
   }
 }
 
-function LinkCell({ value }: { value: string | null }) {
+function LinkCell({ value, row }: { value: string | null; row?: any }) {
   const signFn = useServerFn(getBerkasSignedUrl);
   const [loading, setLoading] = useState(false);
+  const [zipLoading, setZipLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [rawUrl, setRawUrl] = useState<string>("");
@@ -742,6 +743,25 @@ function LinkCell({ value }: { value: string | null }) {
     triggerDownload(dl);
   };
 
+  const rowDocCount = row
+    ? DOC_KEYS.filter((k) => typeof row[k] === "string" && (row[k] as string).trim().length > 0).length
+    : 0;
+
+  const handleDownloadAll = async () => {
+    if (!row) return;
+    setZipLoading(true);
+    try {
+      const { ok, failed } = await bundleRowAsZip(row, signFn);
+      if (ok === 0) toast.error(`Gagal mengunduh berkas${failed.length ? `: ${failed.join(", ")}` : ""}`);
+      else if (failed.length > 0) toast.warning(`Diunduh ${ok} berkas, ${failed.length} gagal`);
+      else toast.success(`Diunduh ${ok} berkas dalam satu ZIP`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Gagal membuat ZIP");
+    } finally {
+      setZipLoading(false);
+    }
+  };
+
   return (
     <TableCell className="text-center">
       <button type="button" onClick={handleOpen}
@@ -757,6 +777,12 @@ function LinkCell({ value }: { value: string | null }) {
               <Button size="sm" variant="outline" onClick={handleDownload} disabled={!rawUrl}>
                 <Download className="h-3.5 w-3.5 mr-1" /> Unduh
               </Button>
+              {row && rowDocCount > 1 && (
+                <Button size="sm" onClick={handleDownloadAll} disabled={zipLoading}>
+                  {zipLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}
+                  Unduh Semua (ZIP)
+                </Button>
+              )}
             </div>
           </DialogHeader>
           <div className="flex-1 min-h-0 border-t bg-muted/30">
@@ -774,6 +800,7 @@ function LinkCell({ value }: { value: string | null }) {
     </TableCell>
   );
 }
+
 
 /** Sanitize a string to be safe as a filename segment. */
 function sanitizeSegment(s: string): string {
