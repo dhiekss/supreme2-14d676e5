@@ -576,6 +576,46 @@ function AdministrasiPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!validateRow} onOpenChange={(o) => { if (!o) { setValidateRow(null); setCatatanValidasi(""); } }}>
+        <DialogContent className="max-w-md w-[95vw]">
+          <DialogHeader>
+            <DialogTitle>Tandai Perlu Perbaikan</DialogTitle>
+          </DialogHeader>
+          {validateRow && (
+            <div className="space-y-3 text-sm">
+              <div className="rounded-md bg-muted/40 p-2 text-xs">
+                {validateRow.row.rombel_name} • {validateRow.row.mapel_nama} • {validateRow.row.guru_nama}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Catatan Perbaikan</Label>
+                <Textarea
+                  value={catatanValidasi}
+                  onChange={(e) => setCatatanValidasi(e.target.value)}
+                  placeholder="Tuliskan hal yang perlu diperbaiki oleh guru…"
+                  rows={4}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setValidateRow(null); setCatatanValidasi(""); }} disabled={validateM.isPending}>
+              Batal
+            </Button>
+            <Button
+              className="bg-amber-600 hover:bg-amber-700"
+              disabled={validateM.isPending || !validateRow}
+              onClick={() => validateRow && validateM.mutate({
+                rombel_mata_pelajaran_id: validateRow.row.id,
+                keputusan: "perbaikan",
+                catatan: catatanValidasi.trim() || undefined,
+              })}
+            >
+              {validateM.isPending ? "Menyimpan…" : "Kirim Catatan"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
