@@ -844,10 +844,19 @@ function extFromUrlOrKey(url: string, key: DocKey): string {
   return "pdf";
 }
 
+export type ZipProgress = {
+  phase: "idle" | "fetching" | "zipping" | "done";
+  current: number; // items processed
+  total: number;   // total items
+  label?: string;  // current item name
+  zipPercent?: number; // 0-100 for zipping phase
+};
+
 /** Fetch every document on a row and bundle into one ZIP. Returns { ok, failed }. */
 async function bundleRowAsZip(
   row: any,
   signFn: (args: { data: { path: string } }) => Promise<{ url: string }>,
+  onProgress?: (p: ZipProgress) => void,
 ): Promise<{ ok: number; failed: string[] }> {
   const items = DOC_KEYS
     .map((k) => ({ key: k, value: row[k] as string | null }))
@@ -858,9 +867,14 @@ async function bundleRowAsZip(
   const rombelName = sanitizeSegment(row.rombel_name ?? "Rombel");
   let ok = 0;
   const failed: string[] = [];
+  const total = items.length;
 
-  for (const it of items) {
+  onProgress?.({ phase: "fetching", current: 0, total });
+
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
     const jenis = sanitizeSegment(DOC_LABELS[it.key]);
+    onProgress?.({ phase: "fetching", current: i, total, label: DOC_LABELS[it.key] });
     let url = it.value!;
     const isStorage = url.startsWith("storage://");
     try {
@@ -882,17 +896,23 @@ async function bundleRowAsZip(
     } catch (e: any) {
       failed.push(`${jenis} (${e?.message ?? "gagal"})`);
     }
+    onProgress?.({ phase: "fetching", current: i + 1, total, label: DOC_LABELS[it.key] });
   }
 
   if (ok > 0) {
-    const zipBlob = await zip.generateAsync({ type: "blob" });
+    onProgress?.({ phase: "zipping", current: total, total, zipPercent: 0 });
+    const zipBlob = await zip.generateAsync({ type: "blob" }, (meta) => {
+      onProgress?.({ phase: "zipping", current: total, total, zipPercent: Math.round(meta.percent) });
+    });
     const zipUrl = URL.createObjectURL(zipBlob);
     const zipName = `${guruName}-${mapelName}-${rombelName}.zip`;
     triggerDownload(zipUrl, zipName);
     setTimeout(() => URL.revokeObjectURL(zipUrl), 30_000);
   }
+  onProgress?.({ phase: "done", current: total, total });
   return { ok, failed };
 }
+
 
 /** Download all uploaded documents for a single row as one ZIP file. */
 function RowDownloadButton({ row }: { row: any }) {
