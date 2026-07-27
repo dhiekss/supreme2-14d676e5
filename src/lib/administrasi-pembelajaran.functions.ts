@@ -176,7 +176,7 @@ export const listAdministrasi = createServerFn({ method: "GET" })
       mIds.length ? s.from("mata_pelajaran").select("id, nama").in("id", mIds) : Promise.resolve({ data: [] as any[], error: null }),
       gIds.length ? s.from("guru").select("id, nama, nip").in("id", gIds) : Promise.resolve({ data: [] as any[], error: null }),
       ids.length ? s.from("berkas_pembelajaran")
-        .select("id, rombel_mata_pelajaran_id, analisis_cp_atp_link, prota_link, promes_link, rpa_link, modul_ajar_link, status, catatan_perbaikan, diperiksa_oleh_nama, diperiksa_at")
+        .select("id, rombel_mata_pelajaran_id, analisis_cp_atp_link, prota_link, promes_link, rpa_link, modul_ajar_link, status, catatan_perbaikan, diperiksa_oleh_nama, diperiksa_at, updated_at, created_at")
         .not("rombel_mata_pelajaran_id", "is", null)
         .limit(10000) : Promise.resolve({ data: [] as any[], error: null }),
     ]);
