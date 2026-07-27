@@ -176,7 +176,7 @@ export const listAdministrasi = createServerFn({ method: "GET" })
       mIds.length ? s.from("mata_pelajaran").select("id, nama").in("id", mIds) : Promise.resolve({ data: [] as any[], error: null }),
       gIds.length ? s.from("guru").select("id, nama, nip").in("id", gIds) : Promise.resolve({ data: [] as any[], error: null }),
       ids.length ? s.from("berkas_pembelajaran")
-        .select("id, rombel_mata_pelajaran_id, analisis_cp_atp_link, prota_link, promes_link, rpa_link, modul_ajar_link, status, catatan_perbaikan, diperiksa_oleh_nama, diperiksa_at")
+        .select("id, rombel_mata_pelajaran_id, analisis_cp_atp_link, prota_link, promes_link, rpa_link, modul_ajar_link, status, catatan_perbaikan, diperiksa_oleh_nama, diperiksa_at, updated_at, created_at")
         .not("rombel_mata_pelajaran_id", "is", null)
         .limit(10000) : Promise.resolve({ data: [] as any[], error: null }),
     ]);
@@ -218,6 +218,7 @@ export const listAdministrasi = createServerFn({ method: "GET" })
         catatan_perbaikan: b?.catatan_perbaikan ?? null,
         diperiksa_oleh_nama: b?.diperiksa_oleh_nama ?? null,
         diperiksa_at: b?.diperiksa_at ?? null,
+        tanggal_upload: b?.updated_at ?? b?.created_at ?? null,
       };
     });
 
@@ -392,4 +393,54 @@ export const resetAdministrasi = createServerFn({ method: "POST" })
       deleted = count ?? 0;
     }
     return { ok: true, reset: deleted, files_removed: paths.length };
+  });
+
+/**
+ * Admin/superadmin validates a berkas: mark as Valid (disetujui) or Perlu Perbaikan.
+ * Records diperiksa_oleh, diperiksa_oleh_nama, diperiksa_at.
+ */
+export const validateAdministrasi = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({
+    rombel_mata_pelajaran_id: z.string().uuid(),
+    keputusan: z.enum(["valid", "perbaikan"]),
+    catatan: z.string().trim().max(2000).optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const s = context.supabase;
+    const [{ data: isAdmin }, { data: isSuper }] = await Promise.all([
+      s.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+      s.rpc("has_role", { _user_id: context.userId, _role: "superadmin" }),
+    ]);
+    if (!isAdmin && !isSuper) {
+      throw new Error("Hanya admin yang dapat memvalidasi berkas");
+    }
+
+    const { data: existing, error: exErr } = await s
+      .from("berkas_pembelajaran")
+      .select("id")
+      .eq("rombel_mata_pelajaran_id", data.rombel_mata_pelajaran_id)
+      .maybeSingle();
+    if (exErr) throw new Error(exErr.message);
+    if (!existing) throw new Error("Belum ada berkas yang diinput untuk divalidasi");
+
+    const { data: prof } = await s
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", context.userId)
+      .maybeSingle();
+    const reviewerName = (prof as any)?.full_name || (prof as any)?.email || "Admin";
+
+    const status = data.keputusan === "valid" ? "disetujui" : "perbaikan";
+    const payload: any = {
+      status,
+      catatan_perbaikan: data.keputusan === "perbaikan" ? (data.catatan || null) : null,
+      diperiksa_oleh: context.userId,
+      diperiksa_oleh_nama: reviewerName,
+      diperiksa_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await s.from("berkas_pembelajaran").update(payload).eq("id", (existing as any).id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });

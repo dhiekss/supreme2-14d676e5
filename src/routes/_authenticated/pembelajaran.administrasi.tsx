@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { withDateSuffix } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -26,7 +27,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
   getAdministrasiRefs, listAdministrasi, upsertAdministrasi, getBerkasSignedUrl,
-  resetAdministrasi,
+  resetAdministrasi, validateAdministrasi,
 } from "@/lib/administrasi-pembelajaran.functions";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -69,6 +70,7 @@ function AdministrasiPage() {
   const listFn = useServerFn(listAdministrasi);
   const upsertFn = useServerFn(upsertAdministrasi);
   const resetFn = useServerFn(resetAdministrasi);
+  const validateFn = useServerFn(validateAdministrasi);
 
   const [rombelId, setRombelId] = useState("all");
   const [mapelId, setMapelId] = useState("all");
@@ -85,6 +87,11 @@ function AdministrasiPage() {
     | { kind: "guru"; ids: string[]; guruName: string }
     | null
   >(null);
+  const [validateRow, setValidateRow] = useState<
+    | { row: any; keputusan: "valid" | "perbaikan" }
+    | null
+  >(null);
+  const [catatanValidasi, setCatatanValidasi] = useState("");
 
   const { data: refs } = useQuery({
     queryKey: ["administrasi-refs"],
@@ -112,6 +119,18 @@ function AdministrasiPage() {
       toast.success(`Berhasil mereset ${r?.reset ?? 0} data (${r?.files_removed ?? 0} berkas dihapus)`);
       setSelectedIds(new Set());
       setConfirmReset(null);
+      qc.invalidateQueries({ queryKey: ["administrasi"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const validateM = useMutation({
+    mutationFn: (v: { rombel_mata_pelajaran_id: string; keputusan: "valid" | "perbaikan"; catatan?: string }) =>
+      validateFn({ data: v }),
+    onSuccess: () => {
+      toast.success("Validasi tersimpan");
+      setValidateRow(null);
+      setCatatanValidasi("");
       qc.invalidateQueries({ queryKey: ["administrasi"] });
     },
     onError: (e: any) => toast.error(e.message),
@@ -371,6 +390,7 @@ function AdministrasiPage() {
                     <TableHead key={k} className="text-center whitespace-nowrap">{DOC_SHORT[k]}</TableHead>
                   ))}
                   <TableHead>Kelengkapan {sortIcon("kelengkapan")}</TableHead>
+                  <TableHead className="whitespace-nowrap">Tanggal Upload</TableHead>
                   <TableHead>Keterangan {sortIcon("keterangan")}</TableHead>
                   <TableHead>Diperiksa Oleh</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
@@ -378,10 +398,10 @@ function AdministrasiPage() {
               </TableHeader>
               <TableBody>
                 {isFetching && (list?.rows ?? []).length === 0 && (
-                  <TableRow><TableCell colSpan={isAdmin ? 14 : 13} className="text-center text-muted-foreground py-8">Memuat…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={isAdmin ? 15 : 14} className="text-center text-muted-foreground py-8">Memuat…</TableCell></TableRow>
                 )}
                 {!isFetching && (list?.rows ?? []).length === 0 && (
-                  <TableRow><TableCell colSpan={isAdmin ? 14 : 13} className="text-center text-muted-foreground py-8">Tidak ada data</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={isAdmin ? 15 : 14} className="text-center text-muted-foreground py-8">Tidak ada data</TableCell></TableRow>
                 )}
                 {(list?.rows ?? []).map((r: any, idx: number) => (
                   <TableRow key={r.id} data-state={selectedIds.has(r.id) ? "selected" : undefined}>
@@ -408,6 +428,16 @@ function AdministrasiPage() {
                         <span className="text-xs text-muted-foreground w-9 text-right">{r.kelengkapan}%</span>
                       </div>
                     </TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">
+                      {r.tanggal_upload ? (
+                        <div>
+                          <div>{new Date(r.tanggal_upload).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</div>
+                          <div className="text-muted-foreground">
+                            {new Date(r.tanggal_upload).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                        </div>
+                      ) : <span className="text-muted-foreground">-</span>}
+                    </TableCell>
                     <TableCell><KetBadge ket={r.keterangan} /></TableCell>
                     <TableCell className="text-xs">
                       {r.diperiksa_oleh_nama ? (
@@ -433,6 +463,29 @@ function AdministrasiPage() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        {isAdmin && r.berkas_id && (
+                          <>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                              title="Tandai Valid"
+                              onClick={() => validateM.mutate({ rombel_mata_pelajaran_id: r.id, keputusan: "valid" })}
+                              disabled={validateM.isPending}
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                              title="Perlu Perbaikan"
+                              onClick={() => { setCatatanValidasi(r.catatan_perbaikan ?? ""); setValidateRow({ row: r, keputusan: "perbaikan" }); }}
+                            >
+                              <AlertTriangle className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                         {isAdmin && r.kelengkapan > 0 && (
                           <Button
                             size="icon"
@@ -523,6 +576,46 @@ function AdministrasiPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!validateRow} onOpenChange={(o) => { if (!o) { setValidateRow(null); setCatatanValidasi(""); } }}>
+        <DialogContent className="max-w-md w-[95vw]">
+          <DialogHeader>
+            <DialogTitle>Tandai Perlu Perbaikan</DialogTitle>
+          </DialogHeader>
+          {validateRow && (
+            <div className="space-y-3 text-sm">
+              <div className="rounded-md bg-muted/40 p-2 text-xs">
+                {validateRow.row.rombel_name} • {validateRow.row.mapel_nama} • {validateRow.row.guru_nama}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Catatan Perbaikan</Label>
+                <Textarea
+                  value={catatanValidasi}
+                  onChange={(e) => setCatatanValidasi(e.target.value)}
+                  placeholder="Tuliskan hal yang perlu diperbaiki oleh guru…"
+                  rows={4}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setValidateRow(null); setCatatanValidasi(""); }} disabled={validateM.isPending}>
+              Batal
+            </Button>
+            <Button
+              className="bg-amber-600 hover:bg-amber-700"
+              disabled={validateM.isPending || !validateRow}
+              onClick={() => validateRow && validateM.mutate({
+                rombel_mata_pelajaran_id: validateRow.row.id,
+                keputusan: "perbaikan",
+                catatan: catatanValidasi.trim() || undefined,
+              })}
+            >
+              {validateM.isPending ? "Menyimpan…" : "Kirim Catatan"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
