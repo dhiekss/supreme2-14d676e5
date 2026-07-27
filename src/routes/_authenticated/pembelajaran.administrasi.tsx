@@ -817,67 +817,70 @@ function extFromUrlOrKey(url: string, key: DocKey): string {
   return "pdf";
 }
 
+/** Fetch every document on a row and bundle into one ZIP. Returns { ok, failed }. */
+async function bundleRowAsZip(
+  row: any,
+  signFn: (args: { data: { path: string } }) => Promise<{ url: string }>,
+): Promise<{ ok: number; failed: string[] }> {
+  const items = DOC_KEYS
+    .map((k) => ({ key: k, value: row[k] as string | null }))
+    .filter((x) => typeof x.value === "string" && x.value.trim().length > 0);
+  const zip = new JSZip();
+  const guruName = sanitizeSegment(row.guru_nama ?? "Guru");
+  const mapelName = sanitizeSegment(row.mapel_nama ?? "Mapel");
+  const rombelName = sanitizeSegment(row.rombel_name ?? "Rombel");
+  let ok = 0;
+  const failed: string[] = [];
+
+  for (const it of items) {
+    const jenis = sanitizeSegment(DOC_LABELS[it.key]);
+    let url = it.value!;
+    const isStorage = url.startsWith("storage://");
+    try {
+      if (isStorage) {
+        const path = url.replace(/^storage:\/\//, "");
+        const res = await signFn({ data: { path } });
+        if (!res.url) throw new Error("URL kosong");
+        url = res.url;
+      } else {
+        url = toDownloadUrl(url);
+      }
+      const resp = await fetch(url, { redirect: "follow" });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const blob = await resp.blob();
+      const ext = extFromContentType(resp.headers.get("content-type")) || extFromUrlOrKey(url, it.key);
+      const filename = `${guruName}-${mapelName}-${rombelName}-${jenis}.${ext}`;
+      zip.file(filename, blob);
+      ok++;
+    } catch (e: any) {
+      failed.push(`${jenis} (${e?.message ?? "gagal"})`);
+    }
+  }
+
+  if (ok > 0) {
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    const zipUrl = URL.createObjectURL(zipBlob);
+    const zipName = `${guruName}-${mapelName}-${rombelName}.zip`;
+    triggerDownload(zipUrl, zipName);
+    setTimeout(() => URL.revokeObjectURL(zipUrl), 30_000);
+  }
+  return { ok, failed };
+}
+
 /** Download all uploaded documents for a single row as one ZIP file. */
 function RowDownloadButton({ row }: { row: any }) {
   const signFn = useServerFn(getBerkasSignedUrl);
   const [loading, setLoading] = useState(false);
-  const items = DOC_KEYS
-    .map((k) => ({ key: k, value: row[k] as string | null }))
-    .filter((x) => typeof x.value === "string" && x.value.trim().length > 0);
-
+  const items = DOC_KEYS.filter((k) => typeof row[k] === "string" && (row[k] as string).trim().length > 0);
   if (items.length === 0) return null;
 
   const handleDownloadAll = async () => {
     setLoading(true);
-    const zip = new JSZip();
-    const guruName = sanitizeSegment(row.guru_nama ?? "Guru");
-    const mapelName = sanitizeSegment(row.mapel_nama ?? "Mapel");
-    const rombelName = sanitizeSegment(row.rombel_name ?? "Rombel");
-    let ok = 0;
-    const failed: string[] = [];
-
     try {
-      for (const it of items) {
-        const jenis = sanitizeSegment(DOC_LABELS[it.key]);
-        let url = it.value!;
-        const isStorage = url.startsWith("storage://");
-        try {
-          if (isStorage) {
-            const path = url.replace(/^storage:\/\//, "");
-            const res = await signFn({ data: { path } });
-            if (!res.url) throw new Error("URL kosong");
-            url = res.url;
-          } else {
-            url = toDownloadUrl(url);
-          }
-          const resp = await fetch(url, { redirect: "follow" });
-          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          const blob = await resp.blob();
-          const ext = extFromContentType(resp.headers.get("content-type")) || extFromUrlOrKey(url, it.key);
-          const filename = `${guruName}-${mapelName}-${rombelName}-${jenis}.${ext}`;
-          zip.file(filename, blob);
-          ok++;
-        } catch (e: any) {
-          failed.push(`${jenis} (${e?.message ?? "gagal"})`);
-        }
-      }
-
-      if (ok === 0) {
-        toast.error(`Gagal mengunduh berkas${failed.length ? `: ${failed.join(", ")}` : ""}`);
-        return;
-      }
-
-      const zipBlob = await zip.generateAsync({ type: "blob" });
-      const zipUrl = URL.createObjectURL(zipBlob);
-      const zipName = `${guruName}-${mapelName}-${rombelName}.zip`;
-      triggerDownload(zipUrl, zipName);
-      setTimeout(() => URL.revokeObjectURL(zipUrl), 30_000);
-
-      if (failed.length > 0) {
-        toast.warning(`Diunduh ${ok} berkas, ${failed.length} gagal: ${failed.join(", ")}`);
-      } else {
-        toast.success(`Diunduh ${ok} berkas dalam satu ZIP`);
-      }
+      const { ok, failed } = await bundleRowAsZip(row, signFn);
+      if (ok === 0) toast.error(`Gagal mengunduh berkas${failed.length ? `: ${failed.join(", ")}` : ""}`);
+      else if (failed.length > 0) toast.warning(`Diunduh ${ok} berkas, ${failed.length} gagal`);
+      else toast.success(`Diunduh ${ok} berkas dalam satu ZIP`);
     } catch (e: any) {
       toast.error(e?.message ?? "Gagal membuat ZIP");
     } finally {
@@ -898,6 +901,7 @@ function RowDownloadButton({ row }: { row: any }) {
     </Button>
   );
 }
+
 
 
 
