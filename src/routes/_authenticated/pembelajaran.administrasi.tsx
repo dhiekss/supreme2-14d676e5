@@ -775,7 +775,49 @@ function LinkCell({ value }: { value: string | null }) {
   );
 }
 
-/** Download all uploaded documents belonging to a single row (one guru assignment). */
+/** Sanitize a string to be safe as a filename segment. */
+function sanitizeSegment(s: string): string {
+  return (s ?? "")
+    .replace(/[\\/:*?"<>|]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim() || "-";
+}
+
+function extFromContentType(ct: string | null): string {
+  if (!ct) return "";
+  const t = ct.split(";")[0].trim().toLowerCase();
+  const map: Record<string, string> = {
+    "application/pdf": "pdf",
+    "application/msword": "doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "application/vnd.ms-excel": "xls",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+    "application/vnd.ms-powerpoint": "ppt",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "text/plain": "txt",
+    "application/zip": "zip",
+  };
+  return map[t] ?? "";
+}
+
+function extFromUrlOrKey(url: string, key: DocKey): string {
+  try {
+    const u = new URL(url);
+    const path = u.pathname;
+    const m = path.match(/\.([a-zA-Z0-9]{2,5})$/);
+    if (m) return m[1].toLowerCase();
+    if (u.hostname.includes("docs.google.com")) {
+      if (path.includes("/spreadsheets/")) return "xlsx";
+      if (path.includes("/presentation/")) return "pptx";
+      if (path.includes("/document/")) return "docx";
+    }
+  } catch { /* noop */ }
+  return "pdf";
+}
+
+/** Download all uploaded documents for a single row as one ZIP file. */
 function RowDownloadButton({ row }: { row: any }) {
   const signFn = useServerFn(getBerkasSignedUrl);
   const [loading, setLoading] = useState(false);
@@ -787,25 +829,57 @@ function RowDownloadButton({ row }: { row: any }) {
 
   const handleDownloadAll = async () => {
     setLoading(true);
+    const zip = new JSZip();
+    const guruName = sanitizeSegment(row.guru_nama ?? "Guru");
+    const mapelName = sanitizeSegment(row.mapel_nama ?? "Mapel");
+    const rombelName = sanitizeSegment(row.rombel_name ?? "Rombel");
+    let ok = 0;
+    const failed: string[] = [];
+
     try {
-      let i = 0;
       for (const it of items) {
+        const jenis = sanitizeSegment(DOC_LABELS[it.key]);
         let url = it.value!;
-        if (url.startsWith("storage://")) {
-          const path = url.replace(/^storage:\/\//, "");
-          const res = await signFn({ data: { path } });
-          if (!res.url) continue;
-          url = res.url;
-        } else {
-          url = toDownloadUrl(url);
+        const isStorage = url.startsWith("storage://");
+        try {
+          if (isStorage) {
+            const path = url.replace(/^storage:\/\//, "");
+            const res = await signFn({ data: { path } });
+            if (!res.url) throw new Error("URL kosong");
+            url = res.url;
+          } else {
+            url = toDownloadUrl(url);
+          }
+          const resp = await fetch(url, { redirect: "follow" });
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const blob = await resp.blob();
+          const ext = extFromContentType(resp.headers.get("content-type")) || extFromUrlOrKey(url, it.key);
+          const filename = `${guruName}-${mapelName}-${rombelName}-${jenis}.${ext}`;
+          zip.file(filename, blob);
+          ok++;
+        } catch (e: any) {
+          failed.push(`${jenis} (${e?.message ?? "gagal"})`);
         }
-        triggerDownload(url, DOC_SHORT[it.key]);
-        await new Promise((r) => setTimeout(r, 600));
-        i++;
       }
-      toast.success(`Mengunduh ${i} dokumen`);
+
+      if (ok === 0) {
+        toast.error(`Gagal mengunduh berkas${failed.length ? `: ${failed.join(", ")}` : ""}`);
+        return;
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const zipUrl = URL.createObjectURL(zipBlob);
+      const zipName = `${guruName}-${mapelName}-${rombelName}.zip`;
+      triggerDownload(zipUrl, zipName);
+      setTimeout(() => URL.revokeObjectURL(zipUrl), 30_000);
+
+      if (failed.length > 0) {
+        toast.warning(`Diunduh ${ok} berkas, ${failed.length} gagal: ${failed.join(", ")}`);
+      } else {
+        toast.success(`Diunduh ${ok} berkas dalam satu ZIP`);
+      }
     } catch (e: any) {
-      toast.error(e?.message ?? "Gagal mengunduh berkas");
+      toast.error(e?.message ?? "Gagal membuat ZIP");
     } finally {
       setLoading(false);
     }
@@ -816,7 +890,7 @@ function RowDownloadButton({ row }: { row: any }) {
       size="icon"
       variant="outline"
       className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-      title={`Unduh semua dokumen (${items.length})`}
+      title={`Unduh semua dokumen dalam satu ZIP (${items.length})`}
       onClick={handleDownloadAll}
       disabled={loading}
     >
@@ -824,6 +898,7 @@ function RowDownloadButton({ row }: { row: any }) {
     </Button>
   );
 }
+
 
 
 function labelKet(k: Ket) {
