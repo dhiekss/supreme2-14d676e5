@@ -218,6 +218,7 @@ export const listAdministrasi = createServerFn({ method: "GET" })
         catatan_perbaikan: b?.catatan_perbaikan ?? null,
         diperiksa_oleh_nama: b?.diperiksa_oleh_nama ?? null,
         diperiksa_at: b?.diperiksa_at ?? null,
+        tanggal_upload: b?.updated_at ?? b?.created_at ?? null,
       };
     });
 
