@@ -652,19 +652,41 @@ function StatCard({ icon, label, value, suffix, tint }: {
   );
 }
 
+function toEmbedUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("drive.google.com")) {
+      const m = u.pathname.match(/\/file\/d\/([^/]+)/);
+      if (m) return `https://drive.google.com/file/d/${m[1]}/preview`;
+      const id = u.searchParams.get("id");
+      if (id) return `https://drive.google.com/file/d/${id}/preview`;
+    }
+    if (u.hostname.includes("docs.google.com")) {
+      return url.replace(/\/(edit|view)(\?[^#]*)?(#.*)?$/, "/preview");
+    }
+    return url;
+  } catch { return url; }
+}
+
 function LinkCell({ value }: { value: string | null }) {
   const signFn = useServerFn(getBerkasSignedUrl);
   const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
   if (!value) return <TableCell className="text-center text-muted-foreground">-</TableCell>;
 
   const isStorage = value.startsWith("storage://");
-  const open = async () => {
-    if (!isStorage) { window.open(value, "_blank", "noopener"); return; }
+  const handleOpen = async () => {
+    if (!isStorage) {
+      setPreviewUrl(toEmbedUrl(value));
+      setOpen(true);
+      return;
+    }
     setLoading(true);
     try {
       const path = value.replace(/^storage:\/\//, "");
       const res = await signFn({ data: { path } });
-      if (res.url) window.open(res.url, "_blank", "noopener");
+      if (res.url) { setPreviewUrl(res.url); setOpen(true); }
     } catch (e: any) {
       toast.error(e.message ?? "Gagal membuka berkas");
     } finally { setLoading(false); }
@@ -672,11 +694,36 @@ function LinkCell({ value }: { value: string | null }) {
 
   return (
     <TableCell className="text-center">
-      <button type="button" onClick={open}
+      <button type="button" onClick={handleOpen}
         className="inline-flex items-center gap-1 text-blue-600 hover:underline text-xs">
         {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <ExternalLink className="h-3 w-3" />}
         Lihat
       </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-5xl w-[95vw] h-[85vh] p-0 flex flex-col">
+          <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
+            <DialogTitle className="text-base">Pratinjau Dokumen</DialogTitle>
+            <a
+              href={previewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-blue-600 hover:underline inline-flex items-center gap-1 mr-6"
+            >
+              <ExternalLink className="h-3 w-3" /> Buka di tab baru
+            </a>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 border-t bg-muted/30">
+            {previewUrl ? (
+              <iframe
+                src={previewUrl}
+                className="w-full h-full"
+                title="Pratinjau Dokumen"
+                allow="autoplay"
+              />
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
     </TableCell>
   );
 }
