@@ -70,6 +70,7 @@ function AdministrasiPage() {
   const listFn = useServerFn(listAdministrasi);
   const upsertFn = useServerFn(upsertAdministrasi);
   const resetFn = useServerFn(resetAdministrasi);
+  const validateFn = useServerFn(validateAdministrasi);
 
   const [rombelId, setRombelId] = useState("all");
   const [mapelId, setMapelId] = useState("all");
