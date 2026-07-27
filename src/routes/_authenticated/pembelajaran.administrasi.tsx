@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
   getAdministrasiRefs, listAdministrasi, upsertAdministrasi, getBerkasSignedUrl,
-  resetAdministrasi,
+  resetAdministrasi, validateAdministrasi,
 } from "@/lib/administrasi-pembelajaran.functions";
 import { supabase } from "@/integrations/supabase/client";
 
