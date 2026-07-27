@@ -124,6 +124,18 @@ function AdministrasiPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const validateM = useMutation({
+    mutationFn: (v: { rombel_mata_pelajaran_id: string; keputusan: "valid" | "perbaikan"; catatan?: string }) =>
+      validateFn({ data: v }),
+    onSuccess: () => {
+      toast.success("Validasi tersimpan");
+      setValidateRow(null);
+      setCatatanValidasi("");
+      qc.invalidateQueries({ queryKey: ["administrasi"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const isAdmin = Boolean((refs as any)?.is_admin);
   const uploadEnabled = (refs as any)?.upload_enabled !== false;
   const canEdit = isAdmin || uploadEnabled;
