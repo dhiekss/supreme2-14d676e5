@@ -751,8 +751,9 @@ function LinkCell({ value, row }: { value: string | null; row?: any }) {
   const handleDownloadAll = async () => {
     if (!row) return;
     setZipLoading(true);
+    setZipProgress({ phase: "fetching", current: 0, total: rowDocCount });
     try {
-      const { ok, failed } = await bundleRowAsZip(row, signFn);
+      const { ok, failed } = await bundleRowAsZip(row, signFn, setZipProgress);
       if (ok === 0) toast.error(`Gagal mengunduh berkas${failed.length ? `: ${failed.join(", ")}` : ""}`);
       else if (failed.length > 0) toast.warning(`Diunduh ${ok} berkas, ${failed.length} gagal`);
       else toast.success(`Diunduh ${ok} berkas dalam satu ZIP`);
@@ -760,8 +761,15 @@ function LinkCell({ value, row }: { value: string | null; row?: any }) {
       toast.error(e?.message ?? "Gagal membuat ZIP");
     } finally {
       setZipLoading(false);
+      setZipProgress(null);
     }
   };
+
+  const zipPct = zipProgress
+    ? zipProgress.phase === "zipping"
+      ? zipProgress.zipPercent ?? 0
+      : zipProgress.total > 0 ? Math.round((zipProgress.current / zipProgress.total) * 100) : 0
+    : 0;
 
   return (
     <TableCell className="text-center">
@@ -775,17 +783,39 @@ function LinkCell({ value, row }: { value: string | null; row?: any }) {
           <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
             <DialogTitle className="text-base">Pratinjau Dokumen</DialogTitle>
             <div className="flex items-center gap-2 mr-6">
-              <Button size="sm" variant="outline" onClick={handleDownload} disabled={!rawUrl}>
+              <Button size="sm" variant="outline" onClick={handleDownload} disabled={!rawUrl || zipLoading}>
                 <Download className="h-3.5 w-3.5 mr-1" /> Unduh
               </Button>
               {row && rowDocCount > 1 && (
                 <Button size="sm" onClick={handleDownloadAll} disabled={zipLoading}>
                   {zipLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}
-                  Unduh Semua (ZIP)
+                  {zipLoading
+                    ? zipProgress?.phase === "zipping"
+                      ? `Membuat ZIP ${zipPct}%`
+                      : `Mengunduh ${zipProgress?.current ?? 0}/${zipProgress?.total ?? rowDocCount}`
+                    : "Unduh Semua (ZIP)"}
                 </Button>
               )}
             </div>
           </DialogHeader>
+          {zipLoading && zipProgress && (
+            <div className="px-4 pb-2">
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
+                <span>
+                  {zipProgress.phase === "zipping"
+                    ? "Mengompres berkas ke ZIP…"
+                    : `Mengunduh ${zipProgress.current}/${zipProgress.total}${zipProgress.label ? ` — ${zipProgress.label}` : ""}`}
+                </span>
+                <span className="tabular-nums">{zipPct}%</span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-blue-600 transition-all duration-200"
+                  style={{ width: `${zipPct}%` }}
+                />
+              </div>
+            </div>
+          )}
           <div className="flex-1 min-h-0 border-t bg-muted/30">
             {previewUrl ? (
               <iframe
