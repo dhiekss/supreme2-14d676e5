@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import JSZip from "jszip";
 import {
   getAdministrasiRefs, listAdministrasi, upsertAdministrasi, getBerkasSignedUrl,
   resetAdministrasi, validateAdministrasi,
