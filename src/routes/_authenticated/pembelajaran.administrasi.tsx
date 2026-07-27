@@ -87,6 +87,11 @@ function AdministrasiPage() {
     | { kind: "guru"; ids: string[]; guruName: string }
     | null
   >(null);
+  const [validateRow, setValidateRow] = useState<
+    | { row: any; keputusan: "valid" | "perbaikan" }
+    | null
+  >(null);
+  const [catatanValidasi, setCatatanValidasi] = useState("");
 
   const { data: refs } = useQuery({
     queryKey: ["administrasi-refs"],
