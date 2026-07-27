@@ -390,6 +390,7 @@ function AdministrasiPage() {
                     <TableHead key={k} className="text-center whitespace-nowrap">{DOC_SHORT[k]}</TableHead>
                   ))}
                   <TableHead>Kelengkapan {sortIcon("kelengkapan")}</TableHead>
+                  <TableHead className="whitespace-nowrap">Tanggal Upload</TableHead>
                   <TableHead>Keterangan {sortIcon("keterangan")}</TableHead>
                   <TableHead>Diperiksa Oleh</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
@@ -397,10 +398,10 @@ function AdministrasiPage() {
               </TableHeader>
               <TableBody>
                 {isFetching && (list?.rows ?? []).length === 0 && (
-                  <TableRow><TableCell colSpan={isAdmin ? 14 : 13} className="text-center text-muted-foreground py-8">Memuat…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={isAdmin ? 15 : 14} className="text-center text-muted-foreground py-8">Memuat…</TableCell></TableRow>
                 )}
                 {!isFetching && (list?.rows ?? []).length === 0 && (
-                  <TableRow><TableCell colSpan={isAdmin ? 14 : 13} className="text-center text-muted-foreground py-8">Tidak ada data</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={isAdmin ? 15 : 14} className="text-center text-muted-foreground py-8">Tidak ada data</TableCell></TableRow>
                 )}
                 {(list?.rows ?? []).map((r: any, idx: number) => (
                   <TableRow key={r.id} data-state={selectedIds.has(r.id) ? "selected" : undefined}>
