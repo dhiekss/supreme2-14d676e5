@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import JSZip from "jszip";
 import {
   getAdministrasiRefs, listAdministrasi, upsertAdministrasi, getBerkasSignedUrl,
   resetAdministrasi, validateAdministrasi,
@@ -421,7 +422,7 @@ function AdministrasiPage() {
                     <TableCell className="font-medium">{r.rombel_name}</TableCell>
                     <TableCell className="text-sm">{r.mapel_nama}</TableCell>
                     <TableCell className="text-sm">{r.guru_nama}</TableCell>
-                    {DOC_KEYS.map((k) => <LinkCell key={k} value={r[k]} />)}
+                    {DOC_KEYS.map((k) => <LinkCell key={k} value={r[k]} row={r} />)}
                     <TableCell>
                       <div className="flex items-center gap-2 w-[110px]">
                         <Progress value={r.kelengkapan} className="h-2 flex-1" />
@@ -709,9 +710,10 @@ function triggerDownload(url: string, filename?: string) {
   }
 }
 
-function LinkCell({ value }: { value: string | null }) {
+function LinkCell({ value, row }: { value: string | null; row?: any }) {
   const signFn = useServerFn(getBerkasSignedUrl);
   const [loading, setLoading] = useState(false);
+  const [zipLoading, setZipLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [rawUrl, setRawUrl] = useState<string>("");
@@ -741,6 +743,25 @@ function LinkCell({ value }: { value: string | null }) {
     triggerDownload(dl);
   };
 
+  const rowDocCount = row
+    ? DOC_KEYS.filter((k) => typeof row[k] === "string" && (row[k] as string).trim().length > 0).length
+    : 0;
+
+  const handleDownloadAll = async () => {
+    if (!row) return;
+    setZipLoading(true);
+    try {
+      const { ok, failed } = await bundleRowAsZip(row, signFn);
+      if (ok === 0) toast.error(`Gagal mengunduh berkas${failed.length ? `: ${failed.join(", ")}` : ""}`);
+      else if (failed.length > 0) toast.warning(`Diunduh ${ok} berkas, ${failed.length} gagal`);
+      else toast.success(`Diunduh ${ok} berkas dalam satu ZIP`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Gagal membuat ZIP");
+    } finally {
+      setZipLoading(false);
+    }
+  };
+
   return (
     <TableCell className="text-center">
       <button type="button" onClick={handleOpen}
@@ -756,6 +777,12 @@ function LinkCell({ value }: { value: string | null }) {
               <Button size="sm" variant="outline" onClick={handleDownload} disabled={!rawUrl}>
                 <Download className="h-3.5 w-3.5 mr-1" /> Unduh
               </Button>
+              {row && rowDocCount > 1 && (
+                <Button size="sm" onClick={handleDownloadAll} disabled={zipLoading}>
+                  {zipLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}
+                  Unduh Semua (ZIP)
+                </Button>
+              )}
             </div>
           </DialogHeader>
           <div className="flex-1 min-h-0 border-t bg-muted/30">
@@ -774,37 +801,115 @@ function LinkCell({ value }: { value: string | null }) {
   );
 }
 
-/** Download all uploaded documents belonging to a single row (one guru assignment). */
-function RowDownloadButton({ row }: { row: any }) {
-  const signFn = useServerFn(getBerkasSignedUrl);
-  const [loading, setLoading] = useState(false);
+
+/** Sanitize a string to be safe as a filename segment. */
+function sanitizeSegment(s: string): string {
+  return (s ?? "")
+    .replace(/[\\/:*?"<>|]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim() || "-";
+}
+
+function extFromContentType(ct: string | null): string {
+  if (!ct) return "";
+  const t = ct.split(";")[0].trim().toLowerCase();
+  const map: Record<string, string> = {
+    "application/pdf": "pdf",
+    "application/msword": "doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "application/vnd.ms-excel": "xls",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+    "application/vnd.ms-powerpoint": "ppt",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "text/plain": "txt",
+    "application/zip": "zip",
+  };
+  return map[t] ?? "";
+}
+
+function extFromUrlOrKey(url: string, key: DocKey): string {
+  try {
+    const u = new URL(url);
+    const path = u.pathname;
+    const m = path.match(/\.([a-zA-Z0-9]{2,5})$/);
+    if (m) return m[1].toLowerCase();
+    if (u.hostname.includes("docs.google.com")) {
+      if (path.includes("/spreadsheets/")) return "xlsx";
+      if (path.includes("/presentation/")) return "pptx";
+      if (path.includes("/document/")) return "docx";
+    }
+  } catch { /* noop */ }
+  return "pdf";
+}
+
+/** Fetch every document on a row and bundle into one ZIP. Returns { ok, failed }. */
+async function bundleRowAsZip(
+  row: any,
+  signFn: (args: { data: { path: string } }) => Promise<{ url: string }>,
+): Promise<{ ok: number; failed: string[] }> {
   const items = DOC_KEYS
     .map((k) => ({ key: k, value: row[k] as string | null }))
     .filter((x) => typeof x.value === "string" && x.value.trim().length > 0);
+  const zip = new JSZip();
+  const guruName = sanitizeSegment(row.guru_nama ?? "Guru");
+  const mapelName = sanitizeSegment(row.mapel_nama ?? "Mapel");
+  const rombelName = sanitizeSegment(row.rombel_name ?? "Rombel");
+  let ok = 0;
+  const failed: string[] = [];
 
+  for (const it of items) {
+    const jenis = sanitizeSegment(DOC_LABELS[it.key]);
+    let url = it.value!;
+    const isStorage = url.startsWith("storage://");
+    try {
+      if (isStorage) {
+        const path = url.replace(/^storage:\/\//, "");
+        const res = await signFn({ data: { path } });
+        if (!res.url) throw new Error("URL kosong");
+        url = res.url;
+      } else {
+        url = toDownloadUrl(url);
+      }
+      const resp = await fetch(url, { redirect: "follow" });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const blob = await resp.blob();
+      const ext = extFromContentType(resp.headers.get("content-type")) || extFromUrlOrKey(url, it.key);
+      const filename = `${guruName}-${mapelName}-${rombelName}-${jenis}.${ext}`;
+      zip.file(filename, blob);
+      ok++;
+    } catch (e: any) {
+      failed.push(`${jenis} (${e?.message ?? "gagal"})`);
+    }
+  }
+
+  if (ok > 0) {
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    const zipUrl = URL.createObjectURL(zipBlob);
+    const zipName = `${guruName}-${mapelName}-${rombelName}.zip`;
+    triggerDownload(zipUrl, zipName);
+    setTimeout(() => URL.revokeObjectURL(zipUrl), 30_000);
+  }
+  return { ok, failed };
+}
+
+/** Download all uploaded documents for a single row as one ZIP file. */
+function RowDownloadButton({ row }: { row: any }) {
+  const signFn = useServerFn(getBerkasSignedUrl);
+  const [loading, setLoading] = useState(false);
+  const items = DOC_KEYS.filter((k) => typeof row[k] === "string" && (row[k] as string).trim().length > 0);
   if (items.length === 0) return null;
 
   const handleDownloadAll = async () => {
     setLoading(true);
     try {
-      let i = 0;
-      for (const it of items) {
-        let url = it.value!;
-        if (url.startsWith("storage://")) {
-          const path = url.replace(/^storage:\/\//, "");
-          const res = await signFn({ data: { path } });
-          if (!res.url) continue;
-          url = res.url;
-        } else {
-          url = toDownloadUrl(url);
-        }
-        triggerDownload(url, DOC_SHORT[it.key]);
-        await new Promise((r) => setTimeout(r, 600));
-        i++;
-      }
-      toast.success(`Mengunduh ${i} dokumen`);
+      const { ok, failed } = await bundleRowAsZip(row, signFn);
+      if (ok === 0) toast.error(`Gagal mengunduh berkas${failed.length ? `: ${failed.join(", ")}` : ""}`);
+      else if (failed.length > 0) toast.warning(`Diunduh ${ok} berkas, ${failed.length} gagal`);
+      else toast.success(`Diunduh ${ok} berkas dalam satu ZIP`);
     } catch (e: any) {
-      toast.error(e?.message ?? "Gagal mengunduh berkas");
+      toast.error(e?.message ?? "Gagal membuat ZIP");
     } finally {
       setLoading(false);
     }
@@ -815,7 +920,7 @@ function RowDownloadButton({ row }: { row: any }) {
       size="icon"
       variant="outline"
       className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-      title={`Unduh semua dokumen (${items.length})`}
+      title={`Unduh semua dokumen dalam satu ZIP (${items.length})`}
       onClick={handleDownloadAll}
       disabled={loading}
     >
@@ -823,6 +928,8 @@ function RowDownloadButton({ row }: { row: any }) {
     </Button>
   );
 }
+
+
 
 
 function labelKet(k: Ket) {
