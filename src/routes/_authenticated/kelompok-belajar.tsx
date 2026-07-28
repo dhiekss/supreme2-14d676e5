@@ -321,16 +321,28 @@ function ImportDialog({
             <div className="rounded-md border p-3 text-sm space-y-1 max-h-56 overflow-y-auto">
               <div>Baru: <b>{report.created}</b> · Diperbarui: <b>{report.updated}</b></div>
               <div>Total anggota: <b>{report.total_anggota}</b> · Pembimbing: <b>{report.total_pembimbing}</b></div>
-              {report.missing_nis?.length > 0 && (
+              {report.missing_names?.length > 0 && (
                 <div className="text-amber-600">
-                  NIS tidak ditemukan ({report.missing_nis.length}):
-                  <ul className="list-disc ml-5">{report.missing_nis.slice(0, 20).map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
+                  Nama murid tidak ditemukan ({report.missing_names.length}):
+                  <ul className="list-disc ml-5">{report.missing_names.slice(0, 20).map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
                 </div>
               )}
-              {report.missing_nip?.length > 0 && (
+              {report.ambiguous_names?.length > 0 && (
                 <div className="text-amber-600">
-                  NIP tidak ditemukan ({report.missing_nip.length}):
-                  <ul className="list-disc ml-5">{report.missing_nip.slice(0, 20).map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
+                  Nama murid ambigu ({report.ambiguous_names.length}) — dipakai kandidat pertama:
+                  <ul className="list-disc ml-5">{report.ambiguous_names.slice(0, 20).map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
+                </div>
+              )}
+              {report.missing_pembimbing?.length > 0 && (
+                <div className="text-amber-600">
+                  Nama pembimbing tidak ditemukan ({report.missing_pembimbing.length}):
+                  <ul className="list-disc ml-5">{report.missing_pembimbing.slice(0, 20).map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
+                </div>
+              )}
+              {report.ambiguous_pembimbing?.length > 0 && (
+                <div className="text-amber-600">
+                  Nama pembimbing ambigu ({report.ambiguous_pembimbing.length}) — dipakai kandidat pertama:
+                  <ul className="list-disc ml-5">{report.ambiguous_pembimbing.slice(0, 20).map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
                 </div>
               )}
               {report.errors?.length > 0 && (
