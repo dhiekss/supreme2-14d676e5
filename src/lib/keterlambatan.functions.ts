@@ -87,7 +87,9 @@ export const createKeterlambatan = createServerFn({ method: "POST" })
       .maybeSingle();
     if (existing) {
       const [{ data: student }, { data: rombel }, { data: profile }] = await Promise.all([
-        context.supabase.from("students").select("name, nis").eq("id", existing.student_id).maybeSingle(),
+        existing.student_id
+          ? context.supabase.from("students").select("name, nis").eq("id", existing.student_id).maybeSingle()
+          : Promise.resolve({ data: null as any }),
         existing.rombel_id
           ? context.supabase.from("rombel").select("name").eq("id", existing.rombel_id).maybeSingle()
           : Promise.resolve({ data: null as any }),
