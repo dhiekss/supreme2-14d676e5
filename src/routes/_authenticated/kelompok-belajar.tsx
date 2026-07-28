@@ -63,9 +63,11 @@ function KelompokBelajarPage() {
 
   const save = useServerFn(saveKelompokBelajar);
   const del = useServerFn(deleteKelompokBelajar);
+  const importFn = useServerFn(importKelompokBelajar);
 
   const [editing, setEditing] = useState<Row | null>(null);
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const saveMut = useMutation({
     mutationFn: (v: { id?: string; nama: string; pembimbings: PembimbingRef[]; anggota_ids: string[] }) =>
@@ -86,6 +88,41 @@ function KelompokBelajarPage() {
     },
     onError: (e: any) => toast.error(e?.message || "Gagal menghapus"),
   });
+
+  function downloadTemplate() {
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: Kelompok Belajar template
+    const tpl = [
+      ["Nama Kelompok", "NIS Anggota (pisah koma)", "NIP Pembimbing (pisah koma, opsional)"],
+      ["Contoh: Kelompok A", "1234,5678,9012", "197001011990031001,198202022005011002"],
+    ];
+    const wsTpl = XLSX.utils.aoa_to_sheet(tpl);
+    wsTpl["!cols"] = [{ wch: 30 }, { wch: 50 }, { wch: 50 }];
+    XLSX.utils.book_append_sheet(wb, wsTpl, "Kelompok Belajar");
+
+    // Sheet 2: Referensi Murid
+    const rombelById = new Map(refs.rombel.map((r) => [r.id, r]));
+    const stuRows: any[][] = [["Nama", "NIS", "Rombel", "Tingkat", "Konsentrasi"]];
+    for (const s of [...refs.students].sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))) {
+      const r = s.rombel_id ? rombelById.get(s.rombel_id) : null;
+      stuRows.push([s.name ?? "", s.nis ?? "", r?.name ?? "", r?.tingkat ?? "", (r as any)?.konsentrasi_keahlian ?? ""]);
+    }
+    const wsStu = XLSX.utils.aoa_to_sheet(stuRows);
+    wsStu["!cols"] = [{ wch: 30 }, { wch: 18 }, { wch: 20 }, { wch: 10 }, { wch: 24 }];
+    XLSX.utils.book_append_sheet(wb, wsStu, "Referensi Murid");
+
+    // Sheet 3: Referensi Pembimbing
+    const pembRows: any[][] = [["Nama", "NIP", "Tipe"]];
+    for (const g of refs.guru) pembRows.push([g.nama ?? "", g.nip ?? "", "guru"]);
+    for (const t of refs.tendik) pembRows.push([t.nama ?? "", t.nip ?? "", "tendik"]);
+    const wsPemb = XLSX.utils.aoa_to_sheet(pembRows);
+    wsPemb["!cols"] = [{ wch: 30 }, { wch: 22 }, { wch: 10 }];
+    XLSX.utils.book_append_sheet(wb, wsPemb, "Referensi Pembimbing");
+
+    XLSX.writeFile(wb, "template-kelompok-belajar.xlsx");
+  }
+
 
   return (
     <>
