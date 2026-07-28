@@ -65,6 +65,7 @@ function KelompokBelajarPage() {
   const save = useServerFn(saveKelompokBelajar);
   const del = useServerFn(deleteKelompokBelajar);
   const importFn = useServerFn(importKelompokBelajar);
+  const allStudentsFn = useServerFn(listAllStudents);
 
   const [editing, setEditing] = useState<Row | null>(null);
   const [open, setOpen] = useState(false);
