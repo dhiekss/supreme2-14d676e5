@@ -81,12 +81,32 @@ export const createKeterlambatan = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { data: existing } = await context.supabase
       .from("late_records")
-      .select("id")
+      .select("id, recorded_at, recorded_by, rombel_id, student_id")
       .eq("student_id", data.studentId)
       .eq("record_date", data.recordDate)
       .maybeSingle();
     if (existing) {
-      throw new Error("Murid ini sudah tercatat terlambat pada tanggal tersebut.");
+      const [{ data: student }, { data: rombel }, { data: profile }] = await Promise.all([
+        existing.student_id
+          ? context.supabase.from("students").select("name, nis").eq("id", existing.student_id).maybeSingle()
+          : Promise.resolve({ data: null as any }),
+        existing.rombel_id
+          ? context.supabase.from("rombel").select("name").eq("id", existing.rombel_id).maybeSingle()
+          : Promise.resolve({ data: null as any }),
+        existing.recorded_by
+          ? context.supabase.from("profiles").select("full_name").eq("id", existing.recorded_by).maybeSingle()
+          : Promise.resolve({ data: null as any }),
+      ]);
+      throw new Error(
+        "DUPLICATE_LATE_RECORD::" +
+          JSON.stringify({
+            studentName: (student as any)?.name ?? "—",
+            studentNis: (student as any)?.nis ?? null,
+            rombelName: (rombel as any)?.name ?? "—",
+            recordedAt: existing.recorded_at,
+            recordedByName: (profile as any)?.full_name ?? "—",
+          }),
+      );
     }
 
     const { data: sem } = await context.supabase
