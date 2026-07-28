@@ -131,6 +131,18 @@ function KelompokBelajarPage() {
         description="Kelola kelompok belajar: nama, anggota (murid), dan pembimbing (guru/tendik)."
         rows={rows}
         search={(r, q) => r.nama.toLowerCase().includes(q)}
+        extra={
+          <>
+            <Button variant="outline" onClick={downloadTemplate}>
+              <Download className="mr-2 h-4 w-4" />
+              Template
+            </Button>
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import
+            </Button>
+          </>
+        }
         onAdd={() => {
           setEditing(null);
           setOpen(true);
