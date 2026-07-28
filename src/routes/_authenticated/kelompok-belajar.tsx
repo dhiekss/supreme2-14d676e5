@@ -225,6 +225,14 @@ function KelompokBelajarPage() {
         search={(r, q) => r.nama.toLowerCase().includes(q)}
         extra={
           <>
+            <Button variant="outline" onClick={handleExportKelompok}>
+              <Download className="mr-2 h-4 w-4" />
+              Export Kelompok
+            </Button>
+            <Button variant="outline" onClick={handleExportAnggota}>
+              <Download className="mr-2 h-4 w-4" />
+              Export Anggota
+            </Button>
             <Button variant="outline" onClick={downloadTemplate}>
               <Download className="mr-2 h-4 w-4" />
               Template
