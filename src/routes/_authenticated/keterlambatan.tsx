@@ -63,6 +63,13 @@ function KeterlambatanPage() {
   const [studentId, setStudentId] = useState("");
   const [rombelOpen, setRombelOpen] = useState(false);
   const [studentOpen, setStudentOpen] = useState(false);
+  const [duplicate, setDuplicate] = useState<null | {
+    studentName: string;
+    studentNis: string | null;
+    rombelName: string;
+    recordedAt: string;
+    recordedByName: string;
+  }>(null);
 
   const fetchStudents = useServerFn(listStudentsByRombel);
   const createFn = useServerFn(createKeterlambatan);
@@ -90,7 +97,20 @@ function KeterlambatanPage() {
       toast.success("Data keterlambatan tersimpan");
       setStudentId("");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      const msg = String(e?.message ?? "");
+      const idx = msg.indexOf("DUPLICATE_LATE_RECORD::");
+      if (idx >= 0) {
+        try {
+          const payload = JSON.parse(msg.slice(idx + "DUPLICATE_LATE_RECORD::".length));
+          setDuplicate(payload);
+          return;
+        } catch {
+          // fallthrough
+        }
+      }
+      toast.error(msg || "Gagal menyimpan");
+    },
   });
 
   const hari = HARI[now.getDay()];
