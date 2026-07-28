@@ -710,6 +710,29 @@ function triggerDownload(url: string, filename?: string) {
   }
 }
 
+function extFromUrl(u: string): string {
+  try {
+    const clean = u.split("?")[0].split("#")[0];
+    const m = clean.match(/\.([a-z0-9]{2,5})$/i);
+    return m ? m[1].toLowerCase() : "";
+  } catch { return ""; }
+}
+
+function buildPreviewUrl(url: string, isStorage: boolean, originalPath: string): string {
+  if (!isStorage) {
+    try {
+      const host = new URL(url).hostname;
+      if (host.includes("drive.google.com") || host.includes("docs.google.com")) {
+        return toEmbedUrl(url);
+      }
+    } catch { /* ignore */ }
+  }
+  const ext = extFromUrl(isStorage ? originalPath : url);
+  const inlineExts = ["pdf", "png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "txt", "html", "htm"];
+  if (inlineExts.includes(ext)) return url;
+  return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+}
+
 function LinkCell({ value, row: _row }: { value: string | null; row?: any }) {
   const signFn = useServerFn(getBerkasSignedUrl);
   const [loading, setLoading] = useState(false);
@@ -722,7 +745,7 @@ function LinkCell({ value, row: _row }: { value: string | null; row?: any }) {
   const handleOpen = async () => {
     if (!isStorage) {
       setRawUrl(value);
-      setPreviewUrl(toEmbedUrl(value));
+      setPreviewUrl(buildPreviewUrl(value, false, value));
       setOpen(true);
       return;
     }
@@ -730,7 +753,11 @@ function LinkCell({ value, row: _row }: { value: string | null; row?: any }) {
     try {
       const path = value.replace(/^storage:\/\//, "");
       const res = await signFn({ data: { path } });
-      if (res.url) { setRawUrl(res.url); setPreviewUrl(res.url); setOpen(true); }
+      if (res.url) {
+        setRawUrl(res.url);
+        setPreviewUrl(buildPreviewUrl(res.url, true, path));
+        setOpen(true);
+      }
     } catch (e: any) {
       toast.error(e.message ?? "Gagal membuka berkas");
     } finally { setLoading(false); }
@@ -754,6 +781,13 @@ function LinkCell({ value, row: _row }: { value: string | null; row?: any }) {
           <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
             <DialogTitle className="text-base">Pratinjau Dokumen</DialogTitle>
             <div className="flex items-center gap-2 mr-6">
+              {rawUrl && (
+                <Button size="sm" variant="ghost" asChild>
+                  <a href={rawUrl} target="_blank" rel="noreferrer">
+                    <ExternalLink className="h-3.5 w-3.5 mr-1" /> Tab baru
+                  </a>
+                </Button>
+              )}
               <Button size="sm" variant="outline" onClick={handleDownload} disabled={!rawUrl}>
                 <Download className="h-3.5 w-3.5 mr-1" /> Unduh
               </Button>
