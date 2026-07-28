@@ -289,6 +289,48 @@ function KeterlambatanPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <Dialog open={!!duplicate} onOpenChange={(o) => !o && setDuplicate(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="h-5 w-5" />
+              Sudah Tercatat Terlambat
+            </DialogTitle>
+            <DialogDescription>
+              Murid ini sudah diinput terlambat pada hari yang sama.
+            </DialogDescription>
+          </DialogHeader>
+          {duplicate && (() => {
+            const d = new Date(duplicate.recordedAt);
+            const hariStr = HARI[d.getDay()];
+            const tglStr = `${hariStr}, ${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()}`;
+            const pad2 = (n: number) => String(n).padStart(2, "0");
+            const jamStr = `${pad2(d.getHours())}:${pad2(d.getMinutes())} WIB`;
+            return (
+              <div className="rounded-lg border bg-muted/40 p-4 text-sm leading-relaxed">
+                <div className="font-semibold text-base">
+                  {duplicate.studentName}
+                  {duplicate.studentNis ? (
+                    <span className="text-muted-foreground font-normal"> · NIS: {duplicate.studentNis}</span>
+                  ) : null}
+                </div>
+                <div className="text-muted-foreground">Rombel: {duplicate.rombelName}</div>
+                <div className="mt-2">
+                  Sudah diinput terlambat pada <span className="font-medium">{tglStr}</span> pukul{" "}
+                  <span className="font-medium tabular-nums">{jamStr}</span>
+                </div>
+                <div>
+                  Oleh <span className="font-medium">{duplicate.recordedByName}</span>
+                </div>
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button onClick={() => setDuplicate(null)}>Mengerti</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
