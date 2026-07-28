@@ -238,3 +238,130 @@ export const deleteKelompokBelajar = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+const importSchema = z.object({
+  mode: z.enum(["upsert", "replace_all"]).default("upsert"),
+  rows: z.array(z.object({
+    nama: z.string().min(1),
+    anggota_nis: z.array(z.string()).default([]),
+    pembimbing_nips: z.array(z.string()).default([]),
+  })).min(1),
+});
+
+export const importKelompokBelajar = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => importSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabase } = context;
+
+    const students: any[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data: batch, error } = await supabase
+        .from("students").select("id, nis").range(from, from + pageSize - 1);
+      if (error) throw new Error(error.message);
+      const rows = batch ?? [];
+      students.push(...rows);
+      if (rows.length < pageSize) break;
+      from += pageSize;
+    }
+    const [{ data: guruList }, { data: tendikList }] = await Promise.all([
+      supabase.from("guru").select("id, nip"),
+      supabase.from("tendik").select("id, nip"),
+    ]);
+    const stuByNis = new Map(
+      students.filter((s: any) => s.nis).map((s: any) => [String(s.nis).trim(), s.id as string]),
+    );
+    const guruByNip = new Map(
+      (guruList ?? []).filter((g: any) => g.nip).map((g: any) => [String(g.nip).trim(), g.id as string]),
+    );
+    const tendikByNip = new Map(
+      (tendikList ?? []).filter((t: any) => t.nip).map((t: any) => [String(t.nip).trim(), t.id as string]),
+    );
+
+    const { data: existing } = await supabase.from("kelompok_belajar").select("id, nama");
+    const existingByNama = new Map(
+      (existing ?? []).map((k: any) => [String(k.nama).toLowerCase().trim(), k.id as string]),
+    );
+
+    if (data.mode === "replace_all") {
+      const ids = (existing ?? []).map((k: any) => k.id);
+      if (ids.length) {
+        const { error } = await supabase.from("kelompok_belajar").delete().in("id", ids);
+        if (error) throw new Error(error.message);
+      }
+      existingByNama.clear();
+    }
+
+    const report = {
+      created: 0,
+      updated: 0,
+      total_anggota: 0,
+      total_pembimbing: 0,
+      missing_nis: [] as string[],
+      missing_nip: [] as string[],
+      errors: [] as string[],
+    };
+
+    for (const row of data.rows) {
+      try {
+        const key = row.nama.toLowerCase().trim();
+        let kelompokId = existingByNama.get(key);
+        if (kelompokId) {
+          await supabase.from("kelompok_belajar").update({ nama: row.nama.trim() }).eq("id", kelompokId);
+          report.updated += 1;
+        } else {
+          const { data: ins, error } = await supabase
+            .from("kelompok_belajar").insert({ nama: row.nama.trim() }).select("id").single();
+          if (error) throw new Error(error.message);
+          kelompokId = ins.id as string;
+          existingByNama.set(key, kelompokId);
+          report.created += 1;
+        }
+
+        const anggotaIds: string[] = [];
+        for (const rawNis of row.anggota_nis) {
+          const nis = String(rawNis).trim();
+          if (!nis) continue;
+          const sid = stuByNis.get(nis);
+          if (sid) anggotaIds.push(sid);
+          else report.missing_nis.push(`${row.nama}: NIS ${nis}`);
+        }
+        const uniqAnggota = Array.from(new Set(anggotaIds));
+
+        const pemb: { type: "guru" | "tendik"; id: string }[] = [];
+        for (const rawNip of row.pembimbing_nips) {
+          const nip = String(rawNip).trim();
+          if (!nip) continue;
+          const gid = guruByNip.get(nip);
+          if (gid) { pemb.push({ type: "guru", id: gid }); continue; }
+          const tid = tendikByNip.get(nip);
+          if (tid) { pemb.push({ type: "tendik", id: tid }); continue; }
+          report.missing_nip.push(`${row.nama}: NIP ${nip}`);
+        }
+
+        await supabase.from("kelompok_belajar_anggota").delete().eq("kelompok_id", kelompokId);
+        if (uniqAnggota.length) {
+          const insRows = uniqAnggota.map((sid) => ({ kelompok_id: kelompokId!, student_id: sid }));
+          const { error } = await supabase.from("kelompok_belajar_anggota").insert(insRows);
+          if (error) throw new Error(error.message);
+        }
+        await supabase.from("kelompok_belajar_pembimbing").delete().eq("kelompok_id", kelompokId);
+        if (pemb.length) {
+          const insRows = pemb.map((p) => ({
+            kelompok_id: kelompokId!, pembimbing_type: p.type, pembimbing_id: p.id,
+          }));
+          const { error } = await supabase.from("kelompok_belajar_pembimbing").insert(insRows);
+          if (error) throw new Error(error.message);
+        }
+        report.total_anggota += uniqAnggota.length;
+        report.total_pembimbing += pemb.length;
+      } catch (e: any) {
+        report.errors.push(`${row.nama}: ${e?.message ?? String(e)}`);
+      }
+    }
+
+    return report;
+  });
