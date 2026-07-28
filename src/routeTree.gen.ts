@@ -23,6 +23,7 @@ import { Route as AuthenticatedSarprasRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedRombelKhususRouteImport } from './routes/_authenticated/rombel-khusus'
 import { Route as AuthenticatedRombelRouteImport } from './routes/_authenticated/rombel'
 import { Route as AuthenticatedRevisiPresensiRouteImport } from './routes/_authenticated/revisi-presensi'
+import { Route as AuthenticatedPresensiKelompokRouteImport } from './routes/_authenticated/presensi-kelompok'
 import { Route as AuthenticatedPresensiRouteImport } from './routes/_authenticated/presensi'
 import { Route as AuthenticatedPerpusRouteImport } from './routes/_authenticated/perpus'
 import { Route as AuthenticatedPeriodeRouteImport } from './routes/_authenticated/periode'
@@ -144,6 +145,12 @@ const AuthenticatedRevisiPresensiRoute =
   AuthenticatedRevisiPresensiRouteImport.update({
     id: '/revisi-presensi',
     path: '/revisi-presensi',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPresensiKelompokRoute =
+  AuthenticatedPresensiKelompokRouteImport.update({
+    id: '/presensi-kelompok',
+    path: '/presensi-kelompok',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPresensiRoute = AuthenticatedPresensiRouteImport.update({
@@ -459,6 +466,7 @@ export interface FileRoutesByFullPath {
   '/periode': typeof AuthenticatedPeriodeRoute
   '/perpus': typeof AuthenticatedPerpusRoute
   '/presensi': typeof AuthenticatedPresensiRoute
+  '/presensi-kelompok': typeof AuthenticatedPresensiKelompokRoute
   '/revisi-presensi': typeof AuthenticatedRevisiPresensiRoute
   '/rombel': typeof AuthenticatedRombelRoute
   '/rombel-khusus': typeof AuthenticatedRombelKhususRoute
@@ -524,6 +532,7 @@ export interface FileRoutesByTo {
   '/periode': typeof AuthenticatedPeriodeRoute
   '/perpus': typeof AuthenticatedPerpusRoute
   '/presensi': typeof AuthenticatedPresensiRoute
+  '/presensi-kelompok': typeof AuthenticatedPresensiKelompokRoute
   '/revisi-presensi': typeof AuthenticatedRevisiPresensiRoute
   '/rombel': typeof AuthenticatedRombelRoute
   '/rombel-khusus': typeof AuthenticatedRombelKhususRoute
@@ -591,6 +600,7 @@ export interface FileRoutesById {
   '/_authenticated/periode': typeof AuthenticatedPeriodeRoute
   '/_authenticated/perpus': typeof AuthenticatedPerpusRoute
   '/_authenticated/presensi': typeof AuthenticatedPresensiRoute
+  '/_authenticated/presensi-kelompok': typeof AuthenticatedPresensiKelompokRoute
   '/_authenticated/revisi-presensi': typeof AuthenticatedRevisiPresensiRoute
   '/_authenticated/rombel': typeof AuthenticatedRombelRoute
   '/_authenticated/rombel-khusus': typeof AuthenticatedRombelKhususRoute
@@ -658,6 +668,7 @@ export interface FileRouteTypes {
     | '/periode'
     | '/perpus'
     | '/presensi'
+    | '/presensi-kelompok'
     | '/revisi-presensi'
     | '/rombel'
     | '/rombel-khusus'
@@ -723,6 +734,7 @@ export interface FileRouteTypes {
     | '/periode'
     | '/perpus'
     | '/presensi'
+    | '/presensi-kelompok'
     | '/revisi-presensi'
     | '/rombel'
     | '/rombel-khusus'
@@ -789,6 +801,7 @@ export interface FileRouteTypes {
     | '/_authenticated/periode'
     | '/_authenticated/perpus'
     | '/_authenticated/presensi'
+    | '/_authenticated/presensi-kelompok'
     | '/_authenticated/revisi-presensi'
     | '/_authenticated/rombel'
     | '/_authenticated/rombel-khusus'
@@ -931,6 +944,13 @@ declare module '@tanstack/react-router' {
       path: '/revisi-presensi'
       fullPath: '/revisi-presensi'
       preLoaderRoute: typeof AuthenticatedRevisiPresensiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/presensi-kelompok': {
+      id: '/_authenticated/presensi-kelompok'
+      path: '/presensi-kelompok'
+      fullPath: '/presensi-kelompok'
+      preLoaderRoute: typeof AuthenticatedPresensiKelompokRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/presensi': {
@@ -1349,6 +1369,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPeriodeRoute: typeof AuthenticatedPeriodeRoute
   AuthenticatedPerpusRoute: typeof AuthenticatedPerpusRoute
   AuthenticatedPresensiRoute: typeof AuthenticatedPresensiRoute
+  AuthenticatedPresensiKelompokRoute: typeof AuthenticatedPresensiKelompokRoute
   AuthenticatedRevisiPresensiRoute: typeof AuthenticatedRevisiPresensiRoute
   AuthenticatedRombelRoute: typeof AuthenticatedRombelRoute
   AuthenticatedRombelKhususRoute: typeof AuthenticatedRombelKhususRoute
@@ -1409,6 +1430,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPeriodeRoute: AuthenticatedPeriodeRoute,
   AuthenticatedPerpusRoute: AuthenticatedPerpusRoute,
   AuthenticatedPresensiRoute: AuthenticatedPresensiRoute,
+  AuthenticatedPresensiKelompokRoute: AuthenticatedPresensiKelompokRoute,
   AuthenticatedRevisiPresensiRoute: AuthenticatedRevisiPresensiRoute,
   AuthenticatedRombelRoute: AuthenticatedRombelRoute,
   AuthenticatedRombelKhususRoute: AuthenticatedRombelKhususRoute,

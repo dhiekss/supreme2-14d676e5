@@ -81,6 +81,7 @@ export const DEFAULT_SIDEBAR: DefaultNode[] = [
     icon: CalendarCheck,
     children: [
       { id: "presensi", title: "Input Presensi", url: "/presensi", icon: CalendarCheck },
+      { id: "presensi-kelompok", title: "Input Presensi Kelompok Belajar", url: "/presensi-kelompok", icon: Users },
       { id: "laporan-presensi", title: "Laporan Presensi", url: "/laporan-presensi", icon: FileBarChart },
       { id: "revisi-presensi", title: "Revisi Presensi", url: "/revisi-presensi", icon: FileBarChart },
     ],

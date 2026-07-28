@@ -14,6 +14,7 @@ export const MENU_CATALOG: MenuGroup[] = [
       { key: "dashboard-kelas", label: "Dashboard Kelas" },
       { key: "dashboard-kakonli", label: "Dashboard Kakonli" },
       { key: "presensi", label: "Presensi" },
+      { key: "presensi-kelompok", label: "Input Presensi Kelompok Belajar" },
       { key: "laporan-presensi", label: "Laporan Presensi" },
       { key: "revisi-presensi", label: "Revisi Presensi" },
       { key: "keterlambatan", label: "Input Keterlambatan" },
