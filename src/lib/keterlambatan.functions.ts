@@ -79,6 +79,16 @@ export const createKeterlambatan = createServerFn({ method: "POST" })
     }).parse,
   )
   .handler(async ({ context, data }) => {
+    const { data: existing } = await context.supabase
+      .from("late_records")
+      .select("id")
+      .eq("student_id", data.studentId)
+      .eq("record_date", data.recordDate)
+      .maybeSingle();
+    if (existing) {
+      throw new Error("Murid ini sudah tercatat terlambat pada tanggal tersebut.");
+    }
+
     const { data: sem } = await context.supabase
       .from("semester")
       .select("id")
