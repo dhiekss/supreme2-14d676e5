@@ -83,6 +83,7 @@ export const DEFAULT_SIDEBAR: DefaultNode[] = [
       { id: "presensi", title: "Input Presensi", url: "/presensi", icon: CalendarCheck },
       { id: "presensi-kelompok", title: "Input Presensi Kelompok Belajar", url: "/presensi-kelompok", icon: Users },
       { id: "laporan-presensi", title: "Laporan Presensi", url: "/laporan-presensi", icon: FileBarChart },
+      { id: "laporan-presensi-kelompok", title: "Laporan Presensi Kelompok Belajar", url: "/laporan-presensi-kelompok", icon: FileBarChart },
       { id: "revisi-presensi", title: "Revisi Presensi", url: "/revisi-presensi", icon: FileBarChart },
     ],
   },
