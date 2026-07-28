@@ -261,13 +261,13 @@ function ImportDialog({
         .map((r) => {
           const nama = String(r["Nama Kelompok"] ?? r["nama"] ?? r["Nama"] ?? "").trim();
           if (!nama) return null;
-          const anggota_nis = splitList(
-            r["NIS Anggota (pisah koma)"] ?? r["NIS Anggota"] ?? r["nis"] ?? r["NIS"],
+          const anggota_names = splitList(
+            r["Nama Anggota (pisah koma)"] ?? r["Nama Anggota"] ?? r["anggota"] ?? r["Anggota"],
           );
-          const pembimbing_nips = splitList(
-            r["NIP Pembimbing (pisah koma, opsional)"] ?? r["NIP Pembimbing"] ?? r["nip"] ?? r["NIP"],
+          const pembimbing_names = splitList(
+            r["Nama Pembimbing (pisah koma, opsional)"] ?? r["Nama Pembimbing"] ?? r["pembimbing"] ?? r["Pembimbing"],
           );
-          return { nama, anggota_nis, pembimbing_nips };
+          return { nama, anggota_names, pembimbing_names };
         })
         .filter(Boolean) as any[];
 
