@@ -243,10 +243,14 @@ const importSchema = z.object({
   mode: z.enum(["upsert", "replace_all"]).default("upsert"),
   rows: z.array(z.object({
     nama: z.string().min(1),
-    anggota_nis: z.array(z.string()).default([]),
-    pembimbing_nips: z.array(z.string()).default([]),
+    anggota_names: z.array(z.string()).default([]),
+    pembimbing_names: z.array(z.string()).default([]),
   })).min(1),
 });
+
+function normName(s: string) {
+  return String(s).trim().toLowerCase().replace(/\s+/g, " ");
+}
 
 export const importKelompokBelajar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -255,12 +259,13 @@ export const importKelompokBelajar = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     const { supabase } = context;
 
+    // Load all students (chunked)
     const students: any[] = [];
     let from = 0;
     const pageSize = 1000;
     while (true) {
       const { data: batch, error } = await supabase
-        .from("students").select("id, nis").range(from, from + pageSize - 1);
+        .from("students").select("id, name, nis").range(from, from + pageSize - 1);
       if (error) throw new Error(error.message);
       const rows = batch ?? [];
       students.push(...rows);
@@ -268,18 +273,35 @@ export const importKelompokBelajar = createServerFn({ method: "POST" })
       from += pageSize;
     }
     const [{ data: guruList }, { data: tendikList }] = await Promise.all([
-      supabase.from("guru").select("id, nip"),
-      supabase.from("tendik").select("id, nip"),
+      supabase.from("guru").select("id, nama"),
+      supabase.from("tendik").select("id, nama"),
     ]);
-    const stuByNis = new Map(
-      students.filter((s: any) => s.nis).map((s: any) => [String(s.nis).trim(), s.id as string]),
-    );
-    const guruByNip = new Map(
-      (guruList ?? []).filter((g: any) => g.nip).map((g: any) => [String(g.nip).trim(), g.id as string]),
-    );
-    const tendikByNip = new Map(
-      (tendikList ?? []).filter((t: any) => t.nip).map((t: any) => [String(t.nip).trim(), t.id as string]),
-    );
+
+    // Name -> [ids] (may have duplicates)
+    const stuByName = new Map<string, string[]>();
+    for (const s of students as any[]) {
+      if (!s.name) continue;
+      const k = normName(s.name);
+      const arr = stuByName.get(k) ?? [];
+      arr.push(s.id as string);
+      stuByName.set(k, arr);
+    }
+    const guruByName = new Map<string, string[]>();
+    for (const g of (guruList ?? []) as any[]) {
+      if (!g.nama) continue;
+      const k = normName(g.nama);
+      const arr = guruByName.get(k) ?? [];
+      arr.push(g.id as string);
+      guruByName.set(k, arr);
+    }
+    const tendikByName = new Map<string, string[]>();
+    for (const t of (tendikList ?? []) as any[]) {
+      if (!t.nama) continue;
+      const k = normName(t.nama);
+      const arr = tendikByName.get(k) ?? [];
+      arr.push(t.id as string);
+      tendikByName.set(k, arr);
+    }
 
     const { data: existing } = await supabase.from("kelompok_belajar").select("id, nama");
     const existingByNama = new Map(
@@ -300,8 +322,10 @@ export const importKelompokBelajar = createServerFn({ method: "POST" })
       updated: 0,
       total_anggota: 0,
       total_pembimbing: 0,
-      missing_nis: [] as string[],
-      missing_nip: [] as string[],
+      missing_names: [] as string[],
+      missing_pembimbing: [] as string[],
+      ambiguous_names: [] as string[],
+      ambiguous_pembimbing: [] as string[],
       errors: [] as string[],
     };
 
@@ -322,24 +346,40 @@ export const importKelompokBelajar = createServerFn({ method: "POST" })
         }
 
         const anggotaIds: string[] = [];
-        for (const rawNis of row.anggota_nis) {
-          const nis = String(rawNis).trim();
-          if (!nis) continue;
-          const sid = stuByNis.get(nis);
-          if (sid) anggotaIds.push(sid);
-          else report.missing_nis.push(`${row.nama}: NIS ${nis}`);
+        for (const raw of row.anggota_names) {
+          const name = String(raw).trim();
+          if (!name) continue;
+          const matches = stuByName.get(normName(name)) ?? [];
+          if (matches.length === 0) {
+            report.missing_names.push(`${row.nama}: ${name}`);
+          } else if (matches.length > 1) {
+            report.ambiguous_names.push(`${row.nama}: ${name} (${matches.length} murid)`);
+            anggotaIds.push(matches[0]);
+          } else {
+            anggotaIds.push(matches[0]);
+          }
         }
         const uniqAnggota = Array.from(new Set(anggotaIds));
 
         const pemb: { type: "guru" | "tendik"; id: string }[] = [];
-        for (const rawNip of row.pembimbing_nips) {
-          const nip = String(rawNip).trim();
-          if (!nip) continue;
-          const gid = guruByNip.get(nip);
-          if (gid) { pemb.push({ type: "guru", id: gid }); continue; }
-          const tid = tendikByNip.get(nip);
-          if (tid) { pemb.push({ type: "tendik", id: tid }); continue; }
-          report.missing_nip.push(`${row.nama}: NIP ${nip}`);
+        for (const raw of row.pembimbing_names) {
+          const name = String(raw).trim();
+          if (!name) continue;
+          const k = normName(name);
+          const gMatches = guruByName.get(k) ?? [];
+          const tMatches = tendikByName.get(k) ?? [];
+          const total = gMatches.length + tMatches.length;
+          if (total === 0) {
+            report.missing_pembimbing.push(`${row.nama}: ${name}`);
+          } else if (total > 1) {
+            report.ambiguous_pembimbing.push(`${row.nama}: ${name} (${total} kandidat)`);
+            if (gMatches.length) pemb.push({ type: "guru", id: gMatches[0] });
+            else pemb.push({ type: "tendik", id: tMatches[0] });
+          } else if (gMatches.length === 1) {
+            pemb.push({ type: "guru", id: gMatches[0] });
+          } else {
+            pemb.push({ type: "tendik", id: tMatches[0] });
+          }
         }
 
         await supabase.from("kelompok_belajar_anggota").delete().eq("kelompok_id", kelompokId);
@@ -365,3 +405,4 @@ export const importKelompokBelajar = createServerFn({ method: "POST" })
 
     return report;
   });
+
