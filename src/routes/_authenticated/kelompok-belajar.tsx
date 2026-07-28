@@ -212,7 +212,143 @@ function KelompokBelajarPage() {
         onSave={(v) => saveMut.mutate(v)}
         saving={saveMut.isPending}
       />
+
+      <ImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        importFn={importFn}
+        onDone={() => qc.invalidateQueries({ queryKey: ["kelompok-belajar"] })}
+      />
     </>
+  );
+}
+
+function ImportDialog({
+  open,
+  onOpenChange,
+  importFn,
+  onDone,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  importFn: ReturnType<typeof useServerFn<typeof importKelompokBelajar>>;
+  onDone: () => void;
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [mode, setMode] = useState<"upsert" | "replace_all">("upsert");
+  const [busy, setBusy] = useState(false);
+  const [report, setReport] = useState<any>(null);
+
+  function splitList(v: any): string[] {
+    if (v == null) return [];
+    return String(v).split(/[,;\n]/).map((s) => s.trim()).filter(Boolean);
+  }
+
+  async function submit() {
+    if (!file) {
+      toast.error("Pilih file .xlsx terlebih dahulu");
+      return;
+    }
+    setBusy(true);
+    setReport(null);
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const sheetName = wb.SheetNames.find((n) => n.toLowerCase().includes("kelompok")) ?? wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+      const json: any[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
+      const rows = json
+        .map((r) => {
+          const nama = String(r["Nama Kelompok"] ?? r["nama"] ?? r["Nama"] ?? "").trim();
+          if (!nama) return null;
+          const anggota_nis = splitList(
+            r["NIS Anggota (pisah koma)"] ?? r["NIS Anggota"] ?? r["nis"] ?? r["NIS"],
+          );
+          const pembimbing_nips = splitList(
+            r["NIP Pembimbing (pisah koma, opsional)"] ?? r["NIP Pembimbing"] ?? r["nip"] ?? r["NIP"],
+          );
+          return { nama, anggota_nis, pembimbing_nips };
+        })
+        .filter(Boolean) as any[];
+
+      if (rows.length === 0) {
+        toast.error("Tidak ada baris valid pada sheet Kelompok Belajar");
+        setBusy(false);
+        return;
+      }
+      const res = await importFn({ data: { mode, rows } });
+      setReport(res);
+      toast.success(`Import selesai: ${res.created} baru, ${res.updated} diperbarui`);
+      onDone();
+    } catch (e: any) {
+      toast.error(e?.message || "Gagal mengimpor");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!busy) onOpenChange(v); }}>
+      <DialogContent className="w-[95vw] max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Import Kelompok Belajar</DialogTitle>
+          <DialogDescription>
+            Unggah file <b>.xlsx</b> dengan sheet <b>Kelompok Belajar</b>. Gunakan tombol Template untuk struktur & referensi.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>File Excel</Label>
+            <Input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Mode</Label>
+            <Select value={mode} onValueChange={(v) => setMode(v as any)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="upsert">Upsert (tambah/ubah berdasarkan nama)</SelectItem>
+                <SelectItem value="replace_all">Ganti Semua (hapus semua kelompok lalu import)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {report && (
+            <div className="rounded-md border p-3 text-sm space-y-1 max-h-56 overflow-y-auto">
+              <div>Baru: <b>{report.created}</b> · Diperbarui: <b>{report.updated}</b></div>
+              <div>Total anggota: <b>{report.total_anggota}</b> · Pembimbing: <b>{report.total_pembimbing}</b></div>
+              {report.missing_nis?.length > 0 && (
+                <div className="text-amber-600">
+                  NIS tidak ditemukan ({report.missing_nis.length}):
+                  <ul className="list-disc ml-5">{report.missing_nis.slice(0, 20).map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
+                </div>
+              )}
+              {report.missing_nip?.length > 0 && (
+                <div className="text-amber-600">
+                  NIP tidak ditemukan ({report.missing_nip.length}):
+                  <ul className="list-disc ml-5">{report.missing_nip.slice(0, 20).map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
+                </div>
+              )}
+              {report.errors?.length > 0 && (
+                <div className="text-destructive">
+                  Error ({report.errors.length}):
+                  <ul className="list-disc ml-5">{report.errors.slice(0, 20).map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>Tutup</Button>
+          <Button onClick={submit} disabled={busy || !file}>{busy ? "Mengimpor…" : "Import"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
