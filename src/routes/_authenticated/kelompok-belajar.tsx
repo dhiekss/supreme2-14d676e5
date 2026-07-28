@@ -94,8 +94,8 @@ function KelompokBelajarPage() {
 
     // Sheet 1: Kelompok Belajar template
     const tpl = [
-      ["Nama Kelompok", "NIS Anggota (pisah koma)", "NIP Pembimbing (pisah koma, opsional)"],
-      ["Contoh: Kelompok A", "1234,5678,9012", "197001011990031001,198202022005011002"],
+      ["Nama Kelompok", "Nama Anggota (pisah koma)", "Nama Pembimbing (pisah koma, opsional)"],
+      ["Contoh: Kelompok A", "Budi Santoso, Siti Aminah, Rizky Pratama", "Dra. Ani Wijaya, Bpk. Rahmat"],
     ];
     const wsTpl = XLSX.utils.aoa_to_sheet(tpl);
     wsTpl["!cols"] = [{ wch: 30 }, { wch: 50 }, { wch: 50 }];
