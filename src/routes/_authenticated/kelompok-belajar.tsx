@@ -231,7 +231,7 @@ function ImportDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  importFn: ReturnType<typeof useServerFn<typeof importKelompokBelajar>>;
+  importFn: any;
   onDone: () => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
