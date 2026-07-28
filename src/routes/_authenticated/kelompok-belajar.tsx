@@ -125,6 +125,96 @@ function KelompokBelajarPage() {
     XLSX.writeFile(wb, "template-kelompok-belajar.xlsx");
   }
 
+  function downloadXLSX(filename: string, rows: (string | number | null | undefined)[][]) {
+    const aoa = rows.map((r) => r.map((c) => (c == null ? "" : c)));
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const header = (rows[0] ?? []).map((h) => String(h ?? "").toLowerCase());
+    const textCols = ["nisn", "nis", "nip pembimbing", "nip"]
+      .map((k) => header.indexOf(k))
+      .filter((i) => i >= 0);
+    const range = XLSX.utils.decode_range(ws["!ref"] ?? "A1");
+    for (let R = 1; R <= range.e.r; R++) {
+      for (const C of textCols) {
+        const addr = XLSX.utils.encode_cell({ r: R, c: C });
+        const cell = ws[addr];
+        if (cell && cell.v != null && cell.v !== "") {
+          cell.t = "s";
+          cell.v = String(cell.v);
+          cell.z = "@";
+        }
+      }
+    }
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    XLSX.writeFile(wb, filename);
+  }
+
+  async function handleExportKelompok() {
+    const all = (await allStudentsFn({})) as any[];
+    const byId = new Map(all.map((s) => [s.id, s]));
+    const header = [
+      "Nama Kelompok", "Jumlah Anggota", "Laki-laki", "Perempuan", "Belum Diisi",
+      "Pembimbing", "NIP Pembimbing",
+    ];
+    const out: any[][] = [header];
+    const sorted = [...rows].sort((a, b) => a.nama.localeCompare(b.nama));
+    for (const k of sorted) {
+      let L = 0, P = 0, belum = 0;
+      for (const sid of k.anggota_ids) {
+        const s: any = byId.get(sid);
+        if (!s) { belum += 1; continue; }
+        if (s.gender === "L") L += 1;
+        else if (s.gender === "P") P += 1;
+        else belum += 1;
+      }
+      const pembNama = k.pembimbings.map((p) => p.nama).join(", ");
+      const pembNip = k.pembimbings.map((p: any) => p.nip ?? "").filter(Boolean).join(", ");
+      out.push([
+        k.nama,
+        k.anggota_count,
+        L > 0 ? L : "-",
+        P > 0 ? P : "-",
+        belum > 0 ? belum : "-",
+        pembNama || "",
+        pembNip || "",
+      ]);
+    }
+    downloadXLSX("kelompok-belajar.xlsx", out);
+  }
+
+  async function handleExportAnggota() {
+    const all = (await allStudentsFn({})) as any[];
+    const byId = new Map(all.map((s) => [s.id, s]));
+    const header = ["No", "Nama Murid", "JK", "NIS", "NISN", "Rombel", "Kelompok Belajar", "Nama Pembimbing"];
+    const items: any[] = [];
+    for (const k of rows) {
+      const pembNama = k.pembimbings.map((p) => p.nama).join(", ");
+      for (const sid of k.anggota_ids) {
+        const s: any = byId.get(sid);
+        if (!s) continue;
+        items.push({
+          nama: s.name ?? "",
+          gender: s.gender === "L" ? "Laki-laki" : s.gender === "P" ? "Perempuan" : "",
+          nis: s.nis ?? "",
+          nisn: s.nisn ?? "",
+          rombel: s.rombel_nama ?? "",
+          kelompok: k.nama,
+          pembimbing: pembNama,
+        });
+      }
+    }
+    items.sort((a, b) =>
+      a.kelompok.localeCompare(b.kelompok) ||
+      String(a.rombel).localeCompare(String(b.rombel)) ||
+      a.nama.localeCompare(b.nama)
+    );
+    const out: any[][] = [header];
+    items.forEach((it, i) => out.push([
+      i + 1, it.nama, it.gender, it.nis, it.nisn, it.rombel, it.kelompok, it.pembimbing,
+    ]));
+    downloadXLSX("anggota-kelompok-belajar.xlsx", out);
+  }
+
 
   return (
     <>
