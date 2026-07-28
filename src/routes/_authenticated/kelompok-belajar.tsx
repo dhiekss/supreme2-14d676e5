@@ -94,8 +94,8 @@ function KelompokBelajarPage() {
 
     // Sheet 1: Kelompok Belajar template
     const tpl = [
-      ["Nama Kelompok", "NIS Anggota (pisah koma)", "NIP Pembimbing (pisah koma, opsional)"],
-      ["Contoh: Kelompok A", "1234,5678,9012", "197001011990031001,198202022005011002"],
+      ["Nama Kelompok", "Nama Anggota (pisah koma)", "Nama Pembimbing (pisah koma, opsional)"],
+      ["Contoh: Kelompok A", "Budi Santoso, Siti Aminah, Rizky Pratama", "Dra. Ani Wijaya, Bpk. Rahmat"],
     ];
     const wsTpl = XLSX.utils.aoa_to_sheet(tpl);
     wsTpl["!cols"] = [{ wch: 30 }, { wch: 50 }, { wch: 50 }];
@@ -261,13 +261,13 @@ function ImportDialog({
         .map((r) => {
           const nama = String(r["Nama Kelompok"] ?? r["nama"] ?? r["Nama"] ?? "").trim();
           if (!nama) return null;
-          const anggota_nis = splitList(
-            r["NIS Anggota (pisah koma)"] ?? r["NIS Anggota"] ?? r["nis"] ?? r["NIS"],
+          const anggota_names = splitList(
+            r["Nama Anggota (pisah koma)"] ?? r["Nama Anggota"] ?? r["anggota"] ?? r["Anggota"],
           );
-          const pembimbing_nips = splitList(
-            r["NIP Pembimbing (pisah koma, opsional)"] ?? r["NIP Pembimbing"] ?? r["nip"] ?? r["NIP"],
+          const pembimbing_names = splitList(
+            r["Nama Pembimbing (pisah koma, opsional)"] ?? r["Nama Pembimbing"] ?? r["pembimbing"] ?? r["Pembimbing"],
           );
-          return { nama, anggota_nis, pembimbing_nips };
+          return { nama, anggota_names, pembimbing_names };
         })
         .filter(Boolean) as any[];
 
@@ -321,16 +321,28 @@ function ImportDialog({
             <div className="rounded-md border p-3 text-sm space-y-1 max-h-56 overflow-y-auto">
               <div>Baru: <b>{report.created}</b> · Diperbarui: <b>{report.updated}</b></div>
               <div>Total anggota: <b>{report.total_anggota}</b> · Pembimbing: <b>{report.total_pembimbing}</b></div>
-              {report.missing_nis?.length > 0 && (
+              {report.missing_names?.length > 0 && (
                 <div className="text-amber-600">
-                  NIS tidak ditemukan ({report.missing_nis.length}):
-                  <ul className="list-disc ml-5">{report.missing_nis.slice(0, 20).map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
+                  Nama murid tidak ditemukan ({report.missing_names.length}):
+                  <ul className="list-disc ml-5">{report.missing_names.slice(0, 20).map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
                 </div>
               )}
-              {report.missing_nip?.length > 0 && (
+              {report.ambiguous_names?.length > 0 && (
                 <div className="text-amber-600">
-                  NIP tidak ditemukan ({report.missing_nip.length}):
-                  <ul className="list-disc ml-5">{report.missing_nip.slice(0, 20).map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
+                  Nama murid ambigu ({report.ambiguous_names.length}) — dipakai kandidat pertama:
+                  <ul className="list-disc ml-5">{report.ambiguous_names.slice(0, 20).map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
+                </div>
+              )}
+              {report.missing_pembimbing?.length > 0 && (
+                <div className="text-amber-600">
+                  Nama pembimbing tidak ditemukan ({report.missing_pembimbing.length}):
+                  <ul className="list-disc ml-5">{report.missing_pembimbing.slice(0, 20).map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
+                </div>
+              )}
+              {report.ambiguous_pembimbing?.length > 0 && (
+                <div className="text-amber-600">
+                  Nama pembimbing ambigu ({report.ambiguous_pembimbing.length}) — dipakai kandidat pertama:
+                  <ul className="list-disc ml-5">{report.ambiguous_pembimbing.slice(0, 20).map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
                 </div>
               )}
               {report.errors?.length > 0 && (
