@@ -73,6 +73,8 @@ const ROLE_LABEL: Record<Role, string> = {
   walas: "Walas",
   guru: "Guru",
   murid: "Murid",
+  tendik: "Tendik",
+
   admin_persuratan: "Admin Persuratan",
   admin_sarpras: "Admin Sarpras",
   admin_tpg: "Admin TPG",
