@@ -47,10 +47,12 @@ export const getMyMenuLayout = createServerFn({ method: "GET" })
       "admin_persuratan",
       "admin_sarpras",
       "admin_tpg",
+      "tendik",
       "guru",
       "murid",
     ];
     const role: Role = priority.find((p) => roles.includes(p)) ?? "guru";
+
 
     // Superadmin selalu memperoleh akses penuh ke seluruh menu default —
     // di atas admin dan tidak dapat dibatasi oleh layout tersimpan.

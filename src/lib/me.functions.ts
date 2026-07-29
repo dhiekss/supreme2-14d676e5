@@ -22,9 +22,11 @@ export const getMyProfile = createServerFn({ method: "GET" })
       "admin_persuratan",
       "admin_sarpras",
       "admin_tpg",
+      "tendik",
       "guru",
       "murid",
     ];
+
     const primary = priority.find((p) => roles.includes(p)) ?? roles[0] ?? null;
     return {
       id: context.userId,
