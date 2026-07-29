@@ -10,10 +10,12 @@ export const ROLES = [
   "walas",
   "guru",
   "murid",
+  "tendik",
   "admin_sarpras",
   "admin_persuratan",
   "admin_tpg",
 ] as const;
+
 export type Role = (typeof ROLES)[number];
 
 async function assertAdmin(ctx: {
