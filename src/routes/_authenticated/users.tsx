@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/users")({
   errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal: {error.message}</div>,
 });
 
-const ROLES = ["superadmin", "admin", "wakasek", "kakonli", "walas", "guru", "murid", "admin_sarpras", "admin_persuratan", "admin_tpg"] as const;
+const ROLES = ["superadmin", "admin", "wakasek", "kakonli", "walas", "guru", "murid", "tendik", "admin_sarpras", "admin_persuratan", "admin_tpg"] as const;
 type Role = typeof ROLES[number];
 
 const ROLE_LABEL: Record<string, string> = {
@@ -43,6 +43,7 @@ const ROLE_LABEL: Record<string, string> = {
   walas: "Walas",
   guru: "Guru",
   murid: "Murid",
+  tendik: "Tendik",
   admin_sarpras: "Admin Sarpras",
   admin_persuratan: "Admin Persuratan",
   admin_tpg: "Admin TPG",
@@ -56,10 +57,12 @@ const ROLE_BADGE: Record<string, string> = {
   wakasek: "bg-violet-500/10 text-violet-700 border-violet-500/20",
   kakonli: "bg-pink-500/10 text-pink-700 border-pink-500/20",
   walas: "bg-indigo-500/10 text-indigo-700 border-indigo-500/20",
+  tendik: "bg-lime-500/10 text-lime-700 border-lime-500/20",
   admin_sarpras: "bg-amber-500/10 text-amber-700 border-amber-500/20",
   admin_persuratan: "bg-cyan-500/10 text-cyan-700 border-cyan-500/20",
   admin_tpg: "bg-teal-500/10 text-teal-700 border-teal-500/20",
 };
+
 
 function relTime(iso?: string | null) {
   if (!iso) return "—";
