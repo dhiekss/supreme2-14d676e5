@@ -275,7 +275,6 @@ function Page() {
 
       <EditDialog
         row={editing}
-        rombels={rombels}
         onClose={() => setEditing(null)}
         onSave={(v) => save.mutate(v)}
         saving={save.isPending}
