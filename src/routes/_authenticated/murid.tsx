@@ -70,6 +70,7 @@ function Page() {
     onSuccess: () => {
       toast.success("Data murid tersimpan");
       qc.invalidateQueries({ queryKey: ["murid-all"] });
+      qc.invalidateQueries({ queryKey: ["murid-logs"] });
       setEditing(null);
     },
     onError: (e: any) => toast.error(e.message),
