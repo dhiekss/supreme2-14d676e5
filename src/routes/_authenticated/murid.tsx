@@ -55,6 +55,8 @@ function Page() {
   const { data: rombels = [] } = useQuery({ queryKey: ["rombel-list"], queryFn: () => rombelFn({ data: {} }) as Promise<any[]> });
 
   const [q, setQ] = useState("");
+  const deferredQ = useDeferredValue(q);
+  const [limit, setLimit] = useState(100);
   const [rombelFilter, setRombelFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
   const [tingkatFilter, setTingkatFilter] = useState("all");
@@ -119,7 +121,11 @@ function Page() {
       if (av && !bv) return -1;
       return av.localeCompare(bv, "id", { numeric: true, sensitivity: "base" }) * dir;
     });
-  }, [data, q, rombelFilter, genderFilter, tingkatFilter, konsentrasiFilter, sort]);
+  }, [data, deferredQ, rombelFilter, genderFilter, tingkatFilter, konsentrasiFilter, sort]);
+
+  useEffect(() => {
+    setLimit(100);
+  }, [deferredQ, rombelFilter, genderFilter, tingkatFilter, konsentrasiFilter]);
 
   const toggleSort = (key: SortKey) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
