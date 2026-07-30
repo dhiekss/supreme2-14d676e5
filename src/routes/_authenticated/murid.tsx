@@ -110,9 +110,10 @@ function Page() {
       if (tingkatFilter !== "all" && (r.tingkat ?? "") !== tingkatFilter) return false;
       if (konsentrasiFilter !== "all" && (r.konsentrasi_keahlian ?? "") !== konsentrasiFilter) return false;
       if (!terms.length) return true;
-      const hay = [r.name, r.nis, r.nisn, r.rombel_nama, r.tingkat, r.konsentrasi_keahlian, r.wali_kelas_name]
+      const hay = [r.name, r.nis, r.nisn, r.rombel_nama]
         .map(norm)
         .join(" ");
+
       return terms.every((t) => hay.includes(t));
     });
     const dir = sort.dir === "asc" ? 1 : -1;
