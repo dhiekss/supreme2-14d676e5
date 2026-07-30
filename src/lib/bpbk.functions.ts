@@ -17,8 +17,7 @@ type ThresholdInput = {
   sp3Telat?: number;
 };
 
-async function fetchAll<T>(query: any): Promise<T[]> {
-  const pageSize = 1000;
+async function fetchAll<T>(query: any, pageSize = 1000): Promise<T[]> {
   const out: T[] = [];
   let from = 0;
   // eslint-disable-next-line no-constant-condition
@@ -32,6 +31,7 @@ async function fetchAll<T>(query: any): Promise<T[]> {
   }
   return out;
 }
+
 
 export const getBpBkData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -57,8 +57,17 @@ export const getBpBkData = createServerFn({ method: "POST" })
       fetchAll<any>(sb.from("students").select("id, name, nis, rombel_id").order("name")),
       fetchAll<any>(sb.from("rombel").select("id, name, konsentrasi_keahlian")),
       fetchAll<any>(sb.from("late_records").select("student_id, record_date")),
-      fetchAll<any>(sb.from("attendance_details").select("student_id, status, attendance_record_id")),
-      fetchAll<any>(sb.from("attendance_records").select("id, date")),
+      // Only alfa rows are needed — fetching every attendance detail (80k+ rows)
+      // made this page hang for minutes.
+      fetchAll<any>(
+        sb
+          .from("attendance_details")
+          .select("student_id, status, attendance_record_id")
+          .in("status", ["A", "a", "alfa", "Alfa", "ALFA"]),
+        5000,
+      ),
+      fetchAll<any>(sb.from("attendance_records").select("id, date"), 5000),
+
       fetchAll<any>(
         sb.from("sp_records").select(
           "id, student_id, sp_level, alasan, jumlah_alfa, jumlah_terlambat, dokumen_pendukung, tanggal_rekaman, created_at",
