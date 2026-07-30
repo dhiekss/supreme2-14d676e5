@@ -42,7 +42,7 @@ async function loadKelompokBundle(supabase: any) {
     fetchAllPaged((f, t) => supabase.from("guru").select("id, nama, nip").range(f, t)),
     fetchAllPaged((f, t) => supabase.from("tendik").select("id, nama, nip").range(f, t)),
     fetchAllPaged((f, t) => supabase.from("students").select("id, nis, name, rombel_id").range(f, t)),
-    fetchAllPaged((f, t) => supabase.from("rombel").select("id, name").range(f, t)),
+    fetchAllPaged((f, t) => supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian").range(f, t)),
   ]);
   const guruMap = new Map(guru.map((g: any) => [g.id, g]));
   const tendikMap = new Map(tendik.map((t: any) => [t.id, t]));
@@ -61,14 +61,28 @@ async function loadKelompokBundle(supabase: any) {
     arr.push({ nama: src?.nama ?? "-", type: p.pembimbing_type });
     pembByKelompok.set(p.kelompok_id, arr);
   }
-  const kelompokList = (kb as any[]).map((k) => ({
-    id: k.id as string,
-    nama: k.nama as string,
-    members: membersByKelompok.get(k.id) ?? [],
-    pembimbings: pembByKelompok.get(k.id) ?? [],
-  }));
+  const kelompokList = (kb as any[]).map((k) => {
+    const members = membersByKelompok.get(k.id) ?? [];
+    const tSet = new Set<string>();
+    const kSet = new Set<string>();
+    for (const sid of members) {
+      const s: any = studentById.get(sid);
+      const r: any = s?.rombel_id ? rombelById.get(s.rombel_id) : null;
+      if (r?.tingkat) tSet.add(String(r.tingkat));
+      if (r?.konsentrasi_keahlian) kSet.add(String(r.konsentrasi_keahlian));
+    }
+    return {
+      id: k.id as string,
+      nama: k.nama as string,
+      members,
+      pembimbings: pembByKelompok.get(k.id) ?? [],
+      tingkatList: [...tSet].sort(),
+      konsentrasiKeahlianList: [...kSet].sort(),
+    };
+  });
   return { kelompokList, studentById, rombelById };
 }
+
 
 export const presensiDashboardKelompok = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
