@@ -42,7 +42,7 @@ async function loadKelompokBundle(supabase: any) {
     fetchAllPaged((f, t) => supabase.from("guru").select("id, nama, nip").range(f, t)),
     fetchAllPaged((f, t) => supabase.from("tendik").select("id, nama, nip").range(f, t)),
     fetchAllPaged((f, t) => supabase.from("students").select("id, nis, name, rombel_id").range(f, t)),
-    fetchAllPaged((f, t) => supabase.from("rombel").select("id, name").range(f, t)),
+    fetchAllPaged((f, t) => supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian").range(f, t)),
   ]);
   const guruMap = new Map(guru.map((g: any) => [g.id, g]));
   const tendikMap = new Map(tendik.map((t: any) => [t.id, t]));
@@ -61,14 +61,28 @@ async function loadKelompokBundle(supabase: any) {
     arr.push({ nama: src?.nama ?? "-", type: p.pembimbing_type });
     pembByKelompok.set(p.kelompok_id, arr);
   }
-  const kelompokList = (kb as any[]).map((k) => ({
-    id: k.id as string,
-    nama: k.nama as string,
-    members: membersByKelompok.get(k.id) ?? [],
-    pembimbings: pembByKelompok.get(k.id) ?? [],
-  }));
+  const kelompokList = (kb as any[]).map((k) => {
+    const members = membersByKelompok.get(k.id) ?? [];
+    const tSet = new Set<string>();
+    const kSet = new Set<string>();
+    for (const sid of members) {
+      const s: any = studentById.get(sid);
+      const r: any = s?.rombel_id ? rombelById.get(s.rombel_id) : null;
+      if (r?.tingkat) tSet.add(String(r.tingkat));
+      if (r?.konsentrasi_keahlian) kSet.add(String(r.konsentrasi_keahlian));
+    }
+    return {
+      id: k.id as string,
+      nama: k.nama as string,
+      members,
+      pembimbings: pembByKelompok.get(k.id) ?? [],
+      tingkatList: [...tSet].sort(),
+      konsentrasiKeahlianList: [...kSet].sort(),
+    };
+  });
   return { kelompokList, studentById, rombelById };
 }
+
 
 export const presensiDashboardKelompok = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -300,8 +314,13 @@ export const attendanceDetailListKelompok = createServerFn({ method: "GET" })
           walikelas: k.pembimbings.map((p) => p.nama).join(", ") || "-",
           officer_name: [...(officersByDate.get(dt) ?? [])].join(", ") || "-",
           jumlahMurid: k.members.length,
+          tingkat: k.tingkatList.join(", ") || "-",
+          konsentrasi: k.konsentrasiKeahlianList.join(", ") || "-",
+          tingkatList: k.tingkatList,
+          konsentrasiList: k.konsentrasiKeahlianList,
           ...c,
         });
+
       }
     }
     return out.sort((a, b) => String(b.date).localeCompare(String(a.date)));
@@ -357,4 +376,62 @@ export const listOfficersKelompok = createServerFn({ method: "GET" })
       if (n) set.add(n);
     }
     return [...set].sort();
+  });
+
+async function recordIdsForDate(supabase: any, date: string): Promise<string[]> {
+  const records = await fetchAllPaged<any>((f, t) =>
+    supabase.from("attendance_records").select("id").eq("date", date).range(f, t),
+  );
+  return records.map((r: any) => r.id);
+}
+
+export const updateKelompokAttendance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      kelompokId: z.string().uuid(),
+      date: z.string(),
+      items: z.array(z.object({ studentId: z.string().uuid(), status: z.enum(["H", "S", "I", "A", "P"]) })),
+    }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const recIds = await recordIdsForDate(supabase, data.date);
+    if (!recIds.length) throw new Error("Tidak ada data presensi pada tanggal ini");
+    let updated = 0;
+    for (const it of data.items) {
+      const { error, count } = await supabase
+        .from("attendance_details")
+        .update({ status: it.status }, { count: "exact" })
+        .eq("student_id", it.studentId)
+        .in("attendance_record_id", recIds);
+      if (error) throw new Error(error.message);
+      updated += count ?? 0;
+    }
+    return { ok: true, updated };
+  });
+
+export const deleteKelompokAttendance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ kelompokId: z.string().uuid(), date: z.string() }).parse)
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const bundle = await loadKelompokBundle(supabase);
+    const k = bundle.kelompokList.find((x) => x.id === data.kelompokId);
+    if (!k) throw new Error("Kelompok tidak ditemukan");
+    const recIds = await recordIdsForDate(supabase, data.date);
+    if (!recIds.length) return { ok: true, deleted: 0 };
+    let deleted = 0;
+    const CHUNK = 100;
+    for (let i = 0; i < k.members.length; i += CHUNK) {
+      const slice = k.members.slice(i, i + CHUNK);
+      const { error, count } = await supabase
+        .from("attendance_details")
+        .delete({ count: "exact" })
+        .in("student_id", slice)
+        .in("attendance_record_id", recIds);
+      if (error) throw new Error(error.message);
+      deleted += count ?? 0;
+    }
+    return { ok: true, deleted };
   });

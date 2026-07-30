@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
@@ -15,18 +15,25 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   presensiDashboardKelompok,
   kelompokBelumInputByDate,
   attendanceDetailListKelompok,
   attendanceDetailViewKelompok,
+  updateKelompokAttendance,
+  deleteKelompokAttendance,
 } from "@/lib/presensi-report-kelompok.functions";
-import { todayStamp } from "@/lib/utils";
+import { todayStamp, cn } from "@/lib/utils";
 import {
   Download, Users, GraduationCap, School, CalendarCheck, CheckCircle2,
   Thermometer, FileText, XCircle, Briefcase, ClipboardList, AlertTriangle,
   TrendingUp, PieChart as PieIcon, BarChart3, FileSpreadsheet, Loader2,
-  Eye, Filter, FileDown, Search,
+  Eye, Filter, FileDown, Search, ArrowUpDown, Pencil, Trash2, Save,
 } from "lucide-react";
+
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RTooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area,
@@ -402,16 +409,25 @@ function TrendChart({ title, data, dataKey, color }: { title: string; data: any[
   );
 }
 
+type KbSortKey = "date" | "rombel" | "walikelas" | "officer_name" | "tingkat" | "konsentrasi" | "H" | "S" | "I" | "A" | "P" | "jumlahMurid";
+
 function DetailPresensiKelompokCard() {
   const [date, setDate] = useState<string>("");
   const [kelompokId, setKelompokId] = useState<string>("__all");
+  const [tingkat, setTingkat] = useState<string>("__all");
+  const [konsentrasi, setKonsentrasi] = useState<string>("__all");
   const [search, setSearch] = useState<string>("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [view, setView] = useState<{ kelompokId: string; date: string } | null>(null);
+  const [edit, setEdit] = useState<{ kelompokId: string; date: string } | null>(null);
+  const [del, setDel] = useState<any | null>(null);
+  const [sort, setSort] = useState<{ key: KbSortKey; dir: "asc" | "desc" }>({ key: "date", dir: "desc" });
 
+  const qc = useQueryClient();
   const fetchList = useServerFn(attendanceDetailListKelompok);
   const fetchDash = useServerFn(presensiDashboardKelompok);
+  const delFn = useServerFn(deleteKelompokAttendance);
 
   // Load kelompok list from dashboard endpoint (reuse existing wide fetch)
   const refsQuery = useQuery({
@@ -430,26 +446,82 @@ function DetailPresensiKelompokCard() {
       }),
   });
   const rows = listQuery.data ?? [];
-  const filteredRows = (() => {
+
+  const tingkatOptions = useMemo(
+    () => [...new Set((rows as any[]).flatMap((r) => r.tingkatList ?? []))].map(String).sort(),
+    [rows],
+  );
+  const konsentrasiOptions = useMemo(
+    () => [...new Set((rows as any[]).flatMap((r) => r.konsentrasiList ?? []))].map(String).sort(),
+    [rows],
+  );
+
+  const filteredRows = useMemo(() => {
+    let out = rows as any[];
     const q = search.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((r: any) =>
-      [r.officer_name, r.rombel, r.walikelas]
-        .filter(Boolean)
-        .some((v: string) => String(v).toLowerCase().includes(q))
-    );
-  })();
+    if (q) {
+      out = out.filter((r: any) =>
+        [r.officer_name, r.rombel, r.walikelas, r.tingkat, r.konsentrasi]
+          .filter(Boolean)
+          .some((v: string) => String(v).toLowerCase().includes(q)),
+      );
+    }
+    if (tingkat !== "__all") out = out.filter((r: any) => (r.tingkatList ?? []).includes(tingkat));
+    if (konsentrasi !== "__all") out = out.filter((r: any) => (r.konsentrasiList ?? []).includes(konsentrasi));
+
+    const k = sort.key;
+    const dir = sort.dir === "asc" ? 1 : -1;
+    return [...out].sort((a: any, b: any) => {
+      if (["H", "S", "I", "A", "P", "jumlahMurid"].includes(k)) return (Number(a[k]) - Number(b[k])) * dir;
+      return String(a[k] ?? "").localeCompare(String(b[k] ?? "")) * dir;
+    });
+  }, [rows, search, tingkat, konsentrasi, sort]);
+
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const curPage = Math.min(page, totalPages);
   const start = (curPage - 1) * pageSize;
   const pageRows = filteredRows.slice(start, start + pageSize);
 
+  const toggleSort = (key: KbSortKey) => {
+    setSort((prev) => ({ key, dir: prev.key === key && prev.dir === "asc" ? "desc" : "asc" }));
+    setPage(1);
+  };
+
+  const SortHeader = ({ sortKey, children, className }: { sortKey: KbSortKey; children: React.ReactNode; className?: string }) => (
+    <TableHead
+      className={cn("cursor-pointer select-none hover:bg-muted/50 transition-colors", className)}
+      onClick={() => toggleSort(sortKey)}
+    >
+      <div className={cn("flex items-center gap-1", className?.includes("text-center") && "justify-center")}>
+        {children}
+        <ArrowUpDown className={cn("h-3.5 w-3.5", sort.key === sortKey ? "text-foreground" : "text-muted-foreground/50")} />
+      </div>
+    </TableHead>
+  );
+
+  const doDelete = async () => {
+    if (!del) return;
+    try {
+      await delFn({ data: { kelompokId: del.kelompokId, date: del.date } });
+      toast.success("Data presensi kelompok dihapus");
+      setDel(null);
+      qc.invalidateQueries({ queryKey: ["detail-presensi-kelompok"] });
+      qc.invalidateQueries({ queryKey: ["presensi-dashboard-kelompok"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal menghapus");
+    }
+  };
+
   const resetFilter = () => {
     setDate("");
     setKelompokId("__all");
+    setTingkat("__all");
+    setKonsentrasi("__all");
     setSearch("");
+    setSort({ key: "date", dir: "desc" });
     setPage(1);
   };
+
 
   const exportRecap = () => {
     const header = ["Tanggal", "Kelompok Belajar", "Pembimbing", "Petugas Piket", "Hadir", "Sakit", "Izin", "Alfa", "PKL", "Jumlah Murid"];
@@ -503,7 +575,7 @@ function DetailPresensiKelompokCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="rounded-lg border bg-muted/30 p-3 grid gap-3 md:grid-cols-[1fr_1fr_auto] items-end">
+        <div className="rounded-lg border bg-muted/30 p-3 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] items-end">
           <div className="space-y-1">
             <Label className="text-xs flex items-center gap-1.5"><CalendarCheck className="h-3.5 w-3.5" /> Tanggal</Label>
             <Input type="date" value={date} onChange={(e) => { setDate(e.target.value); setPage(1); }} className="h-9 bg-background" />
@@ -520,6 +592,26 @@ function DetailPresensiKelompokCard() {
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-1">
+            <Label className="text-xs flex items-center gap-1.5"><Filter className="h-3.5 w-3.5" /> Tingkat</Label>
+            <Select value={tingkat} onValueChange={(v) => { setTingkat(v); setPage(1); }}>
+              <SelectTrigger className="h-9 bg-background"><SelectValue placeholder="Semua Tingkat" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua Tingkat</SelectItem>
+                {tingkatOptions.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs flex items-center gap-1.5"><Filter className="h-3.5 w-3.5" /> Konsentrasi</Label>
+            <Select value={konsentrasi} onValueChange={(v) => { setKonsentrasi(v); setPage(1); }}>
+              <SelectTrigger className="h-9 bg-background"><SelectValue placeholder="Semua Konsentrasi" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua Konsentrasi</SelectItem>
+                {konsentrasiOptions.map((k) => <SelectItem key={k} value={k}>{k}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
           <Button variant="outline" onClick={resetFilter} className="h-9">Reset Filter</Button>
         </div>
 
@@ -528,7 +620,7 @@ function DetailPresensiKelompokCard() {
           <Input
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Cari cepat: petugas, kelompok, atau pembimbing..."
+            placeholder="Cari cepat: petugas, kelompok, pembimbing, tingkat, atau konsentrasi..."
             className="h-9 pl-9 bg-background"
           />
         </div>
@@ -537,16 +629,18 @@ function DetailPresensiKelompokCard() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tanggal</TableHead>
-                <TableHead>Kelompok Belajar</TableHead>
-                <TableHead>Pembimbing</TableHead>
-                <TableHead>Petugas Piket</TableHead>
-                <TableHead className="text-center">Hadir</TableHead>
-                <TableHead className="text-center">Sakit</TableHead>
-                <TableHead className="text-center">Izin</TableHead>
-                <TableHead className="text-center">Alfa</TableHead>
-                <TableHead className="text-center">PKL</TableHead>
-                <TableHead className="text-center">Jumlah Murid</TableHead>
+                <SortHeader sortKey="date">Tanggal</SortHeader>
+                <SortHeader sortKey="rombel">Kelompok Belajar</SortHeader>
+                <SortHeader sortKey="walikelas">Pembimbing</SortHeader>
+                <SortHeader sortKey="tingkat">Tingkat</SortHeader>
+                <SortHeader sortKey="konsentrasi">Konsentrasi</SortHeader>
+                <SortHeader sortKey="officer_name">Petugas Piket</SortHeader>
+                <SortHeader sortKey="H" className="text-center">Hadir</SortHeader>
+                <SortHeader sortKey="S" className="text-center">Sakit</SortHeader>
+                <SortHeader sortKey="I" className="text-center">Izin</SortHeader>
+                <SortHeader sortKey="A" className="text-center">Alfa</SortHeader>
+                <SortHeader sortKey="P" className="text-center">PKL</SortHeader>
+                <SortHeader sortKey="jumlahMurid" className="text-center">Jumlah Murid</SortHeader>
                 <TableHead className="text-center">Aksi</TableHead>
               </TableRow>
             </TableHeader>
@@ -556,6 +650,8 @@ function DetailPresensiKelompokCard() {
                   <TableCell className="whitespace-nowrap">{r.date}</TableCell>
                   <TableCell className="font-medium">{r.rombel}</TableCell>
                   <TableCell>{r.walikelas}</TableCell>
+                  <TableCell className="whitespace-nowrap">{r.tingkat}</TableCell>
+                  <TableCell className="text-xs">{r.konsentrasi}</TableCell>
                   <TableCell>{r.officer_name}</TableCell>
                   <TableCell className="text-center text-emerald-600 font-medium">{r.H}</TableCell>
                   <TableCell className="text-center text-amber-600">{r.S}</TableCell>
@@ -571,13 +667,22 @@ function DetailPresensiKelompokCard() {
                         onClick={() => setView({ kelompokId: r.kelompokId, date: r.date })} title="Lihat Detail">
                         <Eye className="h-4 w-4" />
                       </Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-indigo-600 hover:text-indigo-700"
+                        onClick={() => setEdit({ kelompokId: r.kelompokId, date: r.date })} title="Edit Presensi">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => setDel(r)} title="Hapus Baris">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
               ))}
               {!listQuery.isFetching && filteredRows.length === 0 && (
-                <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-6">{rows.length === 0 ? "Belum ada catatan presensi kelompok." : "Tidak ada hasil untuk pencarian ini."}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={13} className="text-center text-muted-foreground py-6">{rows.length === 0 ? "Belum ada catatan presensi kelompok." : "Tidak ada hasil untuk pencarian ini."}</TableCell></TableRow>
               )}
+
             </TableBody>
           </Table>
         </div>
@@ -604,9 +709,127 @@ function DetailPresensiKelompokCard() {
       </CardContent>
 
       <ViewKelompokDialog value={view} onClose={() => setView(null)} />
+      <EditKelompokDialog value={edit} onClose={() => setEdit(null)} />
+
+      <AlertDialog open={!!del} onOpenChange={(o) => { if (!o) setDel(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus data presensi kelompok?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Semua catatan kehadiran anggota kelompok <b>{del?.rombel}</b> pada tanggal{" "}
+              <b>{del ? formatDateLongID(String(del.date)) : ""}</b> akan dihapus. Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={doDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Hapus</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
+
+function EditKelompokDialog({ value, onClose }: { value: { kelompokId: string; date: string } | null; onClose: () => void }) {
+  const qc = useQueryClient();
+  const fetchFn = useServerFn(attendanceDetailViewKelompok);
+  const saveFn = useServerFn(updateKelompokAttendance);
+  const [draft, setDraft] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+
+  const { data, isFetching } = useQuery({
+    queryKey: ["attendance-edit-kelompok", value?.kelompokId, value?.date],
+    queryFn: async () => {
+      const res: any = await fetchFn({ data: { kelompokId: value!.kelompokId, date: value!.date } });
+      const d: Record<string, string> = {};
+      for (const s of res.students as any[]) if (s.status && s.status !== "-") d[s.id] = s.status;
+      setDraft(d);
+      return res;
+    },
+    enabled: !!value,
+  });
+
+  const save = async () => {
+    if (!value) return;
+    const items = Object.entries(draft)
+      .filter(([, st]) => ["H", "S", "I", "A", "P"].includes(st))
+      .map(([studentId, status]) => ({ studentId, status: status as "H" | "S" | "I" | "A" | "P" }));
+    if (items.length === 0) { toast.info("Tidak ada perubahan untuk disimpan"); return; }
+    setSaving(true);
+    try {
+      await saveFn({ data: { kelompokId: value.kelompokId, date: value.date, items } });
+      toast.success("Presensi kelompok diperbarui");
+      qc.invalidateQueries({ queryKey: ["detail-presensi-kelompok"] });
+      qc.invalidateQueries({ queryKey: ["presensi-dashboard-kelompok"] });
+      qc.invalidateQueries({ queryKey: ["attendance-view-kelompok"] });
+      onClose();
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal menyimpan");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!value} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Pencil className="h-5 w-5 text-indigo-600" /> Edit Presensi Kelompok</DialogTitle>
+          <DialogDescription>
+            {data ? `${data.record.rombel_name} — ${formatDateLongID(String(data.record.date))}` : "Memuat..."}
+          </DialogDescription>
+        </DialogHeader>
+        {isFetching || !data ? (
+          <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Memuat...</div>
+        ) : (
+          <div className="space-y-4">
+            <div className="max-h-[420px] overflow-y-auto rounded-lg border">
+              <Table>
+                <TableHeader className="sticky top-0 bg-muted/60 backdrop-blur">
+                  <TableRow>
+                    <TableHead className="w-12">No</TableHead>
+                    <TableHead className="w-28">NIS</TableHead>
+                    <TableHead>Nama Murid</TableHead>
+                    <TableHead className="w-[140px] text-right">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(data.students as any[]).map((s, i) => (
+                    <TableRow key={s.id}>
+                      <TableCell>{i + 1}</TableCell>
+                      <TableCell className="font-mono text-xs">{s.nis ?? "-"}</TableCell>
+                      <TableCell className="uppercase">{s.name}</TableCell>
+                      <TableCell className="text-right">
+                        <Select
+                          value={draft[s.id] ?? ""}
+                          onValueChange={(v) => setDraft((p) => ({ ...p, [s.id]: v }))}
+                        >
+                          <SelectTrigger className="h-8"><SelectValue placeholder="-" /></SelectTrigger>
+                          <SelectContent>
+                            {(["H", "S", "I", "A", "P"] as const).map((k) => (
+                              <SelectItem key={k} value={k}>{STATUS_LABEL[k]}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={onClose}>Batal</Button>
+              <Button onClick={save} disabled={saving} className="gap-2">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Simpan
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function ViewKelompokDialog({ value, onClose }: { value: { kelompokId: string; date: string } | null; onClose: () => void }) {
   const fetchFn = useServerFn(attendanceDetailViewKelompok);
