@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Search, Users } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronsUpDown, Pencil, Search, Users, X } from "lucide-react";
 import { listAllStudents, saveStudent } from "@/lib/rombel-members.functions";
 import { listRombel } from "@/lib/sekolah.functions";
 import { toast } from "sonner";
@@ -24,7 +24,14 @@ type Row = {
   rombel_id: string | null;
   rombel_nama?: string | null;
   wali_kelas_name?: string | null;
+  tingkat?: string | null;
+  konsentrasi_keahlian?: string | null;
+  dapodik_status?: string | null;
+  dapodik_tanggal?: string | null;
 };
+
+type SortKey = "name" | "gender" | "nis" | "nisn" | "rombel_nama" | "tingkat" | "konsentrasi_keahlian" | "wali_kelas_name" | "dapodik_status";
+
 
 export const Route = createFileRoute("/_authenticated/murid")({
   head: () => ({
