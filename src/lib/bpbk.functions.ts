@@ -9,6 +9,8 @@ const DEFAULT_THRESHOLDS = {
 } as const;
 
 type ThresholdInput = {
+  /** Tanggal mulai (YYYY-MM-DD) perhitungan ambang untuk periode berjalan. */
+  mulaiTanggal?: string | null;
   sp1Alfa?: number;
   sp1Telat?: number;
   sp2Alfa?: number;
