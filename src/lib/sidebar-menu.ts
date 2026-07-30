@@ -103,6 +103,7 @@ export const DEFAULT_SIDEBAR: DefaultNode[] = [
     icon: School,
     children: [
       { id: "rombel", title: "Manajemen Rombel", url: "/rombel", icon: GraduationCap },
+      { id: "murid", title: "Manajemen Murid", url: "/murid", icon: Users },
       { id: "rombel-khusus", title: "Rombel Khusus", url: "/rombel-khusus", icon: Layers },
       { id: "kelompok-belajar", title: "Kelompok Belajar", url: "/kelompok-belajar", icon: Users },
       { id: "konsentrasi", title: "Konsentrasi Keahlian", url: "/konsentrasi", icon: Briefcase },
