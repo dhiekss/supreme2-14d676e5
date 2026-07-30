@@ -98,10 +98,8 @@ function Page() {
       if (genderFilter !== "all" && (r.gender ?? "") !== genderFilter) return false;
       if (tingkatFilter !== "all" && (r.tingkat ?? "") !== tingkatFilter) return false;
       if (konsentrasiFilter !== "all" && (r.konsentrasi_keahlian ?? "") !== konsentrasiFilter) return false;
-      if (dapodikFilter === "none" && r.dapodik_status) return false;
-      if (dapodikFilter !== "all" && dapodikFilter !== "none" && (r.dapodik_status ?? "") !== dapodikFilter) return false;
       if (!terms.length) return true;
-      const hay = [r.name, r.nis, r.nisn, r.rombel_nama, r.tingkat, r.konsentrasi_keahlian, r.wali_kelas_name, r.dapodik_status]
+      const hay = [r.name, r.nis, r.nisn, r.rombel_nama, r.tingkat, r.konsentrasi_keahlian, r.wali_kelas_name]
         .map((v) => String(v ?? "").toLowerCase())
         .join(" ");
       return terms.every((t) => hay.includes(t));
@@ -114,7 +112,7 @@ function Page() {
       if (av && !bv) return -1;
       return av.localeCompare(bv, "id", { numeric: true, sensitivity: "base" }) * dir;
     });
-  }, [data, q, rombelFilter, genderFilter, tingkatFilter, konsentrasiFilter, dapodikFilter, sort]);
+  }, [data, q, rombelFilter, genderFilter, tingkatFilter, konsentrasiFilter, sort]);
 
   const toggleSort = (key: SortKey) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
