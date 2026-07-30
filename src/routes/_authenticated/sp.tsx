@@ -84,7 +84,6 @@ function loadThresholds(): Thresholds {
 
 export const Route = createFileRoute("/_authenticated/sp")({
   head: () => ({ meta: [{ title: "Manajemen BP/BK — SUPREME XPOES" }] }),
-  loader: async () => ({ data: await getBpBkData() }),
   component: BpBkPage,
   pendingComponent: () => (
     <div className="p-6 text-sm text-muted-foreground">Memuat data BP/BK…</div>
@@ -160,7 +159,6 @@ function CountBadge({
 }
 
 function BpBkPage() {
-  const { data } = Route.useLoaderData();
   const qc = useQueryClient();
   const getData = useServerFn(getBpBkData);
   const removeFn = useServerFn(deleteSp);
@@ -170,7 +168,6 @@ function BpBkPage() {
   const { data: bp } = useSuspenseQuery({
     queryKey: ["bpbk", thresholds],
     queryFn: () => getData({ data: thresholds }),
-    initialData: data,
   });
 
   const [tab, setTab] = useState<"rek1" | "murid1" | "rek2" | "murid2" | "rek3" | "murid3">("rek1");

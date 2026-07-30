@@ -89,9 +89,6 @@ export const getRouter = () => {
     defaultPreload: "intent",
     // Let TanStack Query own freshness; router preloads are effective for 30s.
     defaultPreloadStaleTime: 30_000,
-    defaultPendingComponent: () => (
-      <div className="p-6 text-sm text-muted-foreground">Memuat…</div>
-    ),
     defaultPendingMs: 200,
     defaultPendingMinMs: 0,
     defaultErrorComponent: ({ error }: { error: unknown }) => {
