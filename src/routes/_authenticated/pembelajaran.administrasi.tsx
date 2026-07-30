@@ -368,12 +368,28 @@ function AdministrasiPage() {
 
 
           {isAdmin && selectedIds.size > 0 && (
-            <div className="flex items-center justify-between gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2">
-              <div className="text-sm text-rose-800">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2">
+              <div className="text-sm">
                 <span className="font-semibold">{selectedIds.size}</span> data terpilih
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>Bersihkan</Button>
+                <Button
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                  disabled={bulkValidateM.isPending}
+                  onClick={() => setBulkValidate("valid")}
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" />Tandai Valid
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-amber-600 hover:bg-amber-700"
+                  disabled={bulkValidateM.isPending}
+                  onClick={() => { setCatatanBulk(""); setBulkValidate("perbaikan"); }}
+                >
+                  <AlertTriangle className="h-4 w-4 mr-2" />Perlu Perbaikan
+                </Button>
                 <Button
                   size="sm"
                   variant="destructive"
@@ -384,6 +400,7 @@ function AdministrasiPage() {
               </div>
             </div>
           )}
+
 
           <div className="text-xs text-muted-foreground">
             Menampilkan {(list?.rows ?? []).length === 0 ? 0 : (page - 1) * pageSize + 1}
