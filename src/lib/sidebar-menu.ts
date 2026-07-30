@@ -96,7 +96,7 @@ export const DEFAULT_SIDEBAR: DefaultNode[] = [
       { id: "laporan-keterlambatan", title: "Laporan Keterlambatan", url: "/laporan-keterlambatan", icon: FileBarChart },
     ],
   },
-  { id: "sp", title: "Surat Peringatan", url: "/sp", icon: AlertTriangle },
+  { id: "sp", title: "Manajemen BP/BK", url: "/sp", icon: AlertTriangle },
   {
     id: "grp-manajemen-sekolah",
     title: "Manajemen Sekolah",
