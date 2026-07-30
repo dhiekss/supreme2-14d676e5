@@ -17,8 +17,7 @@ type ThresholdInput = {
   sp3Telat?: number;
 };
 
-async function fetchAll<T>(query: any): Promise<T[]> {
-  const pageSize = 1000;
+async function fetchAll<T>(query: any, pageSize = 1000): Promise<T[]> {
   const out: T[] = [];
   let from = 0;
   // eslint-disable-next-line no-constant-condition
@@ -32,6 +31,7 @@ async function fetchAll<T>(query: any): Promise<T[]> {
   }
   return out;
 }
+
 
 export const getBpBkData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
