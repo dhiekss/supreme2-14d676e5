@@ -663,6 +663,54 @@ function AdministrasiPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!bulkValidate} onOpenChange={(o) => { if (!o && !bulkValidateM.isPending) { setBulkValidate(null); setCatatanBulk(""); } }}>
+        <DialogContent className="max-w-md w-[95vw]">
+          <DialogHeader>
+            <DialogTitle>
+              {bulkValidate === "valid" ? "Tandai Valid (Massal)" : "Tandai Perlu Perbaikan (Massal)"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="rounded-md bg-muted/40 p-2 text-xs">
+              <span className="font-semibold">{selectedIds.size}</span> data terpilih akan divalidasi sebagai{" "}
+              <span className="font-semibold">{bulkValidate === "valid" ? "Valid" : "Perlu Perbaikan"}</span>.
+            </div>
+            {bulkValidate === "perbaikan" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">Catatan Perbaikan (berlaku untuk semua)</Label>
+                <Textarea
+                  value={catatanBulk}
+                  onChange={(e) => setCatatanBulk(e.target.value)}
+                  placeholder="Tuliskan hal yang perlu diperbaiki oleh guru…"
+                  rows={4}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => { setBulkValidate(null); setCatatanBulk(""); }}
+              disabled={bulkValidateM.isPending}
+            >
+              Batal
+            </Button>
+            <Button
+              className={bulkValidate === "valid" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-amber-600 hover:bg-amber-700"}
+              disabled={bulkValidateM.isPending || !bulkValidate || selectedIds.size === 0}
+              onClick={() => bulkValidate && bulkValidateM.mutate({
+                ids: Array.from(selectedIds),
+                keputusan: bulkValidate,
+                catatan: bulkValidate === "perbaikan" ? (catatanBulk.trim() || undefined) : undefined,
+              })}
+            >
+              {bulkValidateM.isPending ? "Memproses…" : "Simpan Validasi"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
