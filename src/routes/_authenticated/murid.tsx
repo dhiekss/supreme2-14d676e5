@@ -26,11 +26,9 @@ type Row = {
   wali_kelas_name?: string | null;
   tingkat?: string | null;
   konsentrasi_keahlian?: string | null;
-  dapodik_status?: string | null;
-  dapodik_tanggal?: string | null;
 };
 
-type SortKey = "name" | "gender" | "nis" | "nisn" | "rombel_nama" | "tingkat" | "konsentrasi_keahlian" | "wali_kelas_name" | "dapodik_status";
+type SortKey = "name" | "gender" | "nis" | "nisn" | "rombel_nama" | "tingkat" | "konsentrasi_keahlian" | "wali_kelas_name";
 
 
 export const Route = createFileRoute("/_authenticated/murid")({
@@ -61,7 +59,6 @@ function Page() {
   const [genderFilter, setGenderFilter] = useState("all");
   const [tingkatFilter, setTingkatFilter] = useState("all");
   const [konsentrasiFilter, setKonsentrasiFilter] = useState("all");
-  const [dapodikFilter, setDapodikFilter] = useState("all");
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "name", dir: "asc" });
   const [editing, setEditing] = useState<Partial<Row> | null>(null);
 
@@ -83,10 +80,6 @@ function Page() {
     () => Array.from(new Set((rombels ?? []).map((r: any) => r.konsentrasi_keahlian).filter(Boolean))).sort() as string[],
     [rombels],
   );
-  const dapodikOptions = useMemo(
-    () => Array.from(new Set((data ?? []).map((r) => r.dapodik_status).filter(Boolean))).sort() as string[],
-    [data],
-  );
 
   const filteredRombels = useMemo(
     () =>
@@ -105,10 +98,8 @@ function Page() {
       if (genderFilter !== "all" && (r.gender ?? "") !== genderFilter) return false;
       if (tingkatFilter !== "all" && (r.tingkat ?? "") !== tingkatFilter) return false;
       if (konsentrasiFilter !== "all" && (r.konsentrasi_keahlian ?? "") !== konsentrasiFilter) return false;
-      if (dapodikFilter === "none" && r.dapodik_status) return false;
-      if (dapodikFilter !== "all" && dapodikFilter !== "none" && (r.dapodik_status ?? "") !== dapodikFilter) return false;
       if (!terms.length) return true;
-      const hay = [r.name, r.nis, r.nisn, r.rombel_nama, r.tingkat, r.konsentrasi_keahlian, r.wali_kelas_name, r.dapodik_status]
+      const hay = [r.name, r.nis, r.nisn, r.rombel_nama, r.tingkat, r.konsentrasi_keahlian, r.wali_kelas_name]
         .map((v) => String(v ?? "").toLowerCase())
         .join(" ");
       return terms.every((t) => hay.includes(t));
@@ -121,7 +112,7 @@ function Page() {
       if (av && !bv) return -1;
       return av.localeCompare(bv, "id", { numeric: true, sensitivity: "base" }) * dir;
     });
-  }, [data, q, rombelFilter, genderFilter, tingkatFilter, konsentrasiFilter, dapodikFilter, sort]);
+  }, [data, q, rombelFilter, genderFilter, tingkatFilter, konsentrasiFilter, sort]);
 
   const toggleSort = (key: SortKey) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
@@ -145,7 +136,7 @@ function Page() {
 
   const hasFilter =
     q.trim() !== "" ||
-    [rombelFilter, genderFilter, tingkatFilter, konsentrasiFilter, dapodikFilter].some((v) => v !== "all");
+    [rombelFilter, genderFilter, tingkatFilter, konsentrasiFilter].some((v) => v !== "all");
 
   const resetFilters = () => {
     setQ("");
@@ -153,7 +144,6 @@ function Page() {
     setGenderFilter("all");
     setTingkatFilter("all");
     setKonsentrasiFilter("all");
-    setDapodikFilter("all");
   };
 
   const totalL = rows.filter((r) => r.gender === "L").length;
@@ -184,12 +174,12 @@ function Page() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 className="pl-9"
-                placeholder="Cari nama / NIS / NISN / rombel / konsentrasi / status Dapodik…"
+                placeholder="Cari nama / NIS / NISN / rombel / konsentrasi…"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <Select value={tingkatFilter} onValueChange={(v) => { setTingkatFilter(v); setRombelFilter("all"); }}>
                 <SelectTrigger><SelectValue placeholder="Semua Tingkat" /></SelectTrigger>
                 <SelectContent>
@@ -221,14 +211,6 @@ function Page() {
                   <SelectItem value="P">Perempuan</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={dapodikFilter} onValueChange={setDapodikFilter}>
-                <SelectTrigger><SelectValue placeholder="Semua Status Dapodik" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Status Dapodik</SelectItem>
-                  <SelectItem value="none">Belum ada status</SelectItem>
-                  {dapodikOptions.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
-                </SelectContent>
-              </Select>
             </div>
             {hasFilter && (
               <div className="flex items-center justify-between gap-3">
@@ -253,15 +235,14 @@ function Page() {
                   <SortHead label="Konsentrasi" sortKey="konsentrasi_keahlian" />
                   <SortHead label="Rombel" sortKey="rombel_nama" />
                   <SortHead label="Wali Kelas" sortKey="wali_kelas_name" />
-                  <SortHead label="Status Dapodik" sortKey="dapodik_status" />
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Memuat…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Memuat…</TableCell></TableRow>
                 ) : rows.length === 0 ? (
-                  <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Tidak ada data murid.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Tidak ada data murid.</TableCell></TableRow>
                 ) : (
                   rows.slice(0, 1000).map((r, i) => (
                     <TableRow key={r.id}>
@@ -274,9 +255,6 @@ function Page() {
                       <TableCell>{r.konsentrasi_keahlian ?? "—"}</TableCell>
                       <TableCell>{r.rombel_nama ?? "—"}</TableCell>
                       <TableCell>{r.wali_kelas_name ?? "—"}</TableCell>
-                      <TableCell>
-                        {r.dapodik_status ? <Badge variant="outline">{r.dapodik_status}</Badge> : <span className="text-muted-foreground">—</span>}
-                      </TableCell>
                       <TableCell className="text-right">
                         <Button size="sm" variant="outline" onClick={() => setEditing(r)}>
                           <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
@@ -297,7 +275,6 @@ function Page() {
 
       <EditDialog
         row={editing}
-        rombels={rombels}
         onClose={() => setEditing(null)}
         onSave={(v) => save.mutate(v)}
         saving={save.isPending}
@@ -318,10 +295,9 @@ function StatCard({ title, value }: { title: string; value: number }) {
 }
 
 function EditDialog({
-  row, rombels, onClose, onSave, saving,
+  row, onClose, onSave, saving,
 }: {
   row: Partial<Row> | null;
-  rombels: any[];
   onClose: () => void;
   onSave: (v: any) => void;
   saving: boolean;
@@ -339,7 +315,6 @@ function EditDialog({
       nis: form.nis || null,
       nisn: form.nisn || null,
       gender: form.gender || null,
-      rombel_id: form.rombel_id || null,
     });
   };
 
@@ -375,14 +350,9 @@ function EditDialog({
             </div>
             <div className="space-y-1.5">
               <Label>Rombel</Label>
-              <Select value={form.rombel_id ?? ""} onValueChange={(v) => setForm((f) => ({ ...f, rombel_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Pilih rombel" /></SelectTrigger>
-                <SelectContent>
-                  {rombels.map((r: any) => (
-                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm shadow-sm items-center text-muted-foreground">
+                {row?.rombel_nama ?? "—"}
+              </div>
             </div>
           </div>
         </div>
