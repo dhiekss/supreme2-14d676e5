@@ -86,10 +86,14 @@ export const Route = createFileRoute("/_authenticated/sp")({
   head: () => ({ meta: [{ title: "Manajemen BP/BK — SUPREME XPOES" }] }),
   loader: async () => ({ data: await getBpBkData() }),
   component: BpBkPage,
+  pendingComponent: () => (
+    <div className="p-6 text-sm text-muted-foreground">Memuat data BP/BK…</div>
+  ),
   errorComponent: ({ error }) => (
     <div className="text-destructive">Gagal: {error.message}</div>
   ),
 });
+
 
 type StatCardTone = "sp1r" | "sp1m" | "sp2r" | "sp2m" | "sp3r" | "sp3m";
 
