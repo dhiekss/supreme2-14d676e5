@@ -93,6 +93,8 @@ function AdministrasiPage() {
     | null
   >(null);
   const [catatanValidasi, setCatatanValidasi] = useState("");
+  const [bulkValidate, setBulkValidate] = useState<"valid" | "perbaikan" | null>(null);
+  const [catatanBulk, setCatatanBulk] = useState("");
 
   const { data: refs } = useQuery({
     queryKey: ["administrasi-refs"],
@@ -136,6 +138,32 @@ function AdministrasiPage() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const bulkValidateM = useMutation({
+    mutationFn: async (v: { ids: string[]; keputusan: "valid" | "perbaikan"; catatan?: string }) => {
+      let ok = 0;
+      const errors: string[] = [];
+      for (const id of v.ids) {
+        try {
+          await validateFn({ data: { rombel_mata_pelajaran_id: id, keputusan: v.keputusan, catatan: v.catatan } });
+          ok++;
+        } catch (e: any) {
+          errors.push(e?.message ?? "Gagal");
+        }
+      }
+      return { ok, failed: errors.length };
+    },
+    onSuccess: (r) => {
+      if (r.failed > 0) toast.warning(`${r.ok} data divalidasi, ${r.failed} gagal`);
+      else toast.success(`${r.ok} data berhasil divalidasi`);
+      setSelectedIds(new Set());
+      setBulkValidate(null);
+      setCatatanBulk("");
+      qc.invalidateQueries({ queryKey: ["administrasi"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
 
   const isAdmin = Boolean((refs as any)?.is_admin);
   const uploadEnabled = (refs as any)?.upload_enabled !== false;
@@ -340,12 +368,28 @@ function AdministrasiPage() {
 
 
           {isAdmin && selectedIds.size > 0 && (
-            <div className="flex items-center justify-between gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2">
-              <div className="text-sm text-rose-800">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2">
+              <div className="text-sm">
                 <span className="font-semibold">{selectedIds.size}</span> data terpilih
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>Bersihkan</Button>
+                <Button
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                  disabled={bulkValidateM.isPending}
+                  onClick={() => setBulkValidate("valid")}
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" />Tandai Valid
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-amber-600 hover:bg-amber-700"
+                  disabled={bulkValidateM.isPending}
+                  onClick={() => { setCatatanBulk(""); setBulkValidate("perbaikan"); }}
+                >
+                  <AlertTriangle className="h-4 w-4 mr-2" />Perlu Perbaikan
+                </Button>
                 <Button
                   size="sm"
                   variant="destructive"
@@ -356,6 +400,7 @@ function AdministrasiPage() {
               </div>
             </div>
           )}
+
 
           <div className="text-xs text-muted-foreground">
             Menampilkan {(list?.rows ?? []).length === 0 ? 0 : (page - 1) * pageSize + 1}
@@ -618,6 +663,54 @@ function AdministrasiPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!bulkValidate} onOpenChange={(o) => { if (!o && !bulkValidateM.isPending) { setBulkValidate(null); setCatatanBulk(""); } }}>
+        <DialogContent className="max-w-md w-[95vw]">
+          <DialogHeader>
+            <DialogTitle>
+              {bulkValidate === "valid" ? "Tandai Valid (Massal)" : "Tandai Perlu Perbaikan (Massal)"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="rounded-md bg-muted/40 p-2 text-xs">
+              <span className="font-semibold">{selectedIds.size}</span> data terpilih akan divalidasi sebagai{" "}
+              <span className="font-semibold">{bulkValidate === "valid" ? "Valid" : "Perlu Perbaikan"}</span>.
+            </div>
+            {bulkValidate === "perbaikan" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">Catatan Perbaikan (berlaku untuk semua)</Label>
+                <Textarea
+                  value={catatanBulk}
+                  onChange={(e) => setCatatanBulk(e.target.value)}
+                  placeholder="Tuliskan hal yang perlu diperbaiki oleh guru…"
+                  rows={4}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => { setBulkValidate(null); setCatatanBulk(""); }}
+              disabled={bulkValidateM.isPending}
+            >
+              Batal
+            </Button>
+            <Button
+              className={bulkValidate === "valid" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-amber-600 hover:bg-amber-700"}
+              disabled={bulkValidateM.isPending || !bulkValidate || selectedIds.size === 0}
+              onClick={() => bulkValidate && bulkValidateM.mutate({
+                ids: Array.from(selectedIds),
+                keputusan: bulkValidate,
+                catatan: bulkValidate === "perbaikan" ? (catatanBulk.trim() || undefined) : undefined,
+              })}
+            >
+              {bulkValidateM.isPending ? "Memproses…" : "Simpan Validasi"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
