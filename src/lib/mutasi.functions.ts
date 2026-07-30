@@ -315,14 +315,115 @@ export const mutasiSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
-    const [{ count: rombelCnt }, { count: resignCnt }, { count: outCnt }] = await Promise.all([
+    const [{ count: rombelCnt }, { count: resignCnt }, { count: outCnt }, { count: inCnt }] = await Promise.all([
       supabase.from("student_rombel_transfers").select("id", { count: "exact", head: true }),
       supabase.from("student_resignations").select("id", { count: "exact", head: true }),
       supabase.from("student_transfers_out").select("id", { count: "exact", head: true }),
+      supabase.from("student_transfers_in").select("id", { count: "exact", head: true }),
     ]);
     return {
       rombel: rombelCnt ?? 0,
       resign: resignCnt ?? 0,
       out: outCnt ?? 0,
+      in: inCnt ?? 0,
     };
+  });
+
+
+// ============ TRANSFERS IN (Pindah Masuk) ============
+export const listTransfersIn = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { search?: string } = {}) => d)
+  .handler(async ({ data, context }) => {
+    let q = context.supabase
+      .from("student_transfers_in")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(300);
+    if (data.search) {
+      const s = `%${data.search}%`;
+      q = q.or(`student_name.ilike.${s},student_nis.ilike.${s},sekolah_asal.ilike.${s}`);
+    }
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const upsertTransferIn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: {
+    id?: string;
+    student_name: string;
+    student_nis?: string;
+    student_nisn?: string;
+    gender?: string;
+    sekolah_asal?: string;
+    rombel_tujuan_id: string;
+    tanggal_surat?: string;
+    tanggal_diterima?: string;
+    file_surat?: string;
+    keterangan?: string;
+    dapodik_status?: string;
+    dapodik_tanggal?: string;
+  }) => {
+    if (!d.student_name?.trim()) throw new Error("Nama murid wajib diisi");
+    if (!d.rombel_tujuan_id) throw new Error("Rombel tujuan wajib dipilih");
+    return d;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: rb } = await supabase
+      .from("rombel").select("name").eq("id", data.rombel_tujuan_id).maybeSingle();
+
+    const payload: any = {
+      ...data,
+      student_name: data.student_name.trim(),
+      rombel_tujuan_name: (rb as any)?.name ?? null,
+    };
+
+    let studentId: string | null = null;
+    if (data.id) {
+      const { data: prev } = await supabase
+        .from("student_transfers_in").select("student_id").eq("id", data.id).maybeSingle();
+      studentId = (prev as any)?.student_id ?? null;
+    }
+
+    // Buat / perbarui data murid supaya langsung masuk rombel tujuan
+    const studentPayload: any = {
+      name: payload.student_name,
+      nis: data.student_nis || null,
+      nisn: data.student_nisn || null,
+      gender: data.gender || null,
+      rombel_id: data.rombel_tujuan_id,
+    };
+    if (studentId) {
+      const { error } = await supabase.from("students").update(studentPayload).eq("id", studentId);
+      if (error) throw new Error(error.message);
+    } else {
+      const { data: ins, error } = await supabase
+        .from("students").insert(studentPayload).select("id").maybeSingle();
+      if (error) throw new Error(error.message);
+      studentId = (ins as any)?.id ?? null;
+    }
+    payload.student_id = studentId;
+
+    if (data.id) {
+      const { error } = await supabase.from("student_transfers_in").update(payload).eq("id", data.id);
+      if (error) throw new Error(error.message);
+    } else {
+      delete payload.id;
+      payload.created_by = userId;
+      const { error } = await supabase.from("student_transfers_in").insert(payload);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+export const deleteTransferIn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("student_transfers_in").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
