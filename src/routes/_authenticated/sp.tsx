@@ -84,7 +84,7 @@ function loadThresholds(): Thresholds {
 
 export const Route = createFileRoute("/_authenticated/sp")({
   head: () => ({ meta: [{ title: "Manajemen BP/BK — SUPREME XPOES" }] }),
-  loader: async () => ({ data: await getBpBkData() }),
+  loader: async () => ({ data: await getBpBkData() }), // TEMP
   component: BpBkPage,
   pendingComponent: () => (
     <div className="p-6 text-sm text-muted-foreground">Memuat data BP/BK…</div>
