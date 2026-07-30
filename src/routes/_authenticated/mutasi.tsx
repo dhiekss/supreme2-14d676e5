@@ -546,7 +546,9 @@ function ResignTab({ onChange }: { onChange: () => void }) {
                   />
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
+                  <SuratViewButton path={r.file_surat} title={r.students?.name ?? r.student_name ?? "Surat"} />
                   <Button size="sm" variant="ghost" onClick={() => { setEditRow(r); setOpen(true); }}><Eye className="h-4 w-4 text-primary" /></Button>
+
                   <Button size="sm" variant="ghost" onClick={() => { if (confirm("Hapus?")) del.mutate(r.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </TableCell>
               </TableRow>
