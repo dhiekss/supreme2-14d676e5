@@ -137,6 +137,32 @@ function AdministrasiPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const bulkValidateM = useMutation({
+    mutationFn: async (v: { ids: string[]; keputusan: "valid" | "perbaikan"; catatan?: string }) => {
+      let ok = 0;
+      const errors: string[] = [];
+      for (const id of v.ids) {
+        try {
+          await validateFn({ data: { rombel_mata_pelajaran_id: id, keputusan: v.keputusan, catatan: v.catatan } });
+          ok++;
+        } catch (e: any) {
+          errors.push(e?.message ?? "Gagal");
+        }
+      }
+      return { ok, failed: errors.length };
+    },
+    onSuccess: (r) => {
+      if (r.failed > 0) toast.warning(`${r.ok} data divalidasi, ${r.failed} gagal`);
+      else toast.success(`${r.ok} data berhasil divalidasi`);
+      setSelectedIds(new Set());
+      setBulkValidate(null);
+      setCatatanBulk("");
+      qc.invalidateQueries({ queryKey: ["administrasi"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+
   const isAdmin = Boolean((refs as any)?.is_admin);
   const uploadEnabled = (refs as any)?.upload_enabled !== false;
   const canEdit = isAdmin || uploadEnabled;
