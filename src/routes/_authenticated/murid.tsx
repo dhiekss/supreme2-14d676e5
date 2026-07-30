@@ -317,7 +317,6 @@ function EditDialog({
       nis: form.nis || null,
       nisn: form.nisn || null,
       gender: form.gender || null,
-      rombel_id: form.rombel_id || null,
     });
   };
 
@@ -353,14 +352,9 @@ function EditDialog({
             </div>
             <div className="space-y-1.5">
               <Label>Rombel</Label>
-              <Select value={form.rombel_id ?? ""} onValueChange={(v) => setForm((f) => ({ ...f, rombel_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Pilih rombel" /></SelectTrigger>
-                <SelectContent>
-                  {rombels.map((r: any) => (
-                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm shadow-sm items-center text-muted-foreground">
+                {row?.rombel_nama ?? "—"}
+              </div>
             </div>
           </div>
         </div>
