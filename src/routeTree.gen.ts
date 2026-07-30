@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedZztestRouteImport } from './routes/_authenticated/zztest'
 import { Route as AuthenticatedVervalRouteImport } from './routes/_authenticated/verval'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedTpgRouteImport } from './routes/_authenticated/tpg'
@@ -91,11 +90,6 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedZztestRoute = AuthenticatedZztestRouteImport.update({
-  id: '/zztest',
-  path: '/zztest',
-  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedVervalRoute = AuthenticatedVervalRouteImport.update({
   id: '/verval',
@@ -499,7 +493,6 @@ export interface FileRoutesByFullPath {
   '/tpg': typeof AuthenticatedTpgRoute
   '/users': typeof AuthenticatedUsersRoute
   '/verval': typeof AuthenticatedVervalRoute
-  '/zztest': typeof AuthenticatedZztestRoute
   '/dashboard-guru/$guruId': typeof AuthenticatedDashboardGuruGuruIdRoute
   '/dashboard-murid/$studentId': typeof AuthenticatedDashboardMuridStudentIdRoute
   '/kelompok-belajar/$id': typeof AuthenticatedKelompokBelajarIdRoute
@@ -568,7 +561,6 @@ export interface FileRoutesByTo {
   '/tpg': typeof AuthenticatedTpgRoute
   '/users': typeof AuthenticatedUsersRoute
   '/verval': typeof AuthenticatedVervalRoute
-  '/zztest': typeof AuthenticatedZztestRoute
   '/dashboard-guru/$guruId': typeof AuthenticatedDashboardGuruGuruIdRoute
   '/dashboard-murid/$studentId': typeof AuthenticatedDashboardMuridStudentIdRoute
   '/kelompok-belajar/$id': typeof AuthenticatedKelompokBelajarIdRoute
@@ -639,7 +631,6 @@ export interface FileRoutesById {
   '/_authenticated/tpg': typeof AuthenticatedTpgRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/verval': typeof AuthenticatedVervalRoute
-  '/_authenticated/zztest': typeof AuthenticatedZztestRoute
   '/_authenticated/dashboard-guru/$guruId': typeof AuthenticatedDashboardGuruGuruIdRoute
   '/_authenticated/dashboard-murid/$studentId': typeof AuthenticatedDashboardMuridStudentIdRoute
   '/_authenticated/kelompok-belajar/$id': typeof AuthenticatedKelompokBelajarIdRoute
@@ -710,7 +701,6 @@ export interface FileRouteTypes {
     | '/tpg'
     | '/users'
     | '/verval'
-    | '/zztest'
     | '/dashboard-guru/$guruId'
     | '/dashboard-murid/$studentId'
     | '/kelompok-belajar/$id'
@@ -779,7 +769,6 @@ export interface FileRouteTypes {
     | '/tpg'
     | '/users'
     | '/verval'
-    | '/zztest'
     | '/dashboard-guru/$guruId'
     | '/dashboard-murid/$studentId'
     | '/kelompok-belajar/$id'
@@ -849,7 +838,6 @@ export interface FileRouteTypes {
     | '/_authenticated/tpg'
     | '/_authenticated/users'
     | '/_authenticated/verval'
-    | '/_authenticated/zztest'
     | '/_authenticated/dashboard-guru/$guruId'
     | '/_authenticated/dashboard-murid/$studentId'
     | '/_authenticated/kelompok-belajar/$id'
@@ -905,13 +893,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/zztest': {
-      id: '/_authenticated/zztest'
-      path: '/zztest'
-      fullPath: '/zztest'
-      preLoaderRoute: typeof AuthenticatedZztestRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/verval': {
       id: '/_authenticated/verval'
@@ -1441,7 +1422,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTpgRoute: typeof AuthenticatedTpgRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedVervalRoute: typeof AuthenticatedVervalRoute
-  AuthenticatedZztestRoute: typeof AuthenticatedZztestRoute
   AuthenticatedDashboardGuruGuruIdRoute: typeof AuthenticatedDashboardGuruGuruIdRoute
   AuthenticatedDashboardMuridStudentIdRoute: typeof AuthenticatedDashboardMuridStudentIdRoute
   AuthenticatedPembelajaranAdministrasiRoute: typeof AuthenticatedPembelajaranAdministrasiRoute
@@ -1506,7 +1486,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTpgRoute: AuthenticatedTpgRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedVervalRoute: AuthenticatedVervalRoute,
-  AuthenticatedZztestRoute: AuthenticatedZztestRoute,
   AuthenticatedDashboardGuruGuruIdRoute: AuthenticatedDashboardGuruGuruIdRoute,
   AuthenticatedDashboardMuridStudentIdRoute:
     AuthenticatedDashboardMuridStudentIdRoute,
