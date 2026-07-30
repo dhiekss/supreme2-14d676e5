@@ -1866,6 +1866,36 @@ export type Database = {
         }
         Relationships: []
       }
+      student_identity_logs: {
+        Row: {
+          changed_by: string | null
+          changed_by_email: string | null
+          changed_by_name: string | null
+          changes: Json
+          created_at: string
+          id: string
+          student_id: string
+        }
+        Insert: {
+          changed_by?: string | null
+          changed_by_email?: string | null
+          changed_by_name?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          student_id: string
+        }
+        Update: {
+          changed_by?: string | null
+          changed_by_email?: string | null
+          changed_by_name?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          student_id?: string
+        }
+        Relationships: []
+      }
       student_promotions: {
         Row: {
           batch_id: string
