@@ -19,6 +19,7 @@ import {
   listRombelTransfers, upsertRombelTransfer, deleteRombelTransfer,
   listResignations, upsertResignation, deleteResignation,
   listTransfersOut, upsertTransferOut, deleteTransferOut,
+  listTransfersIn, upsertTransferIn, deleteTransferIn,
   listStudentsForMutasi, listRombelForMutasi, mutasiSummary,
 } from "@/lib/mutasi.functions";
 
