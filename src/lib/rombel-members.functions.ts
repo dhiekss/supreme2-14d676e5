@@ -89,11 +89,55 @@ export const saveStudent = createServerFn({ method: "POST" })
   .inputValidator(StudentInput.parse)
   .handler(async ({ context, data }) => {
     const { id, ...payload } = data;
+    let before: any = null;
+    if (id) {
+      const { data: prev } = await context.supabase
+        .from("students")
+        .select("name, nis, nisn, gender")
+        .eq("id", id)
+        .maybeSingle();
+      before = prev ?? null;
+    }
     const r = id
       ? await context.supabase.from("students").update(payload).eq("id", id)
       : await context.supabase.from("students").insert(payload);
     if (r.error) throw new Error(r.error.message);
+
+    if (id && before) {
+      const fields = ["name", "nis", "nisn", "gender"] as const;
+      const changes = fields
+        .filter((f) => f in payload && String((before as any)[f] ?? "") !== String((payload as any)[f] ?? ""))
+        .map((f) => ({ field: f, from: (before as any)[f] ?? null, to: (payload as any)[f] ?? null }));
+      if (changes.length) {
+        const { data: prof } = await context.supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("id", context.userId)
+          .maybeSingle();
+        await context.supabase.from("student_identity_logs").insert({
+          student_id: id,
+          changed_by: context.userId,
+          changed_by_name: prof?.full_name ?? null,
+          changed_by_email: prof?.email ?? null,
+          changes,
+        });
+      }
+    }
     return { ok: true };
+  });
+
+export const listStudentIdentityLogs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ student_id: uuid }).parse)
+  .handler(async ({ context, data }) => {
+    const { data: rows, error } = await context.supabase
+      .from("student_identity_logs")
+      .select("id, created_at, changed_by_name, changed_by_email, changes")
+      .eq("student_id", data.student_id)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    return rows ?? [];
   });
 
 export const removeStudentFromRombel = createServerFn({ method: "POST" })

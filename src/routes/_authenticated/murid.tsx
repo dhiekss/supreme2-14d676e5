@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowDown, ArrowUp, ChevronsUpDown, Pencil, Search, Users, X } from "lucide-react";
-import { listAllStudents, saveStudent } from "@/lib/rombel-members.functions";
+import { ArrowDown, ArrowUp, ChevronsUpDown, History, Pencil, Search, Users, X } from "lucide-react";
+import { listAllStudents, listStudentIdentityLogs, saveStudent } from "@/lib/rombel-members.functions";
 import { listRombel } from "@/lib/sekolah.functions";
 import { toast } from "sonner";
 
@@ -63,12 +63,14 @@ function Page() {
   const [konsentrasiFilter, setKonsentrasiFilter] = useState("all");
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "name", dir: "asc" });
   const [editing, setEditing] = useState<Partial<Row> | null>(null);
+  const [history, setHistory] = useState<Partial<Row> | null>(null);
 
   const save = useMutation({
     mutationFn: (v: any) => saveFn({ data: v }),
     onSuccess: () => {
       toast.success("Data murid tersimpan");
       qc.invalidateQueries({ queryKey: ["murid-all"] });
+      qc.invalidateQueries({ queryKey: ["murid-logs"] });
       setEditing(null);
     },
     onError: (e: any) => toast.error(e.message),
@@ -269,9 +271,14 @@ function Page() {
                       <TableCell>{r.rombel_nama ?? "—"}</TableCell>
                       <TableCell>{r.wali_kelas_name ?? "—"}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="outline" onClick={() => setEditing(r)}>
-                          <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
-                        </Button>
+                        <div className="inline-flex gap-2">
+                          <Button size="sm" variant="ghost" onClick={() => setHistory(r)}>
+                            <History className="h-3.5 w-3.5 mr-1" /> Riwayat
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditing(r)}>
+                            <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -295,6 +302,8 @@ function Page() {
         onSave={(v) => save.mutate(v)}
         saving={save.isPending}
       />
+
+      <HistoryDialog row={history} onClose={() => setHistory(null)} />
     </div>
   );
 }
@@ -375,6 +384,68 @@ function EditDialog({
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Batal</Button>
           <Button onClick={submit} disabled={saving}>{saving ? "Menyimpan…" : "Simpan"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const FIELD_LABEL: Record<string, string> = {
+  name: "Nama",
+  nis: "NIS",
+  nisn: "NISN",
+  gender: "Jenis Kelamin",
+};
+
+function HistoryDialog({ row, onClose }: { row: Partial<Row> | null; onClose: () => void }) {
+  const logsFn = useServerFn(listStudentIdentityLogs);
+  const { data = [], isLoading } = useQuery({
+    queryKey: ["murid-logs", row?.id],
+    queryFn: () => logsFn({ data: { student_id: row!.id as string } }) as Promise<any[]>,
+    enabled: !!row?.id,
+  });
+
+  return (
+    <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="w-[95vw] max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Riwayat Perubahan Identitas — {row?.name ?? "—"}</DialogTitle>
+        </DialogHeader>
+        <div className="max-h-[60vh] overflow-y-auto space-y-3">
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">Memuat…</p>
+          ) : data.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">Belum ada perubahan identitas tercatat.</p>
+          ) : (
+            data.map((log) => (
+              <div key={log.id} className="rounded-md border p-3 space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">
+                    {log.changed_by_name || log.changed_by_email || "Pengguna tidak dikenal"}
+                  </span>
+                  <span>
+                    {new Date(log.created_at).toLocaleString("id-ID", {
+                      dateStyle: "full",
+                      timeStyle: "short",
+                    })}
+                  </span>
+                </div>
+                <ul className="space-y-1 text-sm">
+                  {(Array.isArray(log.changes) ? log.changes : []).map((c: any, i: number) => (
+                    <li key={i} className="flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary">{FIELD_LABEL[c.field] ?? c.field}</Badge>
+                      <span className="text-muted-foreground line-through">{c.from ?? "—"}</span>
+                      <span aria-hidden>→</span>
+                      <span className="font-medium">{c.to ?? "—"}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Tutup</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
