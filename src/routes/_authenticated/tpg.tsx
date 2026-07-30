@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/tpg")({
+  ssr: false,
   head: () => ({ meta: [{ title: "TPG — SUPREME XPOES" }] }),
   loader: async () => ({
     guru: await listGuru(),
