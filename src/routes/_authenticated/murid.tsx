@@ -26,11 +26,9 @@ type Row = {
   wali_kelas_name?: string | null;
   tingkat?: string | null;
   konsentrasi_keahlian?: string | null;
-  dapodik_status?: string | null;
-  dapodik_tanggal?: string | null;
 };
 
-type SortKey = "name" | "gender" | "nis" | "nisn" | "rombel_nama" | "tingkat" | "konsentrasi_keahlian" | "wali_kelas_name" | "dapodik_status";
+type SortKey = "name" | "gender" | "nis" | "nisn" | "rombel_nama" | "tingkat" | "konsentrasi_keahlian" | "wali_kelas_name";
 
 
 export const Route = createFileRoute("/_authenticated/murid")({
