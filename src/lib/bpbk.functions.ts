@@ -161,7 +161,7 @@ export const getBpBkData = createServerFn({ method: "POST" })
         const telat = countSince(telatDates, cutoff);
         const th = THRESHOLDS[lv];
         if (alfa <= th.alfa && telat <= th.telat) continue;
-        rekomendasi[lv].push({ ...baseEnrich(s), alfa, telat, sejak: cutoff ?? null });
+        rekomendasi[lv].push({ ...baseEnrich(s), alfa, telat, sejak: cutoff ?? periodStart ?? null });
       }
     }
 
@@ -211,5 +211,6 @@ export const getBpBkData = createServerFn({ method: "POST" })
       murid,
       rombelList,
       thresholds: THRESHOLDS,
+      mulaiTanggal: periodStart,
     };
   });
