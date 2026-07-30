@@ -47,7 +47,7 @@ function Page() {
   const saveFn = useServerFn(saveStudent);
 
   const { data = [], isLoading } = useQuery({ queryKey: ["murid-all"], queryFn: () => fetchFn() as Promise<Row[]> });
-  const { data: rombels = [] } = useQuery({ queryKey: ["rombel-list"], queryFn: () => rombelFn() as Promise<any[]> });
+  const { data: rombels = [] } = useQuery({ queryKey: ["rombel-list"], queryFn: () => rombelFn({ data: {} }) as Promise<any[]> });
 
   const [q, setQ] = useState("");
   const [rombelFilter, setRombelFilter] = useState("all");
