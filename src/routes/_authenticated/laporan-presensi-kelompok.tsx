@@ -402,16 +402,25 @@ function TrendChart({ title, data, dataKey, color }: { title: string; data: any[
   );
 }
 
+type KbSortKey = "date" | "rombel" | "walikelas" | "officer_name" | "tingkat" | "konsentrasi" | "H" | "S" | "I" | "A" | "P" | "jumlahMurid";
+
 function DetailPresensiKelompokCard() {
   const [date, setDate] = useState<string>("");
   const [kelompokId, setKelompokId] = useState<string>("__all");
+  const [tingkat, setTingkat] = useState<string>("__all");
+  const [konsentrasi, setKonsentrasi] = useState<string>("__all");
   const [search, setSearch] = useState<string>("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [view, setView] = useState<{ kelompokId: string; date: string } | null>(null);
+  const [edit, setEdit] = useState<{ kelompokId: string; date: string } | null>(null);
+  const [del, setDel] = useState<any | null>(null);
+  const [sort, setSort] = useState<{ key: KbSortKey; dir: "asc" | "desc" }>({ key: "date", dir: "desc" });
 
+  const qc = useQueryClient();
   const fetchList = useServerFn(attendanceDetailListKelompok);
   const fetchDash = useServerFn(presensiDashboardKelompok);
+  const delFn = useServerFn(deleteKelompokAttendance);
 
   // Load kelompok list from dashboard endpoint (reuse existing wide fetch)
   const refsQuery = useQuery({
@@ -430,26 +439,82 @@ function DetailPresensiKelompokCard() {
       }),
   });
   const rows = listQuery.data ?? [];
-  const filteredRows = (() => {
+
+  const tingkatOptions = useMemo(
+    () => [...new Set((rows as any[]).flatMap((r) => r.tingkatList ?? []))].map(String).sort(),
+    [rows],
+  );
+  const konsentrasiOptions = useMemo(
+    () => [...new Set((rows as any[]).flatMap((r) => r.konsentrasiList ?? []))].map(String).sort(),
+    [rows],
+  );
+
+  const filteredRows = useMemo(() => {
+    let out = rows as any[];
     const q = search.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((r: any) =>
-      [r.officer_name, r.rombel, r.walikelas]
-        .filter(Boolean)
-        .some((v: string) => String(v).toLowerCase().includes(q))
-    );
-  })();
+    if (q) {
+      out = out.filter((r: any) =>
+        [r.officer_name, r.rombel, r.walikelas, r.tingkat, r.konsentrasi]
+          .filter(Boolean)
+          .some((v: string) => String(v).toLowerCase().includes(q)),
+      );
+    }
+    if (tingkat !== "__all") out = out.filter((r: any) => (r.tingkatList ?? []).includes(tingkat));
+    if (konsentrasi !== "__all") out = out.filter((r: any) => (r.konsentrasiList ?? []).includes(konsentrasi));
+
+    const k = sort.key;
+    const dir = sort.dir === "asc" ? 1 : -1;
+    return [...out].sort((a: any, b: any) => {
+      if (["H", "S", "I", "A", "P", "jumlahMurid"].includes(k)) return (Number(a[k]) - Number(b[k])) * dir;
+      return String(a[k] ?? "").localeCompare(String(b[k] ?? "")) * dir;
+    });
+  }, [rows, search, tingkat, konsentrasi, sort]);
+
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const curPage = Math.min(page, totalPages);
   const start = (curPage - 1) * pageSize;
   const pageRows = filteredRows.slice(start, start + pageSize);
 
+  const toggleSort = (key: KbSortKey) => {
+    setSort((prev) => ({ key, dir: prev.key === key && prev.dir === "asc" ? "desc" : "asc" }));
+    setPage(1);
+  };
+
+  const SortHeader = ({ sortKey, children, className }: { sortKey: KbSortKey; children: React.ReactNode; className?: string }) => (
+    <TableHead
+      className={cn("cursor-pointer select-none hover:bg-muted/50 transition-colors", className)}
+      onClick={() => toggleSort(sortKey)}
+    >
+      <div className={cn("flex items-center gap-1", className?.includes("text-center") && "justify-center")}>
+        {children}
+        <ArrowUpDown className={cn("h-3.5 w-3.5", sort.key === sortKey ? "text-foreground" : "text-muted-foreground/50")} />
+      </div>
+    </TableHead>
+  );
+
+  const doDelete = async () => {
+    if (!del) return;
+    try {
+      await delFn({ data: { kelompokId: del.kelompokId, date: del.date } });
+      toast.success("Data presensi kelompok dihapus");
+      setDel(null);
+      qc.invalidateQueries({ queryKey: ["detail-presensi-kelompok"] });
+      qc.invalidateQueries({ queryKey: ["presensi-dashboard-kelompok"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal menghapus");
+    }
+  };
+
   const resetFilter = () => {
     setDate("");
     setKelompokId("__all");
+    setTingkat("__all");
+    setKonsentrasi("__all");
     setSearch("");
+    setSort({ key: "date", dir: "desc" });
     setPage(1);
   };
+
 
   const exportRecap = () => {
     const header = ["Tanggal", "Kelompok Belajar", "Pembimbing", "Petugas Piket", "Hadir", "Sakit", "Izin", "Alfa", "PKL", "Jumlah Murid"];
