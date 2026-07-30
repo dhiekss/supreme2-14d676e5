@@ -315,17 +315,20 @@ export const mutasiSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
-    const [{ count: rombelCnt }, { count: resignCnt }, { count: outCnt }] = await Promise.all([
+    const [{ count: rombelCnt }, { count: resignCnt }, { count: outCnt }, { count: inCnt }] = await Promise.all([
       supabase.from("student_rombel_transfers").select("id", { count: "exact", head: true }),
       supabase.from("student_resignations").select("id", { count: "exact", head: true }),
       supabase.from("student_transfers_out").select("id", { count: "exact", head: true }),
+      supabase.from("student_transfers_in").select("id", { count: "exact", head: true }),
     ]);
     return {
       rombel: rombelCnt ?? 0,
       resign: resignCnt ?? 0,
       out: outCnt ?? 0,
+      in: inCnt ?? 0,
     };
   });
+
 
 // ============ TRANSFERS IN (Pindah Masuk) ============
 export const listTransfersIn = createServerFn({ method: "GET" })
