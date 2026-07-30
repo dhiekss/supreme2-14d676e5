@@ -336,7 +336,7 @@ export const attendanceDetailList = createServerFn({ method: "GET" })
     const recIds = recs.map((r: any) => r.id);
     const [rombelRes, students, details] = await Promise.all([
       rombelIds.length
-        ? supabase.from("rombel").select("id, name, wali_kelas_name").in("id", rombelIds)
+        ? supabase.from("rombel").select("id, name, wali_kelas_name, tingkat, konsentrasi_keahlian").in("id", rombelIds)
         : Promise.resolve({ data: [] as any[] }),
       rombelIds.length
         ? fetchAllPaged((f, t) => supabase.from("students").select("id, rombel_id").in("rombel_id", rombelIds).range(f, t))
@@ -366,6 +366,8 @@ export const attendanceDetailList = createServerFn({ method: "GET" })
         rombel_id: r.rombel_id,
         rombel: rb?.name ?? "-",
         walikelas: rb?.wali_kelas_name ?? "-",
+        tingkat: rb?.tingkat ?? null,
+        konsentrasi: rb?.konsentrasi_keahlian ?? null,
         officer_name: r.officer_name ?? "-",
         jumlahMurid: r.rombel_id ? countByRombel.get(r.rombel_id) ?? 0 : 0,
         ...c,
