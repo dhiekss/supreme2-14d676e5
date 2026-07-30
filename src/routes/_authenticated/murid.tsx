@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -92,7 +92,14 @@ function Page() {
   );
 
   const rows = useMemo(() => {
-    const terms = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const norm = (v: unknown) =>
+      String(v ?? "")
+        .toLowerCase()
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+    const terms = norm(deferredQ).split(" ").filter(Boolean);
     const out = (data ?? []).filter((r) => {
       if (rombelFilter !== "all" && r.rombel_id !== rombelFilter) return false;
       if (genderFilter !== "all" && (r.gender ?? "") !== genderFilter) return false;
@@ -100,7 +107,7 @@ function Page() {
       if (konsentrasiFilter !== "all" && (r.konsentrasi_keahlian ?? "") !== konsentrasiFilter) return false;
       if (!terms.length) return true;
       const hay = [r.name, r.nis, r.nisn, r.rombel_nama, r.tingkat, r.konsentrasi_keahlian, r.wali_kelas_name]
-        .map((v) => String(v ?? "").toLowerCase())
+        .map(norm)
         .join(" ");
       return terms.every((t) => hay.includes(t));
     });
