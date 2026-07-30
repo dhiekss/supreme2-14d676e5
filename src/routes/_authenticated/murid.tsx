@@ -235,15 +235,14 @@ function Page() {
                   <SortHead label="Konsentrasi" sortKey="konsentrasi_keahlian" />
                   <SortHead label="Rombel" sortKey="rombel_nama" />
                   <SortHead label="Wali Kelas" sortKey="wali_kelas_name" />
-                  <SortHead label="Status Dapodik" sortKey="dapodik_status" />
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Memuat…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Memuat…</TableCell></TableRow>
                 ) : rows.length === 0 ? (
-                  <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Tidak ada data murid.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Tidak ada data murid.</TableCell></TableRow>
                 ) : (
                   rows.slice(0, 1000).map((r, i) => (
                     <TableRow key={r.id}>
@@ -256,9 +255,6 @@ function Page() {
                       <TableCell>{r.konsentrasi_keahlian ?? "—"}</TableCell>
                       <TableCell>{r.rombel_nama ?? "—"}</TableCell>
                       <TableCell>{r.wali_kelas_name ?? "—"}</TableCell>
-                      <TableCell>
-                        {r.dapodik_status ? <Badge variant="outline">{r.dapodik_status}</Badge> : <span className="text-muted-foreground">—</span>}
-                      </TableCell>
                       <TableCell className="text-right">
                         <Button size="sm" variant="outline" onClick={() => setEditing(r)}>
                           <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
