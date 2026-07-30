@@ -63,6 +63,7 @@ function Page() {
   const [konsentrasiFilter, setKonsentrasiFilter] = useState("all");
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "name", dir: "asc" });
   const [editing, setEditing] = useState<Partial<Row> | null>(null);
+  const [history, setHistory] = useState<Partial<Row> | null>(null);
 
   const save = useMutation({
     mutationFn: (v: any) => saveFn({ data: v }),
