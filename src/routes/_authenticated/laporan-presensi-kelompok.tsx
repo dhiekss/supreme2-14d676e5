@@ -575,7 +575,7 @@ function DetailPresensiKelompokCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="rounded-lg border bg-muted/30 p-3 grid gap-3 md:grid-cols-[1fr_1fr_auto] items-end">
+        <div className="rounded-lg border bg-muted/30 p-3 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] items-end">
           <div className="space-y-1">
             <Label className="text-xs flex items-center gap-1.5"><CalendarCheck className="h-3.5 w-3.5" /> Tanggal</Label>
             <Input type="date" value={date} onChange={(e) => { setDate(e.target.value); setPage(1); }} className="h-9 bg-background" />
@@ -592,6 +592,26 @@ function DetailPresensiKelompokCard() {
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-1">
+            <Label className="text-xs flex items-center gap-1.5"><Filter className="h-3.5 w-3.5" /> Tingkat</Label>
+            <Select value={tingkat} onValueChange={(v) => { setTingkat(v); setPage(1); }}>
+              <SelectTrigger className="h-9 bg-background"><SelectValue placeholder="Semua Tingkat" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua Tingkat</SelectItem>
+                {tingkatOptions.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs flex items-center gap-1.5"><Filter className="h-3.5 w-3.5" /> Konsentrasi</Label>
+            <Select value={konsentrasi} onValueChange={(v) => { setKonsentrasi(v); setPage(1); }}>
+              <SelectTrigger className="h-9 bg-background"><SelectValue placeholder="Semua Konsentrasi" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua Konsentrasi</SelectItem>
+                {konsentrasiOptions.map((k) => <SelectItem key={k} value={k}>{k}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
           <Button variant="outline" onClick={resetFilter} className="h-9">Reset Filter</Button>
         </div>
 
@@ -600,7 +620,7 @@ function DetailPresensiKelompokCard() {
           <Input
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Cari cepat: petugas, kelompok, atau pembimbing..."
+            placeholder="Cari cepat: petugas, kelompok, pembimbing, tingkat, atau konsentrasi..."
             className="h-9 pl-9 bg-background"
           />
         </div>
@@ -609,16 +629,18 @@ function DetailPresensiKelompokCard() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tanggal</TableHead>
-                <TableHead>Kelompok Belajar</TableHead>
-                <TableHead>Pembimbing</TableHead>
-                <TableHead>Petugas Piket</TableHead>
-                <TableHead className="text-center">Hadir</TableHead>
-                <TableHead className="text-center">Sakit</TableHead>
-                <TableHead className="text-center">Izin</TableHead>
-                <TableHead className="text-center">Alfa</TableHead>
-                <TableHead className="text-center">PKL</TableHead>
-                <TableHead className="text-center">Jumlah Murid</TableHead>
+                <SortHeader sortKey="date">Tanggal</SortHeader>
+                <SortHeader sortKey="rombel">Kelompok Belajar</SortHeader>
+                <SortHeader sortKey="walikelas">Pembimbing</SortHeader>
+                <SortHeader sortKey="tingkat">Tingkat</SortHeader>
+                <SortHeader sortKey="konsentrasi">Konsentrasi</SortHeader>
+                <SortHeader sortKey="officer_name">Petugas Piket</SortHeader>
+                <SortHeader sortKey="H" className="text-center">Hadir</SortHeader>
+                <SortHeader sortKey="S" className="text-center">Sakit</SortHeader>
+                <SortHeader sortKey="I" className="text-center">Izin</SortHeader>
+                <SortHeader sortKey="A" className="text-center">Alfa</SortHeader>
+                <SortHeader sortKey="P" className="text-center">PKL</SortHeader>
+                <SortHeader sortKey="jumlahMurid" className="text-center">Jumlah Murid</SortHeader>
                 <TableHead className="text-center">Aksi</TableHead>
               </TableRow>
             </TableHeader>
@@ -628,6 +650,8 @@ function DetailPresensiKelompokCard() {
                   <TableCell className="whitespace-nowrap">{r.date}</TableCell>
                   <TableCell className="font-medium">{r.rombel}</TableCell>
                   <TableCell>{r.walikelas}</TableCell>
+                  <TableCell className="whitespace-nowrap">{r.tingkat}</TableCell>
+                  <TableCell className="text-xs">{r.konsentrasi}</TableCell>
                   <TableCell>{r.officer_name}</TableCell>
                   <TableCell className="text-center text-emerald-600 font-medium">{r.H}</TableCell>
                   <TableCell className="text-center text-amber-600">{r.S}</TableCell>
@@ -643,13 +667,22 @@ function DetailPresensiKelompokCard() {
                         onClick={() => setView({ kelompokId: r.kelompokId, date: r.date })} title="Lihat Detail">
                         <Eye className="h-4 w-4" />
                       </Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-indigo-600 hover:text-indigo-700"
+                        onClick={() => setEdit({ kelompokId: r.kelompokId, date: r.date })} title="Edit Presensi">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => setDel(r)} title="Hapus Baris">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
               ))}
               {!listQuery.isFetching && filteredRows.length === 0 && (
-                <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-6">{rows.length === 0 ? "Belum ada catatan presensi kelompok." : "Tidak ada hasil untuk pencarian ini."}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={13} className="text-center text-muted-foreground py-6">{rows.length === 0 ? "Belum ada catatan presensi kelompok." : "Tidak ada hasil untuk pencarian ini."}</TableCell></TableRow>
               )}
+
             </TableBody>
           </Table>
         </div>
