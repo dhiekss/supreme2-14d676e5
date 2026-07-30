@@ -136,7 +136,7 @@ function Page() {
 
   const hasFilter =
     q.trim() !== "" ||
-    [rombelFilter, genderFilter, tingkatFilter, konsentrasiFilter, dapodikFilter].some((v) => v !== "all");
+    [rombelFilter, genderFilter, tingkatFilter, konsentrasiFilter].some((v) => v !== "all");
 
   const resetFilters = () => {
     setQ("");
@@ -144,7 +144,6 @@ function Page() {
     setGenderFilter("all");
     setTingkatFilter("all");
     setKonsentrasiFilter("all");
-    setDapodikFilter("all");
   };
 
   const totalL = rows.filter((r) => r.gender === "L").length;
