@@ -18,11 +18,11 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
 } from "recharts";
 
-const listQO = queryOptions({
+export const listQO = queryOptions({
   queryKey: ["lapor-kbm-list"],
   queryFn: () => listLaporanKbm({ data: { limit: 500 } }),
 });
-const optsQO = queryOptions({
+export const optsQO = queryOptions({
   queryKey: ["lapor-kbm-options"],
   queryFn: () => listLaporanKbmOptions(),
 });
