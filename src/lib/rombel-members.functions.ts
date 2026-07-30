@@ -31,7 +31,7 @@ export const listAllStudents = createServerFn({ method: "GET" })
       }
       return out;
     };
-    const safe = async <T = any>(p: Promise<any>): Promise<T[]> => {
+    const safe = async <T = any>(p: any): Promise<T[]> => {
       try {
         const { data, error } = await p;
         if (error) return [];
@@ -40,6 +40,7 @@ export const listAllStudents = createServerFn({ method: "GET" })
         return [];
       }
     };
+
     const [studentsData, rombelData, tIn, tOut, tPindah, tKeluar] = await Promise.all([
       fetchAll((f, t) => context.supabase.from("students").select("id, name, nis, nisn, gender, rombel_id").order("name").range(f, t)),
       fetchAll((f, t) => context.supabase.from("rombel").select("id, name, wali_kelas_name, tingkat, konsentrasi_keahlian").range(f, t)),
