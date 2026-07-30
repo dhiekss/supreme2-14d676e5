@@ -850,3 +850,206 @@ function OutDialog({ open, setOpen, row, onSaved }: any) {
     </Dialog>
   );
 }
+
+// ============ Transfer In (Pindah Masuk) ============
+function TransferInTab({ onChange }: { onChange: () => void }) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const [editRow, setEditRow] = useState<any>(null);
+  const [sort, setSort] = useState<{ field: string; dir: SortDir }>({ field: "", dir: null });
+  const listFn = useServerFn(listTransfersIn);
+  const delFn = useServerFn(deleteTransferIn);
+  const saveFn = useServerFn(upsertTransferIn);
+  const qc = useQueryClient();
+  const { data } = useSuspenseQuery({
+    queryKey: ["mutasi-in", search],
+    queryFn: () => listFn({ data: { search: search || undefined } }),
+  });
+  const del = useMutation({
+    mutationFn: (id: string) => delFn({ data: { id } }),
+    onSuccess: () => { toast.success("Dihapus"); onChange(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const inlineUpdate = useMutation({
+    mutationFn: (payload: { row: any; patch: any }) =>
+      saveFn({ data: {
+        id: payload.row.id,
+        student_name: payload.row.student_name,
+        student_nis: payload.row.student_nis,
+        student_nisn: payload.row.student_nisn,
+        gender: payload.row.gender,
+        sekolah_asal: payload.row.sekolah_asal,
+        rombel_tujuan_id: payload.row.rombel_tujuan_id,
+        tanggal_surat: payload.row.tanggal_surat,
+        tanggal_diterima: payload.row.tanggal_diterima,
+        file_surat: payload.row.file_surat,
+        keterangan: payload.row.keterangan,
+        ...payload.patch,
+      } }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["mutasi-in"] }); qc.invalidateQueries({ queryKey: ["mutasi-sum"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const sorted = useSortedRows(data as any[], sort, {
+    nama: (r) => r.student_name ?? "",
+    nis: (r) => r.student_nis ?? "",
+    sekolah_asal: (r) => r.sekolah_asal ?? "",
+    rombel_tujuan: (r) => r.rombel_tujuan_name ?? "",
+    tanggal_diterima: (r) => r.tanggal_diterima ?? "",
+    dapodik_status: (r) => (r.dapodik_status ?? "belum"),
+    dapodik_tanggal: (r) => r.dapodik_tanggal ?? "",
+  });
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row gap-2 items-center flex-wrap">
+        <Input placeholder="Cari nama / NIS / sekolah asal…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-md" />
+        <div className="ml-auto">
+          <Button onClick={() => { setEditRow(null); setOpen(true); }}><Plus className="h-4 w-4 mr-2" />Tambah</Button>
+        </div>
+      </CardHeader>
+      <CardContent className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <SortTh label="Nama Murid" field="nama" sort={sort} setSort={setSort} />
+              <SortTh label="NIS" field="nis" sort={sort} setSort={setSort} />
+              <SortTh label="Sekolah Asal" field="sekolah_asal" sort={sort} setSort={setSort} />
+              <SortTh label="Rombel Tujuan" field="rombel_tujuan" sort={sort} setSort={setSort} />
+              <SortTh label="Tanggal Diterima" field="tanggal_diterima" sort={sort} setSort={setSort} />
+              <SortTh label="Proses Dapodik" field="dapodik_status" sort={sort} setSort={setSort} />
+              <SortTh label="Tgl Proses Dapodik" field="dapodik_tanggal" sort={sort} setSort={setSort} />
+              <TableHead className="text-right">Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.length === 0 && (
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
+            )}
+            {sorted.map((r: any) => (
+              <TableRow key={r.id}>
+                <TableCell className="font-medium">{r.student_name ?? "—"}</TableCell>
+                <TableCell className="text-muted-foreground">{r.student_nis ?? "—"}</TableCell>
+                <TableCell className="max-w-xs truncate">{r.sekolah_asal ?? "—"}</TableCell>
+                <TableCell><RombelPill name={r.rombel_tujuan_name} /></TableCell>
+                <TableCell className="text-sm">{fmtDateID(r.tanggal_diterima)}</TableCell>
+                <TableCell>
+                  <DapodikSelect
+                    value={r.dapodik_status}
+                    disabled={inlineUpdate.isPending}
+                    onChange={(v) => inlineUpdate.mutate({ row: r, patch: { dapodik_status: v } })}
+                  />
+                </TableCell>
+                <TableCell>
+                  <DapodikDate
+                    value={r.dapodik_tanggal}
+                    disabled={inlineUpdate.isPending}
+                    onChange={(v) => inlineUpdate.mutate({ row: r, patch: { dapodik_tanggal: v } })}
+                  />
+                </TableCell>
+                <TableCell className="text-right whitespace-nowrap">
+                  <Button size="sm" variant="ghost" onClick={() => { setEditRow(r); setOpen(true); }}><Eye className="h-4 w-4 text-primary" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => { if (confirm("Hapus?")) del.mutate(r.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+      {open && <InDialog open={open} setOpen={setOpen} row={editRow} onSaved={() => { setOpen(false); onChange(); }} />}
+    </Card>
+  );
+}
+
+function InDialog({ open, setOpen, row, onSaved }: any) {
+  const email = useCurrentEmail();
+  const rombelFn = useServerFn(listRombelForMutasi);
+  const saveFn = useServerFn(upsertTransferIn);
+  const { data: rombels = [] } = useQuery({ queryKey: ["mutasi-rombels"], queryFn: () => rombelFn() });
+  const [f, setF] = useState({
+    student_name: row?.student_name ?? "",
+    student_nis: row?.student_nis ?? "",
+    student_nisn: row?.student_nisn ?? "",
+    gender: row?.gender ?? "",
+    sekolah_asal: row?.sekolah_asal ?? "",
+    rombel_tujuan_id: row?.rombel_tujuan_id ?? "",
+    tanggal_surat: row?.tanggal_surat ?? new Date().toISOString().slice(0, 10),
+    tanggal_diterima: row?.tanggal_diterima ?? new Date().toISOString().slice(0, 10),
+    file_surat: row?.file_surat ?? "",
+    keterangan: row?.keterangan ?? "",
+  });
+  const save = useMutation({
+    mutationFn: () => saveFn({ data: { id: row?.id, ...f } }),
+    onSuccess: () => { toast.success("Disimpan & murid masuk ke rombel tujuan"); onSaved(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Form Pindah Masuk</DialogTitle>
+          <DialogDescription>Murid yang diinput akan otomatis terdaftar pada rombel tujuan</DialogDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label>Nama Murid <span className="text-destructive">*</span></Label>
+            <Input placeholder="Nama lengkap murid" value={f.student_name} onChange={(e) => setF({ ...f, student_name: e.target.value })} maxLength={150} />
+          </div>
+          <div>
+            <Label>Rombel Tujuan <span className="text-destructive">*</span></Label>
+            <Select value={f.rombel_tujuan_id} onValueChange={(v) => setF({ ...f, rombel_tujuan_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Pilih rombel tujuan" /></SelectTrigger>
+              <SelectContent>{rombels.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>NIS</Label>
+            <Input value={f.student_nis} onChange={(e) => setF({ ...f, student_nis: e.target.value })} maxLength={30} />
+          </div>
+          <div>
+            <Label>NISN</Label>
+            <Input value={f.student_nisn} onChange={(e) => setF({ ...f, student_nisn: e.target.value })} maxLength={30} />
+          </div>
+          <div>
+            <Label>Jenis Kelamin</Label>
+            <Select value={f.gender} onValueChange={(v) => setF({ ...f, gender: v })}>
+              <SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="L">Laki-laki</SelectItem>
+                <SelectItem value="P">Perempuan</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Sekolah Asal</Label>
+            <Input placeholder="Nama sekolah asal" value={f.sekolah_asal} onChange={(e) => setF({ ...f, sekolah_asal: e.target.value })} maxLength={150} />
+          </div>
+          <div>
+            <Label>Tanggal Surat</Label>
+            <Input type="date" value={f.tanggal_surat} onChange={(e) => setF({ ...f, tanggal_surat: e.target.value })} />
+          </div>
+          <div>
+            <Label>Tanggal Diterima</Label>
+            <Input type="date" value={f.tanggal_diterima} onChange={(e) => setF({ ...f, tanggal_diterima: e.target.value })} />
+          </div>
+          <div className="md:col-span-2">
+            <Label>Upload File Surat</Label>
+            <FileUploadField value={f.file_surat} onChange={(v) => setF({ ...f, file_surat: v })} />
+          </div>
+          <div className="md:col-span-2">
+            <Label>Keterangan</Label>
+            <Textarea value={f.keterangan} onChange={(e) => setF({ ...f, keterangan: e.target.value })} maxLength={500} />
+          </div>
+          <div className="md:col-span-2"><DiinputOleh email={email} /></div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Batal</Button>
+          <Button onClick={() => save.mutate()} disabled={!f.student_name.trim() || !f.rombel_tujuan_id || save.isPending}>
+            {save.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Simpan Data
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
