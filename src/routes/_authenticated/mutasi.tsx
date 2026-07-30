@@ -90,6 +90,82 @@ function FileUploadField({
   );
 }
 
+function SuratViewButton({ path, title }: { path?: string | null; title?: string }) {
+  const [open, setOpen] = useState(false);
+  const [url, setUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  if (!path) return null;
+
+  const ext = path.split(".").pop()?.toLowerCase() ?? "";
+  const isOffice = ["doc", "docx", "xls", "xlsx", "ppt", "pptx"].includes(ext);
+  const isImage = ["png", "jpg", "jpeg", "gif", "webp", "bmp"].includes(ext);
+
+  const load = async () => {
+    setOpen(true);
+    setLoading(true);
+    setUrl("");
+    const { data, error } = await supabase.storage.from("mutasi").createSignedUrl(path, 3600);
+    setLoading(false);
+    if (error || !data?.signedUrl) {
+      toast.error(error?.message ?? "Gagal memuat surat");
+      return;
+    }
+    setUrl(data.signedUrl);
+  };
+
+  const download = async () => {
+    try {
+      const { data, error } = await supabase.storage.from("mutasi").download(path);
+      if (error || !data) throw new Error(error?.message ?? "Gagal mengunduh");
+      const href = URL.createObjectURL(data);
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = `${(title ?? "Surat").replace(/[\\/:*?"<>|]/g, "-")}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(href);
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal mengunduh");
+    }
+  };
+
+  return (
+    <>
+      <Button size="sm" variant="ghost" title="Lihat surat" onClick={load}>
+        <FileText className="h-4 w-4 text-blue-600" />
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-[95vw] sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="truncate">Surat — {title ?? "Dokumen"}</DialogTitle>
+            <DialogDescription className="truncate">{path}</DialogDescription>
+          </DialogHeader>
+          <div className="h-[60vh] w-full rounded-md border bg-muted/30 overflow-auto flex items-center justify-center">
+            {loading && <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />}
+            {!loading && url && isImage && (
+              <img src={url} alt={`Surat ${title ?? ""}`} className="max-h-full max-w-full object-contain" />
+            )}
+            {!loading && url && !isImage && (
+              <iframe
+                src={isOffice ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(url)}` : url}
+                className="h-full w-full"
+                title="Pratinjau surat"
+              />
+            )}
+            {!loading && !url && <span className="text-sm text-muted-foreground">Tidak ada pratinjau</span>}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={download}><Download className="h-4 w-4 mr-1" /> Unduh</Button>
+            <Button onClick={() => setOpen(false)}>Tutup</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+
 function DiinputOleh({ email }: { email: string }) {
   return (
     <div className="rounded-md bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
