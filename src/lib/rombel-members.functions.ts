@@ -31,16 +31,47 @@ export const listAllStudents = createServerFn({ method: "GET" })
       }
       return out;
     };
-    const [studentsData, rombelData] = await Promise.all([
+    const safe = async <T = any>(p: any): Promise<T[]> => {
+      try {
+        const { data, error } = await p;
+        if (error) return [];
+        return (data ?? []) as T[];
+      } catch {
+        return [];
+      }
+    };
+
+    const [studentsData, rombelData, tIn, tOut, tPindah, tKeluar] = await Promise.all([
       fetchAll((f, t) => context.supabase.from("students").select("id, name, nis, nisn, gender, rombel_id").order("name").range(f, t)),
-      fetchAll((f, t) => context.supabase.from("rombel").select("id, name, wali_kelas_name").range(f, t)),
+      fetchAll((f, t) => context.supabase.from("rombel").select("id, name, wali_kelas_name, tingkat, konsentrasi_keahlian").range(f, t)),
+      safe(context.supabase.from("student_transfers_in").select("student_id, dapodik_status, dapodik_tanggal")),
+      safe(context.supabase.from("student_transfers_out").select("student_id, dapodik_status, dapodik_tanggal")),
+      safe(context.supabase.from("student_rombel_transfers").select("student_id, dapodik_status, dapodik_tanggal")),
+      safe(context.supabase.from("student_resignations").select("student_id, dapodik_status, dapodik_tanggal")),
     ]);
+    const dapodik = new Map<string, { status: string | null; tanggal: string | null }>();
+    for (const row of [...tIn, ...tOut, ...tPindah, ...tKeluar] as any[]) {
+      if (!row?.student_id) continue;
+      const prev = dapodik.get(row.student_id);
+      const cur = { status: row.dapodik_status ?? null, tanggal: row.dapodik_tanggal ?? null };
+      if (!prev || String(cur.tanggal ?? "") >= String(prev.tanggal ?? "")) dapodik.set(row.student_id, cur);
+    }
     const rMap = new Map((rombelData ?? []).map((x: any) => [x.id, x]));
     return (studentsData ?? []).map((x: any) => {
       const rb: any = x.rombel_id ? rMap.get(x.rombel_id) : null;
-      return { ...x, rombel_nama: rb?.name ?? "—", wali_kelas_name: rb?.wali_kelas_name ?? "—" };
+      const d = dapodik.get(x.id);
+      return {
+        ...x,
+        rombel_nama: rb?.name ?? "—",
+        wali_kelas_name: rb?.wali_kelas_name ?? "—",
+        tingkat: rb?.tingkat ?? null,
+        konsentrasi_keahlian: rb?.konsentrasi_keahlian ?? null,
+        dapodik_status: d?.status ?? null,
+        dapodik_tanggal: d?.tanggal ?? null,
+      };
     });
   });
+
 
 
 
