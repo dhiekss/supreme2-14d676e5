@@ -27,6 +27,7 @@ export const MENU_CATALOG: MenuGroup[] = [
     title: "Manajemen Sekolah",
     items: [
       { key: "rombel", label: "Manajemen Rombel" },
+      { key: "murid", label: "Manajemen Murid" },
       { key: "rombel-khusus", label: "Rombel Khusus" },
       { key: "konsentrasi", label: "Konsentrasi Keahlian" },
       { key: "mapel", label: "Manajemen Mata Pelajaran" },
