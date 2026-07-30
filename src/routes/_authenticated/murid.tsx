@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -55,6 +55,8 @@ function Page() {
   const { data: rombels = [] } = useQuery({ queryKey: ["rombel-list"], queryFn: () => rombelFn({ data: {} }) as Promise<any[]> });
 
   const [q, setQ] = useState("");
+  const deferredQ = useDeferredValue(q);
+  const [limit, setLimit] = useState(100);
   const [rombelFilter, setRombelFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
   const [tingkatFilter, setTingkatFilter] = useState("all");
@@ -92,7 +94,14 @@ function Page() {
   );
 
   const rows = useMemo(() => {
-    const terms = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const norm = (v: unknown) =>
+      String(v ?? "")
+        .toLowerCase()
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+    const terms = norm(deferredQ).split(" ").filter(Boolean);
     const out = (data ?? []).filter((r) => {
       if (rombelFilter !== "all" && r.rombel_id !== rombelFilter) return false;
       if (genderFilter !== "all" && (r.gender ?? "") !== genderFilter) return false;
@@ -100,7 +109,7 @@ function Page() {
       if (konsentrasiFilter !== "all" && (r.konsentrasi_keahlian ?? "") !== konsentrasiFilter) return false;
       if (!terms.length) return true;
       const hay = [r.name, r.nis, r.nisn, r.rombel_nama, r.tingkat, r.konsentrasi_keahlian, r.wali_kelas_name]
-        .map((v) => String(v ?? "").toLowerCase())
+        .map(norm)
         .join(" ");
       return terms.every((t) => hay.includes(t));
     });
@@ -112,7 +121,11 @@ function Page() {
       if (av && !bv) return -1;
       return av.localeCompare(bv, "id", { numeric: true, sensitivity: "base" }) * dir;
     });
-  }, [data, q, rombelFilter, genderFilter, tingkatFilter, konsentrasiFilter, sort]);
+  }, [data, deferredQ, rombelFilter, genderFilter, tingkatFilter, konsentrasiFilter, sort]);
+
+  useEffect(() => {
+    setLimit(100);
+  }, [deferredQ, rombelFilter, genderFilter, tingkatFilter, konsentrasiFilter]);
 
   const toggleSort = (key: SortKey) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
@@ -244,7 +257,7 @@ function Page() {
                 ) : rows.length === 0 ? (
                   <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Tidak ada data murid.</TableCell></TableRow>
                 ) : (
-                  rows.slice(0, 1000).map((r, i) => (
+                  rows.slice(0, limit).map((r, i) => (
                     <TableRow key={r.id}>
                       <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                       <TableCell className="font-medium">{r.name ?? "—"}</TableCell>
@@ -266,8 +279,11 @@ function Page() {
               </TableBody>
             </Table>
           </div>
-          {rows.length > 1000 && (
-            <p className="text-xs text-muted-foreground">Menampilkan 1000 dari {rows.length} murid. Gunakan pencarian/filter untuk mempersempit.</p>
+          {rows.length > limit && (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">Menampilkan {limit} dari {rows.length} murid.</p>
+              <Button size="sm" variant="outline" onClick={() => setLimit((n) => n + 200)}>Tampilkan lebih banyak</Button>
+            </div>
           )}
 
         </CardContent>
