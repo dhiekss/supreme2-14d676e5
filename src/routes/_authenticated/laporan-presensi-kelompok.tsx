@@ -15,18 +15,25 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   presensiDashboardKelompok,
   kelompokBelumInputByDate,
   attendanceDetailListKelompok,
   attendanceDetailViewKelompok,
+  updateKelompokAttendance,
+  deleteKelompokAttendance,
 } from "@/lib/presensi-report-kelompok.functions";
-import { todayStamp } from "@/lib/utils";
+import { todayStamp, cn } from "@/lib/utils";
 import {
   Download, Users, GraduationCap, School, CalendarCheck, CheckCircle2,
   Thermometer, FileText, XCircle, Briefcase, ClipboardList, AlertTriangle,
   TrendingUp, PieChart as PieIcon, BarChart3, FileSpreadsheet, Loader2,
-  Eye, Filter, FileDown, Search,
+  Eye, Filter, FileDown, Search, ArrowUpDown, Pencil, Trash2, Save,
 } from "lucide-react";
+
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RTooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area,
