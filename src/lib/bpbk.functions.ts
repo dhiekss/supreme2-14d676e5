@@ -9,6 +9,8 @@ const DEFAULT_THRESHOLDS = {
 } as const;
 
 type ThresholdInput = {
+  /** Tanggal mulai (YYYY-MM-DD) perhitungan ambang untuk periode berjalan. */
+  mulaiTanggal?: string | null;
   sp1Alfa?: number;
   sp1Telat?: number;
   sp2Alfa?: number;
@@ -114,13 +116,23 @@ export const getBpBkData = createServerFn({ method: "POST" })
       spDateByStudent.set(s.student_id, dates);
     }
 
+    // Tanggal mulai periode berjalan: kejadian sebelum tanggal ini diabaikan.
+    const periodStart =
+      typeof input.mulaiTanggal === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input.mulaiTanggal)
+        ? input.mulaiTanggal
+        : null;
+
     const countSince = (dates: string[] | undefined, cutoff: string | undefined) => {
       if (!dates) return 0;
-      if (!cutoff) return dates.length;
       let n = 0;
-      for (const d of dates) if (d > cutoff) n++;
+      for (const d of dates) {
+        if (periodStart && d < periodStart) continue;
+        if (cutoff && d <= cutoff) continue;
+        n++;
+      }
       return n;
     };
+
 
     const baseEnrich = (s: any) => {
       const r = s.rombel_id ? rMap.get(s.rombel_id) : null;
@@ -149,7 +161,7 @@ export const getBpBkData = createServerFn({ method: "POST" })
         const telat = countSince(telatDates, cutoff);
         const th = THRESHOLDS[lv];
         if (alfa <= th.alfa && telat <= th.telat) continue;
-        rekomendasi[lv].push({ ...baseEnrich(s), alfa, telat, sejak: cutoff ?? null });
+        rekomendasi[lv].push({ ...baseEnrich(s), alfa, telat, sejak: cutoff ?? periodStart ?? null });
       }
     }
 
@@ -199,5 +211,6 @@ export const getBpBkData = createServerFn({ method: "POST" })
       murid,
       rombelList,
       thresholds: THRESHOLDS,
+      mulaiTanggal: periodStart,
     };
   });

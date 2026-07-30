@@ -51,6 +51,7 @@ import {
 import { toast } from "sonner";
 
 type Thresholds = {
+  mulaiTanggal: string;
   sp1Alfa: number;
   sp1Telat: number;
   sp2Alfa: number;
@@ -60,6 +61,7 @@ type Thresholds = {
 };
 
 const DEFAULT_TH: Thresholds = {
+  mulaiTanggal: "",
   sp1Alfa: 3,
   sp1Telat: 5,
   sp2Alfa: 6,
@@ -458,6 +460,20 @@ function ThresholdSettingsDialog({
           Murid akan muncul di daftar rekomendasi bila jumlah Alfa <em>atau</em> Terlambat
           melebihi (&gt;) ambang batas berikut.
         </p>
+
+        <div className="rounded-md border p-3">
+          <Label className="text-xs">Tanggal mulai berlaku (periode berjalan)</Label>
+          <Input
+            type="date"
+            className="mt-1"
+            value={form.mulaiTanggal}
+            onChange={(e) => setForm({ ...form, mulaiTanggal: e.target.value })}
+          />
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Alfa &amp; keterlambatan sebelum tanggal ini tidak dihitung. Kosongkan untuk
+            menghitung seluruh riwayat.
+          </p>
+        </div>
 
         <div className="space-y-4">
           {([1, 2, 3] as const).map((lv) => {
