@@ -377,3 +377,61 @@ export const listOfficersKelompok = createServerFn({ method: "GET" })
     }
     return [...set].sort();
   });
+
+async function recordIdsForDate(supabase: any, date: string): Promise<string[]> {
+  const records = await fetchAllPaged<any>((f, t) =>
+    supabase.from("attendance_records").select("id").eq("date", date).range(f, t),
+  );
+  return records.map((r: any) => r.id);
+}
+
+export const updateKelompokAttendance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      kelompokId: z.string().uuid(),
+      date: z.string(),
+      items: z.array(z.object({ studentId: z.string().uuid(), status: z.enum(["H", "S", "I", "A", "P"]) })),
+    }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const recIds = await recordIdsForDate(supabase, data.date);
+    if (!recIds.length) throw new Error("Tidak ada data presensi pada tanggal ini");
+    let updated = 0;
+    for (const it of data.items) {
+      const { error, count } = await supabase
+        .from("attendance_details")
+        .update({ status: it.status }, { count: "exact" })
+        .eq("student_id", it.studentId)
+        .in("attendance_record_id", recIds);
+      if (error) throw new Error(error.message);
+      updated += count ?? 0;
+    }
+    return { ok: true, updated };
+  });
+
+export const deleteKelompokAttendance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ kelompokId: z.string().uuid(), date: z.string() }).parse)
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const bundle = await loadKelompokBundle(supabase);
+    const k = bundle.kelompokList.find((x) => x.id === data.kelompokId);
+    if (!k) throw new Error("Kelompok tidak ditemukan");
+    const recIds = await recordIdsForDate(supabase, data.date);
+    if (!recIds.length) return { ok: true, deleted: 0 };
+    let deleted = 0;
+    const CHUNK = 100;
+    for (let i = 0; i < k.members.length; i += CHUNK) {
+      const slice = k.members.slice(i, i + CHUNK);
+      const { error, count } = await supabase
+        .from("attendance_details")
+        .delete({ count: "exact" })
+        .in("student_id", slice)
+        .in("attendance_record_id", recIds);
+      if (error) throw new Error(error.message);
+      deleted += count ?? 0;
+    }
+    return { ok: true, deleted };
+  });
