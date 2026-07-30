@@ -2028,6 +2028,69 @@ export type Database = {
         }
         Relationships: []
       }
+      student_transfers_in: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          dapodik_status: string | null
+          dapodik_tanggal: string | null
+          file_surat: string | null
+          gender: string | null
+          id: string
+          keterangan: string | null
+          rombel_tujuan_id: string | null
+          rombel_tujuan_name: string | null
+          sekolah_asal: string | null
+          student_id: string | null
+          student_name: string
+          student_nis: string | null
+          student_nisn: string | null
+          tanggal_diterima: string | null
+          tanggal_surat: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          dapodik_status?: string | null
+          dapodik_tanggal?: string | null
+          file_surat?: string | null
+          gender?: string | null
+          id?: string
+          keterangan?: string | null
+          rombel_tujuan_id?: string | null
+          rombel_tujuan_name?: string | null
+          sekolah_asal?: string | null
+          student_id?: string | null
+          student_name: string
+          student_nis?: string | null
+          student_nisn?: string | null
+          tanggal_diterima?: string | null
+          tanggal_surat?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          dapodik_status?: string | null
+          dapodik_tanggal?: string | null
+          file_surat?: string | null
+          gender?: string | null
+          id?: string
+          keterangan?: string | null
+          rombel_tujuan_id?: string | null
+          rombel_tujuan_name?: string | null
+          sekolah_asal?: string | null
+          student_id?: string | null
+          student_name?: string
+          student_nis?: string | null
+          student_nisn?: string | null
+          tanggal_diterima?: string | null
+          tanggal_surat?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       student_transfers_out: {
         Row: {
           created_at: string | null
