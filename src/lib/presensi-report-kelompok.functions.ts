@@ -314,8 +314,13 @@ export const attendanceDetailListKelompok = createServerFn({ method: "GET" })
           walikelas: k.pembimbings.map((p) => p.nama).join(", ") || "-",
           officer_name: [...(officersByDate.get(dt) ?? [])].join(", ") || "-",
           jumlahMurid: k.members.length,
+          tingkat: k.tingkatList.join(", ") || "-",
+          konsentrasi: k.konsentrasiKeahlianList.join(", ") || "-",
+          tingkatList: k.tingkatList,
+          konsentrasiList: k.konsentrasiKeahlianList,
           ...c,
         });
+
       }
     }
     return out.sort((a, b) => String(b.date).localeCompare(String(a.date)));
