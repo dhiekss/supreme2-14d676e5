@@ -59,7 +59,6 @@ function Page() {
   const [genderFilter, setGenderFilter] = useState("all");
   const [tingkatFilter, setTingkatFilter] = useState("all");
   const [konsentrasiFilter, setKonsentrasiFilter] = useState("all");
-  const [dapodikFilter, setDapodikFilter] = useState("all");
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "name", dir: "asc" });
   const [editing, setEditing] = useState<Partial<Row> | null>(null);
 
@@ -80,10 +79,6 @@ function Page() {
   const konsentrasiOptions = useMemo(
     () => Array.from(new Set((rombels ?? []).map((r: any) => r.konsentrasi_keahlian).filter(Boolean))).sort() as string[],
     [rombels],
-  );
-  const dapodikOptions = useMemo(
-    () => Array.from(new Set((data ?? []).map((r) => r.dapodik_status).filter(Boolean))).sort() as string[],
-    [data],
   );
 
   const filteredRombels = useMemo(
