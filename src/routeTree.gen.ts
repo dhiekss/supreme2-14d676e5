@@ -30,6 +30,7 @@ import { Route as AuthenticatedPeriodeRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedPengaturanRouteImport } from './routes/_authenticated/pengaturan'
 import { Route as AuthenticatedNotifikasiRouteImport } from './routes/_authenticated/notifikasi'
 import { Route as AuthenticatedMutasiRouteImport } from './routes/_authenticated/mutasi'
+import { Route as AuthenticatedMuridRouteImport } from './routes/_authenticated/murid'
 import { Route as AuthenticatedMasterRouteImport } from './routes/_authenticated/master'
 import { Route as AuthenticatedMapelRouteImport } from './routes/_authenticated/mapel'
 import { Route as AuthenticatedLaporanPresensiKelompokRouteImport } from './routes/_authenticated/laporan-presensi-kelompok'
@@ -182,6 +183,11 @@ const AuthenticatedNotifikasiRoute = AuthenticatedNotifikasiRouteImport.update({
 const AuthenticatedMutasiRoute = AuthenticatedMutasiRouteImport.update({
   id: '/mutasi',
   path: '/mutasi',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMuridRoute = AuthenticatedMuridRouteImport.update({
+  id: '/murid',
+  path: '/murid',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMasterRoute = AuthenticatedMasterRouteImport.update({
@@ -468,6 +474,7 @@ export interface FileRoutesByFullPath {
   '/laporan-presensi-kelompok': typeof AuthenticatedLaporanPresensiKelompokRoute
   '/mapel': typeof AuthenticatedMapelRoute
   '/master': typeof AuthenticatedMasterRoute
+  '/murid': typeof AuthenticatedMuridRoute
   '/mutasi': typeof AuthenticatedMutasiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/pengaturan': typeof AuthenticatedPengaturanRouteWithChildren
@@ -535,6 +542,7 @@ export interface FileRoutesByTo {
   '/laporan-presensi-kelompok': typeof AuthenticatedLaporanPresensiKelompokRoute
   '/mapel': typeof AuthenticatedMapelRoute
   '/master': typeof AuthenticatedMasterRoute
+  '/murid': typeof AuthenticatedMuridRoute
   '/mutasi': typeof AuthenticatedMutasiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/pengaturan': typeof AuthenticatedPengaturanRouteWithChildren
@@ -604,6 +612,7 @@ export interface FileRoutesById {
   '/_authenticated/laporan-presensi-kelompok': typeof AuthenticatedLaporanPresensiKelompokRoute
   '/_authenticated/mapel': typeof AuthenticatedMapelRoute
   '/_authenticated/master': typeof AuthenticatedMasterRoute
+  '/_authenticated/murid': typeof AuthenticatedMuridRoute
   '/_authenticated/mutasi': typeof AuthenticatedMutasiRoute
   '/_authenticated/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/_authenticated/pengaturan': typeof AuthenticatedPengaturanRouteWithChildren
@@ -673,6 +682,7 @@ export interface FileRouteTypes {
     | '/laporan-presensi-kelompok'
     | '/mapel'
     | '/master'
+    | '/murid'
     | '/mutasi'
     | '/notifikasi'
     | '/pengaturan'
@@ -740,6 +750,7 @@ export interface FileRouteTypes {
     | '/laporan-presensi-kelompok'
     | '/mapel'
     | '/master'
+    | '/murid'
     | '/mutasi'
     | '/notifikasi'
     | '/pengaturan'
@@ -808,6 +819,7 @@ export interface FileRouteTypes {
     | '/_authenticated/laporan-presensi-kelompok'
     | '/_authenticated/mapel'
     | '/_authenticated/master'
+    | '/_authenticated/murid'
     | '/_authenticated/mutasi'
     | '/_authenticated/notifikasi'
     | '/_authenticated/pengaturan'
@@ -1006,6 +1018,13 @@ declare module '@tanstack/react-router' {
       path: '/mutasi'
       fullPath: '/mutasi'
       preLoaderRoute: typeof AuthenticatedMutasiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/murid': {
+      id: '/_authenticated/murid'
+      path: '/murid'
+      fullPath: '/murid'
+      preLoaderRoute: typeof AuthenticatedMuridRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/master': {
@@ -1384,6 +1403,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLaporanPresensiKelompokRoute: typeof AuthenticatedLaporanPresensiKelompokRoute
   AuthenticatedMapelRoute: typeof AuthenticatedMapelRoute
   AuthenticatedMasterRoute: typeof AuthenticatedMasterRoute
+  AuthenticatedMuridRoute: typeof AuthenticatedMuridRoute
   AuthenticatedMutasiRoute: typeof AuthenticatedMutasiRoute
   AuthenticatedNotifikasiRoute: typeof AuthenticatedNotifikasiRoute
   AuthenticatedPengaturanRoute: typeof AuthenticatedPengaturanRouteWithChildren
@@ -1447,6 +1467,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedLaporanPresensiKelompokRoute,
   AuthenticatedMapelRoute: AuthenticatedMapelRoute,
   AuthenticatedMasterRoute: AuthenticatedMasterRoute,
+  AuthenticatedMuridRoute: AuthenticatedMuridRoute,
   AuthenticatedMutasiRoute: AuthenticatedMutasiRoute,
   AuthenticatedNotifikasiRoute: AuthenticatedNotifikasiRoute,
   AuthenticatedPengaturanRoute: AuthenticatedPengaturanRouteWithChildren,
