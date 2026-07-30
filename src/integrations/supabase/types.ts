@@ -2733,6 +2733,10 @@ export type Database = {
         Args: { _rombel_id: string; _user_id: string }
         Returns: boolean
       }
+      get_accessible_rombel_ids: {
+        Args: { _user_id: string }
+        Returns: string[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
