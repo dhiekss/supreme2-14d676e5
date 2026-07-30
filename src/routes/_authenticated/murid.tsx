@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowDown, ArrowUp, ChevronsUpDown, Pencil, Search, Users, X } from "lucide-react";
-import { listAllStudents, saveStudent } from "@/lib/rombel-members.functions";
+import { ArrowDown, ArrowUp, ChevronsUpDown, History, Pencil, Search, Users, X } from "lucide-react";
+import { listAllStudents, listStudentIdentityLogs, saveStudent } from "@/lib/rombel-members.functions";
 import { listRombel } from "@/lib/sekolah.functions";
 import { toast } from "sonner";
 
@@ -269,9 +269,14 @@ function Page() {
                       <TableCell>{r.rombel_nama ?? "—"}</TableCell>
                       <TableCell>{r.wali_kelas_name ?? "—"}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="outline" onClick={() => setEditing(r)}>
-                          <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
-                        </Button>
+                        <div className="inline-flex gap-2">
+                          <Button size="sm" variant="ghost" onClick={() => setHistory(r)}>
+                            <History className="h-3.5 w-3.5 mr-1" /> Riwayat
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditing(r)}>
+                            <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -295,6 +300,8 @@ function Page() {
         onSave={(v) => save.mutate(v)}
         saving={save.isPending}
       />
+
+      <HistoryDialog row={history} onClose={() => setHistory(null)} />
     </div>
   );
 }
