@@ -174,12 +174,12 @@ function Page() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 className="pl-9"
-                placeholder="Cari nama / NIS / NISN / rombel / konsentrasi / status Dapodik…"
+                placeholder="Cari nama / NIS / NISN / rombel / konsentrasi…"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <Select value={tingkatFilter} onValueChange={(v) => { setTingkatFilter(v); setRombelFilter("all"); }}>
                 <SelectTrigger><SelectValue placeholder="Semua Tingkat" /></SelectTrigger>
                 <SelectContent>
@@ -209,14 +209,6 @@ function Page() {
                   <SelectItem value="all">Semua JK</SelectItem>
                   <SelectItem value="L">Laki-laki</SelectItem>
                   <SelectItem value="P">Perempuan</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={dapodikFilter} onValueChange={setDapodikFilter}>
-                <SelectTrigger><SelectValue placeholder="Semua Status Dapodik" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Status Dapodik</SelectItem>
-                  <SelectItem value="none">Belum ada status</SelectItem>
-                  {dapodikOptions.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
