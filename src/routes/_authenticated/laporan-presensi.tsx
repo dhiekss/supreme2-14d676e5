@@ -672,16 +672,21 @@ function formatDateLongID(iso: string) {
   return `${DAYS_ID[dt.getDay()]}, ${dt.getDate()} ${MONTHS_ID[dt.getMonth()]} ${dt.getFullYear()}`;
 }
 
+type DetailSortKey = "date" | "rombel" | "walikelas" | "officer_name" | "H" | "S" | "I" | "A" | "P" | "jumlahMurid";
+
 function DetailPresensiCard() {
   const [date, setDate] = useState<string>("");
   const [rombelId, setRombelId] = useState<string>("__all");
   const [officer, setOfficer] = useState<string>("__all");
+  const [tingkat, setTingkat] = useState<string>("__all");
+  const [konsentrasi, setKonsentrasi] = useState<string>("__all");
   const [search, setSearch] = useState<string>("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [viewId, setViewId] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [sort, setSort] = useState<{ key: DetailSortKey; dir: "asc" | "desc" }>({ key: "date", dir: "desc" });
 
   const qc = useQueryClient();
   const fetchList = useServerFn(attendanceDetailList);
@@ -704,15 +709,42 @@ function DetailPresensiCard() {
       }),
   });
   const rows = listQuery.data ?? [];
-  const filteredRows = (() => {
+
+  const tingkatList = useMemo(
+    () => [...new Set((rombelQuery.data ?? []).map((r: any) => r.tingkat).filter(Boolean))].map(String).sort(),
+    [rombelQuery.data],
+  );
+  const konsentrasiList = useMemo(
+    () => [...new Set((rombelQuery.data ?? []).map((r: any) => r.konsentrasi_keahlian).filter(Boolean))].map(String).sort(),
+    [rombelQuery.data],
+  );
+
+  const filteredRows = useMemo(() => {
+    let out = rows;
     const q = search.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((r: any) =>
-      [r.officer_name, r.rombel, r.walikelas]
-        .filter(Boolean)
-        .some((v: string) => String(v).toLowerCase().includes(q))
-    );
-  })();
+    if (q) {
+      out = out.filter((r: any) =>
+        [r.officer_name, r.rombel, r.walikelas, r.tingkat, r.konsentrasi]
+          .filter(Boolean)
+          .some((v: string) => String(v).toLowerCase().includes(q)),
+      );
+    }
+    if (tingkat !== "__all") out = out.filter((r: any) => String(r.tingkat) === tingkat);
+    if (konsentrasi !== "__all") out = out.filter((r: any) => String(r.konsentrasi) === konsentrasi);
+
+    const k = sort.key;
+    const dir = sort.dir === "asc" ? 1 : -1;
+    out = [...out].sort((a: any, b: any) => {
+      if (["H", "S", "I", "A", "P", "jumlahMurid"].includes(k)) {
+        return (Number(a[k]) - Number(b[k])) * dir;
+      }
+      const av = String(a[k] ?? "");
+      const bv = String(b[k] ?? "");
+      return av.localeCompare(bv) * dir;
+    });
+    return out;
+  }, [rows, search, tingkat, konsentrasi, sort]);
+
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const curPage = Math.min(page, totalPages);
   const start = (curPage - 1) * pageSize;
@@ -722,13 +754,37 @@ function DetailPresensiCard() {
     setDate("");
     setRombelId("__all");
     setOfficer("__all");
+    setTingkat("__all");
+    setKonsentrasi("__all");
     setSearch("");
+    setSort({ key: "date", dir: "desc" });
     setPage(1);
   };
 
+  const toggleSort = (key: DetailSortKey) => {
+    setSort((prev) => ({ key, dir: prev.key === key && prev.dir === "asc" ? "desc" : "asc" }));
+    setPage(1);
+  };
+
+  const SortHeader = ({ key, children, className }: { key: DetailSortKey; children: React.ReactNode; className?: string }) => (
+    <TableHead
+      className={cn("cursor-pointer select-none hover:bg-muted/50 transition-colors", className)}
+      onClick={() => toggleSort(key)}
+    >
+      <div className="flex items-center gap-1">
+        {children}
+        <ArrowUpDown className={cn("h-3.5 w-3.5", sort.key === key ? "text-foreground" : "text-muted-foreground/50")} />
+      </div>
+    </TableHead>
+  );
+
   const exportRecap = () => {
+    if (filteredRows.length === 0) {
+      toast.info("Tidak ada data untuk diekspor");
+      return;
+    }
     const header = ["Tanggal", "Rombel", "Wali Kelas", "Petugas Piket", "Hadir", "Sakit", "Izin", "Alfa", "PKL", "Jumlah Murid"];
-    const body = rows.map((r) => [r.date, r.rombel, r.walikelas, r.officer_name, r.H, r.S, r.I, r.A, r.P, r.jumlahMurid]);
+    const body = filteredRows.map((r) => [r.date, r.rombel, r.walikelas, r.officer_name, r.H, r.S, r.I, r.A, r.P, r.jumlahMurid]);
     const ws = XLSX.utils.aoa_to_sheet([header, ...body]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Rekap");
@@ -736,7 +792,7 @@ function DetailPresensiCard() {
   };
 
   const exportDetail = async () => {
-    if (rows.length === 0) {
+    if (filteredRows.length === 0) {
       toast.info("Tidak ada data untuk diekspor");
       return;
     }
@@ -744,7 +800,7 @@ function DetailPresensiCard() {
     try {
       const viewFn = attendanceDetailView;
       const all: any[] = [];
-      for (const r of rows) {
+      for (const r of filteredRows) {
         const res: any = await viewFn({ data: { recordId: r.id } });
         for (const s of res.students) {
           all.push([r.date, r.rombel, r.walikelas, r.officer_name, s.nis ?? "-", s.name, STATUS_LABEL[s.status] ?? s.status]);
@@ -795,7 +851,7 @@ function DetailPresensiCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="rounded-lg border bg-muted/30 p-3 grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto] items-end">
+        <div className="rounded-lg border bg-muted/30 p-3 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] items-end">
           <div className="space-y-1">
             <Label className="text-xs flex items-center gap-1.5"><CalendarCheck className="h-3.5 w-3.5" /> Tanggal</Label>
             <Input type="date" value={date} onChange={(e) => { setDate(e.target.value); setPage(1); }} className="h-9 bg-background" />
@@ -809,6 +865,26 @@ function DetailPresensiCard() {
                 {(rombelQuery.data ?? []).map((r: any) => (
                   <SelectItem key={r.id} value={r.id}>{r.tingkat ? `${r.tingkat} — ` : ""}{r.name}</SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs flex items-center gap-1.5"><Filter className="h-3.5 w-3.5" /> Tingkat</Label>
+            <Select value={tingkat} onValueChange={(v) => { setTingkat(v); setPage(1); }}>
+              <SelectTrigger className="h-9 bg-background"><SelectValue placeholder="Semua Tingkat" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua Tingkat</SelectItem>
+                {tingkatList.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs flex items-center gap-1.5"><Filter className="h-3.5 w-3.5" /> Konsentrasi</Label>
+            <Select value={konsentrasi} onValueChange={(v) => { setKonsentrasi(v); setPage(1); }}>
+              <SelectTrigger className="h-9 bg-background"><SelectValue placeholder="Semua Konsentrasi" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua Konsentrasi</SelectItem>
+                {konsentrasiList.map((k) => <SelectItem key={k} value={k}>{k}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -832,7 +908,7 @@ function DetailPresensiCard() {
           <Input
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Cari cepat: nama petugas, rombel, atau wali kelas..."
+            placeholder="Cari cepat: nama petugas, rombel, tingkat, konsentrasi, atau wali kelas..."
             className="h-9 pl-9 bg-background"
           />
         </div>
@@ -841,16 +917,16 @@ function DetailPresensiCard() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tanggal</TableHead>
-                <TableHead>Rombel</TableHead>
-                <TableHead>Wali Kelas</TableHead>
-                <TableHead>Petugas Piket</TableHead>
-                <TableHead className="text-center">Hadir</TableHead>
-                <TableHead className="text-center">Sakit</TableHead>
-                <TableHead className="text-center">Izin</TableHead>
-                <TableHead className="text-center">Alfa</TableHead>
-                <TableHead className="text-center">PKL</TableHead>
-                <TableHead className="text-center">Jumlah Murid</TableHead>
+                <SortHeader key="date">Tanggal</SortHeader>
+                <SortHeader key="rombel">Rombel</SortHeader>
+                <SortHeader key="walikelas">Wali Kelas</SortHeader>
+                <SortHeader key="officer_name">Petugas Piket</SortHeader>
+                <SortHeader key="H" className="text-center">Hadir</SortHeader>
+                <SortHeader key="S" className="text-center">Sakit</SortHeader>
+                <SortHeader key="I" className="text-center">Izin</SortHeader>
+                <SortHeader key="A" className="text-center">Alfa</SortHeader>
+                <SortHeader key="P" className="text-center">PKL</SortHeader>
+                <SortHeader key="jumlahMurid" className="text-center">Jumlah Murid</SortHeader>
                 <TableHead className="text-center">Aksi</TableHead>
               </TableRow>
             </TableHeader>
