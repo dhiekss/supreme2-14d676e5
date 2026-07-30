@@ -59,6 +59,10 @@ function Page() {
   const [q, setQ] = useState("");
   const [rombelFilter, setRombelFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
+  const [tingkatFilter, setTingkatFilter] = useState("all");
+  const [konsentrasiFilter, setKonsentrasiFilter] = useState("all");
+  const [dapodikFilter, setDapodikFilter] = useState("all");
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "name", dir: "asc" });
   const [editing, setEditing] = useState<Partial<Row> | null>(null);
 
   const save = useMutation({
@@ -71,15 +75,86 @@ function Page() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const tingkatOptions = useMemo(
+    () => Array.from(new Set((rombels ?? []).map((r: any) => r.tingkat).filter(Boolean))).sort() as string[],
+    [rombels],
+  );
+  const konsentrasiOptions = useMemo(
+    () => Array.from(new Set((rombels ?? []).map((r: any) => r.konsentrasi_keahlian).filter(Boolean))).sort() as string[],
+    [rombels],
+  );
+  const dapodikOptions = useMemo(
+    () => Array.from(new Set((data ?? []).map((r) => r.dapodik_status).filter(Boolean))).sort() as string[],
+    [data],
+  );
+
+  const filteredRombels = useMemo(
+    () =>
+      (rombels ?? []).filter((r: any) => {
+        if (tingkatFilter !== "all" && (r.tingkat ?? "") !== tingkatFilter) return false;
+        if (konsentrasiFilter !== "all" && (r.konsentrasi_keahlian ?? "") !== konsentrasiFilter) return false;
+        return true;
+      }),
+    [rombels, tingkatFilter, konsentrasiFilter],
+  );
+
   const rows = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    return (data ?? []).filter((r) => {
+    const terms = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const out = (data ?? []).filter((r) => {
       if (rombelFilter !== "all" && r.rombel_id !== rombelFilter) return false;
       if (genderFilter !== "all" && (r.gender ?? "") !== genderFilter) return false;
-      if (!s) return true;
-      return [r.name, r.nis, r.nisn, r.rombel_nama].some((v) => String(v ?? "").toLowerCase().includes(s));
+      if (tingkatFilter !== "all" && (r.tingkat ?? "") !== tingkatFilter) return false;
+      if (konsentrasiFilter !== "all" && (r.konsentrasi_keahlian ?? "") !== konsentrasiFilter) return false;
+      if (dapodikFilter === "none" && r.dapodik_status) return false;
+      if (dapodikFilter !== "all" && dapodikFilter !== "none" && (r.dapodik_status ?? "") !== dapodikFilter) return false;
+      if (!terms.length) return true;
+      const hay = [r.name, r.nis, r.nisn, r.rombel_nama, r.tingkat, r.konsentrasi_keahlian, r.wali_kelas_name, r.dapodik_status]
+        .map((v) => String(v ?? "").toLowerCase())
+        .join(" ");
+      return terms.every((t) => hay.includes(t));
     });
-  }, [data, q, rombelFilter, genderFilter]);
+    const dir = sort.dir === "asc" ? 1 : -1;
+    return [...out].sort((a, b) => {
+      const av = String(a[sort.key] ?? "");
+      const bv = String(b[sort.key] ?? "");
+      if (!av && bv) return 1;
+      if (av && !bv) return -1;
+      return av.localeCompare(bv, "id", { numeric: true, sensitivity: "base" }) * dir;
+    });
+  }, [data, q, rombelFilter, genderFilter, tingkatFilter, konsentrasiFilter, dapodikFilter, sort]);
+
+  const toggleSort = (key: SortKey) =>
+    setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
+
+  const SortHead = ({ label, sortKey, className }: { label: string; sortKey: SortKey; className?: string }) => (
+    <TableHead className={className}>
+      <button
+        type="button"
+        onClick={() => toggleSort(sortKey)}
+        className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+      >
+        {label}
+        {sort.key === sortKey ? (
+          sort.dir === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+        ) : (
+          <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />
+        )}
+      </button>
+    </TableHead>
+  );
+
+  const hasFilter =
+    q.trim() !== "" ||
+    [rombelFilter, genderFilter, tingkatFilter, konsentrasiFilter, dapodikFilter].some((v) => v !== "all");
+
+  const resetFilters = () => {
+    setQ("");
+    setRombelFilter("all");
+    setGenderFilter("all");
+    setTingkatFilter("all");
+    setKonsentrasiFilter("all");
+    setDapodikFilter("all");
+  };
 
   const totalL = rows.filter((r) => r.gender === "L").length;
   const totalP = rows.filter((r) => r.gender === "P").length;
@@ -104,33 +179,65 @@ function Page() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="relative flex-1">
+          <div className="space-y-3">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 className="pl-9"
-                placeholder="Cari nama / NIS / NISN / rombel…"
+                placeholder="Cari nama / NIS / NISN / rombel / konsentrasi / status Dapodik…"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
             </div>
-            <Select value={rombelFilter} onValueChange={setRombelFilter}>
-              <SelectTrigger className="w-full md:w-56"><SelectValue placeholder="Semua Rombel" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Rombel</SelectItem>
-                {rombels.map((r: any) => (
-                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={genderFilter} onValueChange={setGenderFilter}>
-              <SelectTrigger className="w-full md:w-40"><SelectValue placeholder="Semua JK" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua JK</SelectItem>
-                <SelectItem value="L">Laki-laki</SelectItem>
-                <SelectItem value="P">Perempuan</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <Select value={tingkatFilter} onValueChange={(v) => { setTingkatFilter(v); setRombelFilter("all"); }}>
+                <SelectTrigger><SelectValue placeholder="Semua Tingkat" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Tingkat</SelectItem>
+                  {tingkatOptions.map((t) => (<SelectItem key={t} value={t}>Tingkat {t}</SelectItem>))}
+                </SelectContent>
+              </Select>
+              <Select value={konsentrasiFilter} onValueChange={(v) => { setKonsentrasiFilter(v); setRombelFilter("all"); }}>
+                <SelectTrigger><SelectValue placeholder="Semua Konsentrasi" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Konsentrasi</SelectItem>
+                  {konsentrasiOptions.map((k) => (<SelectItem key={k} value={k}>{k}</SelectItem>))}
+                </SelectContent>
+              </Select>
+              <Select value={rombelFilter} onValueChange={setRombelFilter}>
+                <SelectTrigger><SelectValue placeholder="Semua Rombel" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Rombel</SelectItem>
+                  {filteredRombels.map((r: any) => (
+                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={genderFilter} onValueChange={setGenderFilter}>
+                <SelectTrigger><SelectValue placeholder="Semua JK" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua JK</SelectItem>
+                  <SelectItem value="L">Laki-laki</SelectItem>
+                  <SelectItem value="P">Perempuan</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={dapodikFilter} onValueChange={setDapodikFilter}>
+                <SelectTrigger><SelectValue placeholder="Semua Status Dapodik" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Status Dapodik</SelectItem>
+                  <SelectItem value="none">Belum ada status</SelectItem>
+                  {dapodikOptions.map((d) => (<SelectItem key={d} value={d}>{d}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+            {hasFilter && (
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-muted-foreground">{rows.length} murid cocok dengan filter.</p>
+                <Button size="sm" variant="ghost" onClick={resetFilters}>
+                  <X className="h-3.5 w-3.5 mr-1" /> Reset filter
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="overflow-x-auto">
@@ -138,20 +245,23 @@ function Page() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">No</TableHead>
-                  <TableHead>Nama Murid</TableHead>
-                  <TableHead>JK</TableHead>
-                  <TableHead>NIS</TableHead>
-                  <TableHead>NISN</TableHead>
-                  <TableHead>Rombel</TableHead>
-                  <TableHead>Wali Kelas</TableHead>
+                  <SortHead label="Nama Murid" sortKey="name" />
+                  <SortHead label="JK" sortKey="gender" />
+                  <SortHead label="NIS" sortKey="nis" />
+                  <SortHead label="NISN" sortKey="nisn" />
+                  <SortHead label="Tingkat" sortKey="tingkat" />
+                  <SortHead label="Konsentrasi" sortKey="konsentrasi_keahlian" />
+                  <SortHead label="Rombel" sortKey="rombel_nama" />
+                  <SortHead label="Wali Kelas" sortKey="wali_kelas_name" />
+                  <SortHead label="Status Dapodik" sortKey="dapodik_status" />
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Memuat…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Memuat…</TableCell></TableRow>
                 ) : rows.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Tidak ada data murid.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Tidak ada data murid.</TableCell></TableRow>
                 ) : (
                   rows.slice(0, 1000).map((r, i) => (
                     <TableRow key={r.id}>
@@ -160,8 +270,13 @@ function Page() {
                       <TableCell>{r.gender ? <Badge variant="secondary">{r.gender}</Badge> : "—"}</TableCell>
                       <TableCell>{r.nis ?? "—"}</TableCell>
                       <TableCell>{r.nisn ?? "—"}</TableCell>
+                      <TableCell>{r.tingkat ?? "—"}</TableCell>
+                      <TableCell>{r.konsentrasi_keahlian ?? "—"}</TableCell>
                       <TableCell>{r.rombel_nama ?? "—"}</TableCell>
                       <TableCell>{r.wali_kelas_name ?? "—"}</TableCell>
+                      <TableCell>
+                        {r.dapodik_status ? <Badge variant="outline">{r.dapodik_status}</Badge> : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button size="sm" variant="outline" onClick={() => setEditing(r)}>
                           <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
@@ -176,6 +291,7 @@ function Page() {
           {rows.length > 1000 && (
             <p className="text-xs text-muted-foreground">Menampilkan 1000 dari {rows.length} murid. Gunakan pencarian/filter untuk mempersempit.</p>
           )}
+
         </CardContent>
       </Card>
 
