@@ -257,7 +257,7 @@ function Page() {
                 ) : rows.length === 0 ? (
                   <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Tidak ada data murid.</TableCell></TableRow>
                 ) : (
-                  rows.slice(0, 1000).map((r, i) => (
+                  rows.slice(0, limit).map((r, i) => (
                     <TableRow key={r.id}>
                       <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                       <TableCell className="font-medium">{r.name ?? "—"}</TableCell>
@@ -279,8 +279,11 @@ function Page() {
               </TableBody>
             </Table>
           </div>
-          {rows.length > 1000 && (
-            <p className="text-xs text-muted-foreground">Menampilkan 1000 dari {rows.length} murid. Gunakan pencarian/filter untuk mempersempit.</p>
+          {rows.length > limit && (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">Menampilkan {limit} dari {rows.length} murid.</p>
+              <Button size="sm" variant="outline" onClick={() => setLimit((n) => n + 200)}>Tampilkan lebih banyak</Button>
+            </div>
           )}
 
         </CardContent>
