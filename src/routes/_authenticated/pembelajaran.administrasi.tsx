@@ -93,6 +93,8 @@ function AdministrasiPage() {
     | null
   >(null);
   const [catatanValidasi, setCatatanValidasi] = useState("");
+  const [bulkValidate, setBulkValidate] = useState<"valid" | "perbaikan" | null>(null);
+  const [catatanBulk, setCatatanBulk] = useState("");
 
   const { data: refs } = useQuery({
     queryKey: ["administrasi-refs"],
