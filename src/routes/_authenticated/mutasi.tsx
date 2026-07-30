@@ -202,6 +202,8 @@ function MutasiPage() {
     qc.invalidateQueries({ queryKey: ["mutasi-rombel"] });
     qc.invalidateQueries({ queryKey: ["mutasi-resign"] });
     qc.invalidateQueries({ queryKey: ["mutasi-out"] });
+    qc.invalidateQueries({ queryKey: ["mutasi-in"] });
+    qc.invalidateQueries({ queryKey: ["mutasi-students"] });
     qc.invalidateQueries({ queryKey: ["mutasi-sum"] });
   };
 
@@ -210,30 +212,34 @@ function MutasiPage() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-2xl font-bold">Mutasi Murid</h1>
-          <p className="text-sm text-muted-foreground">Pindah rombel, resign, dan pindah sekolah</p>
+          <p className="text-sm text-muted-foreground">Pindah rombel, pindah masuk, resign, dan pindah sekolah</p>
         </div>
         <Button variant="outline" onClick={invalidate}><RefreshCw className="h-4 w-4 mr-2" />Refresh</Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <SumCard title="Pindah Rombel" value={sum?.rombel ?? 0} tone="text-primary" />
+        <SumCard title="Pindah Masuk" value={(sum as any)?.in ?? 0} tone="text-emerald-700" />
         <SumCard title="Resign / Keluar" value={sum?.resign ?? 0} tone="text-orange-700" />
         <SumCard title="Pindah Sekolah" value={sum?.out ?? 0} tone="text-blue-700" />
       </div>
 
       <Tabs defaultValue="rombel">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="rombel">Pindah Rombel</TabsTrigger>
+          <TabsTrigger value="in">Pindah Masuk</TabsTrigger>
           <TabsTrigger value="resign">Resign</TabsTrigger>
           <TabsTrigger value="out">Pindah Sekolah</TabsTrigger>
         </TabsList>
         <TabsContent value="rombel"><RombelTransferTab onChange={invalidate} /></TabsContent>
+        <TabsContent value="in"><TransferInTab onChange={invalidate} /></TabsContent>
         <TabsContent value="resign"><ResignTab onChange={invalidate} /></TabsContent>
         <TabsContent value="out"><TransferOutTab onChange={invalidate} /></TabsContent>
       </Tabs>
     </div>
   );
 }
+
 
 function SumCard({ title, value, tone }: { title: string; value: number; tone?: string }) {
   return (
