@@ -296,10 +296,9 @@ function StatCard({ title, value }: { title: string; value: number }) {
 }
 
 function EditDialog({
-  row, rombels, onClose, onSave, saving,
+  row, onClose, onSave, saving,
 }: {
   row: Partial<Row> | null;
-  rombels: any[];
   onClose: () => void;
   onSave: (v: any) => void;
   saving: boolean;
