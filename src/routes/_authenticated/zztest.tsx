@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { listAllStudents } from "@/lib/sp.functions";
+import { getBpBkData } from "@/lib/bpbk.functions";
 
 export const Route = createFileRoute("/_authenticated/zztest")({
-  loader: async () => ({ n: (await listAllStudents()).length }),
+  loader: async () => ({ data: await getBpBkData() }),
   component: () => {
     const d = Route.useLoaderData();
-    return <div>ZZTEST {d.n}</div>;
+    return <div>ZZTEST {JSON.stringify(d.data.counts)}</div>;
   },
 });
