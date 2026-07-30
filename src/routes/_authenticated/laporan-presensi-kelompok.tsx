@@ -709,9 +709,127 @@ function DetailPresensiKelompokCard() {
       </CardContent>
 
       <ViewKelompokDialog value={view} onClose={() => setView(null)} />
+      <EditKelompokDialog value={edit} onClose={() => setEdit(null)} />
+
+      <AlertDialog open={!!del} onOpenChange={(o) => { if (!o) setDel(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus data presensi kelompok?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Semua catatan kehadiran anggota kelompok <b>{del?.rombel}</b> pada tanggal{" "}
+              <b>{del ? formatDateLongID(String(del.date)) : ""}</b> akan dihapus. Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={doDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Hapus</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
+
+function EditKelompokDialog({ value, onClose }: { value: { kelompokId: string; date: string } | null; onClose: () => void }) {
+  const qc = useQueryClient();
+  const fetchFn = useServerFn(attendanceDetailViewKelompok);
+  const saveFn = useServerFn(updateKelompokAttendance);
+  const [draft, setDraft] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+
+  const { data, isFetching } = useQuery({
+    queryKey: ["attendance-edit-kelompok", value?.kelompokId, value?.date],
+    queryFn: async () => {
+      const res: any = await fetchFn({ data: { kelompokId: value!.kelompokId, date: value!.date } });
+      const d: Record<string, string> = {};
+      for (const s of res.students as any[]) if (s.status && s.status !== "-") d[s.id] = s.status;
+      setDraft(d);
+      return res;
+    },
+    enabled: !!value,
+  });
+
+  const save = async () => {
+    if (!value) return;
+    const items = Object.entries(draft)
+      .filter(([, st]) => ["H", "S", "I", "A", "P"].includes(st))
+      .map(([studentId, status]) => ({ studentId, status: status as "H" | "S" | "I" | "A" | "P" }));
+    if (items.length === 0) { toast.info("Tidak ada perubahan untuk disimpan"); return; }
+    setSaving(true);
+    try {
+      await saveFn({ data: { kelompokId: value.kelompokId, date: value.date, items } });
+      toast.success("Presensi kelompok diperbarui");
+      qc.invalidateQueries({ queryKey: ["detail-presensi-kelompok"] });
+      qc.invalidateQueries({ queryKey: ["presensi-dashboard-kelompok"] });
+      qc.invalidateQueries({ queryKey: ["attendance-view-kelompok"] });
+      onClose();
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal menyimpan");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!value} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Pencil className="h-5 w-5 text-indigo-600" /> Edit Presensi Kelompok</DialogTitle>
+          <DialogDescription>
+            {data ? `${data.record.rombel_name} — ${formatDateLongID(String(data.record.date))}` : "Memuat..."}
+          </DialogDescription>
+        </DialogHeader>
+        {isFetching || !data ? (
+          <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Memuat...</div>
+        ) : (
+          <div className="space-y-4">
+            <div className="max-h-[420px] overflow-y-auto rounded-lg border">
+              <Table>
+                <TableHeader className="sticky top-0 bg-muted/60 backdrop-blur">
+                  <TableRow>
+                    <TableHead className="w-12">No</TableHead>
+                    <TableHead className="w-28">NIS</TableHead>
+                    <TableHead>Nama Murid</TableHead>
+                    <TableHead className="w-[140px] text-right">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(data.students as any[]).map((s, i) => (
+                    <TableRow key={s.id}>
+                      <TableCell>{i + 1}</TableCell>
+                      <TableCell className="font-mono text-xs">{s.nis ?? "-"}</TableCell>
+                      <TableCell className="uppercase">{s.name}</TableCell>
+                      <TableCell className="text-right">
+                        <Select
+                          value={draft[s.id] ?? ""}
+                          onValueChange={(v) => setDraft((p) => ({ ...p, [s.id]: v }))}
+                        >
+                          <SelectTrigger className="h-8"><SelectValue placeholder="-" /></SelectTrigger>
+                          <SelectContent>
+                            {(["H", "S", "I", "A", "P"] as const).map((k) => (
+                              <SelectItem key={k} value={k}>{STATUS_LABEL[k]}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={onClose}>Batal</Button>
+              <Button onClick={save} disabled={saving} className="gap-2">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Simpan
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function ViewKelompokDialog({ value, onClose }: { value: { kelompokId: string; date: string } | null; onClose: () => void }) {
   const fetchFn = useServerFn(attendanceDetailViewKelompok);
