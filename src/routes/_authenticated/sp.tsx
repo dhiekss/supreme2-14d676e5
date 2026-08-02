@@ -1011,16 +1011,12 @@ function BeriSpDialog({
   onCreated: () => void;
   btnLabel: string;
 }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString("en-CA");
   const [open, setOpen] = useState(false);
   const createFn = useServerFn(createSp);
-  const [form, setForm] = useState({
-    tanggalRekaman: today,
-    alasan: "",
-    jumlahAlfa: student.alfa ?? 0,
-    jumlahTerlambat: student.telat ?? 0,
-    dokumenPendukung: "",
-  });
+  const [tanggal, setTanggal] = useState(today);
+  const [keterangan, setKeterangan] = useState("");
+  const [dokumen, setDokumen] = useState("");
 
   const create = useMutation({
     mutationFn: () =>
@@ -1028,91 +1024,58 @@ function BeriSpDialog({
         data: {
           studentId: student.id,
           spLevel: level,
-          tanggalRekaman: form.tanggalRekaman,
-          alasan: form.alasan,
-          jumlahAlfa: form.jumlahAlfa,
-          jumlahTerlambat: form.jumlahTerlambat,
-          dokumenPendukung: form.dokumenPendukung,
+          tanggalRekaman: tanggal,
+          alasan: keterangan,
+          jumlahAlfa: Number(student.alfa ?? 0),
+          jumlahTerlambat: Number(student.telat ?? 0),
+          dokumenPendukung: dokumen,
         },
       }),
     onSuccess: () => {
       toast.success(`SP ${level} berhasil dicatat`);
       setOpen(false);
+      setKeterangan("");
+      setDokumen("");
       onCreated();
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) setTanggal(today);
+      }}
+    >
       <DialogTrigger asChild>
         <Button size="sm">
           <FilePlus2 className="mr-1 h-3.5 w-3.5" />
           {btnLabel}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
             {btnLabel} — {student.name}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="rounded-md border bg-muted/40 p-3 text-xs">
-            <div>
-              <span className="text-muted-foreground">NIS:</span> {student.nis}
-            </div>
-            <div>
-              <span className="text-muted-foreground">Rombel:</span> {student.rombel_name}
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label>Tanggal</Label>
-              <Input
-                type="date"
-                value={form.tanggalRekaman}
-                onChange={(e) => setForm({ ...form, tanggalRekaman: e.target.value })}
-              />
-            </div>
-            <div />
-            <div className="space-y-1">
-              <Label>Jumlah Alfa</Label>
-              <Input
-                type="number"
-                min={0}
-                value={form.jumlahAlfa}
-                onChange={(e) => setForm({ ...form, jumlahAlfa: Number(e.target.value) })}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Jumlah Terlambat</Label>
-              <Input
-                type="number"
-                min={0}
-                value={form.jumlahTerlambat}
-                onChange={(e) => setForm({ ...form, jumlahTerlambat: Number(e.target.value) })}
-              />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <Label>Alasan / Pelanggaran</Label>
-            <Textarea
-              rows={3}
-              value={form.alasan}
-              onChange={(e) => setForm({ ...form, alasan: e.target.value })}
-              placeholder="Deskripsikan pelanggaran..."
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Link Dokumen Pendukung (opsional)</Label>
-            <Input
-              type="url"
-              value={form.dokumenPendukung}
-              onChange={(e) => setForm({ ...form, dokumenPendukung: e.target.value })}
-              placeholder="https://..."
-            />
-          </div>
+          <SpFormFields
+            nama={student.name ?? ""}
+            rombel={student.rombel_name ?? ""}
+            nipd={student.nis ?? ""}
+            alfa={student.alfa ?? 0}
+            telat={student.telat ?? 0}
+            tanggal={tanggal}
+            setTanggal={setTanggal}
+            keterangan={keterangan}
+            setKeterangan={setKeterangan}
+            dokumen={dokumen}
+            setDokumen={setDokumen}
+            studentId={student.id}
+          />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
@@ -1120,7 +1083,7 @@ function BeriSpDialog({
           </Button>
           <Button
             onClick={() => {
-              if (!form.alasan || form.alasan.length < 3) return toast.error("Alasan minimal 3 karakter");
+              if (keterangan.trim().length < 3) return toast.error("Keterangan minimal 3 karakter");
               create.mutate();
             }}
             disabled={create.isPending}
