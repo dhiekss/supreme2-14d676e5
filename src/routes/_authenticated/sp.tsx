@@ -225,6 +225,7 @@ function BpBkPage() {
     });
   };
 
+  const wali = useMemo(() => filterFn(bp.perluWali ?? []), [bp, search, rombelFilter]);
   const rek1 = useMemo(() => filterFn(bp.rekomendasi[1]), [bp, search, rombelFilter]);
   const rek2 = useMemo(() => filterFn(bp.rekomendasi[2]), [bp, search, rombelFilter]);
   const rek3 = useMemo(() => filterFn(bp.rekomendasi[3]), [bp, search, rombelFilter]);
@@ -243,21 +244,23 @@ function BpBkPage() {
         </div>
         <ThresholdSettingsDialog
           value={thresholds}
+          saving={saveThM.isPending}
           onSave={(next) => {
-            setThresholds(next);
             try {
               localStorage.setItem(TH_STORAGE_KEY, JSON.stringify(next));
             } catch {}
-            toast.success("Pengaturan ambang batas SP disimpan");
+            saveThM.mutate(next);
           }}
         />
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-7">
+        <StatCard tone="wali" icon={<UserCheck className="h-4 w-4" />} label="Perlu Tindakan Wali Kelas" value={bp.counts.wali ?? 0} />
         <StatCard tone="sp1r" icon={<AlertTriangle className="h-4 w-4" />} label="Rekomendasi SP 1" value={bp.counts.rek1} />
         <StatCard tone="sp1m" icon={<Users className="h-4 w-4" />} label="Murid SP 1" value={bp.counts.murid1} />
         <StatCard tone="sp2r" icon={<AlertTriangle className="h-4 w-4" />} label="Rekomendasi SP 2" value={bp.counts.rek2} />
+
         <StatCard tone="sp2m" icon={<Users className="h-4 w-4" />} label="Murid SP 2" value={bp.counts.murid2} />
         <StatCard tone="sp3r" icon={<AlertTriangle className="h-4 w-4" />} label="Rekomendasi SP 3" value={bp.counts.rek3} />
         <StatCard tone="sp3m" icon={<Users className="h-4 w-4" />} label="Murid SP 3" value={bp.counts.murid3} />
