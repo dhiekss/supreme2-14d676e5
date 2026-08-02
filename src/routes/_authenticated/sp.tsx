@@ -1279,7 +1279,7 @@ function MuridSpTable({
 
 function CaseKhususDialog({ level }: { level: 1 | 2 | 3 }) {
   const qc = useQueryClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString("en-CA");
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [picked, setPicked] = useState<any | null>(null);
@@ -1312,8 +1312,8 @@ function CaseKhususDialog({ level }: { level: 1 | 2 | 3 }) {
           spLevel: level,
           tanggalRekaman: tanggal,
           alasan: `[Case Khusus] ${alasan}`,
-          jumlahAlfa: 0,
-          jumlahTerlambat: 0,
+          jumlahAlfa: Number(picked.alfa ?? 0),
+          jumlahTerlambat: Number(picked.telat ?? 0),
           dokumenPendukung: dokumen,
         },
       }),
@@ -1340,7 +1340,7 @@ function CaseKhususDialog({ level }: { level: 1 | 2 | 3 }) {
           Case Khusus
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[85vh] max-w-md overflow-y-auto">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Case Khusus — SP {level}</DialogTitle>
         </DialogHeader>
@@ -1348,9 +1348,8 @@ function CaseKhususDialog({ level }: { level: 1 | 2 | 3 }) {
           Untuk mencatat SP {level} di luar pelanggaran jumlah alfa dan terlambat.
         </p>
         <div className="space-y-3">
-          <div className="space-y-1">
-            <Label>Cari Murid (nama / NIS)</Label>
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ketik nama atau NIS..." />
+          <div className="space-y-1.5">
+            <Label>Cari Murid (nama / NIPD)</Label>
             {picked ? (
               <div className="flex items-center justify-between rounded-md border bg-muted/40 p-2 text-xs">
                 <span>
@@ -1361,51 +1360,47 @@ function CaseKhususDialog({ level }: { level: 1 | 2 | 3 }) {
                 </Button>
               </div>
             ) : (
-              <div className="max-h-44 overflow-y-auto rounded-md border">
-                {isFetching ? (
-                  <div className="p-2 text-xs text-muted-foreground">Memuat...</div>
-                ) : (results ?? []).length === 0 ? (
-                  <div className="p-2 text-xs text-muted-foreground">Tidak ada murid ditemukan</div>
-                ) : (
-                  (results ?? []).map((s: any) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      className="block w-full px-2 py-1.5 text-left text-xs hover:bg-muted"
-                      onClick={() => setPicked(s)}
-                    >
-                      <span className="font-medium">{s.name}</span>{" "}
-                      <span className="text-muted-foreground">
-                        · {s.nis} · {s.rombel_name}
-                      </span>
-                    </button>
-                  ))
-                )}
-              </div>
+              <>
+                <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ketik nama atau NIPD..." />
+                <div className="max-h-44 overflow-y-auto rounded-md border">
+                  {isFetching ? (
+                    <div className="p-2 text-xs text-muted-foreground">Memuat...</div>
+                  ) : (results ?? []).length === 0 ? (
+                    <div className="p-2 text-xs text-muted-foreground">Tidak ada murid ditemukan</div>
+                  ) : (
+                    (results ?? []).map((s: any) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        className="block w-full px-2 py-1.5 text-left text-xs hover:bg-muted"
+                        onClick={() => setPicked(s)}
+                      >
+                        <span className="font-medium">{s.name}</span>{" "}
+                        <span className="text-muted-foreground">
+                          · {s.nis} · {s.rombel_name}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </>
             )}
           </div>
-          <div className="space-y-1">
-            <Label>Tanggal</Label>
-            <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <Label>Alasan / Pelanggaran Khusus</Label>
-            <Textarea
-              rows={3}
-              value={alasan}
-              onChange={(e) => setAlasan(e.target.value)}
-              placeholder="Deskripsikan pelanggaran khusus..."
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Link Dokumen Pendukung (opsional)</Label>
-            <Input
-              type="url"
-              value={dokumen}
-              onChange={(e) => setDokumen(e.target.value)}
-              placeholder="https://..."
-            />
-          </div>
+
+          <SpFormFields
+            nama={picked?.name ?? ""}
+            rombel={picked?.rombel_name ?? ""}
+            nipd={picked?.nis ?? ""}
+            alfa={picked?.alfa ?? 0}
+            telat={picked?.telat ?? 0}
+            tanggal={tanggal}
+            setTanggal={setTanggal}
+            keterangan={alasan}
+            setKeterangan={setAlasan}
+            dokumen={dokumen}
+            setDokumen={setDokumen}
+            studentId={picked?.id ?? "umum"}
+          />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
@@ -1414,7 +1409,7 @@ function CaseKhususDialog({ level }: { level: 1 | 2 | 3 }) {
           <Button
             onClick={() => {
               if (!picked) return toast.error("Pilih murid terlebih dahulu");
-              if (alasan.trim().length < 3) return toast.error("Alasan minimal 3 karakter");
+              if (alasan.trim().length < 3) return toast.error("Keterangan minimal 3 karakter");
               create.mutate();
             }}
             disabled={create.isPending}
@@ -1424,5 +1419,163 @@ function CaseKhususDialog({ level }: { level: 1 | 2 | 3 }) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Bagian isian standar dialog SP: identitas auto-read, tanggal manual,
+ *  jumlah alfa/terlambat readonly, keterangan tindak lanjut, foto dokumentasi. */
+function SpFormFields({
+  nama,
+  rombel,
+  nipd,
+  alfa,
+  telat,
+  tanggal,
+  setTanggal,
+  keterangan,
+  setKeterangan,
+  dokumen,
+  setDokumen,
+  studentId,
+}: {
+  nama: string;
+  rombel: string;
+  nipd: string;
+  alfa: number;
+  telat: number;
+  tanggal: string;
+  setTanggal: (v: string) => void;
+  keterangan: string;
+  setKeterangan: (v: string) => void;
+  dokumen: string;
+  setDokumen: (v: string) => void;
+  studentId: string;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
+  const fotoUrlFn = useServerFn(getWaliTindakanFotoUrl);
+
+  async function handleUpload(file: File) {
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const key = `sp/${studentId}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("sp-dokumen").upload(key, file, { upsert: false });
+      if (error) throw new Error(error.message);
+      setDokumen(key);
+      const res = await fotoUrlFn({ data: { path: key } });
+      setFotoUrl(res.url);
+      toast.success("Foto terunggah");
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal mengunggah foto");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label>Nama Murid</Label>
+          <Input value={nama} readOnly className="bg-muted/50" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Rombel</Label>
+          <Input value={rombel} readOnly className="bg-muted/50" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>NIPD</Label>
+          <Input value={nipd} readOnly className="bg-muted/50" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Tanggal</Label>
+          <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Jumlah Alfa</Label>
+          <Input value={alfa} readOnly className="bg-muted/50" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Jumlah Terlambat</Label>
+          <Input value={telat} readOnly className="bg-muted/50" />
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label>Keterangan Tindak Lanjut</Label>
+        <Textarea
+          rows={4}
+          value={keterangan}
+          onChange={(e) => setKeterangan(e.target.value)}
+          placeholder="Tuliskan tindak lanjut / alasan pemberian SP..."
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label>Foto Dokumentasi</Label>
+        <Input
+          type="file"
+          accept="image/*"
+          disabled={uploading}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void handleUpload(f);
+          }}
+        />
+        {uploading && (
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Mengunggah…
+          </p>
+        )}
+        {fotoUrl && (
+          <img
+            src={fotoUrl}
+            alt={`Dokumentasi SP ${nama || "murid"}`}
+            className="mt-2 max-h-56 rounded-md border object-contain"
+          />
+        )}
+        {!fotoUrl && dokumen && (
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Upload className="h-3.5 w-3.5" /> {dokumen}
+          </p>
+        )}
+      </div>
+    </>
+  );
+}
+
+/** Tombol buka dokumen: URL eksternal dibuka langsung, path storage
+ *  di-resolve dulu menjadi signed URL. */
+function DokButton({ value, variant = "icon" }: { value: string; variant?: "icon" | "link" }) {
+  const fotoUrlFn = useServerFn(getWaliTindakanFotoUrl);
+  const [loading, setLoading] = useState(false);
+
+  async function open() {
+    if (/^https?:\/\//i.test(value)) {
+      window.open(value, "_blank", "noopener");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fotoUrlFn({ data: { path: value } });
+      if (res.url) window.open(res.url, "_blank", "noopener");
+      else toast.error("Dokumen tidak ditemukan");
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal membuka dokumen");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (variant === "link") {
+    return (
+      <button type="button" className="text-primary underline" onClick={open} disabled={loading}>
+        {loading ? "Membuka…" : "Buka dokumen pendukung"}
+      </button>
+    );
+  }
+  return (
+    <Button size="icon" variant="ghost" onClick={open} disabled={loading} title="Buka dokumen pendukung">
+      <FileText className="h-4 w-4" />
+    </Button>
   );
 }
