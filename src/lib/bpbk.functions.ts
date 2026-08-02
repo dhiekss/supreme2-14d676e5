@@ -92,10 +92,15 @@ export const getBpBkData = createServerFn({ method: "POST" })
         telat: Number.isFinite(input.sp3Telat) ? Number(input.sp3Telat) : DEFAULT_THRESHOLDS[3].telat,
       },
     };
+    const WALI = {
+      alfa: Number.isFinite(input.waliAlfa) ? Number(input.waliAlfa) : 1,
+      telat: Number.isFinite(input.waliTelat) ? Number(input.waliTelat) : 2,
+    };
 
     const [students, rombelRows, lateRows, attendDetails, attendRecords, spRows] = await Promise.all([
       fetchAll<any>(sb.from("students").select("id, name, nis, rombel_id").order("name")),
-      fetchAll<any>(sb.from("rombel").select("id, name, konsentrasi_keahlian")),
+      fetchAll<any>(sb.from("rombel").select("id, name, konsentrasi_keahlian, wali_kelas_name")),
+
       fetchAll<any>(sb.from("late_records").select("student_id, record_date")),
       // Only alfa rows are needed — fetching every attendance detail (80k+ rows)
       // made this page hang for minutes.
