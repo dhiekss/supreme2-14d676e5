@@ -1152,11 +1152,17 @@ function MuridSpTable({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Murid dengan SP {level}</CardTitle>
-        <p className="text-xs text-muted-foreground">
-          Daftar murid yang sudah mendapat Surat Peringatan {level}
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <CardTitle className="text-base">Murid dengan SP {level}</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Daftar murid yang sudah mendapat Surat Peringatan {level}
+            </p>
+          </div>
+          <CaseKhususDialog level={level} />
+        </div>
       </CardHeader>
+
       <CardContent className="p-0">
         <Table>
           <TableHeader>
