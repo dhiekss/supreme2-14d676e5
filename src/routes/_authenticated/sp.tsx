@@ -169,17 +169,38 @@ function BpBkPage() {
   const qc = useQueryClient();
   const getData = useServerFn(getBpBkData);
   const removeFn = useServerFn(deleteSp);
+  const getTh = useServerFn(getBpBkThresholds);
+  const saveTh = useServerFn(saveBpBkThresholds);
 
-  const [thresholds, setThresholds] = useState<Thresholds>(() => loadThresholds());
+  const { data: savedTh } = useSuspenseQuery({
+    queryKey: ["bpbk-thresholds"],
+    queryFn: () => getTh(),
+  });
+
+  const thresholds: Thresholds = useMemo(
+    () => ({ ...DEFAULT_TH, ...loadThresholds(), ...(savedTh ?? {}) }),
+    [savedTh],
+  );
 
   const { data: bp } = useSuspenseQuery({
     queryKey: ["bpbk", thresholds],
     queryFn: () => getData({ data: thresholds }),
   });
 
-  const [tab, setTab] = useState<"rek1" | "murid1" | "rek2" | "murid2" | "rek3" | "murid3">("rek1");
+  const saveThM = useMutation({
+    mutationFn: (v: Thresholds) => saveTh({ data: v }),
+    onSuccess: () => {
+      toast.success("Pengaturan ambang batas SP disimpan");
+      qc.invalidateQueries({ queryKey: ["bpbk-thresholds"] });
+      qc.invalidateQueries({ queryKey: ["bpbk"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Gagal menyimpan pengaturan"),
+  });
+
+  const [tab, setTab] = useState<"wali" | "rek1" | "murid1" | "rek2" | "murid2" | "rek3" | "murid3">("wali");
   const [search, setSearch] = useState("");
   const [rombelFilter, setRombelFilter] = useState<string>("all");
+
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["bpbk"] });
 
