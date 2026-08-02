@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { todayWIB } from "@/lib/wib";
 import { queryOptions, useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -120,7 +121,7 @@ function RevisiPage() {
 }
 
 function DataPresensiTab({ rombel }: { rombel: any[] }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayWIB();
   const [rombelId, setRombelId] = useState<string>(rombel[0]?.id ?? "");
   const [date, setDate] = useState(today);
   const [search, setSearch] = useState("");

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { todayWIB } from "@/lib/wib";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -71,7 +72,7 @@ function formatDateLongID(iso: string) {
 }
 
 function LaporanPresensiKelompok() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayWIB();
   const [from, setFrom] = useState("2026-07-20");
   const [to, setTo] = useState(today);
   const [kelompokId, setKelompokId] = useState<string>("__all");
@@ -271,7 +272,7 @@ function LaporanPresensiKelompok() {
 }
 
 function KelompokBelumInputCard() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayWIB();
   const [date, setDate] = useState(today);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);

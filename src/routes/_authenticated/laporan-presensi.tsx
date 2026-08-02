@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { todayWIB } from "@/lib/wib";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -52,7 +53,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function LaporanPresensi() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayWIB();
   const startDate = "2026-07-20";
   const [from, setFrom] = useState(startDate);
   const [to, setTo] = useState(today);
@@ -550,7 +551,7 @@ function AlfaTopCard({ rows, loaded }: { rows: any[]; loaded: boolean }) {
 
 
 function RombelBelumInputCard() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayWIB();
   const [date, setDate] = useState(today);
   const [tingkat, setTingkat] = useState<string>("__all");
   const [page, setPage] = useState(1);
