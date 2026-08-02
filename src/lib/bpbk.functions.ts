@@ -58,16 +58,20 @@ export const saveBpBkThresholds = createServerFn({ method: "POST" })
 
 
 async function fetchAll<T>(query: any, pageSize = 1000): Promise<T[]> {
+  // PostgREST caps every response at 1000 rows, so a larger page size would
+  // silently stop the loop after the first page (rows.length < pageSize).
+  const size = Math.min(Math.max(1, pageSize), 1000);
   const out: T[] = [];
   let from = 0;
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const { data, error } = await query.range(from, from + pageSize - 1);
+    const { data, error } = await query.range(from, from + size - 1);
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as T[];
     out.push(...rows);
-    if (rows.length < pageSize) break;
-    from += pageSize;
+    if (rows.length < size) break;
+    from += size;
+    if (from > 500_000) break;
   }
   return out;
 }
