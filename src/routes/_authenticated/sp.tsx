@@ -1175,13 +1175,7 @@ function MuridSpTable({
                       <Button size="icon" variant="ghost" onClick={() => setDetail(r)}>
                         <Eye className="h-4 w-4" />
                       </Button>
-                      {r.dokumen_pendukung && (
-                        <Button size="icon" variant="ghost" asChild>
-                          <a href={r.dokumen_pendukung} target="_blank" rel="noreferrer">
-                            <FileText className="h-4 w-4" />
-                          </a>
-                        </Button>
-                      )}
+                      {r.dokumen_pendukung && <DokButton value={r.dokumen_pendukung} />}
                       <Button
                         size="icon"
                         variant="ghost"
