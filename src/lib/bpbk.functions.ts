@@ -11,6 +11,8 @@ const DEFAULT_THRESHOLDS = {
 type ThresholdInput = {
   /** Tanggal mulai (YYYY-MM-DD) perhitungan ambang untuk periode berjalan. */
   mulaiTanggal?: string | null;
+  waliAlfa?: number;
+  waliTelat?: number;
   sp1Alfa?: number;
   sp1Telat?: number;
   sp2Alfa?: number;
@@ -18,6 +20,42 @@ type ThresholdInput = {
   sp3Alfa?: number;
   sp3Telat?: number;
 };
+
+const SETTINGS_KEY = "bpbk.thresholds";
+
+export const getBpBkThresholds = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await context.supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", SETTINGS_KEY)
+      .maybeSingle();
+    if (!data?.value) return null;
+    try {
+      return JSON.parse(data.value) as ThresholdInput;
+    } catch {
+      return null;
+    }
+  });
+
+export const saveBpBkThresholds = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: ThresholdInput) => d)
+  .handler(async ({ context, data }) => {
+    const { error } = await context.supabase.from("app_settings").upsert(
+      {
+        key: SETTINGS_KEY,
+        value: JSON.stringify(data),
+        description: "Ambang batas rekomendasi BP/BK",
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 
 async function fetchAll<T>(query: any, pageSize = 1000): Promise<T[]> {
   const out: T[] = [];
