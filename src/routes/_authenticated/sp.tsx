@@ -32,7 +32,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { getBpBkData } from "@/lib/bpbk.functions";
+import { getBpBkData, getBpBkThresholds, saveBpBkThresholds } from "@/lib/bpbk.functions";
 import { createSp, deleteSp } from "@/lib/sp.functions";
 import {
   AlertTriangle,
@@ -47,11 +47,14 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
+  UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
 type Thresholds = {
   mulaiTanggal: string;
+  waliAlfa: number;
+  waliTelat: number;
   sp1Alfa: number;
   sp1Telat: number;
   sp2Alfa: number;
@@ -62,6 +65,8 @@ type Thresholds = {
 
 const DEFAULT_TH: Thresholds = {
   mulaiTanggal: "",
+  waliAlfa: 1,
+  waliTelat: 2,
   sp1Alfa: 3,
   sp1Telat: 5,
   sp2Alfa: 6,
@@ -84,6 +89,7 @@ function loadThresholds(): Thresholds {
   }
 }
 
+
 export const Route = createFileRoute("/_authenticated/sp")({
   head: () => ({ meta: [{ title: "Manajemen BP/BK — SUPREME XPOES" }] }),
   component: BpBkPage,
@@ -96,9 +102,10 @@ export const Route = createFileRoute("/_authenticated/sp")({
 });
 
 
-type StatCardTone = "sp1r" | "sp1m" | "sp2r" | "sp2m" | "sp3r" | "sp3m";
+type StatCardTone = "wali" | "sp1r" | "sp1m" | "sp2r" | "sp2m" | "sp3r" | "sp3m";
 
 const statStyle: Record<StatCardTone, string> = {
+  wali: "border-l-4 border-l-emerald-500 text-emerald-600 dark:text-emerald-400",
   sp1r: "border-l-4 border-l-amber-500 text-amber-600 dark:text-amber-400",
   sp1m: "border-l-4 border-l-blue-500 text-blue-600 dark:text-blue-400",
   sp2r: "border-l-4 border-l-orange-500 text-orange-600 dark:text-orange-400",
@@ -139,9 +146,10 @@ function CountBadge({
 }: {
   value: number;
   active: boolean;
-  tone: "amber" | "blue" | "orange" | "purple" | "red" | "rose";
+  tone: "emerald" | "amber" | "blue" | "orange" | "purple" | "red" | "rose";
 }) {
   const map: Record<string, string> = {
+    emerald: "bg-emerald-500 text-white",
     amber: "bg-amber-500 text-white",
     blue: "bg-blue-500 text-white",
     orange: "bg-orange-500 text-white",
@@ -164,17 +172,39 @@ function BpBkPage() {
   const qc = useQueryClient();
   const getData = useServerFn(getBpBkData);
   const removeFn = useServerFn(deleteSp);
+  const getTh = useServerFn(getBpBkThresholds);
+  const saveTh = useServerFn(saveBpBkThresholds);
 
-  const [thresholds, setThresholds] = useState<Thresholds>(() => loadThresholds());
+  const { data: savedTh } = useSuspenseQuery({
+    queryKey: ["bpbk-thresholds"],
+    queryFn: () => getTh(),
+  });
+
+  const thresholds: Thresholds = useMemo(() => {
+    const merged = { ...DEFAULT_TH, ...loadThresholds(), ...(savedTh ?? {}) };
+    return { ...merged, mulaiTanggal: merged.mulaiTanggal ?? "" };
+  }, [savedTh]);
+
 
   const { data: bp } = useSuspenseQuery({
     queryKey: ["bpbk", thresholds],
     queryFn: () => getData({ data: thresholds }),
   });
 
-  const [tab, setTab] = useState<"rek1" | "murid1" | "rek2" | "murid2" | "rek3" | "murid3">("rek1");
+  const saveThM = useMutation({
+    mutationFn: (v: Thresholds) => saveTh({ data: v }),
+    onSuccess: () => {
+      toast.success("Pengaturan ambang batas SP disimpan");
+      qc.invalidateQueries({ queryKey: ["bpbk-thresholds"] });
+      qc.invalidateQueries({ queryKey: ["bpbk"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Gagal menyimpan pengaturan"),
+  });
+
+  const [tab, setTab] = useState<"wali" | "rek1" | "murid1" | "rek2" | "murid2" | "rek3" | "murid3">("wali");
   const [search, setSearch] = useState("");
   const [rombelFilter, setRombelFilter] = useState<string>("all");
+
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["bpbk"] });
 
@@ -199,6 +229,7 @@ function BpBkPage() {
     });
   };
 
+  const wali = useMemo(() => filterFn(bp.perluWali ?? []), [bp, search, rombelFilter]);
   const rek1 = useMemo(() => filterFn(bp.rekomendasi[1]), [bp, search, rombelFilter]);
   const rek2 = useMemo(() => filterFn(bp.rekomendasi[2]), [bp, search, rombelFilter]);
   const rek3 = useMemo(() => filterFn(bp.rekomendasi[3]), [bp, search, rombelFilter]);
@@ -217,21 +248,23 @@ function BpBkPage() {
         </div>
         <ThresholdSettingsDialog
           value={thresholds}
+          saving={saveThM.isPending}
           onSave={(next) => {
-            setThresholds(next);
             try {
               localStorage.setItem(TH_STORAGE_KEY, JSON.stringify(next));
             } catch {}
-            toast.success("Pengaturan ambang batas SP disimpan");
+            saveThM.mutate(next);
           }}
         />
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-7">
+        <StatCard tone="wali" icon={<UserCheck className="h-4 w-4" />} label="Perlu Tindakan Wali Kelas" value={bp.counts.wali ?? 0} />
         <StatCard tone="sp1r" icon={<AlertTriangle className="h-4 w-4" />} label="Rekomendasi SP 1" value={bp.counts.rek1} />
         <StatCard tone="sp1m" icon={<Users className="h-4 w-4" />} label="Murid SP 1" value={bp.counts.murid1} />
         <StatCard tone="sp2r" icon={<AlertTriangle className="h-4 w-4" />} label="Rekomendasi SP 2" value={bp.counts.rek2} />
+
         <StatCard tone="sp2m" icon={<Users className="h-4 w-4" />} label="Murid SP 2" value={bp.counts.murid2} />
         <StatCard tone="sp3r" icon={<AlertTriangle className="h-4 w-4" />} label="Rekomendasi SP 3" value={bp.counts.rek3} />
         <StatCard tone="sp3m" icon={<Users className="h-4 w-4" />} label="Murid SP 3" value={bp.counts.murid3} />
@@ -265,6 +298,11 @@ function BpBkPage() {
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 bg-muted/60 p-2">
+          <TabsTrigger value="wali" className="data-[state=active]:bg-background">
+            <UserCheck className="mr-1.5 h-3.5 w-3.5 text-emerald-500" />
+            Perlu Tindakan Wali Kelas
+            <CountBadge value={bp.counts.wali ?? 0} active={tab === "wali"} tone="emerald" />
+          </TabsTrigger>
           <TabsTrigger value="rek1" className="data-[state=active]:bg-background">
             <AlertTriangle className="mr-1.5 h-3.5 w-3.5 text-amber-500" />
             Rekomendasi SP 1
@@ -294,6 +332,9 @@ function BpBkPage() {
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="wali" className="mt-4">
+          <WaliTable rows={wali} threshold={bp.waliThreshold} />
+        </TabsContent>
         <TabsContent value="rek1" className="mt-4">
           <RekomendasiTable level={1} rows={rek1} onCreated={invalidate} thresholds={bp.thresholds} />
         </TabsContent>
@@ -424,12 +465,80 @@ function sortRows<T>(rows: T[], key: keyof T | null, dir: SortDir): T[] {
   return arr;
 }
 
+function WaliTable({
+  rows,
+  threshold,
+}: {
+  rows: any[];
+  threshold: { alfa: number; telat: number };
+}) {
+  const sort = useSort<"name" | "nis" | "rombel_name" | "wali_kelas" | "alfa" | "telat">("name");
+  const data = useMemo(() => sortRows(rows, sort.key as any, sort.dir), [rows, sort.key, sort.dir]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <UserCheck className="h-4 w-4 text-emerald-500" />
+          Perlu Tindakan Wali Kelas
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Murid dengan Alfa &gt; {threshold?.alfa ?? 1} dan/atau Terlambat &gt; {threshold?.telat ?? 2},
+          belum mencapai ambang SP 1. Tangani terlebih dahulu oleh wali kelas.
+        </p>
+      </CardHeader>
+      <CardContent className="overflow-x-auto p-0 sm:p-6 sm:pt-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <SortHead label="Nama Murid" sortKey="name" state={sort} />
+              <SortHead label="NIS" sortKey="nis" state={sort} />
+              <SortHead label="Rombel" sortKey="rombel_name" state={sort} />
+              <SortHead label="Wali Kelas" sortKey="wali_kelas" state={sort} />
+              <SortHead label="Alfa" sortKey="alfa" state={sort} className="text-center" />
+              <SortHead label="Terlambat" sortKey="telat" state={sort} className="text-center" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                  Tidak ada murid yang perlu tindakan wali kelas.
+                </TableCell>
+              </TableRow>
+            ) : (
+              data.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="font-medium">{r.name}</TableCell>
+                  <TableCell>{r.nis}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{r.rombel_name}</Badge>
+                  </TableCell>
+                  <TableCell>{r.wali_kelas ?? "—"}</TableCell>
+                  <TableCell className="text-center">
+                    <CountPill value={r.alfa} danger={r.alfa > (threshold?.alfa ?? 1)} />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <CountPill value={r.telat} danger={r.telat > (threshold?.telat ?? 2)} />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 function ThresholdSettingsDialog({
   value,
   onSave,
+  saving,
 }: {
   value: Thresholds;
   onSave: (v: Thresholds) => void;
+  saving?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Thresholds>(value);
@@ -473,6 +582,33 @@ function ThresholdSettingsDialog({
             Alfa &amp; keterlambatan sebelum tanggal ini tidak dihitung. Kosongkan untuk
             menghitung seluruh riwayat.
           </p>
+        </div>
+
+        <div className="rounded-md border border-l-4 border-l-emerald-500 p-3">
+          <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+            <UserCheck className="h-4 w-4 text-emerald-500" />
+            Perlu Tindakan Wali Kelas
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Alfa &gt;</Label>
+              <Input
+                type="number"
+                min={0}
+                value={form.waliAlfa}
+                onChange={(e) => setForm({ ...form, waliAlfa: Number(e.target.value) })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Terlambat &gt;</Label>
+              <Input
+                type="number"
+                min={0}
+                value={form.waliTelat}
+                onChange={(e) => setForm({ ...form, waliTelat: Number(e.target.value) })}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -542,12 +678,13 @@ function ThresholdSettingsDialog({
               Batal
             </Button>
             <Button
+              disabled={saving}
               onClick={() => {
                 onSave(form);
                 setOpen(false);
               }}
             >
-              Simpan
+              {saving ? "Menyimpan…" : "Simpan"}
             </Button>
           </div>
         </DialogFooter>
