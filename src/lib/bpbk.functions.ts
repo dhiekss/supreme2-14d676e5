@@ -266,7 +266,9 @@ export const getBpBkData = createServerFn({ method: "POST" })
 
     // Existing SP records enriched
     const sMap = new Map<string, any>(students.map((s: any) => [s.id, s]));
-    const spEnriched = spRows.map((r: any) => {
+    const spEnriched = spRows
+      .filter((r: any) => r.student_id && sMap.has(r.student_id))
+      .map((r: any) => {
       const st = r.student_id ? sMap.get(r.student_id) : null;
       const rb = st?.rombel_id ? rMap.get(st.rombel_id) : null;
       return {
