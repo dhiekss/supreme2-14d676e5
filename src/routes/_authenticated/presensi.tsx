@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { todayWIB } from "@/lib/wib";
 import { queryOptions, useQuery, useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState, useEffect } from "react";
@@ -78,7 +79,7 @@ function PresensiPage() {
   const fetchAtt = useServerFn(getAttendanceForDate);
 
   const [rombelId, setRombelId] = useState<string>("");
-  const [date, setDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState<string>(() => todayWIB());
   const [statuses, setStatuses] = useState<Record<string, Status>>({});
   const now = useClock();
   const officerName = me?.full_name || me?.email || "—";
