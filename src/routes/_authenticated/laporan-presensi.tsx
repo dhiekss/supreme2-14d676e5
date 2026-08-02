@@ -451,43 +451,8 @@ function LaporanPresensi() {
 
 
       {/* Alfa leaderboard */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <XCircle className="h-4 w-4 text-rose-500" /> Murid dengan Alfa Terbanyak
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">15 murid dengan jumlah alfa terbanyak pada rentang tanggal.</p>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-14">No</TableHead>
-                <TableHead>Nama Murid</TableHead>
-                <TableHead>NIS</TableHead>
-                <TableHead>Rombel</TableHead>
-                <TableHead className="text-center">Jumlah Alfa</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(data?.alfaTop ?? []).map((s: any, i: number) => (
-                <TableRow key={s.id}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell className="font-medium">{s.name}</TableCell>
-                  <TableCell className="font-mono text-xs">{s.nis ?? "-"}</TableCell>
-                  <TableCell>{s.rombel}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="destructive">{s.count}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {data && data.alfaTop.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Tidak ada catatan alfa.</TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <AlfaTopCard rows={data?.alfaTop ?? []} loaded={!!data} />
+
 
       {/* Detail presensi */}
       <DetailPresensiCard />
@@ -502,6 +467,87 @@ function LaporanPresensi() {
     </div>
   );
 }
+
+function AlfaTopCard({ rows, loaded }: { rows: any[]; loaded: boolean }) {
+  const [tingkat, setTingkat] = useState<string>("__all");
+  const tingkatList = useMemo(
+    () => [...new Set(rows.map((r) => r.tingkat).filter((t) => t && t !== "-"))].sort() as string[],
+    [rows],
+  );
+  const filtered = useMemo(
+    () => (tingkat === "__all" ? rows : rows.filter((r) => String(r.tingkat) === tingkat)).slice(0, 15),
+    [rows, tingkat],
+  );
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2">
+              <XCircle className="h-4 w-4 text-rose-500" /> Murid dengan Alfa Terbanyak
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">15 murid dengan jumlah alfa terbanyak pada rentang tanggal.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground">Tingkat</Label>
+            <Select value={tingkat} onValueChange={setTingkat}>
+              <SelectTrigger className="w-[140px]"><SelectValue placeholder="Semua" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Semua Tingkat</SelectItem>
+                {tingkatList.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-14">No</TableHead>
+              <TableHead>Nama Murid</TableHead>
+              <TableHead>NIS</TableHead>
+              <TableHead>Rombel</TableHead>
+              <TableHead>Tingkat</TableHead>
+              <TableHead className="text-center">Jumlah Alfa</TableHead>
+              <TableHead>Status SP</TableHead>
+              <TableHead>Tanggal SP / Tindakan</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map((s: any, i: number) => (
+              <TableRow key={s.id}>
+                <TableCell>{i + 1}</TableCell>
+                <TableCell className="font-medium">{s.name}</TableCell>
+                <TableCell className="font-mono text-xs">{s.nis ?? "-"}</TableCell>
+                <TableCell>{s.rombel}</TableCell>
+                <TableCell>{s.tingkat ?? "-"}</TableCell>
+                <TableCell className="text-center">
+                  <Badge variant="destructive">{s.count}</Badge>
+                </TableCell>
+                <TableCell>
+                  {s.spLevel ? (
+                    <Badge variant="destructive">{s.spStatus}</Badge>
+                  ) : s.spDate ? (
+                    <Badge variant="secondary">Tindakan Wali Kelas</Badge>
+                  ) : (
+                    <Badge variant="outline" className="border-amber-500 text-amber-600">Perlu Tindakan Wali Kelas</Badge>
+                  )}
+                </TableCell>
+                <TableCell className="text-xs">{s.spDate ?? "-"}</TableCell>
+              </TableRow>
+            ))}
+            {loaded && filtered.length === 0 && (
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Tidak ada catatan alfa.</TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+
 
 function RombelBelumInputCard() {
   const today = new Date().toISOString().slice(0, 10);
