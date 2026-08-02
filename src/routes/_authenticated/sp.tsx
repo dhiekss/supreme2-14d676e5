@@ -297,6 +297,11 @@ function BpBkPage() {
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
         <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 bg-muted/60 p-2">
+          <TabsTrigger value="wali" className="data-[state=active]:bg-background">
+            <UserCheck className="mr-1.5 h-3.5 w-3.5 text-emerald-500" />
+            Perlu Tindakan Wali Kelas
+            <CountBadge value={bp.counts.wali ?? 0} active={tab === "wali"} tone="emerald" />
+          </TabsTrigger>
           <TabsTrigger value="rek1" className="data-[state=active]:bg-background">
             <AlertTriangle className="mr-1.5 h-3.5 w-3.5 text-amber-500" />
             Rekomendasi SP 1
@@ -326,6 +331,9 @@ function BpBkPage() {
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="wali" className="mt-4">
+          <WaliTable rows={wali} threshold={bp.waliThreshold} />
+        </TabsContent>
         <TabsContent value="rek1" className="mt-4">
           <RekomendasiTable level={1} rows={rek1} onCreated={invalidate} thresholds={bp.thresholds} />
         </TabsContent>
@@ -456,12 +464,80 @@ function sortRows<T>(rows: T[], key: keyof T | null, dir: SortDir): T[] {
   return arr;
 }
 
+function WaliTable({
+  rows,
+  threshold,
+}: {
+  rows: any[];
+  threshold: { alfa: number; telat: number };
+}) {
+  const sort = useSort<"name" | "nis" | "rombel_name" | "wali_kelas" | "alfa" | "telat">("name");
+  const data = useMemo(() => sortRows(rows, sort.key as any, sort.dir), [rows, sort.key, sort.dir]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <UserCheck className="h-4 w-4 text-emerald-500" />
+          Perlu Tindakan Wali Kelas
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Murid dengan Alfa &gt; {threshold?.alfa ?? 1} dan/atau Terlambat &gt; {threshold?.telat ?? 2},
+          belum mencapai ambang SP 1. Tangani terlebih dahulu oleh wali kelas.
+        </p>
+      </CardHeader>
+      <CardContent className="overflow-x-auto p-0 sm:p-6 sm:pt-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <SortHead label="Nama Murid" sortKey="name" state={sort} />
+              <SortHead label="NIS" sortKey="nis" state={sort} />
+              <SortHead label="Rombel" sortKey="rombel_name" state={sort} />
+              <SortHead label="Wali Kelas" sortKey="wali_kelas" state={sort} />
+              <SortHead label="Alfa" sortKey="alfa" state={sort} className="text-center" />
+              <SortHead label="Terlambat" sortKey="telat" state={sort} className="text-center" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                  Tidak ada murid yang perlu tindakan wali kelas.
+                </TableCell>
+              </TableRow>
+            ) : (
+              data.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="font-medium">{r.name}</TableCell>
+                  <TableCell>{r.nis}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{r.rombel_name}</Badge>
+                  </TableCell>
+                  <TableCell>{r.wali_kelas ?? "—"}</TableCell>
+                  <TableCell className="text-center">
+                    <CountPill value={r.alfa} danger={r.alfa > (threshold?.alfa ?? 1)} />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <CountPill value={r.telat} danger={r.telat > (threshold?.telat ?? 2)} />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 function ThresholdSettingsDialog({
   value,
   onSave,
+  saving,
 }: {
   value: Thresholds;
   onSave: (v: Thresholds) => void;
+  saving?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Thresholds>(value);
@@ -505,6 +581,33 @@ function ThresholdSettingsDialog({
             Alfa &amp; keterlambatan sebelum tanggal ini tidak dihitung. Kosongkan untuk
             menghitung seluruh riwayat.
           </p>
+        </div>
+
+        <div className="rounded-md border border-l-4 border-l-emerald-500 p-3">
+          <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+            <UserCheck className="h-4 w-4 text-emerald-500" />
+            Perlu Tindakan Wali Kelas
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Alfa &gt;</Label>
+              <Input
+                type="number"
+                min={0}
+                value={form.waliAlfa}
+                onChange={(e) => setForm({ ...form, waliAlfa: Number(e.target.value) })}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Terlambat &gt;</Label>
+              <Input
+                type="number"
+                min={0}
+                value={form.waliTelat}
+                onChange={(e) => setForm({ ...form, waliTelat: Number(e.target.value) })}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -574,12 +677,13 @@ function ThresholdSettingsDialog({
               Batal
             </Button>
             <Button
+              disabled={saving}
               onClick={() => {
                 onSave(form);
                 setOpen(false);
               }}
             >
-              Simpan
+              {saving ? "Menyimpan…" : "Simpan"}
             </Button>
           </div>
         </DialogFooter>
