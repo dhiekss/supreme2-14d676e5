@@ -498,12 +498,31 @@ function sortRows<T>(rows: T[], key: keyof T | null, dir: SortDir): T[] {
 function WaliTable({
   rows,
   threshold,
+  tindakanMap,
+  onSaved,
 }: {
   rows: any[];
   threshold: { alfa: number; telat: number };
+  tindakanMap: Map<string, any>;
+  onSaved: () => void;
 }) {
-  const sort = useSort<"name" | "nis" | "rombel_name" | "wali_kelas" | "alfa" | "telat">("name");
-  const data = useMemo(() => sortRows(rows, sort.key as any, sort.dir), [rows, sort.key, sort.dir]);
+  const sort = useSort<
+    "name" | "nis" | "rombel_name" | "wali_kelas" | "alfa" | "telat" | "status" | "tgl_tindakan"
+  >("name");
+  const merged = useMemo(
+    () =>
+      rows.map((r) => {
+        const t = tindakanMap.get(r.id);
+        return {
+          ...r,
+          tindakan: t ?? null,
+          status: t ? "Sudah" : "Belum",
+          tgl_tindakan: t?.tanggal ?? "",
+        };
+      }),
+    [rows, tindakanMap],
+  );
+  const data = useMemo(() => sortRows(merged, sort.key as any, sort.dir), [merged, sort.key, sort.dir]);
 
   return (
     <Card>
@@ -522,17 +541,20 @@ function WaliTable({
           <TableHeader>
             <TableRow>
               <SortHead label="Nama Murid" sortKey="name" state={sort} />
-              <SortHead label="NIS" sortKey="nis" state={sort} />
+              <SortHead label="NIPD" sortKey="nis" state={sort} />
               <SortHead label="Rombel" sortKey="rombel_name" state={sort} />
               <SortHead label="Wali Kelas" sortKey="wali_kelas" state={sort} />
               <SortHead label="Alfa" sortKey="alfa" state={sort} className="text-center" />
               <SortHead label="Terlambat" sortKey="telat" state={sort} className="text-center" />
+              <SortHead label="Keterangan" sortKey="status" state={sort} className="text-center" />
+              <SortHead label="Tanggal Tindakan" sortKey="tgl_tindakan" state={sort} />
+              <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
                   Tidak ada murid yang perlu tindakan wali kelas.
                 </TableCell>
               </TableRow>
@@ -551,6 +573,22 @@ function WaliTable({
                   <TableCell className="text-center">
                     <CountPill value={r.telat} danger={r.telat > (threshold?.telat ?? 2)} />
                   </TableCell>
+                  <TableCell className="text-center">
+                    <Badge
+                      className={
+                        r.tindakan
+                          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                          : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                      }
+                      variant="outline"
+                    >
+                      {r.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">{r.tgl_tindakan || "—"}</TableCell>
+                  <TableCell className="text-right">
+                    <TindakanDialog row={r} onSaved={onSaved} />
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -558,6 +596,166 @@ function WaliTable({
         </Table>
       </CardContent>
     </Card>
+  );
+}
+
+function TindakanDialog({ row, onSaved }: { row: any; onSaved: () => void }) {
+  const [open, setOpen] = useState(false);
+  const existing = row.tindakan;
+  const [tanggal, setTanggal] = useState<string>("");
+  const [keterangan, setKeterangan] = useState<string>("");
+  const [fotoPath, setFotoPath] = useState<string | null>(null);
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const saveFn = useServerFn(saveWaliTindakan);
+  const fotoUrlFn = useServerFn(getWaliTindakanFotoUrl);
+
+  const save = useMutation({
+    mutationFn: () =>
+      saveFn({
+        data: {
+          id: existing?.id ?? null,
+          studentId: row.id,
+          rombelId: row.rombel_id ?? null,
+          tanggal,
+          jumlahAlfa: Number(row.alfa ?? 0),
+          jumlahTerlambat: Number(row.telat ?? 0),
+          keterangan,
+          fotoPath,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Tindakan wali kelas tersimpan");
+      setOpen(false);
+      onSaved();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Gagal menyimpan tindakan"),
+  });
+
+  async function openChange(o: boolean) {
+    setOpen(o);
+    if (!o) return;
+    setTanggal(existing?.tanggal ?? new Date().toLocaleDateString("en-CA"));
+    setKeterangan(existing?.keterangan ?? "");
+    setFotoPath(existing?.foto_path ?? null);
+    setFotoUrl(null);
+    if (existing?.foto_path) {
+      try {
+        const res = await fotoUrlFn({ data: { path: existing.foto_path } });
+        setFotoUrl(res.url);
+      } catch {
+        setFotoUrl(null);
+      }
+    }
+  }
+
+  async function handleUpload(file: File) {
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const key = `tindakan-wali/${row.id}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("sp-dokumen").upload(key, file, { upsert: false });
+      if (error) throw new Error(error.message);
+      setFotoPath(key);
+      const res = await fotoUrlFn({ data: { path: key } });
+      setFotoUrl(res.url);
+      toast.success("Foto terunggah");
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal mengunggah foto");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={openChange}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant={existing ? "outline" : "default"}>
+          <ClipboardCheck className="mr-1.5 h-3.5 w-3.5" />
+          Tindakan
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Tindakan Wali Kelas</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Nama Murid</Label>
+              <Input value={row.name ?? ""} readOnly className="bg-muted/50" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Rombel</Label>
+              <Input value={row.rombel_name ?? ""} readOnly className="bg-muted/50" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>NIPD</Label>
+              <Input value={row.nis ?? ""} readOnly className="bg-muted/50" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Tanggal</Label>
+              <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Jumlah Alfa</Label>
+              <Input value={row.alfa ?? 0} readOnly className="bg-muted/50" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Jumlah Terlambat</Label>
+              <Input value={row.telat ?? 0} readOnly className="bg-muted/50" />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Keterangan Tindak Lanjut</Label>
+            <Textarea
+              rows={4}
+              value={keterangan}
+              onChange={(e) => setKeterangan(e.target.value)}
+              placeholder="Tuliskan tindak lanjut yang sudah dilakukan wali kelas..."
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Foto Dokumentasi</Label>
+            <Input
+              type="file"
+              accept="image/*"
+              disabled={uploading}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void handleUpload(f);
+              }}
+            />
+            {uploading && (
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Mengunggah…
+              </p>
+            )}
+            {fotoUrl && (
+              <img
+                src={fotoUrl}
+                alt={`Dokumentasi tindakan ${row.name ?? "murid"}`}
+                className="mt-2 max-h-56 rounded-md border object-contain"
+              />
+            )}
+            {!fotoUrl && fotoPath && (
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Upload className="h-3.5 w-3.5" /> {fotoPath}
+              </p>
+            )}
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Batal
+          </Button>
+          <Button disabled={!tanggal || save.isPending} onClick={() => save.mutate()}>
+            {save.isPending ? "Menyimpan…" : "Simpan Tindakan"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
