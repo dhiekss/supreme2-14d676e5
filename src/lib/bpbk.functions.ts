@@ -258,6 +258,7 @@ export const getBpBkData = createServerFn({ method: "POST" })
 
     return {
       counts: {
+        wali: perluWali.length,
         rek1: rekomendasi[1].length,
         murid1: murid[1].length,
         rek2: rekomendasi[2].length,
@@ -265,10 +266,13 @@ export const getBpBkData = createServerFn({ method: "POST" })
         rek3: rekomendasi[3].length,
         murid3: murid[3].length,
       },
+      perluWali,
       rekomendasi,
       murid,
       rombelList,
       thresholds: THRESHOLDS,
+      waliThreshold: WALI,
       mulaiTanggal: periodStart,
+
     };
   });
