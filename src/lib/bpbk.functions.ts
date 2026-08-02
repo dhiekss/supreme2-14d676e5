@@ -58,16 +58,20 @@ export const saveBpBkThresholds = createServerFn({ method: "POST" })
 
 
 async function fetchAll<T>(query: any, pageSize = 1000): Promise<T[]> {
+  // PostgREST caps every response at 1000 rows, so a larger page size would
+  // silently stop the loop after the first page (rows.length < pageSize).
+  const size = Math.min(Math.max(1, pageSize), 1000);
   const out: T[] = [];
   let from = 0;
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const { data, error } = await query.range(from, from + pageSize - 1);
+    const { data, error } = await query.range(from, from + size - 1);
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as T[];
     out.push(...rows);
-    if (rows.length < pageSize) break;
-    from += pageSize;
+    if (rows.length < size) break;
+    from += size;
+    if (from > 500_000) break;
   }
   return out;
 }
@@ -98,25 +102,28 @@ export const getBpBkData = createServerFn({ method: "POST" })
     };
 
     const [students, rombelRows, lateRows, attendDetails, attendRecords, spRows] = await Promise.all([
-      fetchAll<any>(sb.from("students").select("id, name, nis, rombel_id").order("name")),
-      fetchAll<any>(sb.from("rombel").select("id, name, konsentrasi_keahlian, wali_kelas_name")),
+      fetchAll<any>(sb.from("students").select("id, name, nis, rombel_id").order("id")),
+      fetchAll<any>(sb.from("rombel").select("id, name, konsentrasi_keahlian, wali_kelas_name").order("id")),
 
-      fetchAll<any>(sb.from("late_records").select("student_id, record_date")),
+      fetchAll<any>(sb.from("late_records").select("student_id, record_date").order("id")),
       // Only alfa rows are needed — fetching every attendance detail (80k+ rows)
-      // made this page hang for minutes.
+      // made this page hang for minutes. Stable ordering keeps paging correct.
       fetchAll<any>(
         sb
           .from("attendance_details")
           .select("student_id, status, attendance_record_id")
-          .in("status", ["A", "a", "alfa", "Alfa", "ALFA"]),
-        5000,
+          .in("status", ["A", "a", "alfa", "Alfa", "ALFA"])
+          .order("id"),
       ),
-      fetchAll<any>(sb.from("attendance_records").select("id, date"), 5000),
+      fetchAll<any>(sb.from("attendance_records").select("id, date").order("id")),
 
       fetchAll<any>(
-        sb.from("sp_records").select(
-          "id, student_id, sp_level, alasan, jumlah_alfa, jumlah_terlambat, dokumen_pendukung, tanggal_rekaman, created_at",
-        ),
+        sb
+          .from("sp_records")
+          .select(
+            "id, student_id, sp_level, alasan, jumlah_alfa, jumlah_terlambat, dokumen_pendukung, tanggal_rekaman, created_at",
+          )
+          .order("id"),
       ),
     ]);
 
