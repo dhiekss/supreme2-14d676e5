@@ -358,7 +358,12 @@ function BpBkPage() {
         </TabsList>
 
         <TabsContent value="wali" className="mt-4">
-          <WaliTable rows={wali} threshold={bp.waliThreshold} />
+          <WaliTable
+            rows={wali}
+            threshold={bp.waliThreshold}
+            tindakanMap={tindakanMap}
+            onSaved={() => qc.invalidateQueries({ queryKey: ["wali-tindakan"] })}
+          />
         </TabsContent>
         <TabsContent value="rek1" className="mt-4">
           <RekomendasiTable level={1} rows={rek1} onCreated={invalidate} thresholds={bp.thresholds} />
