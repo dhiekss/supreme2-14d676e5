@@ -101,33 +101,46 @@ export const getBpBkData = createServerFn({ method: "POST" })
       telat: Number.isFinite(input.waliTelat) ? Number(input.waliTelat) : 2,
     };
 
-    const [students, rombelRows, lateRows, attendDetails, attendRecords, spRows] = await Promise.all([
-      fetchAll<any>(sb.from("students").select("id, name, nis, rombel_id").order("id")),
-      fetchAll<any>(sb.from("rombel").select("id, name, konsentrasi_keahlian, wali_kelas_name").order("id")),
+    const [allStudents, rombelRows, lateRows, attendDetails, attendRecords, spRows, keluarRows, resignRows] =
+      await Promise.all([
+        fetchAll<any>(sb.from("students").select("id, name, nis, rombel_id").order("id")),
+        fetchAll<any>(sb.from("rombel").select("id, name, konsentrasi_keahlian, wali_kelas_name").order("id")),
 
-      fetchAll<any>(sb.from("late_records").select("student_id, record_date").order("id")),
-      // Only alfa rows are needed — fetching every attendance detail (80k+ rows)
-      // made this page hang for minutes. Stable ordering keeps paging correct.
-      fetchAll<any>(
-        sb
-          .from("attendance_details")
-          .select("student_id, status, attendance_record_id")
-          .in("status", ["A", "a", "alfa", "Alfa", "ALFA"])
-          .order("id"),
-      ),
-      fetchAll<any>(sb.from("attendance_records").select("id, date").order("id")),
+        fetchAll<any>(sb.from("late_records").select("student_id, record_date").order("id")),
+        // Only alfa rows are needed — fetching every attendance detail (80k+ rows)
+        // made this page hang for minutes. Stable ordering keeps paging correct.
+        fetchAll<any>(
+          sb
+            .from("attendance_details")
+            .select("student_id, status, attendance_record_id")
+            .in("status", ["A", "a", "alfa", "Alfa", "ALFA"])
+            .order("id"),
+        ),
+        fetchAll<any>(sb.from("attendance_records").select("id, date").order("id")),
 
-      fetchAll<any>(
-        sb
-          .from("sp_records")
-          .select(
-            "id, student_id, sp_level, alasan, jumlah_alfa, jumlah_terlambat, dokumen_pendukung, tanggal_rekaman, created_at",
-          )
-          .order("id"),
-      ),
-    ]);
+        fetchAll<any>(
+          sb
+            .from("sp_records")
+            .select(
+              "id, student_id, sp_level, alasan, jumlah_alfa, jumlah_terlambat, dokumen_pendukung, tanggal_rekaman, created_at",
+            )
+            .order("id"),
+        ),
+        fetchAll<any>(sb.from("student_transfers_out").select("student_id").order("id")),
+        fetchAll<any>(sb.from("student_resignations").select("student_id").order("id")),
+      ]);
 
     const rMap = new Map<string, any>((rombelRows ?? []).map((r: any) => [r.id, r]));
+
+    // Murid tanpa rombel atau yang sudah mutasi keluar / mengundurkan diri
+    // tidak masuk ke perhitungan BP/BK.
+    const keluarSet = new Set<string>(
+      [...(keluarRows ?? []), ...(resignRows ?? [])].map((r: any) => r.student_id).filter(Boolean),
+    );
+    const students = (allStudents ?? []).filter(
+      (s: any) => s.rombel_id && rMap.has(s.rombel_id) && !keluarSet.has(s.id),
+    );
+
     const arDateMap = new Map<string, string>((attendRecords ?? []).map((a: any) => [a.id, a.date]));
 
     // Build per-student event lists with dates
@@ -253,7 +266,9 @@ export const getBpBkData = createServerFn({ method: "POST" })
 
     // Existing SP records enriched
     const sMap = new Map<string, any>(students.map((s: any) => [s.id, s]));
-    const spEnriched = spRows.map((r: any) => {
+    const spEnriched = spRows
+      .filter((r: any) => r.student_id && sMap.has(r.student_id))
+      .map((r: any) => {
       const st = r.student_id ? sMap.get(r.student_id) : null;
       const rb = st?.rombel_id ? rMap.get(st.rombel_id) : null;
       return {
@@ -272,7 +287,7 @@ export const getBpBkData = createServerFn({ method: "POST" })
         rombel_name: rb?.name ?? "—",
         konsentrasi: rb?.konsentrasi_keahlian ?? "—",
       };
-    });
+      });
 
     const murid: Record<1 | 2 | 3, any[]> = {
       1: spEnriched.filter((x) => x.sp_level === 1).sort((a, b) => a.student_name.localeCompare(b.student_name)),
