@@ -1222,14 +1222,7 @@ function MuridSpTable({
               </div>
               {detail.dokumen_pendukung && (
                 <div>
-                  <a
-                    className="text-primary underline"
-                    href={detail.dokumen_pendukung}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Buka dokumen pendukung
-                  </a>
+                  <DokButton value={detail.dokumen_pendukung} variant="link" />
                 </div>
               )}
             </div>
