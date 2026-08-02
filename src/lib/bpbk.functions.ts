@@ -400,18 +400,34 @@ export const searchStudentsForSp = createServerFn({ method: "POST" })
     if (list.length === 0) return [];
 
     const ids = list.map((s: any) => s.id);
-    const [out, resign, rombels] = await Promise.all([
+    const [out, resign, rombels, lateRows, alfaRows] = await Promise.all([
       context.supabase.from("student_transfers_out").select("student_id").in("student_id", ids),
       context.supabase.from("student_resignations").select("student_id").in("student_id", ids),
       context.supabase
         .from("rombel")
         .select("id, name")
         .in("id", Array.from(new Set(list.map((s: any) => s.rombel_id).filter(Boolean)))),
+      context.supabase.from("late_records").select("student_id").in("student_id", ids),
+      context.supabase
+        .from("attendance_details")
+        .select("student_id, status")
+        .in("student_id", ids)
+        .in("status", ["A", "a", "alfa", "Alfa", "ALFA"]),
     ]);
     const keluar = new Set<string>(
       [...(out.data ?? []), ...(resign.data ?? [])].map((r: any) => r.student_id).filter(Boolean),
     );
     const rMap = new Map<string, string>((rombels.data ?? []).map((r: any) => [r.id, r.name]));
+    const telatCount = new Map<string, number>();
+    for (const l of lateRows.data ?? []) {
+      if (!l.student_id) continue;
+      telatCount.set(l.student_id, (telatCount.get(l.student_id) ?? 0) + 1);
+    }
+    const alfaCount = new Map<string, number>();
+    for (const a of alfaRows.data ?? []) {
+      if (!a.student_id) continue;
+      alfaCount.set(a.student_id, (alfaCount.get(a.student_id) ?? 0) + 1);
+    }
     return list
       .filter((s: any) => !keluar.has(s.id) && rMap.has(s.rombel_id))
       .map((s: any) => ({
@@ -420,5 +436,7 @@ export const searchStudentsForSp = createServerFn({ method: "POST" })
         nis: s.nis ?? "—",
         rombel_id: s.rombel_id,
         rombel_name: rMap.get(s.rombel_id) ?? "—",
+        alfa: alfaCount.get(s.id) ?? 0,
+        telat: telatCount.get(s.id) ?? 0,
       }));
   });

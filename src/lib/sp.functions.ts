@@ -63,7 +63,8 @@ export const createSp = createServerFn({ method: "POST" })
       alasan: z.string().min(3).max(1000),
       jumlahAlfa: z.number().int().min(0).optional(),
       jumlahTerlambat: z.number().int().min(0).optional(),
-      dokumenPendukung: z.string().url().optional().or(z.literal("")),
+      // Bisa berupa URL eksternal atau path file di storage "sp-dokumen".
+      dokumenPendukung: z.string().max(500).optional().or(z.literal("")),
     }).parse,
   )
   .handler(async ({ context, data }) => {
