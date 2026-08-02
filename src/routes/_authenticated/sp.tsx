@@ -52,6 +52,8 @@ import { toast } from "sonner";
 
 type Thresholds = {
   mulaiTanggal: string;
+  waliAlfa: number;
+  waliTelat: number;
   sp1Alfa: number;
   sp1Telat: number;
   sp2Alfa: number;
@@ -62,6 +64,8 @@ type Thresholds = {
 
 const DEFAULT_TH: Thresholds = {
   mulaiTanggal: "",
+  waliAlfa: 1,
+  waliTelat: 2,
   sp1Alfa: 3,
   sp1Telat: 5,
   sp2Alfa: 6,
@@ -83,6 +87,7 @@ function loadThresholds(): Thresholds {
     return DEFAULT_TH;
   }
 }
+
 
 export const Route = createFileRoute("/_authenticated/sp")({
   head: () => ({ meta: [{ title: "Manajemen BP/BK — SUPREME XPOES" }] }),
