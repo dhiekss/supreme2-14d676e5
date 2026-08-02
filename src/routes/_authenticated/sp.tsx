@@ -39,6 +39,7 @@ import {
   listWaliTindakan,
   saveWaliTindakan,
   getWaliTindakanFotoUrl,
+  searchStudentsForSp,
 } from "@/lib/bpbk.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { createSp, deleteSp } from "@/lib/sp.functions";
@@ -1152,11 +1153,17 @@ function MuridSpTable({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Murid dengan SP {level}</CardTitle>
-        <p className="text-xs text-muted-foreground">
-          Daftar murid yang sudah mendapat Surat Peringatan {level}
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <CardTitle className="text-base">Murid dengan SP {level}</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Daftar murid yang sudah mendapat Surat Peringatan {level}
+            </p>
+          </div>
+          <CaseKhususDialog level={level} />
+        </div>
       </CardHeader>
+
       <CardContent className="p-0">
         <Table>
           <TableHeader>
@@ -1267,5 +1274,155 @@ function MuridSpTable({
         </DialogContent>
       </Dialog>
     </Card>
+  );
+}
+
+function CaseKhususDialog({ level }: { level: 1 | 2 | 3 }) {
+  const qc = useQueryClient();
+  const today = new Date().toISOString().slice(0, 10);
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [picked, setPicked] = useState<any | null>(null);
+  const [tanggal, setTanggal] = useState(today);
+  const [alasan, setAlasan] = useState("");
+  const [dokumen, setDokumen] = useState("");
+
+  const searchFn = useServerFn(searchStudentsForSp);
+  const createFn = useServerFn(createSp);
+
+  const { data: results, isFetching } = useQuery({
+    queryKey: ["sp-student-search", q],
+    queryFn: () => searchFn({ data: { q } }),
+    enabled: open,
+  });
+
+  const reset = () => {
+    setQ("");
+    setPicked(null);
+    setTanggal(today);
+    setAlasan("");
+    setDokumen("");
+  };
+
+  const create = useMutation({
+    mutationFn: () =>
+      createFn({
+        data: {
+          studentId: picked.id,
+          spLevel: level,
+          tanggalRekaman: tanggal,
+          alasan: `[Case Khusus] ${alasan}`,
+          jumlahAlfa: 0,
+          jumlahTerlambat: 0,
+          dokumenPendukung: dokumen,
+        },
+      }),
+    onSuccess: () => {
+      toast.success(`SP ${level} (case khusus) berhasil dicatat`);
+      setOpen(false);
+      reset();
+      qc.invalidateQueries({ queryKey: ["bpbk"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) reset();
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          <FilePlus2 className="mr-1 h-3.5 w-3.5" />
+          Case Khusus
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[85vh] max-w-md overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Case Khusus — SP {level}</DialogTitle>
+        </DialogHeader>
+        <p className="text-xs text-muted-foreground">
+          Untuk mencatat SP {level} di luar pelanggaran jumlah alfa dan terlambat.
+        </p>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label>Cari Murid (nama / NIS)</Label>
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ketik nama atau NIS..." />
+            {picked ? (
+              <div className="flex items-center justify-between rounded-md border bg-muted/40 p-2 text-xs">
+                <span>
+                  <span className="font-medium">{picked.name}</span> · {picked.nis} · {picked.rombel_name}
+                </span>
+                <Button size="sm" variant="ghost" onClick={() => setPicked(null)}>
+                  Ganti
+                </Button>
+              </div>
+            ) : (
+              <div className="max-h-44 overflow-y-auto rounded-md border">
+                {isFetching ? (
+                  <div className="p-2 text-xs text-muted-foreground">Memuat...</div>
+                ) : (results ?? []).length === 0 ? (
+                  <div className="p-2 text-xs text-muted-foreground">Tidak ada murid ditemukan</div>
+                ) : (
+                  (results ?? []).map((s: any) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      className="block w-full px-2 py-1.5 text-left text-xs hover:bg-muted"
+                      onClick={() => setPicked(s)}
+                    >
+                      <span className="font-medium">{s.name}</span>{" "}
+                      <span className="text-muted-foreground">
+                        · {s.nis} · {s.rombel_name}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+          <div className="space-y-1">
+            <Label>Tanggal</Label>
+            <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>Alasan / Pelanggaran Khusus</Label>
+            <Textarea
+              rows={3}
+              value={alasan}
+              onChange={(e) => setAlasan(e.target.value)}
+              placeholder="Deskripsikan pelanggaran khusus..."
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Link Dokumen Pendukung (opsional)</Label>
+            <Input
+              type="url"
+              value={dokumen}
+              onChange={(e) => setDokumen(e.target.value)}
+              placeholder="https://..."
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Batal
+          </Button>
+          <Button
+            onClick={() => {
+              if (!picked) return toast.error("Pilih murid terlebih dahulu");
+              if (alasan.trim().length < 3) return toast.error("Alasan minimal 3 karakter");
+              create.mutate();
+            }}
+            disabled={create.isPending}
+          >
+            {create.isPending ? "Menyimpan..." : "Simpan"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
