@@ -197,30 +197,50 @@ export const getBpBkData = createServerFn({ method: "POST" })
       };
     };
 
-    // Recommendations — for SP2/SP3 count only alfa/telat AFTER the previous SP date
+    // Tindakan wali kelas (level 0) — prasyarat sebelum rekomendasi SP 1
+    const waliRows = await fetchAll<any>(
+      sb.from("wali_tindakan").select("student_id, tanggal").order("id"),
+    );
+    const waliDateByStudent = new Map<string, string>();
+    for (const w of waliRows) {
+      if (!w.student_id || !w.tanggal) continue;
+      const cur = waliDateByStudent.get(w.student_id);
+      if (!cur || String(w.tanggal) > cur) waliDateByStudent.set(w.student_id, String(w.tanggal));
+    }
+
+    // Recommendations — hitung alfa/telat hanya SETELAH tindakan level sebelumnya
     const rekomendasi: Record<1 | 2 | 3, any[]> = { 1: [], 2: [], 3: [] };
-    // Tahap awal: belum ada SP, sudah melewati ambang wali kelas tapi belum SP 1
+    // Tahap awal: belum ada SP, sudah melewati ambang wali kelas
     const perluWali: any[] = [];
     for (const s of students) {
       const hasSp = spByStudent.get(s.id) ?? new Set<number>();
       const spDates = spDateByStudent.get(s.id) ?? {};
       const alfaDates = alfaByStudent.get(s.id);
       const telatDates = telatByStudent.get(s.id);
+      const waliDate = waliDateByStudent.get(s.id);
 
       if (hasSp.size === 0) {
         const alfa = countSince(alfaDates, undefined);
         const telat = countSince(telatDates, undefined);
         const overWali = alfa > WALI.alfa || telat > WALI.telat;
-        const overSp1 = alfa > THRESHOLDS[1].alfa || telat > THRESHOLDS[1].telat;
-        if (overWali && !overSp1) {
-          perluWali.push({ ...baseEnrich(s), alfa, telat, sejak: periodStart ?? null });
+        if (overWali) {
+          perluWali.push({
+            ...baseEnrich(s),
+            alfa,
+            telat,
+            sejak: periodStart ?? null,
+            tanggal_tindakan: waliDate ?? null,
+            sudah_ditindak: !!waliDate,
+          });
         }
       }
 
       for (const lv of [1, 2, 3] as const) {
         if (hasSp.has(lv)) continue;
+        // Level sebelumnya wajib sudah ditindak
+        if (lv === 1 && !waliDate) continue;
         if (lv > 1 && !hasSp.has((lv - 1) as 1 | 2)) continue;
-        const cutoff = lv === 1 ? undefined : spDates[lv - 1];
+        const cutoff = lv === 1 ? waliDate : spDates[lv - 1];
         const alfa = countSince(alfaDates, cutoff);
         const telat = countSince(telatDates, cutoff);
         const th = THRESHOLDS[lv];
@@ -228,6 +248,7 @@ export const getBpBkData = createServerFn({ method: "POST" })
         rekomendasi[lv].push({ ...baseEnrich(s), alfa, telat, sejak: cutoff ?? periodStart ?? null });
       }
     }
+
 
 
     // Existing SP records enriched
