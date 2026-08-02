@@ -186,16 +186,30 @@ export const getBpBkData = createServerFn({ method: "POST" })
         rombel_id: s.rombel_id ?? null,
         rombel_name: r?.name ?? "—",
         konsentrasi: r?.konsentrasi_keahlian ?? "—",
+        wali_kelas: r?.wali_kelas_name ?? "—",
       };
     };
 
     // Recommendations — for SP2/SP3 count only alfa/telat AFTER the previous SP date
     const rekomendasi: Record<1 | 2 | 3, any[]> = { 1: [], 2: [], 3: [] };
+    // Tahap awal: belum ada SP, sudah melewati ambang wali kelas tapi belum SP 1
+    const perluWali: any[] = [];
     for (const s of students) {
       const hasSp = spByStudent.get(s.id) ?? new Set<number>();
       const spDates = spDateByStudent.get(s.id) ?? {};
       const alfaDates = alfaByStudent.get(s.id);
       const telatDates = telatByStudent.get(s.id);
+
+      if (hasSp.size === 0) {
+        const alfa = countSince(alfaDates, undefined);
+        const telat = countSince(telatDates, undefined);
+        const overWali = alfa > WALI.alfa || telat > WALI.telat;
+        const overSp1 = alfa > THRESHOLDS[1].alfa || telat > THRESHOLDS[1].telat;
+        if (overWali && !overSp1) {
+          perluWali.push({ ...baseEnrich(s), alfa, telat, sejak: periodStart ?? null });
+        }
+      }
+
       for (const lv of [1, 2, 3] as const) {
         if (hasSp.has(lv)) continue;
         if (lv > 1 && !hasSp.has((lv - 1) as 1 | 2)) continue;
@@ -207,6 +221,7 @@ export const getBpBkData = createServerFn({ method: "POST" })
         rekomendasi[lv].push({ ...baseEnrich(s), alfa, telat, sejak: cutoff ?? periodStart ?? null });
       }
     }
+
 
     // Existing SP records enriched
     const sMap = new Map<string, any>(students.map((s: any) => [s.id, s]));
