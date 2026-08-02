@@ -144,7 +144,7 @@ function PresensiKelompokPage() {
     return new Date(y, (m ?? 1) - 1, d ?? 1);
   }, [date]);
 
-  const clockStr = now.toLocaleTimeString("id-ID", { hour12: false });
+  const clockStr = now.toLocaleTimeString("id-ID", { hour12: false, timeZone: "Asia/Jakarta" });
 
   return (
     <div className="space-y-6">
