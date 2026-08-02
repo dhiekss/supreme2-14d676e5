@@ -32,7 +32,15 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { getBpBkData, getBpBkThresholds, saveBpBkThresholds } from "@/lib/bpbk.functions";
+import {
+  getBpBkData,
+  getBpBkThresholds,
+  saveBpBkThresholds,
+  listWaliTindakan,
+  saveWaliTindakan,
+  getWaliTindakanFotoUrl,
+} from "@/lib/bpbk.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { createSp, deleteSp } from "@/lib/sp.functions";
 import {
   AlertTriangle,
