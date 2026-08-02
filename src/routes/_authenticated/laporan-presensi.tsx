@@ -451,43 +451,8 @@ function LaporanPresensi() {
 
 
       {/* Alfa leaderboard */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <XCircle className="h-4 w-4 text-rose-500" /> Murid dengan Alfa Terbanyak
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">15 murid dengan jumlah alfa terbanyak pada rentang tanggal.</p>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-14">No</TableHead>
-                <TableHead>Nama Murid</TableHead>
-                <TableHead>NIS</TableHead>
-                <TableHead>Rombel</TableHead>
-                <TableHead className="text-center">Jumlah Alfa</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(data?.alfaTop ?? []).map((s: any, i: number) => (
-                <TableRow key={s.id}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell className="font-medium">{s.name}</TableCell>
-                  <TableCell className="font-mono text-xs">{s.nis ?? "-"}</TableCell>
-                  <TableCell>{s.rombel}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="destructive">{s.count}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {data && data.alfaTop.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Tidak ada catatan alfa.</TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <AlfaTopCard rows={data?.alfaTop ?? []} loaded={!!data} />
+
 
       {/* Detail presensi */}
       <DetailPresensiCard />
