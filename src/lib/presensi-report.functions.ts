@@ -191,7 +191,7 @@ export const presensiDashboard = createServerFn({ method: "GET" })
       if (d.status !== "A") continue;
       alfaByStudent.set(d.student_id, (alfaByStudent.get(d.student_id) ?? 0) + 1);
     }
-    const alfaTop = [...alfaByStudent.entries()]
+    const alfaTopBase = [...alfaByStudent.entries()]
       .map(([sid, count]) => {
         const s: any = studentById.get(sid);
         if (!s) return null;
@@ -200,7 +200,42 @@ export const presensiDashboard = createServerFn({ method: "GET" })
       })
       .filter(Boolean)
       .sort((a: any, b: any) => b.count - a.count)
-      .slice(0, 15);
+      .slice(0, 60) as any[];
+
+    // SP status + tindakan wali kelas (Manajemen BP/BK)
+    const topIds = alfaTopBase.map((s: any) => s.id);
+    let spRows: any[] = [];
+    let waliRows: any[] = [];
+    if (topIds.length) {
+      const [spRes, waliRes] = await Promise.all([
+        supabase.from("sp_records").select("student_id, sp_level, tanggal_rekaman").in("student_id", topIds),
+        supabase.from("wali_tindakan").select("student_id, tanggal").in("student_id", topIds),
+      ]);
+      spRows = (spRes as any).data ?? [];
+      waliRows = (waliRes as any).data ?? [];
+    }
+    const spByStudent = new Map<string, { level: number; date: string | null }>();
+    for (const r of spRows) {
+      const lvl = Number(r.sp_level ?? 0);
+      const prev = spByStudent.get(r.student_id);
+      if (!prev || lvl > prev.level) spByStudent.set(r.student_id, { level: lvl, date: r.tanggal_rekaman ?? null });
+    }
+    const waliByStudent = new Map<string, string | null>();
+    for (const r of waliRows) {
+      const prev = waliByStudent.get(r.student_id);
+      if (!prev || String(r.tanggal) > String(prev)) waliByStudent.set(r.student_id, r.tanggal ?? null);
+    }
+    const alfaTop = alfaTopBase.map((s: any) => {
+      const sp = spByStudent.get(s.id);
+      const wali = waliByStudent.get(s.id);
+      return {
+        ...s,
+        spLevel: sp?.level ?? null,
+        spStatus: sp ? `SP ${sp.level}` : wali ? "Tindakan Wali Kelas" : "Perlu Tindakan Wali Kelas",
+        spDate: sp?.date ?? wali ?? null,
+      };
+    });
+
 
     // detail per record
     const perRec = new Map<string, { H: number; S: number; I: number; A: number; P: number }>();
