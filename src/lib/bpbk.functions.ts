@@ -379,3 +379,46 @@ export const getWaliTindakanFotoUrl = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { url: signed?.signedUrl ?? null };
   });
+
+// ---- Pencarian murid untuk SP case khusus ----
+
+export const searchStudentsForSp = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { q?: string }) => d)
+  .handler(async ({ context, data }) => {
+    const q = (data.q ?? "").trim();
+    let query = context.supabase
+      .from("students")
+      .select("id, name, nis, rombel_id")
+      .not("rombel_id", "is", null)
+      .order("name")
+      .limit(30);
+    if (q) query = query.or(`name.ilike.%${q}%,nis.ilike.%${q}%`);
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+    const list = rows ?? [];
+    if (list.length === 0) return [];
+
+    const ids = list.map((s: any) => s.id);
+    const [out, resign, rombels] = await Promise.all([
+      context.supabase.from("student_transfers_out").select("student_id").in("student_id", ids),
+      context.supabase.from("student_resignations").select("student_id").in("student_id", ids),
+      context.supabase
+        .from("rombel")
+        .select("id, name")
+        .in("id", Array.from(new Set(list.map((s: any) => s.rombel_id).filter(Boolean)))),
+    ]);
+    const keluar = new Set<string>(
+      [...(out.data ?? []), ...(resign.data ?? [])].map((r: any) => r.student_id).filter(Boolean),
+    );
+    const rMap = new Map<string, string>((rombels.data ?? []).map((r: any) => [r.id, r.name]));
+    return list
+      .filter((s: any) => !keluar.has(s.id) && rMap.has(s.rombel_id))
+      .map((s: any) => ({
+        id: s.id,
+        name: s.name ?? "—",
+        nis: s.nis ?? "—",
+        rombel_id: s.rombel_id,
+        rombel_name: rMap.get(s.rombel_id) ?? "—",
+      }));
+  });
