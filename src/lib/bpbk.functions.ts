@@ -102,25 +102,28 @@ export const getBpBkData = createServerFn({ method: "POST" })
     };
 
     const [students, rombelRows, lateRows, attendDetails, attendRecords, spRows] = await Promise.all([
-      fetchAll<any>(sb.from("students").select("id, name, nis, rombel_id").order("name")),
-      fetchAll<any>(sb.from("rombel").select("id, name, konsentrasi_keahlian, wali_kelas_name")),
+      fetchAll<any>(sb.from("students").select("id, name, nis, rombel_id").order("id")),
+      fetchAll<any>(sb.from("rombel").select("id, name, konsentrasi_keahlian, wali_kelas_name").order("id")),
 
-      fetchAll<any>(sb.from("late_records").select("student_id, record_date")),
+      fetchAll<any>(sb.from("late_records").select("student_id, record_date").order("id")),
       // Only alfa rows are needed — fetching every attendance detail (80k+ rows)
-      // made this page hang for minutes.
+      // made this page hang for minutes. Stable ordering keeps paging correct.
       fetchAll<any>(
         sb
           .from("attendance_details")
           .select("student_id, status, attendance_record_id")
-          .in("status", ["A", "a", "alfa", "Alfa", "ALFA"]),
-        5000,
+          .in("status", ["A", "a", "alfa", "Alfa", "ALFA"])
+          .order("id"),
       ),
-      fetchAll<any>(sb.from("attendance_records").select("id, date"), 5000),
+      fetchAll<any>(sb.from("attendance_records").select("id, date").order("id")),
 
       fetchAll<any>(
-        sb.from("sp_records").select(
-          "id, student_id, sp_level, alasan, jumlah_alfa, jumlah_terlambat, dokumen_pendukung, tanggal_rekaman, created_at",
-        ),
+        sb
+          .from("sp_records")
+          .select(
+            "id, student_id, sp_level, alasan, jumlah_alfa, jumlah_terlambat, dokumen_pendukung, tanggal_rekaman, created_at",
+          )
+          .order("id"),
       ),
     ]);
 
