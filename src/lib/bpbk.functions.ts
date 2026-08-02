@@ -283,3 +283,63 @@ export const getBpBkData = createServerFn({ method: "POST" })
 
     };
   });
+
+// ---- Tindakan Wali Kelas ----
+
+export const listWaliTindakan = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("wali_tindakan")
+      .select("id, student_id, rombel_id, tanggal, jumlah_alfa, jumlah_terlambat, keterangan, foto_path, created_at")
+      .order("tanggal", { ascending: false })
+      .limit(5000);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const saveWaliTindakan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (d: {
+      id?: string | null;
+      studentId: string;
+      rombelId?: string | null;
+      tanggal: string;
+      jumlahAlfa: number;
+      jumlahTerlambat: number;
+      keterangan?: string | null;
+      fotoPath?: string | null;
+    }) => d,
+  )
+  .handler(async ({ context, data }) => {
+    const payload = {
+      student_id: data.studentId,
+      rombel_id: data.rombelId ?? null,
+      tanggal: data.tanggal,
+      jumlah_alfa: Number(data.jumlahAlfa ?? 0),
+      jumlah_terlambat: Number(data.jumlahTerlambat ?? 0),
+      keterangan: data.keterangan ?? null,
+      foto_path: data.fotoPath ?? null,
+      created_by: context.userId,
+    };
+    if (data.id) {
+      const { error } = await context.supabase.from("wali_tindakan").update(payload).eq("id", data.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await context.supabase.from("wali_tindakan").insert(payload);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+export const getWaliTindakanFotoUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { path: string }) => d)
+  .handler(async ({ context, data }) => {
+    const { data: signed, error } = await context.supabase.storage
+      .from("sp-dokumen")
+      .createSignedUrl(data.path, 60 * 60);
+    if (error) throw new Error(error.message);
+    return { url: signed?.signedUrl ?? null };
+  });

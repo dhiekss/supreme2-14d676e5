@@ -2816,6 +2816,56 @@ export type Database = {
         }
         Relationships: []
       }
+      wali_tindakan: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          foto_path: string | null
+          id: string
+          jumlah_alfa: number
+          jumlah_terlambat: number
+          keterangan: string | null
+          rombel_id: string | null
+          student_id: string
+          tanggal: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          foto_path?: string | null
+          id?: string
+          jumlah_alfa?: number
+          jumlah_terlambat?: number
+          keterangan?: string | null
+          rombel_id?: string | null
+          student_id: string
+          tanggal: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          foto_path?: string | null
+          id?: string
+          jumlah_alfa?: number
+          jumlah_terlambat?: number
+          keterangan?: string | null
+          rombel_id?: string | null
+          student_id?: string
+          tanggal?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wali_tindakan_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
