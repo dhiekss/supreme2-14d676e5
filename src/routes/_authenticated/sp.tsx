@@ -180,10 +180,11 @@ function BpBkPage() {
     queryFn: () => getTh(),
   });
 
-  const thresholds: Thresholds = useMemo(
-    () => ({ ...DEFAULT_TH, ...loadThresholds(), ...(savedTh ?? {}) }),
-    [savedTh],
-  );
+  const thresholds: Thresholds = useMemo(() => {
+    const merged = { ...DEFAULT_TH, ...loadThresholds(), ...(savedTh ?? {}) };
+    return { ...merged, mulaiTanggal: merged.mulaiTanggal ?? "" };
+  }, [savedTh]);
+
 
   const { data: bp } = useSuspenseQuery({
     queryKey: ["bpbk", thresholds],
