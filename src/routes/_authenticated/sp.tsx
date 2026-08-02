@@ -32,7 +32,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { getBpBkData } from "@/lib/bpbk.functions";
+import { getBpBkData, getBpBkThresholds, saveBpBkThresholds } from "@/lib/bpbk.functions";
 import { createSp, deleteSp } from "@/lib/sp.functions";
 import {
   AlertTriangle,
@@ -47,6 +47,7 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
+  UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -101,9 +102,10 @@ export const Route = createFileRoute("/_authenticated/sp")({
 });
 
 
-type StatCardTone = "sp1r" | "sp1m" | "sp2r" | "sp2m" | "sp3r" | "sp3m";
+type StatCardTone = "wali" | "sp1r" | "sp1m" | "sp2r" | "sp2m" | "sp3r" | "sp3m";
 
 const statStyle: Record<StatCardTone, string> = {
+  wali: "border-l-4 border-l-emerald-500 text-emerald-600 dark:text-emerald-400",
   sp1r: "border-l-4 border-l-amber-500 text-amber-600 dark:text-amber-400",
   sp1m: "border-l-4 border-l-blue-500 text-blue-600 dark:text-blue-400",
   sp2r: "border-l-4 border-l-orange-500 text-orange-600 dark:text-orange-400",
@@ -144,9 +146,10 @@ function CountBadge({
 }: {
   value: number;
   active: boolean;
-  tone: "amber" | "blue" | "orange" | "purple" | "red" | "rose";
+  tone: "emerald" | "amber" | "blue" | "orange" | "purple" | "red" | "rose";
 }) {
   const map: Record<string, string> = {
+    emerald: "bg-emerald-500 text-white",
     amber: "bg-amber-500 text-white",
     blue: "bg-blue-500 text-white",
     orange: "bg-orange-500 text-white",
