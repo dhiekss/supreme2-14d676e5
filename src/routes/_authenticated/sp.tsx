@@ -56,6 +56,9 @@ import {
   ArrowDown,
   ArrowUpDown,
   UserCheck,
+  ClipboardCheck,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
