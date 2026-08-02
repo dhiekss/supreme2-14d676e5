@@ -287,7 +287,7 @@ export const getBpBkData = createServerFn({ method: "POST" })
         rombel_name: rb?.name ?? "—",
         konsentrasi: rb?.konsentrasi_keahlian ?? "—",
       };
-    });
+      });
 
     const murid: Record<1 | 2 | 3, any[]> = {
       1: spEnriched.filter((x) => x.sp_level === 1).sort((a, b) => a.student_name.localeCompare(b.student_name)),
