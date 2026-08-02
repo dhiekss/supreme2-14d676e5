@@ -240,6 +240,20 @@ function BpBkPage() {
     });
   };
 
+  const listTindakanFn = useServerFn(listWaliTindakan);
+  const { data: tindakanRows } = useQuery({
+    queryKey: ["wali-tindakan"],
+    queryFn: () => listTindakanFn(),
+  });
+  const tindakanMap = useMemo(() => {
+    const m = new Map<string, any>();
+    for (const t of tindakanRows ?? []) {
+      const prev = m.get(t.student_id);
+      if (!prev || (t.tanggal ?? "") > (prev.tanggal ?? "")) m.set(t.student_id, t);
+    }
+    return m;
+  }, [tindakanRows]);
+
   const wali = useMemo(() => filterFn(bp.perluWali ?? []), [bp, search, rombelFilter]);
   const rek1 = useMemo(() => filterFn(bp.rekomendasi[1]), [bp, search, rombelFilter]);
   const rek2 = useMemo(() => filterFn(bp.rekomendasi[2]), [bp, search, rombelFilter]);
