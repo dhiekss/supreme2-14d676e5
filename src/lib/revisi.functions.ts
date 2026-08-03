@@ -9,15 +9,13 @@ export const listRevisions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ status: z.enum(["pending", "approved", "rejected", "all"]).default("pending") }).parse)
   .handler(async ({ context, data }) => {
-    const allowed = await getAllowedRombelIds(context.supabase, context.userId);
-    if (allowed !== null && allowed.length === 0) return [];
+    // Revisi presensi terbuka untuk semua role — tidak dibatasi Akses Rombel.
     let q = context.supabase
       .from("attendance_revision_requests")
       .select("id, attendance_date, original_status, requested_status, alasan, status, rejection_reason, student_id, rombel_id, created_at, approved_at")
       .order("created_at", { ascending: false })
       .limit(200);
     if (data.status !== "all") q = q.eq("status", data.status);
-    if (allowed !== null) q = q.in("rombel_id", allowed);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
 
