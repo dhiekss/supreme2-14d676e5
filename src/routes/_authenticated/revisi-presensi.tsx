@@ -15,7 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { listRevisions, createRevision, decideRevision } from "@/lib/revisi.functions";
-import { listRombel, listStudentsByRombel, getAttendanceForDate } from "@/lib/presensi.functions";
+import { listRombelAll, listStudentsByRombel, getAttendanceForDate } from "@/lib/presensi.functions";
 import { Check, X, RefreshCcw, Search, Pencil, Calendar as CalendarIcon } from "lucide-react";
 
 const pendingQO = queryOptions({
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/revisi-presensi")({
   loader: async ({ context }) => {
     const [, rombel] = await Promise.all([
       context.queryClient.ensureQueryData(pendingQO),
-      listRombel(),
+      listRombelAll(),
     ]);
     return { rombel };
   },
