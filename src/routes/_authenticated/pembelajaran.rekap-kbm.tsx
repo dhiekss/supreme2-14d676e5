@@ -601,14 +601,29 @@ function MediaPreview({ path, label }: { path: string; label: string }) {
 }
 
 function DetailDialog({ row, onClose }: { row: any | null; onClose: () => void }) {
+  const fetchAtt = useServerFn(getAttendanceDetailForKbm);
+  const [att, setAtt] = useState<{ students: any[]; summary: any; officer_name: string | null } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!row) {
+      setAtt(null);
+      return;
+    }
+    setLoading(true);
+    fetchAtt({ data: { rombel_id: row.rombel_id, tanggal: row.tanggal } })
+      .then((r) => setAtt(r as any))
+      .finally(() => setLoading(false));
+  }, [row?.id, row?.rombel_id, row?.tanggal]);
+
   return (
     <Dialog open={!!row} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Detail Laporan KBM</DialogTitle>
         </DialogHeader>
         {row && (
-          <div className="space-y-4 text-sm">
+          <div className="space-y-5 text-sm">
             <div className="grid grid-cols-2 gap-3">
               <Field label="Tanggal" value={row.tanggal} />
               <Field label="Rombel" value={row.rombel_name} />
@@ -640,6 +655,58 @@ function DetailDialog({ row, onClose }: { row: any | null; onClose: () => void }
               ))}
             </div>
 
+            {/* Detail Kehadiran Murid */}
+            <div className="border rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="font-semibold text-sm">Detail Kehadiran Murid</div>
+                {att?.officer_name && (
+                  <div className="text-xs text-muted-foreground">Petugas piket: {att.officer_name}</div>
+                )}
+              </div>
+
+              {loading ? (
+                <div className="h-24 rounded-lg bg-muted/30 animate-pulse" />
+              ) : att ? (
+                <>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-700 px-2 py-1">Hadir: {att.summary.H}</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 text-sky-700 px-2 py-1">Izin: {att.summary.I}</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 px-2 py-1">Sakit: {att.summary.S}</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-700 px-2 py-1">Alfa: {att.summary.A}</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 text-violet-700 px-2 py-1">PKL: {att.summary.P}</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 text-slate-700 px-2 py-1">Total: {att.summary.total}</span>
+                  </div>
+
+                  {att.students.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-6">Tidak ada data murid di rombel ini.</div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-12">No</TableHead>
+                            <TableHead>NIS</TableHead>
+                            <TableHead>Nama Murid</TableHead>
+                            <TableHead className="text-center">Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {att.students.map((s: any, i: number) => (
+                            <TableRow key={s.id}>
+                              <TableCell>{i + 1}</TableCell>
+                              <TableCell className="whitespace-nowrap">{s.nis || "—"}</TableCell>
+                              <TableCell className="font-medium">{s.name}</TableCell>
+                              <TableCell className="text-center">{attendanceStatusBadge(s.status)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
+
             <Field label="Materi" value={row.materi} block />
             <Field label="Capaian Pembelajaran" value={row.capaian_pembelajaran} block />
             <Field label="Catatan" value={row.catatan} block />
@@ -653,6 +720,18 @@ function DetailDialog({ row, onClose }: { row: any | null; onClose: () => void }
       </DialogContent>
     </Dialog>
   );
+}
+
+function attendanceStatusBadge(status: "H" | "S" | "I" | "A" | "P") {
+  const map: Record<string, { label: string; className: string }> = {
+    H: { label: "Hadir", className: "bg-emerald-100 text-emerald-700" },
+    S: { label: "Sakit", className: "bg-amber-100 text-amber-700" },
+    I: { label: "Izin", className: "bg-sky-100 text-sky-700" },
+    A: { label: "Alfa", className: "bg-rose-100 text-rose-700" },
+    P: { label: "PKL", className: "bg-violet-100 text-violet-700" },
+  };
+  const m = map[status] ?? { label: status, className: "bg-slate-100 text-slate-700" };
+  return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${m.className}`}>{m.label}</span>;
 }
 
 function Field({ label, value, block }: { label: string; value?: string | null; block?: boolean }) {
