@@ -9,7 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { listLaporanKbm, listLaporanKbmOptions, deleteLaporanKbm } from "@/lib/lapor-kbm.functions";
+import { listLaporanKbm, listLaporanKbmOptions, deleteLaporanKbm, signKbmMedia } from "@/lib/lapor-kbm.functions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useEffect } from "react";
 import { todayStamp } from "@/lib/utils";
 import {
   ClipboardList, Trash2, Download, Printer, RefreshCw, BookOpen, CheckCircle2, AlertCircle, XCircle, Eye,
@@ -92,6 +94,7 @@ function RekapKbmPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [pageSize, setPageSize] = useState(50);
+  const [detail, setDetail] = useState<any | null>(null);
 
   const statRows = useMemo(() => {
     return (rows as any[]).filter((r) => {
@@ -514,7 +517,7 @@ function RekapKbmPage() {
                         <TableCell className="text-xs text-muted-foreground">{r.guru_name}</TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <Button size="icon" variant="ghost" title="Lihat">
+                            <Button size="icon" variant="ghost" title="Lihat" onClick={() => setDetail(r)}>
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button
@@ -560,6 +563,103 @@ function RekapKbmPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <DetailDialog row={detail} onClose={() => setDetail(null)} />
+    </div>
+  );
+}
+
+function MediaPreview({ path, label }: { path: string; label: string }) {
+  const sign = useServerFn(signKbmMedia);
+  const [url, setUrl] = useState<string | null>(null);
+  const [err, setErr] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    setUrl(null);
+    setErr(false);
+    sign({ data: { path } })
+      .then((r: any) => { if (alive) setUrl(r.url); })
+      .catch(() => { if (alive) setErr(true); });
+    return () => { alive = false; };
+  }, [path]);
+
+  return (
+    <div className="space-y-1">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      {err ? (
+        <div className="text-xs text-destructive">Gagal memuat berkas.</div>
+      ) : url ? (
+        <a href={url} target="_blank" rel="noreferrer">
+          <img src={url} alt={label} className="max-h-56 rounded-lg border object-contain bg-muted/30" />
+        </a>
+      ) : (
+        <div className="h-24 rounded-lg border bg-muted/30 animate-pulse" />
+      )}
+    </div>
+  );
+}
+
+function DetailDialog({ row, onClose }: { row: any | null; onClose: () => void }) {
+  return (
+    <Dialog open={!!row} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Detail Laporan KBM</DialogTitle>
+        </DialogHeader>
+        {row && (
+          <div className="space-y-4 text-sm">
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Tanggal" value={row.tanggal} />
+              <Field label="Rombel" value={row.rombel_name} />
+              <Field label="Guru" value={row.guru_name} />
+              <Field label="Mata Pelajaran" value={row.mapel_name} />
+            </div>
+
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Jam Pelajaran</div>
+              {jamBadges(row)}
+            </div>
+
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Status Guru</div>
+              {statusBadge(aggregateStatus(row))}
+            </div>
+
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { l: "Hadir", v: row.jumlah_hadir },
+                { l: "Izin", v: row.jumlah_izin },
+                { l: "Sakit", v: row.jumlah_sakit },
+                { l: "Alpa", v: row.jumlah_alpa },
+              ].map((x) => (
+                <div key={x.l} className="rounded-lg border p-2 text-center">
+                  <div className="text-xs text-muted-foreground">{x.l}</div>
+                  <div className="text-lg font-bold">{x.v ?? 0}</div>
+                </div>
+              ))}
+            </div>
+
+            <Field label="Materi" value={row.materi} block />
+            <Field label="Capaian Pembelajaran" value={row.capaian_pembelajaran} block />
+            <Field label="Catatan" value={row.catatan} block />
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {row.foto_path && <MediaPreview path={row.foto_path} label="Foto Kegiatan" />}
+              {row.ttd_path && <MediaPreview path={row.ttd_path} label="Tanda Tangan" />}
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Field({ label, value, block }: { label: string; value?: string | null; block?: boolean }) {
+  return (
+    <div className={block ? "" : undefined}>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="font-medium whitespace-pre-wrap">{value || "—"}</div>
     </div>
   );
 }
