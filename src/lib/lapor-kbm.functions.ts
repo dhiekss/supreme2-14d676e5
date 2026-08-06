@@ -288,3 +288,66 @@ export const createLaporanKbm = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ============ Attendance detail for KBM report detail dialog ============
+
+export const getAttendanceDetailForKbm = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (d) =>
+      z.object({
+        rombel_id: z.string().uuid(),
+        tanggal: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const s = context.supabase;
+    const allowed = await getAllowedRombelIds(s, context.userId);
+    if (allowed !== null && !allowed.includes(data.rombel_id)) {
+      return { students: [], summary: { H: 0, S: 0, I: 0, A: 0, P: 0, total: 0 }, officer_name: null };
+    }
+
+    // Murid aktif di rombel
+    const { data: students, error: stErr } = await s
+      .from("students")
+      .select("id, nis, name, gender")
+      .eq("rombel_id", data.rombel_id)
+      .order("name");
+    if (stErr) throw new Error(stErr.message);
+
+    // Record presensi harian
+    const { data: rec } = await s
+      .from("attendance_records")
+      .select("id, officer_name")
+      .eq("rombel_id", data.rombel_id)
+      .eq("date", data.tanggal)
+      .maybeSingle();
+
+    let details: any[] = [];
+    if (rec) {
+      const { data: det } = await s
+        .from("attendance_details")
+        .select("student_id, status")
+        .eq("attendance_record_id", rec.id);
+      details = det ?? [];
+    }
+
+    const detailMap = new Map(details.map((d) => [d.student_id, d.status]));
+    const rows = (students ?? []).map((s) => ({
+      id: s.id,
+      nis: s.nis,
+      name: s.name,
+      gender: s.gender,
+      status: (detailMap.get(s.id) as "H" | "S" | "I" | "A" | "P") ?? "H",
+    }));
+
+    const summary = { H: 0, S: 0, I: 0, A: 0, P: 0, total: rows.length };
+    for (const r of rows) summary[r.status]++;
+
+    return { students: rows, summary, officer_name: rec?.officer_name ?? null };
+  });
+
+// deprecated alias kept for compatibility
+export const createLaporanKbm = createLaporanKbmImpl;
+
+const createLaporanKbmImpl = createServerFn({ method: "POST" })
+
