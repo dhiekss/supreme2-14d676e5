@@ -346,8 +346,4 @@ export const getAttendanceDetailForKbm = createServerFn({ method: "POST" })
     return { students: rows, summary, officer_name: rec?.officer_name ?? null };
   });
 
-// deprecated alias kept for compatibility
-export const createLaporanKbm = createLaporanKbmImpl;
-
-const createLaporanKbmImpl = createServerFn({ method: "POST" })
 
