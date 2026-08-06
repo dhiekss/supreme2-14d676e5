@@ -602,7 +602,7 @@ function MediaPreview({ path, label }: { path: string; label: string }) {
 
 function DetailDialog({ row, onClose }: { row: any | null; onClose: () => void }) {
   const fetchAtt = useServerFn(getAttendanceDetailForKbm);
-  const [att, setAtt] = useState<{ students: any[]; summary: any; officer_name: string | null } | null>(null);
+  const [att, setAtt] = useState<{ has_record: boolean; students: any[]; summary: any; officer_name: string | null } | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
