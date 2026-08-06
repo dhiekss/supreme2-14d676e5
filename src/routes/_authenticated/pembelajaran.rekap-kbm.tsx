@@ -94,6 +94,7 @@ function RekapKbmPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [pageSize, setPageSize] = useState(50);
+  const [detail, setDetail] = useState<any | null>(null);
 
   const statRows = useMemo(() => {
     return (rows as any[]).filter((r) => {
