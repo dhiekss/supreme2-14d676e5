@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { listLaporanKbm, listLaporanKbmOptions, deleteLaporanKbm, signKbmMedia } from "@/lib/lapor-kbm.functions";
+import { listLaporanKbm, listLaporanKbmOptions, deleteLaporanKbm, signKbmMedia, getAttendanceDetailForKbm } from "@/lib/lapor-kbm.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useEffect } from "react";
 import { todayStamp } from "@/lib/utils";
