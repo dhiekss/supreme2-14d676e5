@@ -517,7 +517,7 @@ function RekapKbmPage() {
                         <TableCell className="text-xs text-muted-foreground">{r.guru_name}</TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <Button size="icon" variant="ghost" title="Lihat">
+                            <Button size="icon" variant="ghost" title="Lihat" onClick={() => setDetail(r)}>
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button
