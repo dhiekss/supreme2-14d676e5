@@ -303,7 +303,12 @@ export const getAttendanceDetailForKbm = createServerFn({ method: "POST" })
     const s = context.supabase;
     const allowed = await getAllowedRombelIds(s, context.userId);
     if (allowed !== null && !allowed.includes(data.rombel_id)) {
-      return { students: [], summary: { H: 0, S: 0, I: 0, A: 0, P: 0, total: 0 }, officer_name: null };
+      return {
+        has_record: false,
+        students: [],
+        summary: { H: 0, S: 0, I: 0, A: 0, P: 0, total: 0 },
+        officer_name: null,
+      };
     }
 
     // Murid aktif di rombel
@@ -343,7 +348,12 @@ export const getAttendanceDetailForKbm = createServerFn({ method: "POST" })
     const summary = { H: 0, S: 0, I: 0, A: 0, P: 0, total: rows.length };
     for (const r of rows) summary[r.status]++;
 
-    return { students: rows, summary, officer_name: rec?.officer_name ?? null };
+    return {
+      has_record: !!rec,
+      students: rows,
+      summary,
+      officer_name: rec?.officer_name ?? null,
+    };
   });
 
 
