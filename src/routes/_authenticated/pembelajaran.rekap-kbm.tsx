@@ -667,43 +667,49 @@ function DetailDialog({ row, onClose }: { row: any | null; onClose: () => void }
               {loading ? (
                 <div className="h-24 rounded-lg bg-muted/30 animate-pulse" />
               ) : att ? (
-                <>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-700 px-2 py-1">Hadir: {att.summary.H}</span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 text-sky-700 px-2 py-1">Izin: {att.summary.I}</span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 px-2 py-1">Sakit: {att.summary.S}</span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-700 px-2 py-1">Alfa: {att.summary.A}</span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 text-violet-700 px-2 py-1">PKL: {att.summary.P}</span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 text-slate-700 px-2 py-1">Total: {att.summary.total}</span>
-                  </div>
-
-                  {att.students.length === 0 ? (
-                    <div className="text-center text-muted-foreground py-6">Tidak ada data murid di rombel ini.</div>
-                  ) : (
-                    <div className="overflow-x-auto rounded-md border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-12">No</TableHead>
-                            <TableHead>NIS</TableHead>
-                            <TableHead>Nama Murid</TableHead>
-                            <TableHead className="text-center">Status</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {att.students.map((s: any, i: number) => (
-                            <TableRow key={s.id}>
-                              <TableCell>{i + 1}</TableCell>
-                              <TableCell className="whitespace-nowrap">{s.nis || "—"}</TableCell>
-                              <TableCell className="font-medium">{s.name}</TableCell>
-                              <TableCell className="text-center">{attendanceStatusBadge(s.status)}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                att.has_record ? (
+                  <>
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-700 px-2 py-1">Hadir: {att.summary.H}</span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 text-sky-700 px-2 py-1">Izin: {att.summary.I}</span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 px-2 py-1">Sakit: {att.summary.S}</span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-700 px-2 py-1">Alfa: {att.summary.A}</span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 text-violet-700 px-2 py-1">PKL: {att.summary.P}</span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 text-slate-700 px-2 py-1">Total: {att.summary.total}</span>
                     </div>
-                  )}
-                </>
+
+                    {att.students.length === 0 ? (
+                      <div className="text-center text-muted-foreground py-6">Tidak ada data murid di rombel ini.</div>
+                    ) : (
+                      <div className="overflow-x-auto rounded-md border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-12">No</TableHead>
+                              <TableHead>NIS</TableHead>
+                              <TableHead>Nama Murid</TableHead>
+                              <TableHead className="text-center">Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {att.students.map((s: any, i: number) => (
+                              <TableRow key={s.id}>
+                                <TableCell>{i + 1}</TableCell>
+                                <TableCell className="whitespace-nowrap">{s.nis || "—"}</TableCell>
+                                <TableCell className="font-medium">{s.name}</TableCell>
+                                <TableCell className="text-center">{attendanceStatusBadge(s.status)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center text-muted-foreground py-6">
+                    Belum ada data presensi harian untuk rombel dan tanggal ini.
+                  </div>
+                )
               ) : null}
             </div>
 
