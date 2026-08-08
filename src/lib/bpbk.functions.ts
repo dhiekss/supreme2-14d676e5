@@ -122,7 +122,7 @@ export const getBpBkData = createServerFn({ method: "POST" })
           sb
             .from("sp_records")
             .select(
-              "id, student_id, sp_level, alasan, jumlah_alfa, jumlah_terlambat, dokumen_pendukung, tanggal_rekaman, created_at",
+              "id, student_id, sp_level, alasan, jumlah_alfa, jumlah_terlambat, dokumen_pendukung, tanggal_rekaman, created_at, created_by",
             )
             .order("id"),
         ),
