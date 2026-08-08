@@ -508,7 +508,7 @@ function WaliTable({
   onSaved: () => void;
 }) {
   const sort = useSort<
-    "name" | "nis" | "rombel_name" | "wali_kelas" | "alfa" | "telat" | "status" | "tgl_tindakan"
+    "name" | "nis" | "rombel_name" | "wali_kelas" | "alfa" | "telat" | "status" | "tgl_tindakan" | "diinput_oleh"
   >("name");
   const merged = useMemo(
     () =>
@@ -519,6 +519,7 @@ function WaliTable({
           tindakan: t ?? null,
           status: t ? "Sudah" : "Belum",
           tgl_tindakan: t?.tanggal ?? "",
+          diinput_oleh: t?.created_by_name ?? "",
         };
       }),
     [rows, tindakanMap],
@@ -549,13 +550,14 @@ function WaliTable({
               <SortHead label="Terlambat" sortKey="telat" state={sort} className="text-center" />
               <SortHead label="Keterangan" sortKey="status" state={sort} className="text-center" />
               <SortHead label="Tanggal Tindakan" sortKey="tgl_tindakan" state={sort} />
+              <SortHead label="Diinput Oleh" sortKey="diinput_oleh" state={sort} />
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={10} className="py-8 text-center text-sm text-muted-foreground">
                   Tidak ada murid yang perlu tindakan wali kelas.
                 </TableCell>
               </TableRow>
@@ -587,6 +589,7 @@ function WaliTable({
                     </Badge>
                   </TableCell>
                   <TableCell className="whitespace-nowrap">{r.tgl_tindakan || "—"}</TableCell>
+                  <TableCell className="whitespace-nowrap">{r.diinput_oleh || "—"}</TableCell>
                   <TableCell className="text-right">
                     <TindakanDialog row={r} onSaved={onSaved} />
                   </TableCell>
@@ -1107,7 +1110,7 @@ function MuridSpTable({
 }) {
   const [detail, setDetail] = useState<any | null>(null);
   const sort = useSort<
-    "student_name" | "student_nis" | "rombel_name" | "tanggal_rekaman" | "jumlah_alfa" | "jumlah_terlambat"
+    "student_name" | "student_nis" | "rombel_name" | "tanggal_rekaman" | "jumlah_alfa" | "jumlah_terlambat" | "created_by_name"
   >();
   const sorted = useMemo(
     () => sortRows(rows, sort.key as any, sort.dir),
@@ -1139,13 +1142,14 @@ function MuridSpTable({
               <TableHead>Alasan</TableHead>
               <SortHead label="Jml Alfa" sortKey="jumlah_alfa" state={sort} className="text-center" />
               <SortHead label="Jml Terlambat" sortKey="jumlah_terlambat" state={sort} className="text-center" />
+              <SortHead label="Diinput Oleh" sortKey="created_by_name" state={sort} />
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sorted.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
                   Belum ada catatan SP {level}
                 </TableCell>
               </TableRow>
@@ -1170,6 +1174,7 @@ function MuridSpTable({
                       {r.jumlah_terlambat}
                     </Badge>
                   </TableCell>
+                  <TableCell className="whitespace-nowrap">{r.created_by_name || "—"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button size="icon" variant="ghost" onClick={() => setDetail(r)}>

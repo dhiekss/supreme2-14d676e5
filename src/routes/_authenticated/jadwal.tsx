@@ -136,7 +136,11 @@ function JadwalPage() {
 
   const alokasiMap = useMemo(() => {
     const m = new Map<SlotKey, { jam_mulai?: string; jam_selesai?: string }>();
-    for (const a of opts.alokasi ?? []) m.set(slotKey(a.hari, Number(a.jam_ke)), a);
+    for (const a of opts.alokasi ?? [])
+      m.set(slotKey(String(a.hari ?? ""), Number(a.jam_ke)), {
+        jam_mulai: a.jam_mulai ?? undefined,
+        jam_selesai: a.jam_selesai ?? undefined,
+      });
     return m;
   }, [opts.alokasi]);
 
@@ -188,7 +192,7 @@ function JadwalPage() {
             rombelId={filterRombel}
             kelompokId={filterKelompok}
             guruId={filterGuru === "all" ? undefined : filterGuru}
-            targetName={activeTargetName}
+            targetName={activeTargetName ?? undefined}
             onDone={invalidate}
           />
         </div>
