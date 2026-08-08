@@ -1174,6 +1174,7 @@ function MuridSpTable({
                       {r.jumlah_terlambat}
                     </Badge>
                   </TableCell>
+                  <TableCell className="whitespace-nowrap">{r.created_by_name || "—"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button size="icon" variant="ghost" onClick={() => setDetail(r)}>
