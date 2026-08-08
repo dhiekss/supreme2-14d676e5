@@ -589,6 +589,7 @@ function WaliTable({
                     </Badge>
                   </TableCell>
                   <TableCell className="whitespace-nowrap">{r.tgl_tindakan || "—"}</TableCell>
+                  <TableCell className="whitespace-nowrap">{r.diinput_oleh || "—"}</TableCell>
                   <TableCell className="text-right">
                     <TindakanDialog row={r} onSaved={onSaved} />
                   </TableCell>
