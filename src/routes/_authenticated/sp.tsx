@@ -1142,13 +1142,14 @@ function MuridSpTable({
               <TableHead>Alasan</TableHead>
               <SortHead label="Jml Alfa" sortKey="jumlah_alfa" state={sort} className="text-center" />
               <SortHead label="Jml Terlambat" sortKey="jumlah_terlambat" state={sort} className="text-center" />
+              <SortHead label="Diinput Oleh" sortKey="created_by_name" state={sort} />
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sorted.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
                   Belum ada catatan SP {level}
                 </TableCell>
               </TableRow>
