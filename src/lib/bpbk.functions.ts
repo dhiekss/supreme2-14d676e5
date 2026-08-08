@@ -341,11 +341,26 @@ export const listWaliTindakan = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("wali_tindakan")
-      .select("id, student_id, rombel_id, tanggal, jumlah_alfa, jumlah_terlambat, keterangan, foto_path, created_at")
+      .select(
+        "id, student_id, rombel_id, tanggal, jumlah_alfa, jumlah_terlambat, keterangan, foto_path, created_at, created_by",
+      )
       .order("tanggal", { ascending: false })
       .limit(5000);
     if (error) throw new Error(error.message);
-    return data ?? [];
+    const rows = data ?? [];
+    const ids = Array.from(new Set(rows.map((r: any) => r.created_by).filter(Boolean))) as string[];
+    const nameMap = new Map<string, string>();
+    if (ids.length) {
+      const { data: profs } = await context.supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", ids);
+      for (const p of profs ?? []) nameMap.set(p.id, p.full_name || p.email || "—");
+    }
+    return rows.map((r: any) => ({
+      ...r,
+      created_by_name: r.created_by ? nameMap.get(r.created_by) ?? "—" : "—",
+    }));
   });
 
 export const saveWaliTindakan = createServerFn({ method: "POST" })
