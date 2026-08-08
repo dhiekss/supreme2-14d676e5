@@ -508,7 +508,7 @@ function WaliTable({
   onSaved: () => void;
 }) {
   const sort = useSort<
-    "name" | "nis" | "rombel_name" | "wali_kelas" | "alfa" | "telat" | "status" | "tgl_tindakan"
+    "name" | "nis" | "rombel_name" | "wali_kelas" | "alfa" | "telat" | "status" | "tgl_tindakan" | "diinput_oleh"
   >("name");
   const merged = useMemo(
     () =>
@@ -519,6 +519,7 @@ function WaliTable({
           tindakan: t ?? null,
           status: t ? "Sudah" : "Belum",
           tgl_tindakan: t?.tanggal ?? "",
+          diinput_oleh: t?.created_by_name ?? "",
         };
       }),
     [rows, tindakanMap],
