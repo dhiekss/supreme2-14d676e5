@@ -265,6 +265,17 @@ export const getBpBkData = createServerFn({ method: "POST" })
 
 
     // Existing SP records enriched
+    const creatorIds = Array.from(
+      new Set((spRows ?? []).map((r: any) => r.created_by).filter(Boolean)),
+    ) as string[];
+    const creatorMap = new Map<string, string>();
+    if (creatorIds.length) {
+      const { data: profs } = await sb
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", creatorIds);
+      for (const p of profs ?? []) creatorMap.set(p.id, p.full_name || p.email || "—");
+    }
     const sMap = new Map<string, any>(students.map((s: any) => [s.id, s]));
     const spEnriched = spRows
       .filter((r: any) => r.student_id && sMap.has(r.student_id))
@@ -281,6 +292,8 @@ export const getBpBkData = createServerFn({ method: "POST" })
         dokumen_pendukung: r.dokumen_pendukung ?? null,
         tanggal_rekaman: r.tanggal_rekaman,
         created_at: r.created_at,
+        created_by: r.created_by ?? null,
+        created_by_name: r.created_by ? creatorMap.get(r.created_by) ?? "—" : "—",
         student_name: st?.name ?? "—",
         student_nis: st?.nis ?? "—",
         rombel_id: st?.rombel_id ?? null,
@@ -288,6 +301,7 @@ export const getBpBkData = createServerFn({ method: "POST" })
         konsentrasi: rb?.konsentrasi_keahlian ?? "—",
       };
       });
+
 
     const murid: Record<1 | 2 | 3, any[]> = {
       1: spEnriched.filter((x) => x.sp_level === 1).sort((a, b) => a.student_name.localeCompare(b.student_name)),
