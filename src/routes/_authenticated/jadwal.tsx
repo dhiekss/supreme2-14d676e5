@@ -192,7 +192,7 @@ function JadwalPage() {
             rombelId={filterRombel}
             kelompokId={filterKelompok}
             guruId={filterGuru === "all" ? undefined : filterGuru}
-            targetName={activeTargetName}
+            targetName={activeTargetName ?? undefined}
             onDone={invalidate}
           />
         </div>
