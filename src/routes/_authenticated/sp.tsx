@@ -1110,7 +1110,7 @@ function MuridSpTable({
 }) {
   const [detail, setDetail] = useState<any | null>(null);
   const sort = useSort<
-    "student_name" | "student_nis" | "rombel_name" | "tanggal_rekaman" | "jumlah_alfa" | "jumlah_terlambat"
+    "student_name" | "student_nis" | "rombel_name" | "tanggal_rekaman" | "jumlah_alfa" | "jumlah_terlambat" | "created_by_name"
   >();
   const sorted = useMemo(
     () => sortRows(rows, sort.key as any, sort.dir),
