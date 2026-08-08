@@ -550,6 +550,7 @@ function WaliTable({
               <SortHead label="Terlambat" sortKey="telat" state={sort} className="text-center" />
               <SortHead label="Keterangan" sortKey="status" state={sort} className="text-center" />
               <SortHead label="Tanggal Tindakan" sortKey="tgl_tindakan" state={sort} />
+              <SortHead label="Diinput Oleh" sortKey="diinput_oleh" state={sort} />
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
