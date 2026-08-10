@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,15 @@ import {
   listTransfersIn, upsertTransferIn, deleteTransferIn,
   listStudentsForMutasi, listRombelForMutasi, mutasiSummary,
 } from "@/lib/mutasi.functions";
+
+function useDebounced<T>(value: T, delay = 350) {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => startTransition(() => setV(value)), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return v;
+}
 
 export const Route = createFileRoute("/_authenticated/mutasi")({
   head: () => ({ meta: [{ title: "Mutasi Murid — SUPREME XPOES" }] }),
@@ -336,9 +345,10 @@ function RombelTransferTab({ onChange }: { onChange: () => void }) {
   const delFn = useServerFn(deleteRombelTransfer);
   const saveFn = useServerFn(upsertRombelTransfer);
   const qc = useQueryClient();
+  const dSearch = useDebounced(search);
   const { data } = useSuspenseQuery({
-    queryKey: ["mutasi-rombel", search],
-    queryFn: () => listFn({ data: { search: search || undefined } }),
+    queryKey: ["mutasi-rombel", dSearch],
+    queryFn: () => listFn({ data: { search: dSearch || undefined } }),
   });
   const del = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
@@ -538,9 +548,10 @@ function ResignTab({ onChange }: { onChange: () => void }) {
   const delFn = useServerFn(deleteResignation);
   const saveFn = useServerFn(upsertResignation);
   const qc = useQueryClient();
+  const dSearch = useDebounced(search);
   const { data } = useSuspenseQuery({
-    queryKey: ["mutasi-resign", search],
-    queryFn: () => listFn({ data: { search: search || undefined } }),
+    queryKey: ["mutasi-resign", dSearch],
+    queryFn: () => listFn({ data: { search: dSearch || undefined } }),
   });
   const del = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
@@ -738,9 +749,10 @@ function TransferOutTab({ onChange }: { onChange: () => void }) {
   const delFn = useServerFn(deleteTransferOut);
   const saveFn = useServerFn(upsertTransferOut);
   const qc = useQueryClient();
+  const dSearch = useDebounced(search);
   const { data } = useSuspenseQuery({
-    queryKey: ["mutasi-out", search],
-    queryFn: () => listFn({ data: { search: search || undefined } }),
+    queryKey: ["mutasi-out", dSearch],
+    queryFn: () => listFn({ data: { search: dSearch || undefined } }),
   });
   const del = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
@@ -941,9 +953,10 @@ function TransferInTab({ onChange }: { onChange: () => void }) {
   const delFn = useServerFn(deleteTransferIn);
   const saveFn = useServerFn(upsertTransferIn);
   const qc = useQueryClient();
+  const dSearch = useDebounced(search);
   const { data } = useSuspenseQuery({
-    queryKey: ["mutasi-in", search],
-    queryFn: () => listFn({ data: { search: search || undefined } }),
+    queryKey: ["mutasi-in", dSearch],
+    queryFn: () => listFn({ data: { search: dSearch || undefined } }),
   });
   const del = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
