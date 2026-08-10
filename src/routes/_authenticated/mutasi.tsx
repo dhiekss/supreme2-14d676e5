@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useSuspenseQuery, useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,7 @@ import {
 function useDebounced<T>(value: T, delay = 350) {
   const [v, setV] = useState(value);
   useEffect(() => {
-    const t = setTimeout(() => setV(value), delay);
+    const t = setTimeout(() => startTransition(() => setV(value)), delay);
     return () => clearTimeout(t);
   }, [value, delay]);
   return v;
@@ -349,7 +349,6 @@ function RombelTransferTab({ onChange }: { onChange: () => void }) {
   const { data } = useSuspenseQuery({
     queryKey: ["mutasi-rombel", dSearch],
     queryFn: () => listFn({ data: { search: dSearch || undefined } }),
-    placeholderData: keepPreviousData,
   });
   const del = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
@@ -553,7 +552,6 @@ function ResignTab({ onChange }: { onChange: () => void }) {
   const { data } = useSuspenseQuery({
     queryKey: ["mutasi-resign", dSearch],
     queryFn: () => listFn({ data: { search: dSearch || undefined } }),
-    placeholderData: keepPreviousData,
   });
   const del = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
@@ -755,7 +753,6 @@ function TransferOutTab({ onChange }: { onChange: () => void }) {
   const { data } = useSuspenseQuery({
     queryKey: ["mutasi-out", dSearch],
     queryFn: () => listFn({ data: { search: dSearch || undefined } }),
-    placeholderData: keepPreviousData,
   });
   const del = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
@@ -960,7 +957,6 @@ function TransferInTab({ onChange }: { onChange: () => void }) {
   const { data } = useSuspenseQuery({
     queryKey: ["mutasi-in", dSearch],
     queryFn: () => listFn({ data: { search: dSearch || undefined } }),
-    placeholderData: keepPreviousData,
   });
   const del = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
