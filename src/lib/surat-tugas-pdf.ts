@@ -24,6 +24,7 @@ export type PesertaPdf = {
 
 export type SuratTugasPdfData = {
   nomor_surat?: string | null;
+  tanggal_surat?: string | null;
   tanggal_mulai?: string | null;
   tanggal_selesai?: string | null;
   tujuan_lokasi?: string | null;
@@ -97,7 +98,7 @@ export function buildSuratTugasHtml(row: SuratTugasPdfData, logo: string): strin
     : "";
 
   const pesertaHtml = peserta.map((p, i) => pesertaBlockHtml(p, i)).join("");
-  const tglSurat = fmtTanggalId(row.tanggal_mulai);
+  const tglSurat = fmtTanggalId(row.tanggal_surat ?? row.tanggal_mulai);
 
   return `
   <div style="width:794px; height:1123px; padding:50px 60px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#000; line-height:1.15;">
