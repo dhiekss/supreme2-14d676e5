@@ -294,8 +294,8 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
   `;
 }
 
-const tdBase = "border-right:1px solid #000; border-bottom:1px solid #000; padding:4px 6px; vertical-align:middle; line-height:1.22; text-align:left; overflow-wrap:break-word; word-break:normal;";
-const tdInner = "padding:4px 6px; vertical-align:middle; line-height:1.2; text-align:left; overflow-wrap:break-word; word-break:normal;";
+const tdBase = "border-right:1px solid #000; border-bottom:1px solid #000; padding:6px 6px; vertical-align:middle; line-height:1.35; text-align:left; overflow-wrap:break-word; word-break:normal;";
+const tdInner = "padding:6px 6px; vertical-align:middle; line-height:1.35; text-align:left; overflow-wrap:break-word; word-break:normal;";
 
 export function sppdPdfFilename(row: SppdPdfData, prefix = "SPPD"): string {
   const nomor = (row.nomor_surat ?? "").replace(/[\\/:*?"<>|\s]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
