@@ -27,6 +27,7 @@ export const listSuratTugas = createServerFn({ method: "GET" })
     }
     return (data ?? []).map((r: any) => ({
       ...r,
+      tanggal_surat: r.surat_keluar?.tanggal_surat ?? r.tanggal_mulai ?? null,
       peserta: peserta.filter((p) => p.surat_tugas_id === r.id),
     }));
   });
