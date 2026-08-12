@@ -206,11 +206,11 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
           </table>
 
           <!-- TTD LEFT -->
-          <div style="margin-top:8px; margin-left:52%;">
+          <div style="margin-top:4px; margin-left:52%; font-size:9.5px; line-height:1.25;">
             <div>Dikeluarkan di&nbsp;&nbsp;: ${KOTA}</div>
             <div>Tanggal&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${fmtTanggalId(row.tanggal_surat ?? row.tanggal_mulai)}</div>
             <div>Kuasa Pengguna Anggaran</div>
-            <div style="height:60px;"></div>
+            <div style="height:42px;"></div>
             <div style="font-weight:bold; text-decoration:underline;">${KPA_NAMA}</div>
             <div>${KPA_PANGKAT}</div>
             <div>NIP. ${KPA_NIP}</div>
@@ -294,8 +294,8 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
   `;
 }
 
-const tdBase = "border-right:1px solid #000; border-bottom:1px solid #000; padding:6px 6px; vertical-align:middle; line-height:1.35; text-align:left; overflow-wrap:break-word; word-break:normal;";
-const tdInner = "padding:6px 6px; vertical-align:middle; line-height:1.35; text-align:left; overflow-wrap:break-word; word-break:normal;";
+const tdBase = "border-right:1px solid #000; border-bottom:1px solid #000; padding:4.5px 6px; vertical-align:middle; line-height:1.3; text-align:left; overflow-wrap:break-word; word-break:normal;";
+const tdInner = "padding:4.5px 6px; vertical-align:middle; line-height:1.3; text-align:left; overflow-wrap:break-word; word-break:normal;";
 
 export function sppdPdfFilename(row: SppdPdfData, prefix = "SPPD"): string {
   const nomor = (row.nomor_surat ?? "").replace(/[\\/:*?"<>|\s]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
