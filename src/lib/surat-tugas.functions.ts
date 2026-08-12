@@ -8,7 +8,7 @@ export const listSuratTugas = createServerFn({ method: "GET" })
     const { data, error } = await (context.supabase as any)
       .from("surat_tugas")
       .select(
-        "id, surat_keluar_id, nomor_surat, jenis, tanggal_surat, tanggal_mulai, tanggal_selesai, tujuan_lokasi, keperluan, kendaraan, waktu_berangkat, kode_kegiatan, kode_ring, dasar_surat_ada, nomor_dasar_surat, tanggal_dasar_surat, perihal_dasar_surat, instansi_dasar_surat, status, file_surat_tugas_url, file_sppd_url, created_at",
+        "id, surat_keluar_id, nomor_surat, jenis, tanggal_mulai, tanggal_selesai, tujuan_lokasi, keperluan, kendaraan, waktu_berangkat, kode_kegiatan, kode_ring, dasar_surat_ada, nomor_dasar_surat, tanggal_dasar_surat, perihal_dasar_surat, instansi_dasar_surat, status, file_surat_tugas_url, file_sppd_url, created_at, surat_keluar:surat_keluar_id(tanggal_surat)",
       )
       .order("tanggal_mulai", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
@@ -27,6 +27,7 @@ export const listSuratTugas = createServerFn({ method: "GET" })
     }
     return (data ?? []).map((r: any) => ({
       ...r,
+      tanggal_surat: r.surat_keluar?.tanggal_surat ?? r.tanggal_mulai ?? null,
       peserta: peserta.filter((p) => p.surat_tugas_id === r.id),
     }));
   });
