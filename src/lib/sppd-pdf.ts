@@ -207,7 +207,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
           <!-- TTD LEFT -->
           <div style="margin-top:8px; margin-left:52%;">
             <div>Dikeluarkan di&nbsp;&nbsp;: ${KOTA}</div>
-            <div>Tanggal&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${fmtTanggalId(row.tanggal_mulai)}</div>
+            <div>Tanggal&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${fmtTanggalId(row.tanggal_surat ?? row.tanggal_mulai)}</div>
             <div>Kuasa Pengguna Anggaran</div>
             <div style="height:60px;"></div>
             <div style="font-weight:bold; text-decoration:underline;">${KPA_NAMA}</div>
@@ -221,7 +221,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
           <table style="border-collapse:collapse; font-size:11px; line-height:1.15; margin-bottom:8px;">
             <tr><td style="width:80px; padding:0; vertical-align:middle;">Lampiran</td><td style="width:8px; padding:0; vertical-align:middle;">:</td><td style="padding:0; vertical-align:middle;">Surat Perjalanan Dinas</td></tr>
             <tr><td style="padding:0; vertical-align:middle;">Nomor</td><td style="padding:0; vertical-align:middle;">:</td><td style="padding:0; vertical-align:middle;">${escapeHtml(row.nomor_surat)}</td></tr>
-            <tr><td style="padding:0; vertical-align:middle;">Tanggal</td><td style="padding:0; vertical-align:middle;">:</td><td style="padding:0; vertical-align:middle;">${fmtTanggalId(row.tanggal_mulai)}</td></tr>
+            <tr><td style="padding:0; vertical-align:middle;">Tanggal</td><td style="padding:0; vertical-align:middle;">:</td><td style="padding:0; vertical-align:middle;">${fmtTanggalId(row.tanggal_surat ?? row.tanggal_mulai)}</td></tr>
           </table>
 
           <table style="width:100%; border-collapse:separate; border-spacing:0; border-left:1px solid #000; border-top:1px solid #000; font-size:9.4px; line-height:1.18; table-layout:fixed;">

@@ -19,6 +19,7 @@ export type PesertaLaporan = {
 
 export type LaporanSppdPdfData = {
   nomor_surat?: string | null;
+  tanggal_surat?: string | null;
   tanggal_mulai?: string | null;
   tanggal_selesai?: string | null;
   tujuan_lokasi?: string | null;
@@ -78,7 +79,7 @@ export function buildLaporanSppdHtml(row: LaporanSppdPdfData, logo: string): str
     .map(() => `<div style="border-bottom:1px solid #000; height:22px;"></div>`)
     .join("");
 
-  const tglTtd = fmtTanggalId(row.tanggal_selesai ?? row.tanggal_mulai);
+  const tglTtd = fmtTanggalId(row.tanggal_surat ?? row.tanggal_selesai ?? row.tanggal_mulai);
 
   return `
   <div style="width:794px; height:1123px; padding:50px 60px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#000; line-height:1.15;">
