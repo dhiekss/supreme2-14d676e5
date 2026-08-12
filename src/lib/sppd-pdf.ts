@@ -120,17 +120,15 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
               <td style="${tdBase}">${escapeHtml(pelaksana?.nama_peserta)}${pelaksana?.nip ? `<br/>NIP. ${escapeHtml(pelaksana.nip)}` : ""}</td>
             </tr>
             <tr>
-              <td style="${tdBase}; text-align:center;">3</td>
+              <td style="${tdBase}; text-align:center;" rowspan="3">3</td>
               <td style="${tdBase}">a.&nbsp;&nbsp;Pangkat dan Golongan</td>
               <td style="${tdBase}">${escapeHtml(pelaksana?.pangkat_golongan)}</td>
             </tr>
             <tr>
-              <td style="${tdBase}"></td>
               <td style="${tdBase}">b.&nbsp;&nbsp;Jabatan/Instansi</td>
               <td style="${tdBase}">${escapeHtml(pelaksana?.jabatan)}${pelaksana?.jabatan ? " / " : ""}${INSTANSI}</td>
             </tr>
             <tr>
-              <td style="${tdBase}"></td>
               <td style="${tdBase}">c.&nbsp;&nbsp;Tingkat Biaya Perjalanan Dinas</td>
               <td style="${tdBase}">&nbsp;</td>
             </tr>
@@ -145,32 +143,29 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
               <td style="${tdBase}">${escapeHtml(row.kendaraan ?? "Roda 4")}</td>
             </tr>
             <tr>
-              <td style="${tdBase}; text-align:center;">6</td>
+              <td style="${tdBase}; text-align:center;" rowspan="2">6</td>
               <td style="${tdBase}">a.&nbsp;&nbsp;Tempat berangkat</td>
               <td style="${tdBase}">${INSTANSI}</td>
             </tr>
             <tr>
-              <td style="${tdBase}"></td>
               <td style="${tdBase}">b.&nbsp;&nbsp;Tempat tujuan</td>
               <td style="${tdBase}">${escapeHtml(row.tujuan_lokasi)}</td>
             </tr>
             <tr>
-              <td style="${tdBase}; text-align:center;">7</td>
+              <td style="${tdBase}; text-align:center;" rowspan="3">7</td>
               <td style="${tdBase}">a.&nbsp;&nbsp;Lamanya Perjalanan Dinas</td>
               <td style="${tdBase}">${daysBetween(row.tanggal_mulai, row.tanggal_selesai)} (hari)</td>
             </tr>
             <tr>
-              <td style="${tdBase}"></td>
               <td style="${tdBase}">b.&nbsp;&nbsp;Tanggal berangkat</td>
               <td style="${tdBase}">${fmtTanggalId(row.tanggal_mulai)}</td>
             </tr>
             <tr>
-              <td style="${tdBase}"></td>
               <td style="${tdBase}">c.&nbsp;&nbsp;Tanggal harus kembali/tiba di tempat baru</td>
               <td style="${tdBase}">${fmtTanggalId(row.tanggal_selesai)}</td>
             </tr>
             <tr>
-              <td style="${tdBase}; text-align:center;">8</td>
+              <td style="${tdBase}; text-align:center;" rowspan="${1 + slots}">8</td>
               <td style="${tdBase}">Pengikut : Nama</td>
               <td style="${tdBase}; padding:0;">
                 <table style="width:100%; height:100%; border-collapse:collapse; table-layout:fixed; line-height:1.2;">
@@ -183,17 +178,15 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
             </tr>
             ${pengikutRows}
             <tr>
-              <td style="${tdBase}; text-align:center;">9</td>
+              <td style="${tdBase}; text-align:center;" rowspan="3">9</td>
               <td style="${tdBase}">Pembebanan Anggaran</td>
               <td style="${tdBase}">&nbsp;</td>
             </tr>
             <tr>
-              <td style="${tdBase}"></td>
               <td style="${tdBase}">a.&nbsp;&nbsp;Instansi</td>
               <td style="${tdBase}">${INSTANSI}</td>
             </tr>
             <tr>
-              <td style="${tdBase}"></td>
               <td style="${tdBase}">b.&nbsp;&nbsp;Akun</td>
               <td style="${tdBase}">${escapeHtml(row.kode_ring)}</td>
             </tr>
