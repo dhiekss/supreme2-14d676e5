@@ -23,6 +23,7 @@ export type SppdPeserta = {
 
 export type SppdPdfData = {
   nomor_surat?: string | null;
+  tanggal_surat?: string | null;
   tanggal_mulai?: string | null;
   tanggal_selesai?: string | null;
   tujuan_lokasi?: string | null;
