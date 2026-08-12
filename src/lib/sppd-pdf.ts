@@ -44,7 +44,6 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
     const p = pengikut[i];
     return `
       <tr>
-        <td style="${tdBase}"></td>
         <td style="${tdBase}">${i + 1}. ${escapeHtml(p?.nama_peserta)}</td>
         <td style="${tdBase}; padding:0;">
           <table style="width:100%; height:100%; border-collapse:collapse; table-layout:fixed; line-height:1.2;">
