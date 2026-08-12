@@ -105,22 +105,22 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
           <!-- MAIN TABLE -->
           <table style="width:100%; border-collapse:separate; border-spacing:0; border-left:1px solid #000; border-top:1px solid #000; font-size:9px; line-height:1.22; table-layout:fixed;">
             <colgroup>
-              <col style="width:20px;" />
-              <col style="width:182px;" />
+              <col style="width:28px;" />
+              <col style="width:174px;" />
               <col />
             </colgroup>
             <tr>
-              <td style="${tdBase}; text-align:center;">1</td>
+              <td style="${tdBase}; text-align:center; white-space:nowrap;">1</td>
               <td style="${tdBase}">Pengguna Anggaran / Kuasa Pengguna Anggaran</td>
               <td style="${tdBase}">${KPA_NAMA}<br/>NIP. ${KPA_NIP}</td>
             </tr>
             <tr>
-              <td style="${tdBase}; text-align:center;">2</td>
+              <td style="${tdBase}; text-align:center; white-space:nowrap;">2</td>
               <td style="${tdBase}">Nama/NIP Pegawai yang melaksanakan Perjalanan Dinas</td>
               <td style="${tdBase}">${escapeHtml(pelaksana?.nama_peserta)}${pelaksana?.nip ? `<br/>NIP. ${escapeHtml(pelaksana.nip)}` : ""}</td>
             </tr>
             <tr>
-              <td style="${tdBase}; text-align:center;" rowspan="3">3</td>
+              <td style="${tdBase}; text-align:center; white-space:nowrap;" rowspan="3">3</td>
               <td style="${tdBase}">a.&nbsp;&nbsp;Pangkat dan Golongan</td>
               <td style="${tdBase}">${escapeHtml(pelaksana?.pangkat_golongan)}</td>
             </tr>
@@ -133,17 +133,17 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
               <td style="${tdBase}">&nbsp;</td>
             </tr>
             <tr>
-              <td style="${tdBase}; text-align:center;">4</td>
+              <td style="${tdBase}; text-align:center; white-space:nowrap;">4</td>
               <td style="${tdBase}">Maksud Perjalanan Dinas</td>
               <td style="${tdBase}">${escapeHtml(row.keperluan)}</td>
             </tr>
             <tr>
-              <td style="${tdBase}; text-align:center;">5</td>
+              <td style="${tdBase}; text-align:center; white-space:nowrap;">5</td>
               <td style="${tdBase}">Alat angkutan yang dipergunakan</td>
               <td style="${tdBase}">${escapeHtml(row.kendaraan ?? "Roda 4")}</td>
             </tr>
             <tr>
-              <td style="${tdBase}; text-align:center;" rowspan="2">6</td>
+              <td style="${tdBase}; text-align:center; white-space:nowrap;" rowspan="2">6</td>
               <td style="${tdBase}">a.&nbsp;&nbsp;Tempat berangkat</td>
               <td style="${tdBase}">${INSTANSI}</td>
             </tr>
@@ -152,7 +152,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
               <td style="${tdBase}">${escapeHtml(row.tujuan_lokasi)}</td>
             </tr>
             <tr>
-              <td style="${tdBase}; text-align:center;" rowspan="3">7</td>
+              <td style="${tdBase}; text-align:center; white-space:nowrap;" rowspan="3">7</td>
               <td style="${tdBase}">a.&nbsp;&nbsp;Lamanya Perjalanan Dinas</td>
               <td style="${tdBase}">${daysBetween(row.tanggal_mulai, row.tanggal_selesai)} (hari)</td>
             </tr>
@@ -165,7 +165,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
               <td style="${tdBase}">${fmtTanggalId(row.tanggal_selesai)}</td>
             </tr>
             <tr>
-              <td style="${tdBase}; text-align:center;" rowspan="${1 + slots}">8</td>
+              <td style="${tdBase}; text-align:center; white-space:nowrap;" rowspan="${1 + slots}">8</td>
               <td style="${tdBase}">Pengikut : Nama</td>
               <td style="${tdBase}; padding:0;">
                 <table style="width:100%; height:100%; border-collapse:collapse; table-layout:fixed; line-height:1.2;">
@@ -178,7 +178,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
             </tr>
             ${pengikutRows}
             <tr>
-              <td style="${tdBase}; text-align:center;" rowspan="3">9</td>
+              <td style="${tdBase}; text-align:center; white-space:nowrap;" rowspan="3">9</td>
               <td style="${tdBase}">Pembebanan Anggaran</td>
               <td style="${tdBase}">&nbsp;</td>
             </tr>
@@ -191,7 +191,7 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
               <td style="${tdBase}">${escapeHtml(row.kode_ring)}</td>
             </tr>
             <tr>
-              <td style="${tdBase}; text-align:center;">10</td>
+              <td style="${tdBase}; text-align:center; white-space:nowrap;">10</td>
               <td style="${tdBase}">Keterangan lain-lain</td>
               <td style="${tdBase}">&nbsp;</td>
             </tr>
