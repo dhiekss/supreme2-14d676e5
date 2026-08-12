@@ -105,12 +105,12 @@ export function buildSppdHtml(row: SppdPdfData, logo: string): string {
           <!-- MAIN TABLE -->
           <table style="width:100%; border-collapse:separate; border-spacing:0; border-left:1px solid #000; border-top:1px solid #000; font-size:9px; line-height:1.22; table-layout:fixed;">
             <colgroup>
-              <col style="width:20px;" />
-              <col style="width:182px;" />
+              <col style="width:28px;" />
+              <col style="width:174px;" />
               <col />
             </colgroup>
             <tr>
-              <td style="${tdBase}; text-align:center;">1</td>
+              <td style="${tdBase}; text-align:center; white-space:nowrap;">1</td>
               <td style="${tdBase}">Pengguna Anggaran / Kuasa Pengguna Anggaran</td>
               <td style="${tdBase}">${KPA_NAMA}<br/>NIP. ${KPA_NIP}</td>
             </tr>
