@@ -279,6 +279,58 @@ export const listPenyerahanIuran = createServerFn({ method: "GET" })
     return rows ?? [];
   });
 
+// Statistik penyerahan iuran: iuran wilayah = 20% dari total iuran, sisanya (80%) iuran sekolah.
+export const getPenyerahanIuranStats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({ bulan: z.number().int().optional(), tahun: z.number().int().optional() }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    let qLap = context.supabase.from("laporan_tpg").select("id", { count: "exact", head: true });
+    let qAdm = context.supabase.from("tpg_administrasi").select("sudah_administrasi, nominal_iuran");
+    let qPen = context.supabase.from("tpg_penyerahan_iuran").select("nominal");
+    if (data.bulan) {
+      qLap = qLap.eq("bulan", data.bulan);
+      qAdm = qAdm.eq("bulan", data.bulan);
+      qPen = qPen.eq("bulan", data.bulan);
+    }
+    if (data.tahun) {
+      qLap = qLap.eq("tahun", data.tahun);
+      qAdm = qAdm.eq("tahun", data.tahun);
+      qPen = qPen.eq("tahun", data.tahun);
+    }
+    const [lap, adm, pen] = await Promise.all([qLap, qAdm, qPen]);
+    if (lap.error) throw new Error(lap.error.message);
+    if (adm.error) throw new Error(adm.error.message);
+    if (pen.error) throw new Error(pen.error.message);
+
+    const totalLaporan = lap.count ?? 0;
+    const admRows = adm.data ?? [];
+    const sudah = admRows.filter((r: any) => r.sudah_administrasi).length;
+    const totalIuran = admRows.reduce((s: number, r: any) => s + Number(r.nominal_iuran ?? 0), 0);
+    const totalTersalur = (pen.data ?? []).reduce((s: number, r: any) => s + Number(r.nominal ?? 0), 0);
+
+    const iuranWilayah = Math.round(totalIuran * 0.2);
+    const iuranSekolah = totalIuran - iuranWilayah;
+    const wilayahTersalur = Math.round(totalTersalur * 0.2);
+    const sekolahTersalur = totalTersalur - wilayahTersalur;
+
+    return {
+      total_laporan: totalLaporan,
+      sudah_administrasi: sudah,
+      belum_administrasi: Math.max(totalLaporan - sudah, 0),
+      iuran_sekolah: iuranSekolah,
+      iuran_wilayah: iuranWilayah,
+      total_iuran: totalIuran,
+      sekolah_tersalur: sekolahTersalur,
+      wilayah_tersalur: wilayahTersalur,
+      total_tersalur: totalTersalur,
+      sisa_sekolah: iuranSekolah - sekolahTersalur,
+      sisa_wilayah: iuranWilayah - wilayahTersalur,
+      total_sisa: totalIuran - totalTersalur,
+    };
+  });
+
 export const listPeriodeAktif = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
