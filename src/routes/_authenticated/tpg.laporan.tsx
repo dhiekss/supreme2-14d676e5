@@ -100,6 +100,7 @@ function LaporanPage() {
                 <TableHead>NIP</TableHead>
                 <TableHead>Nama Guru</TableHead>
                 <TableHead>Periode</TableHead>
+                <TableHead>Gaji Dasar</TableHead>
                 <TableHead>Nominal</TableHead>
                 <TableHead>Bukti</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
@@ -107,12 +108,13 @@ function LaporanPage() {
             </TableHeader>
             <TableBody>
               {laporan.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada laporan</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada laporan</TableCell></TableRow>
               ) : laporan.map((r: any) => (
                 <TableRow key={r.id}>
                   <TableCell>{r.guru_nip}</TableCell>
                   <TableCell>{r.guru_nama}</TableCell>
                   <TableCell>{BULAN[r.bulan-1]} {r.tahun}</TableCell>
+                  <TableCell className="text-muted-foreground">{r.gaji_dasar != null ? fmtRp(r.gaji_dasar) : "—"}</TableCell>
                   <TableCell>{fmtRp(r.nominal_diterima)}</TableCell>
                   <TableCell>
                     {r.bukti_transfer_url ? (

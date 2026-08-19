@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { listGuru, listReferensi, deleteReferensi } from "@/lib/tpg.functions";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { fmtRp, TpgHeader, ReferensiFormDialog } from "@/components/tpg/shared";
+import { fmtRp, TpgHeader, ReferensiFormDialog, KenaikanGajiDialog } from "@/components/tpg/shared";
 
 const guruQO = queryOptions({
   queryKey: ["tpg-guru"],
@@ -59,7 +59,8 @@ function ReferensiPage() {
                 <TableHead>NIP</TableHead>
                 <TableHead>Nama Guru</TableHead>
                 <TableHead>Pangkat/Gol</TableHead>
-                <TableHead>Gaji Pokok</TableHead>
+                <TableHead>Gaji Pokok Awal</TableHead>
+                <TableHead>Gaji Efektif</TableHead>
                 <TableHead>Pajak</TableHead>
                 <TableHead>BPJS</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
@@ -67,16 +68,18 @@ function ReferensiPage() {
             </TableHeader>
             <TableBody>
               {referensi.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada referensi</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Belum ada referensi</TableCell></TableRow>
               ) : referensi.map((r: any) => (
                 <TableRow key={r.id}>
                   <TableCell>{r.guru_nip}</TableCell>
                   <TableCell>{r.guru_nama}</TableCell>
                   <TableCell>{r.pangkat_golongan ?? "—"}</TableCell>
                   <TableCell>{fmtRp(r.gaji_pokok)}</TableCell>
+                  <TableCell className="font-medium">{fmtRp(r.gaji_efektif)}</TableCell>
                   <TableCell>{fmtRp(r.besaran_pajak)}</TableCell>
                   <TableCell>{fmtRp(r.besaran_bpjs)}</TableCell>
                   <TableCell className="text-right">
+                    <KenaikanGajiDialog item={r} onSaved={() => qc.invalidateQueries({ queryKey: ["tpg-ref"] })} />
                     <ReferensiFormDialog guru={guru} item={r} onSaved={() => qc.invalidateQueries({ queryKey: ["tpg-ref"] })} />
                     <Button size="sm" variant="ghost" onClick={() => { if (confirm("Hapus?")) delRef.mutate(r.id); }}>
                       <Trash2 className="h-4 w-4" />
