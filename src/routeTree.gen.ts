@@ -54,6 +54,11 @@ import { Route as AuthenticatedAktivitasRouteImport } from './routes/_authentica
 import { Route as AuthenticatedTpgIndexRouteImport } from './routes/_authenticated/tpg.index'
 import { Route as AuthenticatedDashboardMuridIndexRouteImport } from './routes/_authenticated/dashboard-murid.index'
 import { Route as AuthenticatedDashboardGuruIndexRouteImport } from './routes/_authenticated/dashboard-guru.index'
+import { Route as AuthenticatedTpgReferensiRouteImport } from './routes/_authenticated/tpg.referensi'
+import { Route as AuthenticatedTpgPeriodeAktifRouteImport } from './routes/_authenticated/tpg.periode-aktif'
+import { Route as AuthenticatedTpgPenyerahanIuranRouteImport } from './routes/_authenticated/tpg.penyerahan-iuran'
+import { Route as AuthenticatedTpgLaporanRouteImport } from './routes/_authenticated/tpg.laporan'
+import { Route as AuthenticatedTpgAdministrasiRouteImport } from './routes/_authenticated/tpg.administrasi'
 import { Route as AuthenticatedPersuratanSuratTugasRouteImport } from './routes/_authenticated/persuratan.surat-tugas'
 import { Route as AuthenticatedPersuratanSuratMasukRouteImport } from './routes/_authenticated/persuratan.surat-masuk'
 import { Route as AuthenticatedPersuratanSuratKeluarRouteImport } from './routes/_authenticated/persuratan.surat-keluar'
@@ -318,6 +323,35 @@ const AuthenticatedDashboardGuruIndexRoute =
     path: '/dashboard-guru/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedTpgReferensiRoute =
+  AuthenticatedTpgReferensiRouteImport.update({
+    id: '/referensi',
+    path: '/referensi',
+    getParentRoute: () => AuthenticatedTpgRoute,
+  } as any)
+const AuthenticatedTpgPeriodeAktifRoute =
+  AuthenticatedTpgPeriodeAktifRouteImport.update({
+    id: '/periode-aktif',
+    path: '/periode-aktif',
+    getParentRoute: () => AuthenticatedTpgRoute,
+  } as any)
+const AuthenticatedTpgPenyerahanIuranRoute =
+  AuthenticatedTpgPenyerahanIuranRouteImport.update({
+    id: '/penyerahan-iuran',
+    path: '/penyerahan-iuran',
+    getParentRoute: () => AuthenticatedTpgRoute,
+  } as any)
+const AuthenticatedTpgLaporanRoute = AuthenticatedTpgLaporanRouteImport.update({
+  id: '/laporan',
+  path: '/laporan',
+  getParentRoute: () => AuthenticatedTpgRoute,
+} as any)
+const AuthenticatedTpgAdministrasiRoute =
+  AuthenticatedTpgAdministrasiRouteImport.update({
+    id: '/administrasi',
+    path: '/administrasi',
+    getParentRoute: () => AuthenticatedTpgRoute,
+  } as any)
 const AuthenticatedPersuratanSuratTugasRoute =
   AuthenticatedPersuratanSuratTugasRouteImport.update({
     id: '/persuratan/surat-tugas',
@@ -522,6 +556,11 @@ export interface FileRoutesByFullPath {
   '/persuratan/surat-keluar': typeof AuthenticatedPersuratanSuratKeluarRoute
   '/persuratan/surat-masuk': typeof AuthenticatedPersuratanSuratMasukRoute
   '/persuratan/surat-tugas': typeof AuthenticatedPersuratanSuratTugasRoute
+  '/tpg/administrasi': typeof AuthenticatedTpgAdministrasiRoute
+  '/tpg/laporan': typeof AuthenticatedTpgLaporanRoute
+  '/tpg/penyerahan-iuran': typeof AuthenticatedTpgPenyerahanIuranRoute
+  '/tpg/periode-aktif': typeof AuthenticatedTpgPeriodeAktifRoute
+  '/tpg/referensi': typeof AuthenticatedTpgReferensiRoute
   '/dashboard-guru/': typeof AuthenticatedDashboardGuruIndexRoute
   '/dashboard-murid/': typeof AuthenticatedDashboardMuridIndexRoute
   '/tpg/': typeof AuthenticatedTpgIndexRoute
@@ -590,6 +629,11 @@ export interface FileRoutesByTo {
   '/persuratan/surat-keluar': typeof AuthenticatedPersuratanSuratKeluarRoute
   '/persuratan/surat-masuk': typeof AuthenticatedPersuratanSuratMasukRoute
   '/persuratan/surat-tugas': typeof AuthenticatedPersuratanSuratTugasRoute
+  '/tpg/administrasi': typeof AuthenticatedTpgAdministrasiRoute
+  '/tpg/laporan': typeof AuthenticatedTpgLaporanRoute
+  '/tpg/penyerahan-iuran': typeof AuthenticatedTpgPenyerahanIuranRoute
+  '/tpg/periode-aktif': typeof AuthenticatedTpgPeriodeAktifRoute
+  '/tpg/referensi': typeof AuthenticatedTpgReferensiRoute
   '/dashboard-guru': typeof AuthenticatedDashboardGuruIndexRoute
   '/dashboard-murid': typeof AuthenticatedDashboardMuridIndexRoute
   '/tpg': typeof AuthenticatedTpgIndexRoute
@@ -661,6 +705,11 @@ export interface FileRoutesById {
   '/_authenticated/persuratan/surat-keluar': typeof AuthenticatedPersuratanSuratKeluarRoute
   '/_authenticated/persuratan/surat-masuk': typeof AuthenticatedPersuratanSuratMasukRoute
   '/_authenticated/persuratan/surat-tugas': typeof AuthenticatedPersuratanSuratTugasRoute
+  '/_authenticated/tpg/administrasi': typeof AuthenticatedTpgAdministrasiRoute
+  '/_authenticated/tpg/laporan': typeof AuthenticatedTpgLaporanRoute
+  '/_authenticated/tpg/penyerahan-iuran': typeof AuthenticatedTpgPenyerahanIuranRoute
+  '/_authenticated/tpg/periode-aktif': typeof AuthenticatedTpgPeriodeAktifRoute
+  '/_authenticated/tpg/referensi': typeof AuthenticatedTpgReferensiRoute
   '/_authenticated/dashboard-guru/': typeof AuthenticatedDashboardGuruIndexRoute
   '/_authenticated/dashboard-murid/': typeof AuthenticatedDashboardMuridIndexRoute
   '/_authenticated/tpg/': typeof AuthenticatedTpgIndexRoute
@@ -732,6 +781,11 @@ export interface FileRouteTypes {
     | '/persuratan/surat-keluar'
     | '/persuratan/surat-masuk'
     | '/persuratan/surat-tugas'
+    | '/tpg/administrasi'
+    | '/tpg/laporan'
+    | '/tpg/penyerahan-iuran'
+    | '/tpg/periode-aktif'
+    | '/tpg/referensi'
     | '/dashboard-guru/'
     | '/dashboard-murid/'
     | '/tpg/'
@@ -800,6 +854,11 @@ export interface FileRouteTypes {
     | '/persuratan/surat-keluar'
     | '/persuratan/surat-masuk'
     | '/persuratan/surat-tugas'
+    | '/tpg/administrasi'
+    | '/tpg/laporan'
+    | '/tpg/penyerahan-iuran'
+    | '/tpg/periode-aktif'
+    | '/tpg/referensi'
     | '/dashboard-guru'
     | '/dashboard-murid'
     | '/tpg'
@@ -870,6 +929,11 @@ export interface FileRouteTypes {
     | '/_authenticated/persuratan/surat-keluar'
     | '/_authenticated/persuratan/surat-masuk'
     | '/_authenticated/persuratan/surat-tugas'
+    | '/_authenticated/tpg/administrasi'
+    | '/_authenticated/tpg/laporan'
+    | '/_authenticated/tpg/penyerahan-iuran'
+    | '/_authenticated/tpg/periode-aktif'
+    | '/_authenticated/tpg/referensi'
     | '/_authenticated/dashboard-guru/'
     | '/_authenticated/dashboard-murid/'
     | '/_authenticated/tpg/'
@@ -1198,6 +1262,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardGuruIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/tpg/referensi': {
+      id: '/_authenticated/tpg/referensi'
+      path: '/referensi'
+      fullPath: '/tpg/referensi'
+      preLoaderRoute: typeof AuthenticatedTpgReferensiRouteImport
+      parentRoute: typeof AuthenticatedTpgRoute
+    }
+    '/_authenticated/tpg/periode-aktif': {
+      id: '/_authenticated/tpg/periode-aktif'
+      path: '/periode-aktif'
+      fullPath: '/tpg/periode-aktif'
+      preLoaderRoute: typeof AuthenticatedTpgPeriodeAktifRouteImport
+      parentRoute: typeof AuthenticatedTpgRoute
+    }
+    '/_authenticated/tpg/penyerahan-iuran': {
+      id: '/_authenticated/tpg/penyerahan-iuran'
+      path: '/penyerahan-iuran'
+      fullPath: '/tpg/penyerahan-iuran'
+      preLoaderRoute: typeof AuthenticatedTpgPenyerahanIuranRouteImport
+      parentRoute: typeof AuthenticatedTpgRoute
+    }
+    '/_authenticated/tpg/laporan': {
+      id: '/_authenticated/tpg/laporan'
+      path: '/laporan'
+      fullPath: '/tpg/laporan'
+      preLoaderRoute: typeof AuthenticatedTpgLaporanRouteImport
+      parentRoute: typeof AuthenticatedTpgRoute
+    }
+    '/_authenticated/tpg/administrasi': {
+      id: '/_authenticated/tpg/administrasi'
+      path: '/administrasi'
+      fullPath: '/tpg/administrasi'
+      preLoaderRoute: typeof AuthenticatedTpgAdministrasiRouteImport
+      parentRoute: typeof AuthenticatedTpgRoute
+    }
     '/_authenticated/persuratan/surat-tugas': {
       id: '/_authenticated/persuratan/surat-tugas'
       path: '/persuratan/surat-tugas'
@@ -1400,10 +1499,20 @@ const AuthenticatedPengaturanRouteWithChildren =
   )
 
 interface AuthenticatedTpgRouteChildren {
+  AuthenticatedTpgAdministrasiRoute: typeof AuthenticatedTpgAdministrasiRoute
+  AuthenticatedTpgLaporanRoute: typeof AuthenticatedTpgLaporanRoute
+  AuthenticatedTpgPenyerahanIuranRoute: typeof AuthenticatedTpgPenyerahanIuranRoute
+  AuthenticatedTpgPeriodeAktifRoute: typeof AuthenticatedTpgPeriodeAktifRoute
+  AuthenticatedTpgReferensiRoute: typeof AuthenticatedTpgReferensiRoute
   AuthenticatedTpgIndexRoute: typeof AuthenticatedTpgIndexRoute
 }
 
 const AuthenticatedTpgRouteChildren: AuthenticatedTpgRouteChildren = {
+  AuthenticatedTpgAdministrasiRoute: AuthenticatedTpgAdministrasiRoute,
+  AuthenticatedTpgLaporanRoute: AuthenticatedTpgLaporanRoute,
+  AuthenticatedTpgPenyerahanIuranRoute: AuthenticatedTpgPenyerahanIuranRoute,
+  AuthenticatedTpgPeriodeAktifRoute: AuthenticatedTpgPeriodeAktifRoute,
+  AuthenticatedTpgReferensiRoute: AuthenticatedTpgReferensiRoute,
   AuthenticatedTpgIndexRoute: AuthenticatedTpgIndexRoute,
 }
 

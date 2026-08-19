@@ -69,7 +69,11 @@ export const MENU_CATALOG: MenuGroup[] = [
       { key: "persuratan/pengaturan", label: "Pengaturan Persuratan" },
 
       { key: "sarpras", label: "Sarpras" },
-      { key: "tpg", label: "TPG" },
+      { key: "tpg/laporan", label: "Laporan TPG" },
+      { key: "tpg/administrasi", label: "Administrasi TPG" },
+      { key: "tpg/penyerahan-iuran", label: "Penyerahan Iuran TPG" },
+      { key: "tpg/periode-aktif", label: "Periode Aktif TPG" },
+      { key: "tpg/referensi", label: "Referensi TPG" },
       { key: "verval", label: "Verval Murid" },
       { key: "mutasi", label: "Mutasi Murid" },
       { key: "kenaikan-kelas", label: "Kenaikan Kelas" },
