@@ -98,6 +98,37 @@ export const deleteReferensi = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const addKenaikan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      referensi_tpg_id: z.string().uuid(),
+      gaji_pokok: z.number().int().min(0),
+      tanggal_berlaku: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal tidak valid"),
+      catatan: z.string().optional().nullable(),
+    }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    const { error } = await context.supabase.from("referensi_tpg_kenaikan").insert({
+      referensi_tpg_id: data.referensi_tpg_id,
+      gaji_pokok: data.gaji_pokok,
+      tanggal_berlaku: data.tanggal_berlaku,
+      catatan: data.catatan ?? null,
+      created_by: context.userId,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteKenaikan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .handler(async ({ context, data }) => {
+    const { error } = await context.supabase.from("referensi_tpg_kenaikan").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const listLaporan = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
@@ -122,11 +153,28 @@ export const listLaporan = createServerFn({ method: "GET" })
       const { data: g } = await context.supabase.from("guru").select("id, nama, nip").in("id", ids);
       (g ?? []).forEach((x: any) => gMap.set(x.id, x));
     }
-    return (rows ?? []).map((r: any) => ({
-      ...r,
-      guru_nama: gMap.get(r.guru_id)?.nama ?? "—",
-      guru_nip: gMap.get(r.guru_id)?.nip ?? "—",
-    }));
+    // Gaji dasar per laporan: cocokkan dengan gaji yang berlaku pada periode bulan/tahun baris tsb.
+    const refIds = [...new Set((rows ?? []).map((r: any) => r.referensi_tpg_id).filter(Boolean))] as string[];
+    const refMap = new Map<string, { gaji_pokok: number; kenaikan: KenaikanGajiRow[] }>();
+    if (refIds.length) {
+      const { data: refs } = await context.supabase.from("referensi_tpg").select("id, gaji_pokok").in("id", refIds);
+      (refs ?? []).forEach((x: any) => refMap.set(x.id, { gaji_pokok: x.gaji_pokok, kenaikan: [] }));
+      const { data: kn } = await context.supabase
+        .from("referensi_tpg_kenaikan")
+        .select("id, referensi_tpg_id, gaji_pokok, tanggal_berlaku, catatan")
+        .in("referensi_tpg_id", refIds);
+      (kn ?? []).forEach((k: any) => refMap.get(k.referensi_tpg_id)?.kenaikan.push(k as KenaikanGajiRow));
+    }
+    return (rows ?? []).map((r: any) => {
+      const ref = r.referensi_tpg_id ? refMap.get(r.referensi_tpg_id) : undefined;
+      const periode = `${r.tahun}-${String(r.bulan).padStart(2, "0")}-01`;
+      return {
+        ...r,
+        guru_nama: gMap.get(r.guru_id)?.nama ?? "—",
+        guru_nip: gMap.get(r.guru_id)?.nip ?? "—",
+        gaji_dasar: ref ? resolveGajiEfektif(ref.gaji_pokok, ref.kenaikan, periode) : null,
+      };
+    });
   });
 
 export const upsertLaporan = createServerFn({ method: "POST" })
