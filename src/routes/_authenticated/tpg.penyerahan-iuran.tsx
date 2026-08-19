@@ -24,7 +24,7 @@ function StatCard({ label, value, icon, valueClass, cardClass }: {
         {icon && <div className="mt-0.5 shrink-0">{icon}</div>}
         <div className="space-y-1 min-w-0">
           <div className="text-xs text-muted-foreground leading-tight">{label}</div>
-          <div className={`text-lg font-bold leading-snug break-words ${valueClass ?? ""}`}>{value}</div>
+          <div className={`text-base font-bold whitespace-nowrap ${valueClass ?? ""}`}>{value}</div>
         </div>
       </CardContent>
     </Card>
