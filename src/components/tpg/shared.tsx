@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -11,13 +11,15 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, TrendingUp, Trash2 } from "lucide-react";
+import { Camera, Image as ImageIcon, Plus, Pencil, TrendingUp, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { upsertReferensi, upsertLaporan, addKenaikan, deleteKenaikan } from "@/lib/tpg.functions";
-import { resolveGajiEfektif, gajiEfektifHariIni, statusKenaikan, sortKenaikan, fmtTanggal } from "@/lib/tpg-gaji";
+import { upsertReferensi, upsertLaporan, addKenaikan, deleteKenaikan, signTpgBukti } from "@/lib/tpg.functions";
+import { resolveGajiEfektif, gajiEfektifHariIni, hitungPerkiraanTpg, statusKenaikan, sortKenaikan, fmtTanggal } from "@/lib/tpg-gaji";
+import { supabase } from "@/integrations/supabase/client";
 import { todayWIB } from "@/lib/wib";
 
 export const BULAN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+export const BULAN_FULL = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 export const fmtRp = (n: number | null | undefined) =>
   "Rp " + new Intl.NumberFormat("id-ID").format(Number(n ?? 0));
 
@@ -117,102 +119,197 @@ export function ReferensiFormDialog({ guru, item, onSaved }: { guru: any[]; item
   );
 }
 
-export function LaporanFormDialog({ guru, referensi, item, onSaved }: { guru: any[]; referensi: any[]; item?: any; onSaved: () => void }) {
-  const [open, setOpen] = useState(false);
-  const today = new Date();
-  const [guruId, setGuruId] = useState(item?.guru_id ?? "");
-  const [refId, setRefId] = useState(item?.referensi_tpg_id ?? "");
-  const [bulan, setBulan] = useState(String(item?.bulan ?? today.getMonth() + 1));
-  const [tahun, setTahun] = useState(String(item?.tahun ?? today.getFullYear()));
-  const [nominal, setNominal] = useState(String(item?.nominal_diterima ?? 0));
-  const [bukti, setBukti] = useState(item?.bukti_transfer_url ?? "");
+// Opsi periode pencairan: 1 bulan ke depan s.d. 24 bulan ke belakang.
+function periodeOptions(): { value: string; label: string; bulan: number; tahun: number }[] {
+  const opts: { value: string; label: string; bulan: number; tahun: number }[] = [];
+  const now = new Date();
+  for (let i = 1; i >= -24; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const bulan = d.getMonth() + 1;
+    const tahun = d.getFullYear();
+    opts.push({ value: `${tahun}-${bulan}`, label: `${BULAN_FULL[bulan - 1]} ${tahun}`, bulan, tahun });
+  }
+  return opts;
+}
 
-  const guruRefs = referensi.filter((r: any) => r.guru_id === guruId);
-  // Gaji pokok efektif pada periode (bulan/tahun) terpilih — dasar perhitungan nominal.
-  const periodeDari = (b: string, t: string) => `${t}-${String(Number(b) || 1).padStart(2, "0")}-01`;
-  const gajiPada = (r: any, b = bulan, t = tahun) => resolveGajiEfektif(r?.gaji_pokok, r?.kenaikan, periodeDari(b, t));
-  const syncNominal = (ref: any, b = bulan, t = tahun) => { if (!item && ref) setNominal(String(gajiPada(ref, b, t))); };
-  const pickRef = (v: string) => { setRefId(v); syncNominal(referensi.find((x: any) => x.id === v)); };
-  const changeBulan = (v: string) => { setBulan(v); syncNominal(referensi.find((x: any) => x.id === refId), v, tahun); };
-  const changeTahun = (v: string) => { setTahun(v); syncNominal(referensi.find((x: any) => x.id === refId), bulan, v); };
+export function LaporanFormDialog({
+  guruId,
+  referensi,
+  item,
+  onSaved,
+  trigger,
+}: {
+  guruId: string;
+  referensi: any;
+  item?: any;
+  onSaved: () => void;
+  trigger?: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const opts = useMemo(periodeOptions, []);
+  const [periode, setPeriode] = useState("");
+  const [nominal, setNominal] = useState("");
+  const [buktiPath, setBuktiPath] = useState<string | null>(null);
+  const [buktiPreview, setBuktiPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
 
   const saveFn = useServerFn(upsertLaporan);
+  const signFn = useServerFn(signTpgBukti);
+
+  // Perkiraan nominal pada periode terpilih (gaji efektif periode tsb - pajak - BPJS).
+  const perkiraanFor = (value: string): number | null => {
+    if (!referensi) return null;
+    const [t, b] = value.split("-").map(Number);
+    if (!t || !b) return null;
+    const per = `${t}-${String(b).padStart(2, "0")}-01`;
+    const gaji = resolveGajiEfektif(referensi.gaji_pokok, referensi.kenaikan, per);
+    return hitungPerkiraanTpg(gaji, referensi.besaran_pajak, referensi.besaran_bpjs);
+  };
+
+  async function openChange(o: boolean) {
+    setOpen(o);
+    if (!o) return;
+    const now = new Date();
+    const def = item ? `${item.tahun}-${item.bulan}` : `${now.getFullYear()}-${now.getMonth() + 1}`;
+    setPeriode(def);
+    const p = perkiraanFor(def);
+    setNominal(item ? String(item.nominal_diterima ?? "") : p != null ? String(p) : "");
+    setBuktiPath(item?.bukti_transfer_url ?? null);
+    setBuktiPreview(null);
+    const existing = item?.bukti_transfer_url;
+    if (existing) {
+      if (/^https?:\/\//.test(existing)) {
+        setBuktiPreview(existing);
+      } else {
+        try {
+          const res = await signFn({ data: { path: existing } });
+          setBuktiPreview(res.url);
+        } catch { /* abaikan */ }
+      }
+    }
+  }
+
+  async function handleFile(file: File | null | undefined) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const key = `bukti/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("tpg-bukti").upload(key, file, { upsert: false });
+      if (error) throw new Error(error.message);
+      setBuktiPath(key);
+      setBuktiPreview(URL.createObjectURL(file));
+      toast.success("Bukti terunggah");
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal mengunggah bukti");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   const save = useMutation({
-    mutationFn: () => saveFn({ data: {
-      id: item?.id, guru_id: guruId, referensi_tpg_id: refId || null,
-      bulan: Number(bulan), tahun: Number(tahun),
-      nominal_diterima: Number(nominal), bukti_transfer_url: bukti || null,
-    }}),
-    onSuccess: () => { toast.success("Tersimpan"); setOpen(false); onSaved(); },
+    mutationFn: () => {
+      const [t, b] = periode.split("-").map(Number);
+      return saveFn({ data: {
+        id: item?.id,
+        guru_id: guruId,
+        referensi_tpg_id: referensi?.id ?? null,
+        bulan: b,
+        tahun: t,
+        nominal_diterima: Number(nominal) || 0,
+        bukti_transfer_url: buktiPath ?? null,
+      }});
+    },
+    onSuccess: () => { toast.success("Laporan tersimpan"); setOpen(false); onSaved(); },
     onError: (e: any) => toast.error(e.message),
   });
 
+  const perkiraan = periode ? perkiraanFor(periode) : null;
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={openChange}>
       <DialogTrigger asChild>
-        {item ? <Button size="sm" variant="ghost"><Pencil className="h-4 w-4" /></Button>
-              : <Button><Plus className="h-4 w-4 mr-1" /> Tambah Laporan</Button>}
+        {trigger ?? (item
+          ? <Button size="sm" variant="ghost"><Pencil className="h-4 w-4" /></Button>
+          : <Button><Plus className="h-4 w-4 mr-1" /> Tambah Laporan</Button>)}
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader><DialogTitle>{item ? "Edit" : "Tambah"} Laporan TPG</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <Label>Guru</Label>
-            <Select value={guruId} onValueChange={(v) => { setGuruId(v); setRefId(""); }}>
-              <SelectTrigger><SelectValue placeholder="Pilih guru" /></SelectTrigger>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{item ? "Edit Laporan TPG" : "Tambah Laporan TPG"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Periode Pencairan</Label>
+            <Select
+              value={periode}
+              onValueChange={(v) => {
+                setPeriode(v);
+                if (!item) {
+                  const p = perkiraanFor(v);
+                  if (p != null) setNominal(String(p));
+                }
+              }}
+            >
+              <SelectTrigger><SelectValue placeholder="Pilih periode" /></SelectTrigger>
               <SelectContent>
-                {guru.map((g: any) => <SelectItem key={g.id} value={g.id}>{g.nama} {g.nip ? `(${g.nip})` : ""}</SelectItem>)}
+                {opts.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
-          {guruRefs.length > 0 && (
-            <div className="space-y-1">
-              <Label>Referensi (opsional)</Label>
-              <Select value={refId} onValueChange={pickRef}>
-                <SelectTrigger><SelectValue placeholder="Pilih referensi" /></SelectTrigger>
-                <SelectContent>
-                  {guruRefs.map((r: any) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {r.pangkat_golongan ?? "—"} • {fmtRp(gajiPada(r))}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <Label>Bulan</Label>
-              <Select value={bulan} onValueChange={changeBulan}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {BULAN.map((b, i) => <SelectItem key={i} value={String(i+1)}>{b}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>Tahun</Label>
-              <Input type="number" value={tahun} onChange={(e) => changeTahun(e.target.value)} />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <Label>Nominal Diterima</Label>
-            <Input type="number" value={nominal} onChange={(e) => setNominal(e.target.value)} />
-            {!item && refId && (
-              <p className="text-xs text-muted-foreground">Otomatis terisi gaji pokok efektif pada periode terpilih, dapat diubah manual.</p>
+          <div className="space-y-2">
+            <Label>Nominal yang Diterima (Rp)</Label>
+            <Input
+              inputMode="numeric"
+              value={nominal}
+              onChange={(e) => setNominal(e.target.value.replace(/[^\d]/g, ""))}
+              placeholder="Masukkan nominal"
+            />
+            {perkiraan != null && (
+              <p className="text-xs text-muted-foreground">
+                Perkiraan periode ini: {fmtRp(perkiraan)} — otomatis terisi, dapat diubah manual.
+              </p>
             )}
           </div>
-          <div className="space-y-1">
-            <Label>URL Bukti Transfer</Label>
-            <Input value={bukti} onChange={(e) => setBukti(e.target.value)} placeholder="https://..." />
+          <div className="space-y-2">
+            <Label>Bukti Transfer</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="button" variant="outline" disabled={uploading} onClick={() => cameraRef.current?.click()}>
+                <Camera className="mr-1.5 h-4 w-4" /> Ambil Foto
+              </Button>
+              <Button type="button" variant="outline" disabled={uploading} onClick={() => galleryRef.current?.click()}>
+                <ImageIcon className="mr-1.5 h-4 w-4" /> Galeri
+              </Button>
+            </div>
+            <input
+              ref={cameraRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }}
+            />
+            <input
+              ref={galleryRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }}
+            />
+            {uploading && <p className="text-xs text-muted-foreground">Mengunggah…</p>}
+            {buktiPreview && (
+              <img src={buktiPreview} alt="Bukti transfer" className="max-h-40 rounded-md border object-contain" />
+            )}
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Batal</Button>
-          <Button onClick={() => save.mutate()} disabled={!guruId || save.isPending}>
-            {save.isPending ? "Menyimpan..." : "Simpan"}
+          <Button
+            className="w-full"
+            onClick={() => save.mutate()}
+            disabled={!periode || !nominal || save.isPending || uploading}
+          >
+            <Upload className="mr-1.5 h-4 w-4" /> {save.isPending ? "Menyimpan…" : "Simpan Laporan"}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

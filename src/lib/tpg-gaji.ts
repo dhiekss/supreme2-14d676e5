@@ -50,6 +50,17 @@ export function statusKenaikan(row: KenaikanGajiRow, kenaikan: KenaikanGajiRow[]
   return current && current.id === row.id ? "berlaku" : "riwayat";
 }
 
+/** Perkiraan nominal diterima = gaji efektif dikurangi pajak & BPJS (keduanya persen). */
+export function hitungPerkiraanTpg(
+  gajiEfektif: number | null | undefined,
+  pajakPct: number | null | undefined,
+  bpjsPct: number | null | undefined,
+): number {
+  const p = Number(pajakPct ?? 0);
+  const b = Number(bpjsPct ?? 0);
+  return Math.max(0, Math.round((Number(gajiEfektif ?? 0) * (100 - p - b)) / 100));
+}
+
 /** Format YYYY-MM-DD -> "5 Agu 2026" (id-ID). */
 export function fmtTanggal(ymd: string | null | undefined): string {
   if (!ymd) return "—";
