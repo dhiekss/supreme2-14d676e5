@@ -324,7 +324,11 @@ export const setPeriodeAktifStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ id: z.string().uuid(), is_active: z.boolean() }).parse)
   .handler(async ({ context, data }) => {
-    await assertTpgAdmin(context.supabase, context.userId);
+    const { data: roleRows } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    const roles = (roleRows ?? []).map((r: any) => r.role);
+    if (!roles.includes("admin") && !roles.includes("superadmin")) {
+      throw new Error("Hanya admin yang dapat mengelola periode pelaporan.");
+    }
     const { error } = await context.supabase
       .from("tpg_periode_aktif")
       .update({ is_active: data.is_active })
@@ -337,7 +341,11 @@ export const deletePeriodeAktif = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ id: z.string().uuid() }).parse)
   .handler(async ({ context, data }) => {
-    await assertTpgAdmin(context.supabase, context.userId);
+    const { data: roleRows } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    const roles = (roleRows ?? []).map((r: any) => r.role);
+    if (!roles.includes("admin") && !roles.includes("superadmin")) {
+      throw new Error("Hanya admin yang dapat mengelola periode pelaporan.");
+    }
     const { error } = await context.supabase.from("tpg_periode_aktif").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
