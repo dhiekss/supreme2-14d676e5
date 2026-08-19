@@ -51,6 +51,7 @@ import { Route as AuthenticatedDashboardKakonliRouteImport } from './routes/_aut
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBerkasRouteImport } from './routes/_authenticated/berkas'
 import { Route as AuthenticatedAktivitasRouteImport } from './routes/_authenticated/aktivitas'
+import { Route as AuthenticatedTpgIndexRouteImport } from './routes/_authenticated/tpg.index'
 import { Route as AuthenticatedDashboardMuridIndexRouteImport } from './routes/_authenticated/dashboard-murid.index'
 import { Route as AuthenticatedDashboardGuruIndexRouteImport } from './routes/_authenticated/dashboard-guru.index'
 import { Route as AuthenticatedPersuratanSuratTugasRouteImport } from './routes/_authenticated/persuratan.surat-tugas'
@@ -300,6 +301,11 @@ const AuthenticatedAktivitasRoute = AuthenticatedAktivitasRouteImport.update({
   path: '/aktivitas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTpgIndexRoute = AuthenticatedTpgIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedTpgRoute,
+} as any)
 const AuthenticatedDashboardMuridIndexRoute =
   AuthenticatedDashboardMuridIndexRouteImport.update({
     id: '/dashboard-murid/',
@@ -490,7 +496,7 @@ export interface FileRoutesByFullPath {
   '/sp': typeof AuthenticatedSpRoute
   '/tahun-ajaran': typeof AuthenticatedTahunAjaranRoute
   '/tendik': typeof AuthenticatedTendikRoute
-  '/tpg': typeof AuthenticatedTpgRoute
+  '/tpg': typeof AuthenticatedTpgRouteWithChildren
   '/users': typeof AuthenticatedUsersRoute
   '/verval': typeof AuthenticatedVervalRoute
   '/dashboard-guru/$guruId': typeof AuthenticatedDashboardGuruGuruIdRoute
@@ -518,6 +524,7 @@ export interface FileRoutesByFullPath {
   '/persuratan/surat-tugas': typeof AuthenticatedPersuratanSuratTugasRoute
   '/dashboard-guru/': typeof AuthenticatedDashboardGuruIndexRoute
   '/dashboard-murid/': typeof AuthenticatedDashboardMuridIndexRoute
+  '/tpg/': typeof AuthenticatedTpgIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -558,7 +565,6 @@ export interface FileRoutesByTo {
   '/sp': typeof AuthenticatedSpRoute
   '/tahun-ajaran': typeof AuthenticatedTahunAjaranRoute
   '/tendik': typeof AuthenticatedTendikRoute
-  '/tpg': typeof AuthenticatedTpgRoute
   '/users': typeof AuthenticatedUsersRoute
   '/verval': typeof AuthenticatedVervalRoute
   '/dashboard-guru/$guruId': typeof AuthenticatedDashboardGuruGuruIdRoute
@@ -586,6 +592,7 @@ export interface FileRoutesByTo {
   '/persuratan/surat-tugas': typeof AuthenticatedPersuratanSuratTugasRoute
   '/dashboard-guru': typeof AuthenticatedDashboardGuruIndexRoute
   '/dashboard-murid': typeof AuthenticatedDashboardMuridIndexRoute
+  '/tpg': typeof AuthenticatedTpgIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -628,7 +635,7 @@ export interface FileRoutesById {
   '/_authenticated/sp': typeof AuthenticatedSpRoute
   '/_authenticated/tahun-ajaran': typeof AuthenticatedTahunAjaranRoute
   '/_authenticated/tendik': typeof AuthenticatedTendikRoute
-  '/_authenticated/tpg': typeof AuthenticatedTpgRoute
+  '/_authenticated/tpg': typeof AuthenticatedTpgRouteWithChildren
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/verval': typeof AuthenticatedVervalRoute
   '/_authenticated/dashboard-guru/$guruId': typeof AuthenticatedDashboardGuruGuruIdRoute
@@ -656,6 +663,7 @@ export interface FileRoutesById {
   '/_authenticated/persuratan/surat-tugas': typeof AuthenticatedPersuratanSuratTugasRoute
   '/_authenticated/dashboard-guru/': typeof AuthenticatedDashboardGuruIndexRoute
   '/_authenticated/dashboard-murid/': typeof AuthenticatedDashboardMuridIndexRoute
+  '/_authenticated/tpg/': typeof AuthenticatedTpgIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -726,6 +734,7 @@ export interface FileRouteTypes {
     | '/persuratan/surat-tugas'
     | '/dashboard-guru/'
     | '/dashboard-murid/'
+    | '/tpg/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -766,7 +775,6 @@ export interface FileRouteTypes {
     | '/sp'
     | '/tahun-ajaran'
     | '/tendik'
-    | '/tpg'
     | '/users'
     | '/verval'
     | '/dashboard-guru/$guruId'
@@ -794,6 +802,7 @@ export interface FileRouteTypes {
     | '/persuratan/surat-tugas'
     | '/dashboard-guru'
     | '/dashboard-murid'
+    | '/tpg'
   id:
     | '__root__'
     | '/'
@@ -863,6 +872,7 @@ export interface FileRouteTypes {
     | '/_authenticated/persuratan/surat-tugas'
     | '/_authenticated/dashboard-guru/'
     | '/_authenticated/dashboard-murid/'
+    | '/_authenticated/tpg/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1167,6 +1177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAktivitasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/tpg/': {
+      id: '/_authenticated/tpg/'
+      path: '/'
+      fullPath: '/tpg/'
+      preLoaderRoute: typeof AuthenticatedTpgIndexRouteImport
+      parentRoute: typeof AuthenticatedTpgRoute
+    }
     '/_authenticated/dashboard-murid/': {
       id: '/_authenticated/dashboard-murid/'
       path: '/dashboard-murid'
@@ -1382,6 +1399,17 @@ const AuthenticatedPengaturanRouteWithChildren =
     AuthenticatedPengaturanRouteChildren,
   )
 
+interface AuthenticatedTpgRouteChildren {
+  AuthenticatedTpgIndexRoute: typeof AuthenticatedTpgIndexRoute
+}
+
+const AuthenticatedTpgRouteChildren: AuthenticatedTpgRouteChildren = {
+  AuthenticatedTpgIndexRoute: AuthenticatedTpgIndexRoute,
+}
+
+const AuthenticatedTpgRouteWithChildren =
+  AuthenticatedTpgRoute._addFileChildren(AuthenticatedTpgRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAktivitasRoute: typeof AuthenticatedAktivitasRoute
   AuthenticatedBerkasRoute: typeof AuthenticatedBerkasRoute
@@ -1419,7 +1447,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSpRoute: typeof AuthenticatedSpRoute
   AuthenticatedTahunAjaranRoute: typeof AuthenticatedTahunAjaranRoute
   AuthenticatedTendikRoute: typeof AuthenticatedTendikRoute
-  AuthenticatedTpgRoute: typeof AuthenticatedTpgRoute
+  AuthenticatedTpgRoute: typeof AuthenticatedTpgRouteWithChildren
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedVervalRoute: typeof AuthenticatedVervalRoute
   AuthenticatedDashboardGuruGuruIdRoute: typeof AuthenticatedDashboardGuruGuruIdRoute
@@ -1483,7 +1511,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSpRoute: AuthenticatedSpRoute,
   AuthenticatedTahunAjaranRoute: AuthenticatedTahunAjaranRoute,
   AuthenticatedTendikRoute: AuthenticatedTendikRoute,
-  AuthenticatedTpgRoute: AuthenticatedTpgRoute,
+  AuthenticatedTpgRoute: AuthenticatedTpgRouteWithChildren,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedVervalRoute: AuthenticatedVervalRoute,
   AuthenticatedDashboardGuruGuruIdRoute: AuthenticatedDashboardGuruGuruIdRoute,
