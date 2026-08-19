@@ -9,21 +9,30 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { fmtRp, TpgHeader, ReferensiFormDialog } from "@/components/tpg/shared";
 
+const guruQO = queryOptions({
+  queryKey: ["tpg-guru"],
+  queryFn: () => listGuru(),
+  staleTime: 5 * 60_000,
+});
+
 export const Route = createFileRoute("/_authenticated/tpg/referensi")({
   ssr: false,
   head: () => ({ meta: [{ title: "Referensi TPG — SUPREME XPOES" }] }),
-  loader: async () => ({
-    guru: await listGuru(),
-  }),
+  loader: ({ context }) => {
+    // Non-blocking prefetch — halaman langsung render, data menyusul.
+    void context.queryClient.prefetchQuery(guruQO);
+    return null;
+  },
   component: ReferensiPage,
   errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
 });
 
 function ReferensiPage() {
-  const { guru } = Route.useLoaderData();
   const qc = useQueryClient();
   const fetchRef = useServerFn(listReferensi);
   const delRefFn = useServerFn(deleteReferensi);
+
+  const { data: guru = [] } = useQuery(guruQO);
 
   const { data: referensi } = useSuspenseQuery({
     queryKey: ["tpg-ref"], queryFn: () => fetchRef(),

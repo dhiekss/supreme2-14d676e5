@@ -13,23 +13,31 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { BULAN, fmtRp, TpgHeader, LaporanFormDialog } from "@/components/tpg/shared";
 
+const guruQO = queryOptions({
+  queryKey: ["tpg-guru"],
+  queryFn: () => listGuru(),
+  staleTime: 5 * 60_000,
+});
+
 export const Route = createFileRoute("/_authenticated/tpg/laporan")({
   ssr: false,
   head: () => ({ meta: [{ title: "Laporan TPG — SUPREME XPOES" }] }),
-  loader: async () => ({
-    guru: await listGuru(),
-    referensi: await listReferensi(),
-  }),
+  loader: ({ context }) => {
+    // Non-blocking prefetch — halaman langsung render, data menyusul.
+    void context.queryClient.prefetchQuery(guruQO);
+    return null;
+  },
   component: LaporanPage,
   errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
 });
 
 function LaporanPage() {
-  const { guru } = Route.useLoaderData();
   const qc = useQueryClient();
   const fetchRef = useServerFn(listReferensi);
   const fetchLap = useServerFn(listLaporan);
   const delLapFn = useServerFn(deleteLaporan);
+
+  const { data: guru = [] } = useQuery(guruQO);
 
   const { data: referensi } = useSuspenseQuery({
     queryKey: ["tpg-ref"], queryFn: () => fetchRef(),
