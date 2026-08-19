@@ -150,7 +150,18 @@ export const DEFAULT_SIDEBAR: DefaultNode[] = [
   },
 
   { id: "sarpras", title: "Sarpras", url: "/sarpras", icon: Building2 },
-  { id: "tpg", title: "TPG", url: "/tpg", icon: Wallet },
+  {
+    id: "grp-tpg",
+    title: "TPG",
+    icon: Wallet,
+    children: [
+      { id: "tpg-laporan", title: "Laporan TPG", url: "/tpg/laporan", icon: FileBarChart },
+      { id: "tpg-administrasi", title: "Administrasi", url: "/tpg/administrasi", icon: ClipboardList },
+      { id: "tpg-penyerahan-iuran", title: "Penyerahan Iuran", url: "/tpg/penyerahan-iuran", icon: Wallet },
+      { id: "tpg-periode-aktif", title: "Periode Aktif", url: "/tpg/periode-aktif", icon: CalendarRange },
+      { id: "tpg-referensi", title: "Referensi", url: "/tpg/referensi", icon: Database },
+    ],
+  },
   { id: "notifikasi-wa", title: "Notifikasi WA", url: "/notifikasi", icon: MessageSquare },
   { id: "verval", title: "Verval Murid", url: "/verval", icon: ClipboardCheck },
   { id: "mutasi", title: "Mutasi Murid", url: "/mutasi", icon: ArrowLeftRight },
