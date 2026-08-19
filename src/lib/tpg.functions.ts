@@ -23,17 +23,38 @@ export const listReferensi = createServerFn({ method: "GET" })
       .select("id, guru_id, pangkat_golongan, gaji_pokok, besaran_pajak, besaran_bpjs, updated_at")
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
-    const ids = [...new Set((data ?? []).map((r: any) => r.guru_id).filter(Boolean))];
+    const rows = data ?? [];
+    const ids = [...new Set(rows.map((r: any) => r.guru_id).filter(Boolean))];
     const gMap = new Map<string, any>();
     if (ids.length) {
       const { data: g } = await context.supabase.from("guru").select("id, nama, nip").in("id", ids);
       (g ?? []).forEach((x: any) => gMap.set(x.id, x));
     }
-    return (data ?? []).map((r: any) => ({
-      ...r,
-      guru_nama: gMap.get(r.guru_id)?.nama ?? "—",
-      guru_nip: gMap.get(r.guru_id)?.nip ?? "—",
-    }));
+    const refIds = rows.map((r: any) => r.id);
+    const kMap = new Map<string, KenaikanGajiRow[]>();
+    if (refIds.length) {
+      const { data: kn } = await context.supabase
+        .from("referensi_tpg_kenaikan")
+        .select("id, referensi_tpg_id, gaji_pokok, tanggal_berlaku, catatan, created_at")
+        .in("referensi_tpg_id", refIds)
+        .order("tanggal_berlaku", { ascending: true });
+      (kn ?? []).forEach((k: any) => {
+        const arr = kMap.get(k.referensi_tpg_id) ?? [];
+        arr.push(k as KenaikanGajiRow);
+        kMap.set(k.referensi_tpg_id, arr);
+      });
+    }
+    const today = todayWIB();
+    return rows.map((r: any) => {
+      const kenaikan = sortKenaikan(kMap.get(r.id));
+      return {
+        ...r,
+        guru_nama: gMap.get(r.guru_id)?.nama ?? "—",
+        guru_nip: gMap.get(r.guru_id)?.nip ?? "—",
+        kenaikan,
+        gaji_efektif: resolveGajiEfektif(r.gaji_pokok, kenaikan, today),
+      };
+    });
   });
 
 export const upsertReferensi = createServerFn({ method: "POST" })
