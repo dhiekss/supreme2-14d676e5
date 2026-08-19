@@ -247,19 +247,72 @@ export const listAdministrasi = createServerFn({ method: "GET" })
       .order("bulan", { ascending: false });
     if (data.bulan) q = q.eq("bulan", data.bulan);
     if (data.tahun) q = q.eq("tahun", data.tahun);
-    const { data: rows, error } = await q;
+    const [{ data: rows, error }, { data: roleRows }] = await Promise.all([
+      q,
+      context.supabase.from("user_roles").select("role").eq("user_id", context.userId),
+    ]);
     if (error) throw new Error(error.message);
+    const roles = (roleRows ?? []).map((r: any) => r.role);
+    const isAdmin = roles.includes("admin") || roles.includes("superadmin") || roles.includes("admin_tpg");
+
     const ids = [...new Set((rows ?? []).map((r: any) => r.guru_id).filter(Boolean))];
     const gMap = new Map<string, any>();
     if (ids.length) {
       const { data: g } = await context.supabase.from("guru").select("id, nama, nip").in("id", ids);
       (g ?? []).forEach((x: any) => gMap.set(x.id, x));
     }
-    return (rows ?? []).map((r: any) => ({
-      ...r,
-      guru_nama: gMap.get(r.guru_id)?.nama ?? "—",
-      guru_nip: gMap.get(r.guru_id)?.nip ?? "—",
-    }));
+    const lapIds = [...new Set((rows ?? []).map((r: any) => r.laporan_tpg_id).filter(Boolean))];
+    const lMap = new Map<string, any>();
+    if (lapIds.length) {
+      const { data: laps } = await context.supabase
+        .from("laporan_tpg")
+        .select("id, nominal_diterima, bukti_transfer_url, created_at")
+        .in("id", lapIds);
+      (laps ?? []).forEach((x: any) => lMap.set(x.id, x));
+    }
+    return {
+      is_admin: isAdmin,
+      rows: (rows ?? []).map((r: any) => {
+        const lap = r.laporan_tpg_id ? lMap.get(r.laporan_tpg_id) : null;
+        return {
+          ...r,
+          guru_nama: gMap.get(r.guru_id)?.nama ?? "—",
+          guru_nip: gMap.get(r.guru_id)?.nip ?? "—",
+          laporan_nominal: lap?.nominal_diterima ?? null,
+          laporan_bukti: lap?.bukti_transfer_url ?? null,
+          laporan_created_at: lap?.created_at ?? null,
+        };
+      }),
+    };
+  });
+
+// Admin (admin/superadmin/admin_tpg) menandai status administrasi + nominal iuran per baris.
+export const upsertAdministrasi = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      id: z.string().uuid(),
+      sudah_administrasi: z.boolean(),
+      nominal_iuran: z.number().int().min(0),
+    }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    const { data: roleRows } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    const roles = (roleRows ?? []).map((r: any) => r.role);
+    if (!roles.includes("admin") && !roles.includes("superadmin") && !roles.includes("admin_tpg")) {
+      throw new Error("Hanya admin TPG yang dapat mengubah administrasi.");
+    }
+    const { error } = await context.supabase
+      .from("tpg_administrasi")
+      .update({
+        sudah_administrasi: data.sudah_administrasi,
+        nominal_iuran: data.nominal_iuran,
+        tanggal_administrasi: data.sudah_administrasi ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const listPenyerahanIuran = createServerFn({ method: "GET" })
