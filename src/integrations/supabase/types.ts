@@ -1593,6 +1593,44 @@ export type Database = {
         }
         Relationships: []
       }
+      referensi_tpg_kenaikan: {
+        Row: {
+          catatan: string | null
+          created_at: string
+          created_by: string | null
+          gaji_pokok: number
+          id: string
+          referensi_tpg_id: string
+          tanggal_berlaku: string
+        }
+        Insert: {
+          catatan?: string | null
+          created_at?: string
+          created_by?: string | null
+          gaji_pokok?: number
+          id?: string
+          referensi_tpg_id: string
+          tanggal_berlaku: string
+        }
+        Update: {
+          catatan?: string | null
+          created_at?: string
+          created_by?: string | null
+          gaji_pokok?: number
+          id?: string
+          referensi_tpg_id?: string
+          tanggal_berlaku?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referensi_tpg_kenaikan_referensi_tpg_id_fkey"
+            columns: ["referensi_tpg_id"]
+            isOneToOne: false
+            referencedRelation: "referensi_tpg"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rombel: {
         Row: {
           created_at: string | null
