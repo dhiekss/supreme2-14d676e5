@@ -295,21 +295,17 @@ export const listPeriodeAktif = createServerFn({ method: "GET" })
     return { rows: data ?? [], is_admin: roles.includes("admin") || roles.includes("superadmin") };
   });
 
-async function assertTpgAdmin(supabase: any, userId: string) {
-  const { data: roleRows } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-  const roles = (roleRows ?? []).map((r: any) => r.role);
-  if (!roles.includes("admin") && !roles.includes("superadmin")) {
-    throw new Error("Hanya admin yang dapat mengelola periode pelaporan.");
-  }
-}
-
 export const addPeriodeAktif = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({ bulan: z.number().int().min(1).max(12), tahun: z.number().int().min(2000).max(2100) }).parse,
   )
   .handler(async ({ context, data }) => {
-    await assertTpgAdmin(context.supabase, context.userId);
+    const { data: roleRows } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    const roles = (roleRows ?? []).map((r: any) => r.role);
+    if (!roles.includes("admin") && !roles.includes("superadmin")) {
+      throw new Error("Hanya admin yang dapat mengelola periode pelaporan.");
+    }
     const { data: dup } = await context.supabase
       .from("tpg_periode_aktif")
       .select("id")
