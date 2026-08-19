@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -9,10 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { listAdministrasi, upsertAdministrasi, signTpgBukti } from "@/lib/tpg.functions";
-import { CheckCircle2, Eye, Pencil, Save, XCircle } from "lucide-react";
+import { CheckCircle2, Eye, Pencil, Save, XCircle, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { BULAN, BULAN_FULL, fmtRp, TpgHeader, PeriodeFilter } from "@/components/tpg/shared";
 
@@ -175,10 +178,15 @@ function EditDialog({ row, onSaved }: { row: any; onSaved: () => void }) {
   );
 }
 
+type SortKey = "nip" | "nama" | "periode" | "status" | "iuran" | "tanggal";
+
 function AdministrasiPage() {
   const today = new Date();
   const [bulan, setBulan] = useState<string>(String(today.getMonth() + 1));
   const [tahun, setTahun] = useState<string>(String(today.getFullYear()));
+  const [guruFilter, setGuruFilter] = useState<string>("all");
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDesc, setSortDesc] = useState(false);
   const fetchFn = useServerFn(listAdministrasi);
   const queryClient = useQueryClient();
   const { data } = useSuspenseQuery({
@@ -191,37 +199,134 @@ function AdministrasiPage() {
   const rows = data.rows;
   const isAdmin = data.is_admin;
   const onSaved = () => queryClient.invalidateQueries({ queryKey: ["tpg-adm"] });
-  const total = rows.reduce((s: number, r: any) => s + Number(r.nominal_iuran ?? 0), 0);
-  const sudah = rows.filter((r: any) => r.sudah_administrasi).length;
+
+  const guruOptions = useMemo(() => {
+    const map = new Map<string, { id: string; nama: string; nip: string }>();
+    rows.forEach((r: any) => {
+      if (r.guru_id && !map.has(r.guru_id)) {
+        map.set(r.guru_id, { id: r.guru_id, nama: r.guru_nama, nip: r.guru_nip });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => a.nama.localeCompare(b.nama));
+  }, [rows]);
+
+  const filteredRows = useMemo(() => {
+    if (guruFilter === "all") return rows;
+    return rows.filter((r: any) => r.guru_id === guruFilter);
+  }, [rows, guruFilter]);
+
+  const sortedRows = useMemo(() => {
+    if (!sortKey) return filteredRows;
+    const sorted = [...filteredRows];
+    sorted.sort((a: any, b: any) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case "nip":
+          cmp = String(a.guru_nip ?? "").localeCompare(String(b.guru_nip ?? ""));
+          break;
+        case "nama":
+          cmp = String(a.guru_nama ?? "").localeCompare(String(b.guru_nama ?? ""));
+          break;
+        case "periode":
+          cmp = (a.tahun - b.tahun) || (a.bulan - b.bulan);
+          break;
+        case "status":
+          cmp = Number(!!a.sudah_administrasi) - Number(!!b.sudah_administrasi);
+          break;
+        case "iuran":
+          cmp = Number(a.nominal_iuran ?? 0) - Number(b.nominal_iuran ?? 0);
+          break;
+        case "tanggal":
+          const da = a.tanggal_administrasi ? new Date(a.tanggal_administrasi).getTime() : 0;
+          const db = b.tanggal_administrasi ? new Date(b.tanggal_administrasi).getTime() : 0;
+          cmp = da - db;
+          break;
+      }
+      return sortDesc ? -cmp : cmp;
+    });
+    return sorted;
+  }, [filteredRows, sortKey, sortDesc]);
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      if (!sortDesc) setSortDesc(true);
+      else {
+        setSortKey(null);
+        setSortDesc(false);
+      }
+    } else {
+      setSortKey(key);
+      setSortDesc(false);
+    }
+  }
+
+  function SortHeader({ key: k, children, className }: { key: SortKey; children: React.ReactNode; className?: string }) {
+    return (
+      <TableHead className={className}>
+        <button
+          type="button"
+          onClick={() => toggleSort(k)}
+          className="flex items-center gap-1 hover:text-foreground focus:outline-none"
+        >
+          {children}
+          {sortKey === k ? (
+            sortDesc ? <ArrowDown className="h-3.5 w-3.5" /> : <ArrowUp className="h-3.5 w-3.5" />
+          ) : (
+            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground/70" />
+          )}
+        </button>
+      </TableHead>
+    );
+  }
+
+  const total = sortedRows.reduce((s: number, r: any) => s + Number(r.nominal_iuran ?? 0), 0);
+  const sudah = sortedRows.filter((r: any) => r.sudah_administrasi).length;
+
   return (
     <div className="space-y-6">
       <TpgHeader title="Administrasi TPG" desc="Status administrasi Tunjangan Profesi Guru per periode." />
       <Card>
         <CardHeader><CardTitle className="text-base">Filter</CardTitle></CardHeader>
-        <CardContent><PeriodeFilter bulan={bulan} setBulan={setBulan} tahun={tahun} setTahun={setTahun} /></CardContent>
+        <CardContent>
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+            <PeriodeFilter bulan={bulan} setBulan={setBulan} tahun={tahun} setTahun={setTahun} />
+            <div className="space-y-2">
+              <Label>Guru</Label>
+              <Select value={guruFilter} onValueChange={setGuruFilter}>
+                <SelectTrigger><SelectValue placeholder="Semua Guru" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Guru</SelectItem>
+                  {guruOptions.map((g) => (
+                    <SelectItem key={g.id} value={g.id}>{g.nama} {g.nip ? `(${g.nip})` : ""}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
-          <CardTitle className="text-base">Administrasi — {rows.length} entri ({sudah} sudah)</CardTitle>
+          <CardTitle className="text-base">Administrasi — {sortedRows.length} entri ({sudah} sudah)</CardTitle>
           <div className="text-sm font-semibold">Total Iuran: {fmtRp(total)}</div>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>NIP</TableHead>
-                <TableHead>Nama Guru</TableHead>
-                <TableHead>Periode</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Nominal Iuran</TableHead>
-                <TableHead>Tgl Administrasi</TableHead>
-                <TableHead className="text-right">Aksi</TableHead>
+                <SortHeader key="nip">NIP</SortHeader>
+                <SortHeader key="nama">Nama Guru</SortHeader>
+                <SortHeader key="periode">Periode</SortHeader>
+                <SortHeader key="status">Status</SortHeader>
+                <SortHeader key="iuran">Nominal Iuran</SortHeader>
+                <SortHeader key="tanggal">Tgl Administrasi</SortHeader>
+                <TableHead className="w-[120px] text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.length === 0 ? (
+              {sortedRows.length === 0 ? (
                 <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Tidak ada data</TableCell></TableRow>
-              ) : rows.map((r: any) => (
+              ) : sortedRows.map((r: any) => (
                 <TableRow key={r.id}>
                   <TableCell>{r.guru_nip}</TableCell>
                   <TableCell>{r.guru_nama}</TableCell>
