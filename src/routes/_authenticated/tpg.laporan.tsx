@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/tpg/laporan")({
   errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
 });
 
-function InfoItem({ label, value }: { label: string; value: React.ReactNode }) {
+function InfoItem({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div>
       <div className="text-xs text-muted-foreground">{label}</div>

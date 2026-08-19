@@ -143,7 +143,7 @@ export function LaporanFormDialog({
   referensi: any;
   item?: any;
   onSaved: () => void;
-  trigger?: React.ReactNode;
+  trigger?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const opts = useMemo(periodeOptions, []);
