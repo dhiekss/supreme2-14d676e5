@@ -72,6 +72,9 @@ function DetailDialog({ row }: { row: any }) {
             <p className="text-sm text-muted-foreground">NIP: {row.guru_nip}</p>
             <p className="text-sm text-muted-foreground">Periode: {BULAN_FULL[row.bulan - 1]} {row.tahun}</p>
             <p className="text-sm text-muted-foreground">Nominal TPG: {fmtRp(row.laporan_nominal)}</p>
+            {!row.sudah_lapor && (
+              <Badge variant="destructive" className="mt-1">Belum Mengisi Laporan TPG</Badge>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
@@ -122,7 +125,10 @@ function EditDialog({ row, onSaved }: { row: any; onSaved: () => void }) {
 
   const save = useMutation({
     mutationFn: () => saveFn({ data: {
-      id: row.id,
+      id: row.id ?? undefined,
+      guru_id: row.guru_id,
+      bulan: row.bulan,
+      tahun: row.tahun,
       sudah_administrasi: sudah,
       nominal_iuran: Number(nominal) || 0,
     }}),
@@ -150,6 +156,9 @@ function EditDialog({ row, onSaved }: { row: any; onSaved: () => void }) {
             <p className="font-semibold">{row.guru_nama}</p>
             <p className="text-sm text-muted-foreground">Periode: {BULAN_FULL[row.bulan - 1]} {row.tahun}</p>
             <p className="text-sm text-muted-foreground">Nominal TPG: {fmtRp(row.laporan_nominal)}</p>
+            {!row.sudah_lapor && (
+              <Badge variant="destructive" className="mt-1">Belum Mengisi Laporan TPG</Badge>
+            )}
           </div>
           <label className="flex items-center gap-2.5 cursor-pointer select-none">
             <input
@@ -178,13 +187,14 @@ function EditDialog({ row, onSaved }: { row: any; onSaved: () => void }) {
   );
 }
 
-type SortKey = "nip" | "nama" | "periode" | "status" | "iuran" | "tanggal";
+type SortKey = "nip" | "nama" | "periode" | "laporan" | "status" | "iuran" | "tanggal";
 
 function AdministrasiPage() {
   const today = new Date();
   const [bulan, setBulan] = useState<string>(String(today.getMonth() + 1));
   const [tahun, setTahun] = useState<string>(String(today.getFullYear()));
   const [guruFilter, setGuruFilter] = useState<string>("all");
+  const [laporanFilter, setLaporanFilter] = useState<string>("all");
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDesc, setSortDesc] = useState(false);
   const fetchFn = useServerFn(listAdministrasi);
@@ -211,9 +221,12 @@ function AdministrasiPage() {
   }, [rows]);
 
   const filteredRows = useMemo(() => {
-    if (guruFilter === "all") return rows;
-    return rows.filter((r: any) => r.guru_id === guruFilter);
-  }, [rows, guruFilter]);
+    let out = rows;
+    if (guruFilter !== "all") out = out.filter((r: any) => r.guru_id === guruFilter);
+    if (laporanFilter === "sudah") out = out.filter((r: any) => r.sudah_lapor);
+    if (laporanFilter === "belum") out = out.filter((r: any) => !r.sudah_lapor);
+    return out;
+  }, [rows, guruFilter, laporanFilter]);
 
   const sortedRows = useMemo(() => {
     if (!sortKey) return filteredRows;
@@ -229,6 +242,9 @@ function AdministrasiPage() {
           break;
         case "periode":
           cmp = (a.tahun - b.tahun) || (a.bulan - b.bulan);
+          break;
+        case "laporan":
+          cmp = Number(!!a.sudah_lapor) - Number(!!b.sudah_lapor);
           break;
         case "status":
           cmp = Number(!!a.sudah_administrasi) - Number(!!b.sudah_administrasi);
@@ -260,7 +276,8 @@ function AdministrasiPage() {
     }
   }
 
-  function SortHeader({ key: k, children, className }: { key: SortKey; children: React.ReactNode; className?: string }) {
+  function SortHeader({ sk, children, className }: { sk: SortKey; children: React.ReactNode; className?: string }) {
+    const k = sk;
     return (
       <TableHead className={className}>
         <button
@@ -288,7 +305,7 @@ function AdministrasiPage() {
       <Card>
         <CardHeader><CardTitle className="text-base">Filter</CardTitle></CardHeader>
         <CardContent>
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
             <PeriodeFilter bulan={bulan} setBulan={setBulan} tahun={tahun} setTahun={setTahun} />
             <div className="space-y-2">
               <Label>Guru</Label>
@@ -299,6 +316,17 @@ function AdministrasiPage() {
                   {guruOptions.map((g) => (
                     <SelectItem key={g.id} value={g.id}>{g.nama} {g.nip ? `(${g.nip})` : ""}</SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Status Laporan</Label>
+              <Select value={laporanFilter} onValueChange={setLaporanFilter}>
+                <SelectTrigger><SelectValue placeholder="Semua" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua</SelectItem>
+                  <SelectItem value="sudah">Sudah Lapor</SelectItem>
+                  <SelectItem value="belum">Belum Lapor</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -314,23 +342,31 @@ function AdministrasiPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <SortHeader key="nip">NIP</SortHeader>
-                <SortHeader key="nama">Nama Guru</SortHeader>
-                <SortHeader key="periode">Periode</SortHeader>
-                <SortHeader key="status">Status</SortHeader>
-                <SortHeader key="iuran">Nominal Iuran</SortHeader>
-                <SortHeader key="tanggal">Tgl Administrasi</SortHeader>
+                <SortHeader sk="nip">NIP</SortHeader>
+                <SortHeader sk="nama">Nama Guru</SortHeader>
+                <SortHeader sk="periode">Periode</SortHeader>
+                <SortHeader sk="laporan">Laporan</SortHeader>
+                <SortHeader sk="status">Status</SortHeader>
+                <SortHeader sk="iuran">Nominal Iuran</SortHeader>
+                <SortHeader sk="tanggal">Tgl Administrasi</SortHeader>
                 <TableHead className="w-[120px] text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedRows.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Tidak ada data</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Tidak ada data</TableCell></TableRow>
               ) : sortedRows.map((r: any) => (
-                <TableRow key={r.id}>
+                <TableRow key={r.id ?? `${r.guru_id}-${r.bulan}-${r.tahun}`}>
                   <TableCell>{r.guru_nip}</TableCell>
                   <TableCell>{r.guru_nama}</TableCell>
                   <TableCell>{BULAN[r.bulan-1]} {r.tahun}</TableCell>
+                  <TableCell>
+                    {r.sudah_lapor ? (
+                      <Badge variant="outline" className="gap-1"><CheckCircle2 className="h-3 w-3" /> Sudah Lapor</Badge>
+                    ) : (
+                      <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" /> Belum Lapor</Badge>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {r.sudah_administrasi ? (
                       <Badge variant="default" className="gap-1"><CheckCircle2 className="h-3 w-3" /> Sudah</Badge>

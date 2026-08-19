@@ -1,0 +1,1 @@
+DELETE FROM public.tpg_administrasi WHERE id = '7382a3d5-6ef2-4b04-8020-4ef5d5798a36';

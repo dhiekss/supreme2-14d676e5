@@ -234,64 +234,99 @@ export const deleteLaporan = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Daftar administrasi mencakup SEMUA guru per periode, termasuk yang belum melapor TPG.
 export const listAdministrasi = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({ bulan: z.number().int().optional(), tahun: z.number().int().optional() }).parse,
   )
   .handler(async ({ context, data }) => {
-    let q = context.supabase
+    const tahun = data.tahun ?? new Date().getFullYear();
+
+    let qLap = context.supabase
+      .from("laporan_tpg")
+      .select("id, guru_id, bulan, tahun, nominal_diterima, bukti_transfer_url, created_at")
+      .eq("tahun", tahun);
+    let qAdm = context.supabase
       .from("tpg_administrasi")
       .select("id, guru_id, laporan_tpg_id, bulan, tahun, sudah_administrasi, nominal_iuran, tanggal_administrasi")
-      .order("tahun", { ascending: false })
-      .order("bulan", { ascending: false });
-    if (data.bulan) q = q.eq("bulan", data.bulan);
-    if (data.tahun) q = q.eq("tahun", data.tahun);
-    const [{ data: rows, error }, { data: roleRows }] = await Promise.all([
-      q,
-      context.supabase.from("user_roles").select("role").eq("user_id", context.userId),
-    ]);
-    if (error) throw new Error(error.message);
+      .eq("tahun", tahun);
+    if (data.bulan) {
+      qLap = qLap.eq("bulan", data.bulan);
+      qAdm = qAdm.eq("bulan", data.bulan);
+    }
+    const [{ data: gurus, error: gErr }, { data: laps, error: lErr }, { data: adms, error: aErr }, { data: roleRows }] =
+      await Promise.all([
+        context.supabase.from("guru").select("id, nama, nip").order("nama"),
+        qLap,
+        qAdm,
+        context.supabase.from("user_roles").select("role").eq("user_id", context.userId),
+      ]);
+    if (gErr) throw new Error(gErr.message);
+    if (lErr) throw new Error(lErr.message);
+    if (aErr) throw new Error(aErr.message);
     const roles = (roleRows ?? []).map((r: any) => r.role);
     const isAdmin = roles.includes("admin") || roles.includes("superadmin") || roles.includes("admin_tpg");
 
-    const ids = [...new Set((rows ?? []).map((r: any) => r.guru_id).filter(Boolean))];
-    const gMap = new Map<string, any>();
-    if (ids.length) {
-      const { data: g } = await context.supabase.from("guru").select("id, nama, nip").in("id", ids);
-      (g ?? []).forEach((x: any) => gMap.set(x.id, x));
+    // Periode dalam cakupan: bulan terpilih, atau semua periode yang punya laporan/administrasi tahun ini.
+    const periods: { bulan: number; tahun: number }[] = [];
+    if (data.bulan) {
+      periods.push({ bulan: data.bulan, tahun });
+    } else {
+      const set = new Map<string, { bulan: number; tahun: number }>();
+      [...(laps ?? []), ...(adms ?? [])].forEach((r: any) => {
+        set.set(`${r.tahun}-${r.bulan}`, { bulan: r.bulan, tahun: r.tahun });
+      });
+      periods.push(...set.values());
     }
-    const lapIds = [...new Set((rows ?? []).map((r: any) => r.laporan_tpg_id).filter(Boolean))];
-    const lMap = new Map<string, any>();
-    if (lapIds.length) {
-      const { data: laps } = await context.supabase
-        .from("laporan_tpg")
-        .select("id, nominal_diterima, bukti_transfer_url, created_at")
-        .in("id", lapIds);
-      (laps ?? []).forEach((x: any) => lMap.set(x.id, x));
-    }
-    return {
-      is_admin: isAdmin,
-      rows: (rows ?? []).map((r: any) => {
-        const lap = r.laporan_tpg_id ? lMap.get(r.laporan_tpg_id) : null;
-        return {
-          ...r,
-          guru_nama: gMap.get(r.guru_id)?.nama ?? "—",
-          guru_nip: gMap.get(r.guru_id)?.nip ?? "—",
+    periods.sort((a, b) => b.tahun - a.tahun || b.bulan - a.bulan);
+
+    const key = (g: string, b: number, t: number) => `${g}|${b}|${t}`;
+    const lapMap = new Map<string, any>();
+    (laps ?? []).forEach((l: any) => {
+      const k = key(l.guru_id, l.bulan, l.tahun);
+      const prev = lapMap.get(k);
+      if (!prev || new Date(l.created_at) > new Date(prev.created_at)) lapMap.set(k, l);
+    });
+    const admMap = new Map<string, any>();
+    (adms ?? []).forEach((a: any) => admMap.set(key(a.guru_id, a.bulan, a.tahun), a));
+
+    const rows: any[] = [];
+    for (const p of periods) {
+      for (const g of gurus ?? []) {
+        const lap = lapMap.get(key(g.id, p.bulan, p.tahun)) ?? null;
+        const adm = admMap.get(key(g.id, p.bulan, p.tahun)) ?? null;
+        rows.push({
+          id: adm?.id ?? null,
+          guru_id: g.id,
+          bulan: p.bulan,
+          tahun: p.tahun,
+          sudah_administrasi: adm?.sudah_administrasi ?? false,
+          nominal_iuran: adm?.nominal_iuran ?? 0,
+          tanggal_administrasi: adm?.tanggal_administrasi ?? null,
+          guru_nama: g.nama ?? "—",
+          guru_nip: g.nip ?? "—",
+          sudah_lapor: !!lap,
+          laporan_id: lap?.id ?? null,
           laporan_nominal: lap?.nominal_diterima ?? null,
           laporan_bukti: lap?.bukti_transfer_url ?? null,
           laporan_created_at: lap?.created_at ?? null,
-        };
-      }),
-    };
+        });
+      }
+    }
+    return { is_admin: isAdmin, rows };
   });
 
 // Admin (admin/superadmin/admin_tpg) menandai status administrasi + nominal iuran per baris.
+// Bisa membuat baris baru untuk guru yang belum melapor (tanpa id, pakai guru_id+bulan+tahun).
 export const upsertAdministrasi = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({
-      id: z.string().uuid(),
+      id: z.string().uuid().optional(),
+      guru_id: z.string().uuid().optional(),
+      bulan: z.number().int().min(1).max(12).optional(),
+      tahun: z.number().int().min(2000).max(2100).optional(),
       sudah_administrasi: z.boolean(),
       nominal_iuran: z.number().int().min(0),
     }).parse,
@@ -302,15 +337,38 @@ export const upsertAdministrasi = createServerFn({ method: "POST" })
     if (!roles.includes("admin") && !roles.includes("superadmin") && !roles.includes("admin_tpg")) {
       throw new Error("Hanya admin TPG yang dapat mengubah administrasi.");
     }
-    const { error } = await context.supabase
-      .from("tpg_administrasi")
-      .update({
-        sudah_administrasi: data.sudah_administrasi,
-        nominal_iuran: data.nominal_iuran,
-        tanggal_administrasi: data.sudah_administrasi ? new Date().toISOString() : null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", data.id);
+    const payload = {
+      sudah_administrasi: data.sudah_administrasi,
+      nominal_iuran: data.nominal_iuran,
+      tanggal_administrasi: data.sudah_administrasi ? new Date().toISOString() : null,
+      updated_at: new Date().toISOString(),
+    };
+    if (data.id) {
+      const { error } = await context.supabase.from("tpg_administrasi").update(payload).eq("id", data.id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+    if (!data.guru_id || !data.bulan || !data.tahun) {
+      throw new Error("Data guru dan periode wajib diisi.");
+    }
+    // Tautkan ke laporan TPG guru pada periode ini bila ada.
+    const { data: lap } = await context.supabase
+      .from("laporan_tpg")
+      .select("id")
+      .eq("guru_id", data.guru_id)
+      .eq("bulan", data.bulan)
+      .eq("tahun", data.tahun)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const { error } = await context.supabase.from("tpg_administrasi").insert({
+      ...payload,
+      guru_id: data.guru_id,
+      bulan: data.bulan,
+      tahun: data.tahun,
+      laporan_tpg_id: lap?.id ?? null,
+      created_by: context.userId,
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
