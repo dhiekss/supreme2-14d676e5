@@ -1,17 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { listGuru, listReferensi, listLaporan, deleteLaporan } from "@/lib/tpg.functions";
-import { Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { deleteLaporan, getLaporanTpgDashboard, listGuru, signTpgBukti } from "@/lib/tpg.functions";
+import { hitungPerkiraanTpg } from "@/lib/tpg-gaji";
+import { CheckCircle2, Eye, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { BULAN, fmtRp, TpgHeader, LaporanFormDialog } from "@/components/tpg/shared";
+import { BULAN_FULL, fmtRp, TpgHeader, LaporanFormDialog } from "@/components/tpg/shared";
 
 const guruQO = queryOptions({
   queryKey: ["tpg-guru"],
@@ -21,9 +22,8 @@ const guruQO = queryOptions({
 
 export const Route = createFileRoute("/_authenticated/tpg/laporan")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Laporan TPG — SUPREME XPOES" }] }),
+  head: () => ({ meta: [{ title: "Lapor TPG — SUPREME XPOES" }] }),
   loader: ({ context }) => {
-    // Non-blocking prefetch — halaman langsung render, data menyusul.
     void context.queryClient.prefetchQuery(guruQO);
     return null;
   },
@@ -31,108 +31,245 @@ export const Route = createFileRoute("/_authenticated/tpg/laporan")({
   errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
 });
 
+function InfoItem({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="font-medium">{value}</div>
+    </div>
+  );
+}
+
+function KeteranganBadge({ nominal, perkiraan }: { nominal: number; perkiraan: number | null }) {
+  if (perkiraan == null) return <span className="text-muted-foreground">—</span>;
+  if (nominal < perkiraan) return <Badge variant="destructive">Kurang Bayar</Badge>;
+  if (nominal > perkiraan) return <Badge variant="secondary">Lebih Bayar</Badge>;
+  return <Badge>Nominal Sesuai</Badge>;
+}
+
 function LaporanPage() {
   const qc = useQueryClient();
-  const fetchRef = useServerFn(listReferensi);
-  const fetchLap = useServerFn(listLaporan);
-  const delLapFn = useServerFn(deleteLaporan);
+  const dashFn = useServerFn(getLaporanTpgDashboard);
+  const delFn = useServerFn(deleteLaporan);
+  const signFn = useServerFn(signTpgBukti);
 
-  const { data: guru = [] } = useQuery(guruQO);
+  const [guruId, setGuruId] = useState<string | undefined>(undefined);
+  const [buktiUrl, setBuktiUrl] = useState<string | null>(null);
 
-  const { data: referensi } = useSuspenseQuery({
-    queryKey: ["tpg-ref"], queryFn: () => fetchRef(),
+  const { data: dash } = useSuspenseQuery({
+    queryKey: ["tpg-lap-dashboard", guruId ?? "own"],
+    queryFn: () => dashFn({ data: { guru_id: guruId } }),
   });
 
-  const today = new Date();
-  const [bulan, setBulan] = useState<string>(String(today.getMonth() + 1));
-  const [tahun, setTahun] = useState<string>(String(today.getFullYear()));
+  const { data: guruList = [] } = useQuery({ ...guruQO, enabled: dash.is_admin });
 
-  const { data: laporan } = useSuspenseQuery({
-    queryKey: ["tpg-lap", bulan, tahun],
-    queryFn: () => fetchLap({ data: { bulan: Number(bulan), tahun: Number(tahun) } }),
-  });
-
-  const delLap = useMutation({
-    mutationFn: (id: string) => delLapFn({ data: { id } }),
-    onSuccess: () => { toast.success("Dihapus"); qc.invalidateQueries({ queryKey: ["tpg-lap"] }); },
+  const del = useMutation({
+    mutationFn: (id: string) => delFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Dihapus");
+      qc.invalidateQueries({ queryKey: ["tpg-lap-dashboard"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const totalLap = laporan.reduce((s: number, r: any) => s + Number(r.nominal_diterima ?? 0), 0);
+  async function viewBukti(pathOrUrl: string) {
+    try {
+      if (/^https?:\/\//.test(pathOrUrl)) {
+        setBuktiUrl(pathOrUrl);
+      } else {
+        const res = await signFn({ data: { path: pathOrUrl } });
+        if (!res.url) throw new Error("Bukti tidak ditemukan");
+        setBuktiUrl(res.url);
+      }
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal membuka bukti");
+    }
+  }
+
+  const guru = dash.guru;
+  const ref = dash.referensi;
+  const laporan: any[] = dash.laporan ?? [];
+  const perkiraanNow = ref ? hitungPerkiraanTpg(ref.gaji_efektif, ref.besaran_pajak, ref.besaran_bpjs) : null;
+  const onSaved = () => qc.invalidateQueries({ queryKey: ["tpg-lap-dashboard"] });
 
   return (
     <div className="space-y-6">
-      <TpgHeader title="Laporan TPG" desc="Tunjangan Profesi Guru — laporan bulanan." />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <TpgHeader title="Lapor TPG" desc="Laporkan penerimaan Tunjangan Profesi Guru (TPG) Anda di sini." />
+        {guru && (
+          <LaporanFormDialog
+            guruId={guru.id}
+            referensi={ref}
+            onSaved={onSaved}
+            trigger={
+              <Button>
+                <Plus className="mr-1.5 h-4 w-4" /> Tambah Laporan
+              </Button>
+            }
+          />
+        )}
+      </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Filter</CardTitle></CardHeader>
-        <CardContent>
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label>Bulan</Label>
-              <Select value={bulan} onValueChange={setBulan}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {BULAN.map((b, i) => <SelectItem key={i} value={String(i+1)}>{b}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Tahun</Label>
-              <Input type="number" value={tahun} onChange={(e) => setTahun(e.target.value)} />
-            </div>
-            <div className="flex items-end">
-              <LaporanFormDialog guru={guru} referensi={referensi} onSaved={() => qc.invalidateQueries({ queryKey: ["tpg-lap"] })} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Laporan — {laporan.length} entri</CardTitle>
-          <div className="text-sm font-semibold">Total: {fmtRp(totalLap)}</div>
+        <CardHeader>
+          <CardTitle className="text-base">Pilih Guru</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>NIP</TableHead>
-                <TableHead>Nama Guru</TableHead>
-                <TableHead>Periode</TableHead>
-                <TableHead>Gaji Dasar</TableHead>
-                <TableHead>Nominal</TableHead>
-                <TableHead>Bukti</TableHead>
-                <TableHead className="text-right">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {laporan.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada laporan</TableCell></TableRow>
-              ) : laporan.map((r: any) => (
-                <TableRow key={r.id}>
-                  <TableCell>{r.guru_nip}</TableCell>
-                  <TableCell>{r.guru_nama}</TableCell>
-                  <TableCell>{BULAN[r.bulan-1]} {r.tahun}</TableCell>
-                  <TableCell className="text-muted-foreground">{r.gaji_dasar != null ? fmtRp(r.gaji_dasar) : "—"}</TableCell>
-                  <TableCell>{fmtRp(r.nominal_diterima)}</TableCell>
-                  <TableCell>
-                    {r.bukti_transfer_url ? (
-                      <a href={r.bukti_transfer_url} target="_blank" rel="noreferrer" className="text-primary underline">Lihat</a>
-                    ) : "—"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <LaporanFormDialog guru={guru} referensi={referensi} item={r} onSaved={() => qc.invalidateQueries({ queryKey: ["tpg-lap"] })} />
-                    <Button size="sm" variant="ghost" onClick={() => { if (confirm("Hapus?")) delLap.mutate(r.id); }}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
+        <CardContent>
+          <Select
+            value={guru?.id ?? ""}
+            onValueChange={(v) => setGuruId(v)}
+            disabled={!dash.is_admin}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={dash.is_admin ? "Pilih guru" : "Akun belum terhubung ke data guru"} />
+            </SelectTrigger>
+            <SelectContent>
+              {(dash.is_admin ? guruList : guru ? [guru] : []).map((g: any) => (
+                <SelectItem key={g.id} value={g.id}>
+                  {g.nama} {g.nip ? `(${g.nip})` : ""}
+                </SelectItem>
               ))}
-            </TableBody>
-          </Table>
+            </SelectContent>
+          </Select>
+          {!dash.is_admin && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Terkunci pada akun Anda — laporan hanya bisa diisi untuk data Anda sendiri.
+            </p>
+          )}
         </CardContent>
       </Card>
+
+      {!guru && (
+        <Card>
+          <CardContent className="py-8 text-center text-sm text-muted-foreground">
+            {dash.is_admin
+              ? "Silakan pilih guru di atas untuk melihat informasi TPG."
+              : "Akun Anda belum terhubung dengan data guru (NIP). Hubungi admin untuk menghubungkannya."}
+          </CardContent>
+        </Card>
+      )}
+
+      {guru && ref && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Informasi TPG – {guru.nama}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <InfoItem label="Nama" value={guru.nama} />
+              <InfoItem label="Pangkat/Golongan" value={ref.pangkat_golongan ?? "—"} />
+              <div>
+                <div className="text-xs text-muted-foreground">Gaji Pokok Efektif (saat ini)</div>
+                <div className="text-lg font-bold text-primary">{fmtRp(ref.gaji_efektif)}</div>
+                <div className="text-xs text-muted-foreground">Awal: {fmtRp(ref.gaji_pokok)}</div>
+              </div>
+              <InfoItem label="Besaran Pajak" value={`${ref.besaran_pajak ?? 0}%`} />
+              <InfoItem label="BPJS" value={`${ref.besaran_bpjs ?? 0}%`} />
+            </div>
+            {perkiraanNow != null && (
+              <div className="space-y-1 rounded-lg bg-muted/50 p-4">
+                <div className="text-xs text-muted-foreground">Perkiraan Nominal Diterima (saat ini)</div>
+                <div className="text-2xl font-bold">{fmtRp(perkiraanNow)}</div>
+                <div className="text-xs text-muted-foreground">
+                  = {fmtRp(ref.gaji_efektif)} - Pajak ({ref.besaran_pajak ?? 0}%) - BPJS ({ref.besaran_bpjs ?? 0}%)
+                </div>
+                {(ref.kenaikan?.length ?? 0) > 0 && (
+                  <div className="flex items-center gap-1 text-xs text-primary">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Sudah memperhitungkan kenaikan gaji berkala terbaru
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {guru && !ref && (
+        <Card>
+          <CardContent className="py-6 text-center text-sm text-muted-foreground">
+            Data referensi TPG untuk guru ini belum diatur. Hubungi admin TPG.
+          </CardContent>
+        </Card>
+      )}
+
+      {guru && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Riwayat Laporan TPG</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Periode</TableHead>
+                  <TableHead>Nominal Diterima</TableHead>
+                  <TableHead>Perkiraan</TableHead>
+                  <TableHead>Keterangan</TableHead>
+                  <TableHead>Bukti</TableHead>
+                  <TableHead className="text-right">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {laporan.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                      Belum ada laporan
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  laporan.map((r: any) => (
+                    <TableRow key={r.id}>
+                      <TableCell>
+                        {BULAN_FULL[r.bulan - 1]} {r.tahun}
+                      </TableCell>
+                      <TableCell>{fmtRp(r.nominal_diterima)}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {r.perkiraan != null ? fmtRp(r.perkiraan) : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <KeteranganBadge nominal={Number(r.nominal_diterima ?? 0)} perkiraan={r.perkiraan} />
+                      </TableCell>
+                      <TableCell>
+                        {r.bukti_transfer_url ? (
+                          <Button size="sm" variant="ghost" onClick={() => viewBukti(r.bukti_transfer_url)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <LaporanFormDialog guruId={guru.id} referensi={ref} item={r} onSaved={onSaved} />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            if (confirm("Hapus laporan ini?")) del.mutate(r.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      <Dialog open={!!buktiUrl} onOpenChange={(o) => !o && setBuktiUrl(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Bukti Transfer</DialogTitle>
+          </DialogHeader>
+          {buktiUrl && (
+            <img src={buktiUrl} alt="Bukti transfer TPG" className="w-full rounded-md border object-contain" />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

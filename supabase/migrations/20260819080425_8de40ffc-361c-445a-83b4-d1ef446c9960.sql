@@ -1,0 +1,1 @@
+revoke execute on function public.owns_guru(uuid, uuid) from anon;

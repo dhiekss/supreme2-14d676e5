@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { resolveGajiEfektif, sortKenaikan, type KenaikanGajiRow } from "@/lib/tpg-gaji";
+import { hitungPerkiraanTpg, resolveGajiEfektif, sortKenaikan, type KenaikanGajiRow } from "@/lib/tpg-gaji";
 import { todayWIB } from "@/lib/wib";
 
 export const listGuru = createServerFn({ method: "GET" })
@@ -191,8 +191,23 @@ export const upsertLaporan = createServerFn({ method: "POST" })
     }).parse,
   )
   .handler(async ({ context, data }) => {
+    // Non-admin hanya boleh melaporkan untuk dirinya sendiri (guru yang terhubung via NIP profil).
+    const { data: roleRows } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    const roles = (roleRows ?? []).map((r: any) => r.role);
+    const isAdmin = roles.includes("admin") || roles.includes("superadmin");
+    let guruId = data.guru_id;
+    if (!isAdmin) {
+      const { data: prof } = await context.supabase.from("profiles").select("nip").eq("id", context.userId).maybeSingle();
+      let ownId: string | null = null;
+      if (prof?.nip) {
+        const { data: g } = await context.supabase.from("guru").select("id").eq("nip", prof.nip).maybeSingle();
+        ownId = g?.id ?? null;
+      }
+      if (!ownId) throw new Error("Akun Anda belum terhubung dengan data guru. Hubungi admin.");
+      guruId = ownId;
+    }
     const payload: any = {
-      guru_id: data.guru_id,
+      guru_id: guruId,
       referensi_tpg_id: data.referensi_tpg_id ?? null,
       bulan: data.bulan,
       tahun: data.tahun,
@@ -274,4 +289,99 @@ export const listPeriodeAktif = createServerFn({ method: "GET" })
       .order("bulan", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
+  });
+
+// Dashboard Lapor TPG: data guru + referensi + riwayat laporan untuk satu guru.
+// Non-admin dipaksa ke guru miliknya sendiri (dari NIP profil); admin boleh memilih guru mana pun.
+export const getLaporanTpgDashboard = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ guru_id: z.string().uuid().optional() }).parse)
+  .handler(async ({ context, data }) => {
+    const uid = context.userId;
+    const [{ data: prof }, { data: roleRows }] = await Promise.all([
+      context.supabase.from("profiles").select("nip").eq("id", uid).maybeSingle(),
+      context.supabase.from("user_roles").select("role").eq("user_id", uid),
+    ]);
+    const roles = (roleRows ?? []).map((r: any) => r.role);
+    const isAdmin = roles.includes("admin") || roles.includes("superadmin");
+    let ownGuru: any = null;
+    if (prof?.nip) {
+      const { data: g } = await context.supabase
+        .from("guru")
+        .select("id, nama, nip")
+        .eq("nip", prof.nip)
+        .maybeSingle();
+      ownGuru = g ?? null;
+    }
+    const guruId = isAdmin && data.guru_id ? data.guru_id : (ownGuru?.id ?? null);
+    if (!guruId) return { is_admin: isAdmin, own_guru: ownGuru, guru: null, referensi: null, laporan: [] as any[] };
+
+    const { data: guru } = await context.supabase
+      .from("guru")
+      .select("id, nama, nip")
+      .eq("id", guruId)
+      .maybeSingle();
+
+    const { data: refs } = await context.supabase
+      .from("referensi_tpg")
+      .select("id, guru_id, pangkat_golongan, gaji_pokok, besaran_pajak, besaran_bpjs, updated_at")
+      .eq("guru_id", guruId)
+      .order("updated_at", { ascending: false });
+    const refList = refs ?? [];
+    const refIds = refList.map((r: any) => r.id);
+    const kMap = new Map<string, KenaikanGajiRow[]>();
+    if (refIds.length) {
+      const { data: kn } = await context.supabase
+        .from("referensi_tpg_kenaikan")
+        .select("id, referensi_tpg_id, gaji_pokok, tanggal_berlaku, catatan")
+        .in("referensi_tpg_id", refIds)
+        .order("tanggal_berlaku", { ascending: true });
+      (kn ?? []).forEach((k: any) => {
+        const arr = kMap.get(k.referensi_tpg_id) ?? [];
+        arr.push(k as KenaikanGajiRow);
+        kMap.set(k.referensi_tpg_id, arr);
+      });
+    }
+    const ref = refList[0] ?? null;
+    const today = todayWIB();
+    const referensi = ref
+      ? {
+          ...ref,
+          kenaikan: sortKenaikan(kMap.get(ref.id)),
+          gaji_efektif: resolveGajiEfektif(ref.gaji_pokok, kMap.get(ref.id), today),
+        }
+      : null;
+
+    const { data: laps, error } = await context.supabase
+      .from("laporan_tpg")
+      .select("id, guru_id, referensi_tpg_id, bulan, tahun, nominal_diterima, bukti_transfer_url, created_at")
+      .eq("guru_id", guruId)
+      .order("tahun", { ascending: false })
+      .order("bulan", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    const laporan = (laps ?? []).map((r: any) => {
+      const rRef = refList.find((x: any) => x.id === r.referensi_tpg_id) ?? ref;
+      let perkiraan: number | null = null;
+      if (rRef) {
+        const periode = `${r.tahun}-${String(r.bulan).padStart(2, "0")}-01`;
+        const gaji = resolveGajiEfektif(rRef.gaji_pokok, kMap.get(rRef.id), periode);
+        perkiraan = hitungPerkiraanTpg(gaji, rRef.besaran_pajak, rRef.besaran_bpjs);
+      }
+      return { ...r, perkiraan };
+    });
+
+    return { is_admin: isAdmin, own_guru: ownGuru, guru, referensi, laporan };
+  });
+
+// Signed URL untuk bukti transfer di bucket privat "tpg-bukti".
+export const signTpgBukti = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { path: string }) => d)
+  .handler(async ({ context, data }) => {
+    const { data: signed, error } = await context.supabase.storage
+      .from("tpg-bukti")
+      .createSignedUrl(data.path, 60 * 60);
+    if (error) throw new Error(error.message);
+    return { url: signed?.signedUrl ?? null };
   });

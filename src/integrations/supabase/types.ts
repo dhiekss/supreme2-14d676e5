@@ -2928,6 +2928,10 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_superadmin: { Args: { _user_id: string }; Returns: boolean }
+      owns_guru: {
+        Args: { _guru_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role:
