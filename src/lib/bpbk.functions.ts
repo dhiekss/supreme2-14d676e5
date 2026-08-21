@@ -300,6 +300,7 @@ export const getBpBkData = createServerFn({ method: "POST" })
         rombel_id: st?.rombel_id ?? null,
         rombel_name: rb?.name ?? "—",
         konsentrasi: rb?.konsentrasi_keahlian ?? "—",
+        tingkat: rb?.tingkat ?? "—",
       };
       });
 
@@ -311,7 +312,12 @@ export const getBpBkData = createServerFn({ method: "POST" })
     };
 
     const rombelList = (rombelRows ?? [])
-      .map((r: any) => ({ id: r.id, name: r.name, konsentrasi: r.konsentrasi_keahlian ?? "—" }))
+      .map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        konsentrasi: r.konsentrasi_keahlian ?? "—",
+        tingkat: r.tingkat ?? "—",
+      }))
       .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
 
     return {
