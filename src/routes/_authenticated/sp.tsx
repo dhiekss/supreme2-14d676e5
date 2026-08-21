@@ -247,6 +247,8 @@ function BpBkPage() {
     const q = search.trim().toLowerCase();
     return rows.filter((r) => {
       if (rombelFilter !== "all" && r.rombel_id !== rombelFilter) return false;
+      if (tingkatFilter !== "all" && r.tingkat !== tingkatFilter) return false;
+      if (konsentrasiFilter !== "all" && r.konsentrasi !== konsentrasiFilter) return false;
       if (!q) return true;
       return (
         (r.name ?? r.student_name ?? "").toLowerCase().includes(q) ||
@@ -269,13 +271,13 @@ function BpBkPage() {
     return m;
   }, [tindakanRows]);
 
-  const wali = useMemo(() => filterFn(bp.perluWali ?? []), [bp, search, rombelFilter]);
-  const rek1 = useMemo(() => filterFn(bp.rekomendasi[1]), [bp, search, rombelFilter]);
-  const rek2 = useMemo(() => filterFn(bp.rekomendasi[2]), [bp, search, rombelFilter]);
-  const rek3 = useMemo(() => filterFn(bp.rekomendasi[3]), [bp, search, rombelFilter]);
-  const mur1 = useMemo(() => filterFn(bp.murid[1]), [bp, search, rombelFilter]);
-  const mur2 = useMemo(() => filterFn(bp.murid[2]), [bp, search, rombelFilter]);
-  const mur3 = useMemo(() => filterFn(bp.murid[3]), [bp, search, rombelFilter]);
+  const wali = useMemo(() => filterFn(bp.perluWali ?? []), [bp, search, rombelFilter, tingkatFilter, konsentrasiFilter]);
+  const rek1 = useMemo(() => filterFn(bp.rekomendasi[1]), [bp, search, rombelFilter, tingkatFilter, konsentrasiFilter]);
+  const rek2 = useMemo(() => filterFn(bp.rekomendasi[2]), [bp, search, rombelFilter, tingkatFilter, konsentrasiFilter]);
+  const rek3 = useMemo(() => filterFn(bp.rekomendasi[3]), [bp, search, rombelFilter, tingkatFilter, konsentrasiFilter]);
+  const mur1 = useMemo(() => filterFn(bp.murid[1]), [bp, search, rombelFilter, tingkatFilter, konsentrasiFilter]);
+  const mur2 = useMemo(() => filterFn(bp.murid[2]), [bp, search, rombelFilter, tingkatFilter, konsentrasiFilter]);
+  const mur3 = useMemo(() => filterFn(bp.murid[3]), [bp, search, rombelFilter, tingkatFilter, konsentrasiFilter]);
 
   return (
     <div className="space-y-5">
@@ -310,9 +312,9 @@ function BpBkPage() {
         <StatCard tone="sp3m" icon={<Users className="h-4 w-4" />} label="Murid SP 3" value={bp.counts.murid3} />
       </div>
 
-      {/* Search + rombel filter */}
-      <div className="flex flex-col gap-3 md:flex-row">
-        <div className="relative flex-1">
+      {/* Search + filters */}
+      <div className="flex flex-col gap-3 md:flex-row md:flex-wrap">
+        <div className="relative flex-1 md:min-w-56">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             className="pl-9"
@@ -321,6 +323,32 @@ function BpBkPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        <Select value={tingkatFilter} onValueChange={setTingkatFilter}>
+          <SelectTrigger className="w-full md:w-40">
+            <SelectValue placeholder="Semua Tingkat" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua Tingkat</SelectItem>
+            {tingkatList.map((t) => (
+              <SelectItem key={t} value={t}>
+                Tingkat {t}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={konsentrasiFilter} onValueChange={setKonsentrasiFilter}>
+          <SelectTrigger className="w-full md:w-56">
+            <SelectValue placeholder="Semua Konsentrasi" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua Konsentrasi Keahlian</SelectItem>
+            {konsentrasiList.map((k) => (
+              <SelectItem key={k} value={k}>
+                {k}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={rombelFilter} onValueChange={setRombelFilter}>
           <SelectTrigger className="w-full md:w-56">
             <SelectValue placeholder="Semua Rombel" />
