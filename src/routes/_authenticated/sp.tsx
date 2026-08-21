@@ -216,6 +216,20 @@ function BpBkPage() {
   const [tab, setTab] = useState<"wali" | "rek1" | "murid1" | "rek2" | "murid2" | "rek3" | "murid3">("wali");
   const [search, setSearch] = useState("");
   const [rombelFilter, setRombelFilter] = useState<string>("all");
+  const [tingkatFilter, setTingkatFilter] = useState<string>("all");
+  const [konsentrasiFilter, setKonsentrasiFilter] = useState<string>("all");
+
+  const tingkatList = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of bp.rombelList ?? []) if (r.tingkat && r.tingkat !== "—") set.add(r.tingkat);
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [bp]);
+
+  const konsentrasiList = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of bp.rombelList ?? []) if (r.konsentrasi && r.konsentrasi !== "—") set.add(r.konsentrasi);
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [bp]);
 
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["bpbk"] });
