@@ -104,7 +104,7 @@ export const getBpBkData = createServerFn({ method: "POST" })
     const [allStudents, rombelRows, lateRows, attendDetails, attendRecords, spRows, keluarRows, resignRows] =
       await Promise.all([
         fetchAll<any>(sb.from("students").select("id, name, nis, rombel_id").order("id")),
-        fetchAll<any>(sb.from("rombel").select("id, name, konsentrasi_keahlian, wali_kelas_name").order("id")),
+        fetchAll<any>(sb.from("rombel").select("id, name, konsentrasi_keahlian, wali_kelas_name, tingkat").order("id")),
 
         fetchAll<any>(sb.from("late_records").select("student_id, record_date").order("id")),
         // Only alfa rows are needed — fetching every attendance detail (80k+ rows)
@@ -206,6 +206,7 @@ export const getBpBkData = createServerFn({ method: "POST" })
         rombel_id: s.rombel_id ?? null,
         rombel_name: r?.name ?? "—",
         konsentrasi: r?.konsentrasi_keahlian ?? "—",
+        tingkat: r?.tingkat ?? "—",
         wali_kelas: r?.wali_kelas_name ?? "—",
       };
     };
@@ -299,6 +300,7 @@ export const getBpBkData = createServerFn({ method: "POST" })
         rombel_id: st?.rombel_id ?? null,
         rombel_name: rb?.name ?? "—",
         konsentrasi: rb?.konsentrasi_keahlian ?? "—",
+        tingkat: rb?.tingkat ?? "—",
       };
       });
 
@@ -310,7 +312,12 @@ export const getBpBkData = createServerFn({ method: "POST" })
     };
 
     const rombelList = (rombelRows ?? [])
-      .map((r: any) => ({ id: r.id, name: r.name, konsentrasi: r.konsentrasi_keahlian ?? "—" }))
+      .map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        konsentrasi: r.konsentrasi_keahlian ?? "—",
+        tingkat: r.tingkat ?? "—",
+      }))
       .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
 
     return {
