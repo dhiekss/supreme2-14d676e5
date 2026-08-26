@@ -222,6 +222,10 @@ function Page() {
               <div>
                 <div className="text-xs text-muted-foreground">Jumlah Murid</div>
                 <div className="text-3xl font-bold mt-1">{data.totalSiswa}</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  L: <span className="font-semibold text-foreground">{data.totalL}</span> · P:{" "}
+                  <span className="font-semibold text-foreground">{data.totalP}</span>
+                </div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground mb-2">Rombel</div>
@@ -234,6 +238,35 @@ function Page() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Detail murid per tingkat */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Jumlah Murid per Tingkat</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {data.perTingkat.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Belum ada data.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {data.perTingkat.map((t) => (
+                    <div key={t.tingkat} className="rounded-lg border p-3">
+                      <div className="flex items-baseline justify-between">
+                        <div className="text-sm font-semibold">Tingkat {t.tingkat}</div>
+                        <div className="text-xs text-muted-foreground">{t.rombel} rombel</div>
+                      </div>
+                      <div className="text-2xl font-bold mt-1">{t.total}</div>
+                      <div className="mt-2 flex gap-2">
+                        <Badge variant="secondary">Laki-laki: {t.L}</Badge>
+                        <Badge variant="secondary">Perempuan: {t.P}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
 
           {/* KPI cards (clickable) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">

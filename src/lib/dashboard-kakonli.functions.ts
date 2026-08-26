@@ -115,7 +115,7 @@ export const getKakonliDashboard = createServerFn({ method: "GET" })
     // Students
     const { data: studentsRaw } = await supabase
       .from("students")
-      .select("id, name, nis, rombel_id")
+      .select("id, name, nis, rombel_id, gender")
       .in("rombel_id", rombelIds);
     const students = (studentsRaw ?? []) as any[];
     const studentIds = students.map((s) => s.id);
@@ -265,12 +265,39 @@ export const getKakonliDashboard = createServerFn({ method: "GET" })
       };
     }).sort((a, b) => a.rombel_name.localeCompare(b.rombel_name));
 
+    // Rekap per tingkat + jenis kelamin
+    const tingkatByRombel = new Map(rombels.map((r) => [r.id, (r.tingkat ?? "").trim() || "-"]));
+    const perTingkatMap = new Map<string, { tingkat: string; total: number; L: number; P: number; rombel: number }>();
+    rombels.forEach((r) => {
+      const t = tingkatByRombel.get(r.id) as string;
+      let x = perTingkatMap.get(t);
+      if (!x) { x = { tingkat: t, total: 0, L: 0, P: 0, rombel: 0 }; perTingkatMap.set(t, x); }
+      x.rombel++;
+    });
+    students.forEach((s) => {
+      const t = (tingkatByRombel.get(s.rombel_id) as string) ?? "-";
+      let x = perTingkatMap.get(t);
+      if (!x) { x = { tingkat: t, total: 0, L: 0, P: 0, rombel: 0 }; perTingkatMap.set(t, x); }
+      x.total++;
+      const g = String(s.gender ?? "").toUpperCase();
+      if (g === "L") x.L++;
+      else if (g === "P") x.P++;
+    });
+    const perTingkat = [...perTingkatMap.values()].sort((a, b) =>
+      a.tingkat.localeCompare(b.tingkat, "id", { numeric: true }),
+    );
+    const totalL = students.filter((s) => String(s.gender ?? "").toUpperCase() === "L").length;
+    const totalP = students.filter((s) => String(s.gender ?? "").toUpperCase() === "P").length;
+
     return {
       konsentrasi: data.konsentrasi,
       ...emptySemMeta,
       rombels: rombels.map((r) => ({ id: r.id, name: r.name, tingkat: r.tingkat })),
       totalRombel: rombels.length,
       totalSiswa: students.length,
+      totalL,
+      totalP,
+      perTingkat,
       kehadiran: { H, S, I, A, P, total: totalPresensi, pct: kehadiranPct, list: kehadiranList },
       alfa: { total: A, sakit: S, izin: I, list: alfaList },
       terlambat: { total: terlambatCount, list: terlambatList },
@@ -292,6 +319,9 @@ function emptyResult(
     rombels: [] as { id: string; name: string; tingkat: string | null }[],
     totalRombel: 0,
     totalSiswa: 0,
+    totalL: 0,
+    totalP: 0,
+    perTingkat: [] as { tingkat: string; total: number; L: number; P: number; rombel: number }[],
     kehadiran: { H: 0, S: 0, I: 0, A: 0, P: 0, total: 0, pct: 0, list: [] as any[] },
     alfa: { total: 0, sakit: 0, izin: 0, list: [] as any[] },
     terlambat: { total: 0, list: [] as any[] },
