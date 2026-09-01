@@ -2,6 +2,20 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
+const PAGE = 1000;
+
+async function fetchAllPaged<T>(build: () => any): Promise<T[]> {
+  const out: T[] = [];
+  for (let i = 0; i < 100; i++) {
+    const { data, error } = await build().range(i * PAGE, i * PAGE + PAGE - 1);
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as T[];
+    out.push(...rows);
+    if (rows.length < PAGE) break;
+  }
+  return out;
+}
+
 export const listKeterlambatan = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
@@ -12,29 +26,45 @@ export const listKeterlambatan = createServerFn({ method: "GET" })
     }).parse,
   )
   .handler(async ({ context, data }) => {
-    let q = context.supabase
-      .from("late_records")
-      .select("id, student_id, rombel_id, record_date, recorded_at, created_at, recorded_by")
-      .order("record_date", { ascending: false })
-      .order("recorded_at", { ascending: false })
-      .limit(5000);
-    if (data.from) q = q.gte("record_date", data.from);
-    if (data.to) q = q.lte("record_date", data.to);
-    if (data.rombelId) q = q.eq("rombel_id", data.rombelId);
-    const { data: rows, error } = await q;
-    if (error) throw new Error(error.message);
+    const rows = await fetchAllPaged<any>(() => {
+      let q = context.supabase
+        .from("late_records")
+        .select("id, student_id, rombel_id, record_date, recorded_at, created_at, recorded_by")
+        .order("record_date", { ascending: false })
+        .order("recorded_at", { ascending: false })
+        .order("id", { ascending: false });
+      if (data.from) q = q.gte("record_date", data.from);
+      if (data.to) q = q.lte("record_date", data.to);
+      if (data.rombelId) q = q.eq("rombel_id", data.rombelId);
+      return q;
+    });
+
 
     const sids = [...new Set((rows ?? []).map((r) => r.student_id).filter(Boolean) as string[])];
     const rids = [...new Set((rows ?? []).map((r) => r.rombel_id).filter(Boolean) as string[])];
     const uids = [...new Set((rows ?? []).map((r) => r.recorded_by).filter(Boolean) as string[])];
+    const inChunks = async (table: string, cols: string, ids: string[]) => {
+      const out: any[] = [];
+      for (let i = 0; i < ids.length; i += 300) {
+        const { data: d, error } = await context.supabase
+          .from(table as any)
+          .select(cols)
+          .in("id", ids.slice(i, i + 300));
+        if (error) throw new Error(error.message);
+        out.push(...((d ?? []) as any[]));
+      }
+      return out;
+    };
     const [students, rombel, profiles] = await Promise.all([
-      sids.length ? context.supabase.from("students").select("id, name, nis").in("id", sids) : Promise.resolve({ data: [] }),
-      rids.length ? context.supabase.from("rombel").select("id, name, konsentrasi_keahlian").in("id", rids) : Promise.resolve({ data: [] }),
-      uids.length ? context.supabase.from("profiles").select("id, full_name").in("id", uids) : Promise.resolve({ data: [] }),
+      inChunks("students", "id, name, nis", sids),
+      inChunks("rombel", "id, name, konsentrasi_keahlian", rids),
+      inChunks("profiles", "id, full_name", uids),
     ]);
-    const sMap = new Map((students.data ?? []).map((x: any) => [x.id, x]));
-    const rMap = new Map((rombel.data ?? []).map((x: any) => [x.id, x]));
-    const pMap = new Map((profiles.data ?? []).map((x: any) => [x.id, x.full_name]));
+
+    const sMap = new Map(students.map((x: any) => [x.id, x]));
+    const rMap = new Map(rombel.map((x: any) => [x.id, x]));
+    const pMap = new Map(profiles.map((x: any) => [x.id, x.full_name]));
+
 
     return (rows ?? []).map((r) => ({
       ...r,
@@ -51,10 +81,11 @@ export const listKeterlambatan = createServerFn({ method: "GET" })
 export const listRombelDirectory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const [{ data: rombel }, { data: students }] = await Promise.all([
-      context.supabase.from("rombel").select("id, name, konsentrasi_keahlian"),
-      context.supabase.from("students").select("id, rombel_id"),
+    const [rombel, students] = await Promise.all([
+      fetchAllPaged<any>(() => context.supabase.from("rombel").select("id, name, konsentrasi_keahlian").order("id")),
+      fetchAllPaged<any>(() => context.supabase.from("students").select("id, rombel_id").order("id")),
     ]);
+
     const countByRombel = new Map<string, number>();
     for (const s of students ?? []) {
       if (!s.rombel_id) continue;
