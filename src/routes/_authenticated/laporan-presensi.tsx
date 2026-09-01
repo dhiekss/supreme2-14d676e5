@@ -549,6 +549,30 @@ function AlfaTopCard({ rows, loaded }: { rows: any[]; loaded: boolean }) {
             )}
           </TableBody>
         </Table>
+        {filtered.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>Tampilkan</span>
+              <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+                <SelectTrigger className="h-8 w-[80px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                  <SelectItem value="0">Semua</SelectItem>
+                </SelectContent>
+              </Select>
+              <span>dari {filtered.length} murid</span>
+            </div>
+            {pageSize !== 0 && (
+              <div className="flex items-center gap-2 text-xs">
+                <Button variant="outline" size="sm" disabled={curPage <= 1} onClick={() => setPage(curPage - 1)}>‹</Button>
+                <span className="text-muted-foreground">Halaman {curPage} dari {totalPages}</span>
+                <Button variant="outline" size="sm" disabled={curPage >= totalPages} onClick={() => setPage(curPage + 1)}>›</Button>
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
