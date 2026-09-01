@@ -400,6 +400,36 @@ function LaporanKeterlambatanPage() {
           className="bg-gradient-to-br from-violet-500 to-purple-600" />
       </div>
 
+      {/* Daily trend chart */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-blue-500" /> Tren Keterlambatan Harian
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">{rangeLabel}</p>
+        </CardHeader>
+        <CardContent>
+          {trendData.every((d) => d.jumlah === 0) ? (
+            <div className="text-center text-sm text-muted-foreground py-10">Belum ada data keterlambatan pada rentang ini.</div>
+          ) : (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trendData} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="label" tick={{ fontSize: 11 }} minTickGap={30} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={36} />
+                  <Tooltip
+                    formatter={(v: any) => [`${v} murid`, "Terlambat"]}
+                    labelFormatter={(l: any) => l}
+                  />
+                  <Line type="monotone" dataKey="jumlah" stroke="#3b82f6" strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} name="Terlambat" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Rankings */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         <RankingCard title="Ranking Konsentrasi Keahlian" icon={<Building2 className="h-4 w-4 text-blue-500" />}
