@@ -61,9 +61,10 @@ export const listKeterlambatan = createServerFn({ method: "GET" })
       inChunks("profiles", "id, full_name", uids),
     ]);
 
-    const sMap = new Map((students.data ?? []).map((x: any) => [x.id, x]));
-    const rMap = new Map((rombel.data ?? []).map((x: any) => [x.id, x]));
-    const pMap = new Map((profiles.data ?? []).map((x: any) => [x.id, x.full_name]));
+    const sMap = new Map(students.map((x: any) => [x.id, x]));
+    const rMap = new Map(rombel.map((x: any) => [x.id, x]));
+    const pMap = new Map(profiles.map((x: any) => [x.id, x.full_name]));
+
 
     return (rows ?? []).map((r) => ({
       ...r,
