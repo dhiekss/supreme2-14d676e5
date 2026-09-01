@@ -376,6 +376,8 @@ export const rombelBelumInputRange = createServerFn({ method: "GET" })
     const start = new Date(`${data.from}T00:00:00Z`);
     const end = new Date(`${data.to}T00:00:00Z`);
     for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+      const dow = d.getUTCDay();
+      if (dow === 0 || dow === 6) continue; // Lewati Minggu & Sabtu
       dates.push(d.toISOString().slice(0, 10));
     }
     const rows: {
