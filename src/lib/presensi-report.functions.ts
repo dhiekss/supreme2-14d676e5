@@ -199,20 +199,20 @@ export const presensiDashboard = createServerFn({ method: "GET" })
         return { id: sid, nis: s.nis, name: s.name, rombel: r?.name ?? "-", tingkat: r?.tingkat ?? "-", count };
       })
       .filter(Boolean)
-      .sort((a: any, b: any) => b.count - a.count)
-      .slice(0, 60) as any[];
+      .sort((a: any, b: any) => b.count - a.count) as any[];
 
-    // SP status + tindakan wali kelas (Manajemen BP/BK)
+    // SP status + tindakan wali kelas (Manajemen BP/BK) — chunked to avoid IN-limit
     const topIds = alfaTopBase.map((s: any) => s.id);
     let spRows: any[] = [];
     let waliRows: any[] = [];
-    if (topIds.length) {
+    for (let i = 0; i < topIds.length; i += 200) {
+      const chunk = topIds.slice(i, i + 200);
       const [spRes, waliRes] = await Promise.all([
-        supabase.from("sp_records").select("student_id, sp_level, tanggal_rekaman").in("student_id", topIds),
-        supabase.from("wali_tindakan").select("student_id, tanggal").in("student_id", topIds),
+        supabase.from("sp_records").select("student_id, sp_level, tanggal_rekaman").in("student_id", chunk),
+        supabase.from("wali_tindakan").select("student_id, tanggal").in("student_id", chunk),
       ]);
-      spRows = (spRes as any).data ?? [];
-      waliRows = (waliRes as any).data ?? [];
+      spRows = spRows.concat((spRes as any).data ?? []);
+      waliRows = waliRows.concat((waliRes as any).data ?? []);
     }
     const spByStudent = new Map<string, { level: number; date: string | null }>();
     for (const r of spRows) {

@@ -471,14 +471,20 @@ function LaporanPresensi() {
 
 function AlfaTopCard({ rows, loaded }: { rows: any[]; loaded: boolean }) {
   const [tingkat, setTingkat] = useState<string>("__all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10); // 0 = all
   const tingkatList = useMemo(
     () => [...new Set(rows.map((r) => r.tingkat).filter((t) => t && t !== "-"))].sort() as string[],
     [rows],
   );
   const filtered = useMemo(
-    () => (tingkat === "__all" ? rows : rows.filter((r) => String(r.tingkat) === tingkat)).slice(0, 15),
+    () => (tingkat === "__all" ? rows : rows.filter((r) => String(r.tingkat) === tingkat)),
     [rows, tingkat],
   );
+  const totalPages = pageSize === 0 ? 1 : Math.max(1, Math.ceil(filtered.length / pageSize));
+  const curPage = Math.min(page, totalPages);
+  const start = pageSize === 0 ? 0 : (curPage - 1) * pageSize;
+  const pageRows = pageSize === 0 ? filtered : filtered.slice(start, start + pageSize);
   return (
     <Card>
       <CardHeader>
@@ -487,11 +493,11 @@ function AlfaTopCard({ rows, loaded }: { rows: any[]; loaded: boolean }) {
             <CardTitle className="text-base flex items-center gap-2">
               <XCircle className="h-4 w-4 text-rose-500" /> Murid dengan Alfa Terbanyak
             </CardTitle>
-            <p className="text-xs text-muted-foreground">15 murid dengan jumlah alfa terbanyak pada rentang tanggal.</p>
+            <p className="text-xs text-muted-foreground">{filtered.length} murid dengan jumlah alfa terbanyak pada rentang tanggal.</p>
           </div>
           <div className="flex items-center gap-2">
             <Label className="text-xs text-muted-foreground">Tingkat</Label>
-            <Select value={tingkat} onValueChange={setTingkat}>
+            <Select value={tingkat} onValueChange={(v) => { setTingkat(v); setPage(1); }}>
               <SelectTrigger className="w-[140px]"><SelectValue placeholder="Semua" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all">Semua Tingkat</SelectItem>
@@ -516,9 +522,9 @@ function AlfaTopCard({ rows, loaded }: { rows: any[]; loaded: boolean }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((s: any, i: number) => (
+            {pageRows.map((s: any, i: number) => (
               <TableRow key={s.id}>
-                <TableCell>{i + 1}</TableCell>
+                <TableCell>{start + i + 1}</TableCell>
                 <TableCell className="font-medium">{s.name}</TableCell>
                 <TableCell className="font-mono text-xs">{s.nis ?? "-"}</TableCell>
                 <TableCell>{s.rombel}</TableCell>
@@ -543,6 +549,30 @@ function AlfaTopCard({ rows, loaded }: { rows: any[]; loaded: boolean }) {
             )}
           </TableBody>
         </Table>
+        {filtered.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>Tampilkan</span>
+              <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+                <SelectTrigger className="h-8 w-[80px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                  <SelectItem value="0">Semua</SelectItem>
+                </SelectContent>
+              </Select>
+              <span>dari {filtered.length} murid</span>
+            </div>
+            {pageSize !== 0 && (
+              <div className="flex items-center gap-2 text-xs">
+                <Button variant="outline" size="sm" disabled={curPage <= 1} onClick={() => setPage(curPage - 1)}>‹</Button>
+                <span className="text-muted-foreground">Halaman {curPage} dari {totalPages}</span>
+                <Button variant="outline" size="sm" disabled={curPage >= totalPages} onClick={() => setPage(curPage + 1)}>›</Button>
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
