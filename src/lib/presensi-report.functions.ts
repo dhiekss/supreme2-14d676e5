@@ -335,6 +335,73 @@ export const rombelBelumInputByDate = createServerFn({ method: "GET" })
     return { rows, tingkatList };
   });
 
+export const rombelBelumInputRange = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      from: z.string(),
+      to: z.string(),
+      tingkat: z.array(z.string()).optional().nullable(),
+      konsentrasi: z.array(z.string()).optional().nullable(),
+    }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const allowed = await getAllowedRombelIds(supabase, context.userId);
+    if (allowed !== null && allowed.length === 0) return { rows: [] as any[] };
+    const [allRombel, allStudents, records] = await Promise.all([
+      fetchAllPaged((f, t) => supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian, wali_kelas_name").range(f, t)),
+      fetchAllPaged((f, t) => supabase.from("students").select("id, rombel_id").range(f, t)),
+      fetchAllPaged((f, t) =>
+        supabase.from("attendance_records").select("rombel_id, date").gte("date", data.from).lte("date", data.to).range(f, t),
+      ),
+    ]);
+    const scoped = allowed === null ? allRombel : allRombel.filter((r: any) => allowed.includes(r.id));
+    const tSet = new Set((data.tingkat ?? []).map(String));
+    const kSet = new Set((data.konsentrasi ?? []).map(String));
+    const filtered = scoped.filter((r: any) =>
+      (tSet.size === 0 || tSet.has(String(r.tingkat))) &&
+      (kSet.size === 0 || kSet.has(String(r.konsentrasi_keahlian))),
+    );
+    const countByRombel = new Map<string, number>();
+    for (const s of allStudents) {
+      if (!s.rombel_id) continue;
+      countByRombel.set(s.rombel_id, (countByRombel.get(s.rombel_id) ?? 0) + 1);
+    }
+    const hasRec = new Set(records.map((r: any) => `${r.date}|${r.rombel_id}`));
+    // build date list
+    const dates: string[] = [];
+    const start = new Date(`${data.from}T00:00:00Z`);
+    const end = new Date(`${data.to}T00:00:00Z`);
+    for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+      dates.push(d.toISOString().slice(0, 10));
+    }
+    const rows: {
+      tanggal: string; hari: string; name: string; tingkat: string | null;
+      konsentrasi: string | null; walikelas: string; jumlahMurid: number;
+    }[] = [];
+    const hariNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    for (const tgl of dates) {
+      const dow = new Date(`${tgl}T00:00:00Z`).getUTCDay();
+      for (const r of filtered) {
+        if (hasRec.has(`${tgl}|${r.id}`)) continue;
+        rows.push({
+          tanggal: tgl,
+          hari: hariNames[dow]!,
+          name: r.name,
+          tingkat: r.tingkat,
+          konsentrasi: r.konsentrasi_keahlian,
+          walikelas: r.wali_kelas_name ?? "-",
+          jumlahMurid: countByRombel.get(r.id) ?? 0,
+        });
+      }
+    }
+    rows.sort((a, b) => a.tanggal.localeCompare(b.tanggal) || String(a.name).localeCompare(String(b.name)));
+    return { rows };
+  });
+
+
+
 export const attendanceDetailList = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
