@@ -18,6 +18,7 @@ import {
 import {
   presensiDashboard,
   rombelBelumInputByDate,
+  rombelBelumInputRange,
   attendanceDetailList,
   attendanceDetailView,
   deleteAttendanceRecord,
@@ -703,6 +704,7 @@ function RombelBelumInputCard() {
             <p className="text-xs text-muted-foreground">Daftar rombel yang belum menginput presensi pada tanggal yang dipilih</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <UnduhBelumInputDialog tingkatList={data?.tingkatList ?? []} konsentrasiList={data?.konsentrasiList ?? []} />
             <div className="flex items-center gap-2">
               <Label className="text-xs">Tanggal:</Label>
               <Input type="date" value={date} onChange={(e) => { setDate(e.target.value); setPage(1); }} className="h-9 w-[160px]" />
