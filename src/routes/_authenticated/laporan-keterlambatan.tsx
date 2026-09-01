@@ -38,6 +38,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+} from "recharts";
 
 export const Route = createFileRoute("/_authenticated/laporan-keterlambatan")({
   head: () => ({ meta: [{ title: "Laporan Keterlambatan — SUPREME XPOES" }] }),
