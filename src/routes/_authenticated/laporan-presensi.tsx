@@ -493,11 +493,11 @@ function AlfaTopCard({ rows, loaded }: { rows: any[]; loaded: boolean }) {
             <CardTitle className="text-base flex items-center gap-2">
               <XCircle className="h-4 w-4 text-rose-500" /> Murid dengan Alfa Terbanyak
             </CardTitle>
-            <p className="text-xs text-muted-foreground">15 murid dengan jumlah alfa terbanyak pada rentang tanggal.</p>
+            <p className="text-xs text-muted-foreground">{filtered.length} murid dengan jumlah alfa terbanyak pada rentang tanggal.</p>
           </div>
           <div className="flex items-center gap-2">
             <Label className="text-xs text-muted-foreground">Tingkat</Label>
-            <Select value={tingkat} onValueChange={setTingkat}>
+            <Select value={tingkat} onValueChange={(v) => { setTingkat(v); setPage(1); }}>
               <SelectTrigger className="w-[140px]"><SelectValue placeholder="Semua" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all">Semua Tingkat</SelectItem>
@@ -522,9 +522,9 @@ function AlfaTopCard({ rows, loaded }: { rows: any[]; loaded: boolean }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((s: any, i: number) => (
+            {pageRows.map((s: any, i: number) => (
               <TableRow key={s.id}>
-                <TableCell>{i + 1}</TableCell>
+                <TableCell>{start + i + 1}</TableCell>
                 <TableCell className="font-medium">{s.name}</TableCell>
                 <TableCell className="font-mono text-xs">{s.nis ?? "-"}</TableCell>
                 <TableCell>{s.rombel}</TableCell>
