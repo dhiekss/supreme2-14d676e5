@@ -145,6 +145,9 @@ function Page() {
       if (key === "tanggal_mulai") {
         av = av ? new Date(av).getTime() : 0;
         bv = bv ? new Date(bv).getTime() : 0;
+      } else if (key === "peserta") {
+        av = String((a.peserta ?? [])[0]?.nama_peserta ?? "").toLowerCase();
+        bv = String((b.peserta ?? [])[0]?.nama_peserta ?? "").toLowerCase();
       } else {
         av = String(av ?? "").toLowerCase();
         bv = String(bv ?? "").toLowerCase();
