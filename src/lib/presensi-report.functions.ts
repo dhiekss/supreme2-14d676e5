@@ -332,7 +332,9 @@ export const rombelBelumInputByDate = createServerFn({ method: "GET" })
       }))
       .sort((a, b) => String(a.name).localeCompare(String(b.name)));
     const tingkatList = [...new Set(scoped.map((r: any) => r.tingkat).filter(Boolean))].map(String).sort();
-    return { rows, tingkatList };
+    const konsentrasiList = [...new Set(scoped.map((r: any) => r.konsentrasi_keahlian).filter(Boolean))].map(String).sort();
+    return { rows, tingkatList, konsentrasiList };
+
   });
 
 export const rombelBelumInputRange = createServerFn({ method: "GET" })
