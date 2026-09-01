@@ -81,10 +81,11 @@ export const listKeterlambatan = createServerFn({ method: "GET" })
 export const listRombelDirectory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const [{ data: rombel }, { data: students }] = await Promise.all([
-      context.supabase.from("rombel").select("id, name, konsentrasi_keahlian"),
-      context.supabase.from("students").select("id, rombel_id"),
+    const [rombel, students] = await Promise.all([
+      fetchAllPaged<any>(() => context.supabase.from("rombel").select("id, name, konsentrasi_keahlian").order("id")),
+      fetchAllPaged<any>(() => context.supabase.from("students").select("id, rombel_id").order("id")),
     ]);
+
     const countByRombel = new Map<string, number>();
     for (const s of students ?? []) {
       if (!s.rombel_id) continue;
