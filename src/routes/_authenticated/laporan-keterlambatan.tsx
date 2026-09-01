@@ -38,6 +38,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+} from "recharts";
 
 export const Route = createFileRoute("/_authenticated/laporan-keterlambatan")({
   head: () => ({ meta: [{ title: "Laporan Keterlambatan — SUPREME XPOES" }] }),
@@ -138,6 +141,23 @@ function LaporanKeterlambatanPage() {
     }
     return { total: rows.length, murid: byStudent.size, hariIni, topName, topCount };
   }, [rows, todayISO]);
+
+  // Daily trend data (chronological, every day in range)
+  const trendData = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of rows) counts.set(r.record_date, (counts.get(r.record_date) ?? 0) + 1);
+    const start = range?.from ? new Date(range.from) : null;
+    const end = range?.to ? new Date(range.to) : (range?.from ? new Date(range.from) : null);
+    if (!start || !end) return [] as { date: string; label: string; jumlah: number }[];
+    const out: { date: string; label: string; jumlah: number }[] = [];
+    const d = new Date(start);
+    while (d <= end) {
+      const iso = toISO(d);
+      out.push({ date: iso, label: `${d.getDate()} ${BULAN_SHORT[d.getMonth()]}`, jumlah: counts.get(iso) ?? 0 });
+      d.setDate(d.getDate() + 1);
+    }
+    return out;
+  }, [rows, range?.from, range?.to]);
 
   // Rankings — % = late-students / total-students
   const rankKonsentrasi = useMemo(() => {
@@ -379,6 +399,36 @@ function LaporanKeterlambatanPage() {
           icon={<TrendingUp className="h-8 w-8" />}
           className="bg-gradient-to-br from-violet-500 to-purple-600" />
       </div>
+
+      {/* Daily trend chart */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-blue-500" /> Tren Keterlambatan Harian
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">{rangeLabel}</p>
+        </CardHeader>
+        <CardContent>
+          {trendData.every((d) => d.jumlah === 0) ? (
+            <div className="text-center text-sm text-muted-foreground py-10">Belum ada data keterlambatan pada rentang ini.</div>
+          ) : (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trendData} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="label" tick={{ fontSize: 11 }} minTickGap={30} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={36} />
+                  <Tooltip
+                    formatter={(v: any) => [`${v} murid`, "Terlambat"]}
+                    labelFormatter={(l: any) => l}
+                  />
+                  <Line type="monotone" dataKey="jumlah" stroke="#3b82f6" strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} name="Terlambat" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Rankings */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
