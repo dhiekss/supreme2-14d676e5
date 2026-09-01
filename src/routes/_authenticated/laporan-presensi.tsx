@@ -471,14 +471,20 @@ function LaporanPresensi() {
 
 function AlfaTopCard({ rows, loaded }: { rows: any[]; loaded: boolean }) {
   const [tingkat, setTingkat] = useState<string>("__all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10); // 0 = all
   const tingkatList = useMemo(
     () => [...new Set(rows.map((r) => r.tingkat).filter((t) => t && t !== "-"))].sort() as string[],
     [rows],
   );
   const filtered = useMemo(
-    () => (tingkat === "__all" ? rows : rows.filter((r) => String(r.tingkat) === tingkat)).slice(0, 15),
+    () => (tingkat === "__all" ? rows : rows.filter((r) => String(r.tingkat) === tingkat)),
     [rows, tingkat],
   );
+  const totalPages = pageSize === 0 ? 1 : Math.max(1, Math.ceil(filtered.length / pageSize));
+  const curPage = Math.min(page, totalPages);
+  const start = pageSize === 0 ? 0 : (curPage - 1) * pageSize;
+  const pageRows = pageSize === 0 ? filtered : filtered.slice(start, start + pageSize);
   return (
     <Card>
       <CardHeader>
