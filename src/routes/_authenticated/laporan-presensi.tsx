@@ -18,6 +18,7 @@ import {
 import {
   presensiDashboard,
   rombelBelumInputByDate,
+  rombelBelumInputRange,
   attendanceDetailList,
   attendanceDetailView,
   deleteAttendanceRecord,
@@ -580,6 +581,100 @@ function AlfaTopCard({ rows, loaded }: { rows: any[]; loaded: boolean }) {
 
 
 
+function UnduhBelumInputDialog({ tingkatList, konsentrasiList }: { tingkatList: string[]; konsentrasiList: string[] }) {
+  const [open, setOpen] = useState(false);
+  const today = todayWIB();
+  const [from, setFrom] = useState(today);
+  const [to, setTo] = useState(today);
+  const [tingkat, setTingkat] = useState<string[]>([]);
+  const [konsentrasi, setKonsentrasi] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const fetchRange = useServerFn(rombelBelumInputRange);
+
+  const toggle = (arr: string[], set: (v: string[]) => void, v: string) =>
+    set(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
+
+  const handleDownload = async () => {
+    if (from > to) { toast.error("Rentang tanggal tidak valid"); return; }
+    setLoading(true);
+    try {
+      const res = await fetchRange({ data: { from, to, tingkat, konsentrasi } });
+      const rows = res?.rows ?? [];
+      if (rows.length === 0) { toast.info("Tidak ada rombel yang belum input pada rentang ini"); return; }
+      const sheet = rows.map((r: any, i: number) => ({
+        No: i + 1,
+        Tanggal: r.tanggal,
+        Hari: r.hari,
+        "Nama Rombel": r.name,
+        Tingkat: r.tingkat ?? "-",
+        "Konsentrasi Keahlian": r.konsentrasi ?? "-",
+        "Wali Kelas": r.walikelas,
+        "Jumlah Murid": r.jumlahMurid,
+      }));
+      const ws = XLSX.utils.json_to_sheet(sheet);
+      ws["!cols"] = [{ wch: 5 }, { wch: 12 }, { wch: 10 }, { wch: 20 }, { wch: 9 }, { wch: 26 }, { wch: 26 }, { wch: 13 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Belum Input Presensi");
+      XLSX.writeFile(wb, `Rombel-Belum-Input-Presensi_${from}_sd_${to}.xlsx`);
+      toast.success(`Berhasil mengunduh ${rows.length} baris`);
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Gagal mengunduh laporan");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="h-9 gap-2"><FileDown className="h-4 w-4" /> Unduh Report</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Unduh Report Rombel Belum Input Presensi</DialogTitle>
+          <DialogDescription>Pilih rentang tanggal, konsentrasi keahlian, dan tingkat.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Dari Tanggal</Label>
+              <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Sampai Tanggal</Label>
+              <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">Tingkat {tingkat.length === 0 && <span className="text-muted-foreground">(kosong = semua)</span>}</Label>
+            <div className="flex flex-wrap gap-2">
+              {tingkatList.map((t) => (
+                <Button key={t} type="button" size="sm" variant={tingkat.includes(t) ? "default" : "outline"}
+                  onClick={() => toggle(tingkat, setTingkat, t)}>{t}</Button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">Konsentrasi Keahlian {konsentrasi.length === 0 && <span className="text-muted-foreground">(kosong = semua)</span>}</Label>
+            <div className="flex flex-wrap gap-2">
+              {konsentrasiList.map((k) => (
+                <Button key={k} type="button" size="sm" variant={konsentrasi.includes(k) ? "default" : "outline"}
+                  onClick={() => toggle(konsentrasi, setKonsentrasi, k)}>{k}</Button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button onClick={handleDownload} disabled={loading} className="gap-2">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Unduh Excel
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function RombelBelumInputCard() {
   const today = todayWIB();
   const [date, setDate] = useState(today);
@@ -591,6 +686,7 @@ function RombelBelumInputCard() {
     queryKey: ["rombel-belum-input", date, tingkat],
     queryFn: () => fetchFn({ data: { date, tingkat } }),
   });
+
   const rows = data?.rows ?? [];
   const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   const curPage = Math.min(page, totalPages);
@@ -608,6 +704,7 @@ function RombelBelumInputCard() {
             <p className="text-xs text-muted-foreground">Daftar rombel yang belum menginput presensi pada tanggal yang dipilih</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <UnduhBelumInputDialog tingkatList={data?.tingkatList ?? []} konsentrasiList={data?.konsentrasiList ?? []} />
             <div className="flex items-center gap-2">
               <Label className="text-xs">Tanggal:</Label>
               <Input type="date" value={date} onChange={(e) => { setDate(e.target.value); setPage(1); }} className="h-9 w-[160px]" />
