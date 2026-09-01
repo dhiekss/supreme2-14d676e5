@@ -145,6 +145,9 @@ function Page() {
       if (key === "tanggal_mulai") {
         av = av ? new Date(av).getTime() : 0;
         bv = bv ? new Date(bv).getTime() : 0;
+      } else if (key === "peserta") {
+        av = String((a.peserta ?? [])[0]?.nama_peserta ?? "").toLowerCase();
+        bv = String((b.peserta ?? [])[0]?.nama_peserta ?? "").toLowerCase();
       } else {
         av = String(av ?? "").toLowerCase();
         bv = String(bv ?? "").toLowerCase();
@@ -236,6 +239,7 @@ function Page() {
                 <tr>
                   <SortTh label="No. Surat" field="nomor_surat" sort={sort} setSort={setSort} />
                   <SortTh label="Tujuan" field="tujuan_lokasi" sort={sort} setSort={setSort} />
+                  <SortTh label="Yang Berangkat" field="peserta" sort={sort} setSort={setSort} />
                   <SortTh label="Tanggal" field="tanggal_mulai" sort={sort} setSort={setSort} />
                   <SortTh label="Status" field="status" sort={sort} setSort={setSort} />
                   <th className="text-right p-3 whitespace-nowrap">Aksi</th>
@@ -247,6 +251,9 @@ function Page() {
                     <td className="p-3 font-mono text-xs whitespace-nowrap">{r.nomor_surat ?? "—"}</td>
                     <td className="p-3 max-w-xs">
                       <div className="line-clamp-1">{r.tujuan_lokasi ?? "—"}</div>
+                    </td>
+                    <td className="p-3 max-w-xs">
+                      <div className="line-clamp-1">{(r.peserta ?? [])[0]?.nama_peserta ?? "—"}</div>
                     </td>
                     <td className="p-3 whitespace-nowrap">{fmtRange(r.tanggal_mulai, r.tanggal_selesai)}</td>
                     <td className="p-3">{statusBadge(r.status)}</td>
@@ -302,7 +309,7 @@ function Page() {
                   </tr>
                 ))}
                 {pageRows.length === 0 && (
-                  <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Tidak ada data.</td></tr>
+                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Tidak ada data.</td></tr>
                 )}
               </tbody>
             </table>
