@@ -483,13 +483,19 @@ function LaporanKeterlambatanPage() {
                       Total Terlambat <ArrowUpDown className="h-3 w-3" />
                     </button>
                   </TableHead>
+                  <TableHead>
+                    <button onClick={() => toggleSort("sp")} className="inline-flex items-center gap-1 hover:text-foreground whitespace-nowrap">
+                      Status SP <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap">Tanggal Tindakan/SP</TableHead>
                   <TableHead className="whitespace-nowrap">Penginput Terakhir</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {pageRows.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-10">Tidak ada data</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-10">Tidak ada data</TableCell></TableRow>
                 ) : pageRows.map((s, i) => (
                   <TableRow key={s.student_id}>
                     <TableCell className="text-muted-foreground">{(pageClamped - 1) * pageSize + i + 1}</TableCell>
@@ -499,6 +505,14 @@ function LaporanKeterlambatanPage() {
                     <TableCell>
                       <Badge className="bg-rose-100 text-rose-600 hover:bg-rose-100 rounded-full">{s.count}x</Badge>
                     </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <Badge
+                        variant={s.sp_status.startsWith("SP") ? "destructive" : s.sp_status === "Tindakan Wali Kelas" ? "default" : "secondary"}
+                      >
+                        {s.sp_status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground whitespace-nowrap">{s.sp_date ?? "—"}</TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap">{s.penginput_terakhir}</TableCell>
                     <TableCell className="text-right">
                       <Button size="sm" variant="outline" onClick={() => setDetail(s)}>
