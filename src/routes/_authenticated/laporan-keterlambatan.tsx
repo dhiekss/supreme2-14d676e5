@@ -279,17 +279,19 @@ function LaporanKeterlambatanPage() {
       NIS: s.student_nis,
       Rombel: s.rombel_name,
       "Total Terlambat": s.count,
+      "Status SP": s.sp_status,
+      "Tanggal Tindakan/SP": s.sp_date ?? "-",
       "Penginput Terakhir": s.penginput_terakhir,
     }));
     const ws = XLSX.utils.json_to_sheet(data);
-    ws["!cols"] = [{ wch: 5 }, { wch: 28 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 24 }];
+    ws["!cols"] = [{ wch: 5 }, { wch: 28 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 26 }, { wch: 20 }, { wch: 24 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Laporan");
     XLSX.writeFile(wb, `laporan-keterlambatan_${from}_sd_${to}.xlsx`);
     toast.success("File Excel diunduh");
   };
 
-  const toggleSort = (col: "count" | "name" | "rombel") => {
+  const toggleSort = (col: "count" | "name" | "rombel" | "sp") => {
     if (sortBy === col) setSortDir(sortDir === "desc" ? "asc" : "desc");
     else {
       setSortBy(col);
