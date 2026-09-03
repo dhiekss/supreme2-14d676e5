@@ -209,10 +209,12 @@ function LaporanKeterlambatanPage() {
     rombel_name: string;
     count: number;
     penginput_terakhir: string;
+    sp_status: string;
+    sp_date: string | null;
     dates: { id: string; date: string; time: string; penginput: string }[];
   };
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
-  const [sortBy, setSortBy] = useState<"count" | "name" | "rombel">("count");
+  const [sortBy, setSortBy] = useState<"count" | "name" | "rombel" | "sp">("count");
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
 
@@ -229,6 +231,8 @@ function LaporanKeterlambatanPage() {
           rombel_name: r.rombel_name,
           count: 0,
           penginput_terakhir: r.penginput_name,
+          sp_status: r.sp_status ?? "Perlu Tindakan Wali Kelas",
+          sp_date: r.sp_date ?? null,
           dates: [],
         });
       }
@@ -248,6 +252,7 @@ function LaporanKeterlambatanPage() {
       let cmp = 0;
       if (sortBy === "count") cmp = a.count - b.count;
       else if (sortBy === "name") cmp = a.student_name.localeCompare(b.student_name);
+      else if (sortBy === "sp") cmp = a.sp_status.localeCompare(b.sp_status);
       else cmp = a.rombel_name.localeCompare(b.rombel_name);
       return sortDir === "desc" ? -cmp : cmp;
     });
@@ -274,17 +279,19 @@ function LaporanKeterlambatanPage() {
       NIS: s.student_nis,
       Rombel: s.rombel_name,
       "Total Terlambat": s.count,
+      "Status SP": s.sp_status,
+      "Tanggal Tindakan/SP": s.sp_date ?? "-",
       "Penginput Terakhir": s.penginput_terakhir,
     }));
     const ws = XLSX.utils.json_to_sheet(data);
-    ws["!cols"] = [{ wch: 5 }, { wch: 28 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 24 }];
+    ws["!cols"] = [{ wch: 5 }, { wch: 28 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 26 }, { wch: 20 }, { wch: 24 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Laporan");
     XLSX.writeFile(wb, `laporan-keterlambatan_${from}_sd_${to}.xlsx`);
     toast.success("File Excel diunduh");
   };
 
-  const toggleSort = (col: "count" | "name" | "rombel") => {
+  const toggleSort = (col: "count" | "name" | "rombel" | "sp") => {
     if (sortBy === col) setSortDir(sortDir === "desc" ? "asc" : "desc");
     else {
       setSortBy(col);
@@ -476,13 +483,19 @@ function LaporanKeterlambatanPage() {
                       Total Terlambat <ArrowUpDown className="h-3 w-3" />
                     </button>
                   </TableHead>
+                  <TableHead>
+                    <button onClick={() => toggleSort("sp")} className="inline-flex items-center gap-1 hover:text-foreground whitespace-nowrap">
+                      Status SP <ArrowUpDown className="h-3 w-3" />
+                    </button>
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap">Tanggal Tindakan/SP</TableHead>
                   <TableHead className="whitespace-nowrap">Penginput Terakhir</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {pageRows.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-10">Tidak ada data</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-10">Tidak ada data</TableCell></TableRow>
                 ) : pageRows.map((s, i) => (
                   <TableRow key={s.student_id}>
                     <TableCell className="text-muted-foreground">{(pageClamped - 1) * pageSize + i + 1}</TableCell>
@@ -492,6 +505,14 @@ function LaporanKeterlambatanPage() {
                     <TableCell>
                       <Badge className="bg-rose-100 text-rose-600 hover:bg-rose-100 rounded-full">{s.count}x</Badge>
                     </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <Badge
+                        variant={s.sp_status.startsWith("SP") ? "destructive" : s.sp_status === "Tindakan Wali Kelas" ? "default" : "secondary"}
+                      >
+                        {s.sp_status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground whitespace-nowrap">{s.sp_date ?? "—"}</TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap">{s.penginput_terakhir}</TableCell>
                     <TableCell className="text-right">
                       <Button size="sm" variant="outline" onClick={() => setDetail(s)}>
