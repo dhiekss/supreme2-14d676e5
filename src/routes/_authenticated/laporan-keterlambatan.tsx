@@ -209,10 +209,12 @@ function LaporanKeterlambatanPage() {
     rombel_name: string;
     count: number;
     penginput_terakhir: string;
+    sp_status: string;
+    sp_date: string | null;
     dates: { id: string; date: string; time: string; penginput: string }[];
   };
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
-  const [sortBy, setSortBy] = useState<"count" | "name" | "rombel">("count");
+  const [sortBy, setSortBy] = useState<"count" | "name" | "rombel" | "sp">("count");
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
 
@@ -229,6 +231,8 @@ function LaporanKeterlambatanPage() {
           rombel_name: r.rombel_name,
           count: 0,
           penginput_terakhir: r.penginput_name,
+          sp_status: r.sp_status ?? "Perlu Tindakan Wali Kelas",
+          sp_date: r.sp_date ?? null,
           dates: [],
         });
       }
@@ -248,6 +252,7 @@ function LaporanKeterlambatanPage() {
       let cmp = 0;
       if (sortBy === "count") cmp = a.count - b.count;
       else if (sortBy === "name") cmp = a.student_name.localeCompare(b.student_name);
+      else if (sortBy === "sp") cmp = a.sp_status.localeCompare(b.sp_status);
       else cmp = a.rombel_name.localeCompare(b.rombel_name);
       return sortDir === "desc" ? -cmp : cmp;
     });
