@@ -61,19 +61,50 @@ export const listKeterlambatan = createServerFn({ method: "GET" })
       inChunks("profiles", "id, full_name", uids),
     ]);
 
+    // Status SP + tindakan wali kelas per murid (chunked agar tidak kena limit IN)
+    let spRows: any[] = [];
+    let waliRows: any[] = [];
+    for (let i = 0; i < sids.length; i += 200) {
+      const chunk = sids.slice(i, i + 200);
+      const [spRes, waliRes] = await Promise.all([
+        context.supabase.from("sp_records").select("student_id, sp_level, tanggal_rekaman").in("student_id", chunk),
+        context.supabase.from("wali_tindakan").select("student_id, tanggal").in("student_id", chunk),
+      ]);
+      spRows = spRows.concat((spRes as any).data ?? []);
+      waliRows = waliRows.concat((waliRes as any).data ?? []);
+    }
+    const spByStudent = new Map<string, { level: number; date: string | null }>();
+    for (const r of spRows) {
+      const lvl = Number(r.sp_level ?? 0);
+      const prev = spByStudent.get(r.student_id);
+      if (!prev || lvl > prev.level) spByStudent.set(r.student_id, { level: lvl, date: r.tanggal_rekaman ?? null });
+    }
+    const waliByStudent = new Map<string, string | null>();
+    for (const r of waliRows) {
+      const prev = waliByStudent.get(r.student_id);
+      if (!prev || String(r.tanggal) > String(prev)) waliByStudent.set(r.student_id, r.tanggal ?? null);
+    }
+
     const sMap = new Map(students.map((x: any) => [x.id, x]));
     const rMap = new Map(rombel.map((x: any) => [x.id, x]));
     const pMap = new Map(profiles.map((x: any) => [x.id, x.full_name]));
 
 
-    return (rows ?? []).map((r) => ({
-      ...r,
-      student_name: r.student_id ? (sMap.get(r.student_id) as any)?.name ?? "—" : "—",
-      student_nis: r.student_id ? (sMap.get(r.student_id) as any)?.nis ?? "—" : "—",
-      rombel_name: r.rombel_id ? (rMap.get(r.rombel_id) as any)?.name ?? "—" : "—",
-      konsentrasi: r.rombel_id ? (rMap.get(r.rombel_id) as any)?.konsentrasi_keahlian ?? "—" : "—",
-      penginput_name: r.recorded_by ? pMap.get(r.recorded_by) ?? "—" : "—",
-    }));
+    return (rows ?? []).map((r) => {
+      const sp = r.student_id ? spByStudent.get(r.student_id) : undefined;
+      const wali = r.student_id ? waliByStudent.get(r.student_id) : undefined;
+      return {
+        ...r,
+        student_name: r.student_id ? (sMap.get(r.student_id) as any)?.name ?? "—" : "—",
+        student_nis: r.student_id ? (sMap.get(r.student_id) as any)?.nis ?? "—" : "—",
+        rombel_name: r.rombel_id ? (rMap.get(r.rombel_id) as any)?.name ?? "—" : "—",
+        konsentrasi: r.rombel_id ? (rMap.get(r.rombel_id) as any)?.konsentrasi_keahlian ?? "—" : "—",
+        penginput_name: r.recorded_by ? pMap.get(r.recorded_by) ?? "—" : "—",
+        sp_level: sp?.level ?? null,
+        sp_status: sp ? `SP ${sp.level}` : wali ? "Tindakan Wali Kelas" : "Perlu Tindakan Wali Kelas",
+        sp_date: sp?.date ?? wali ?? null,
+      };
+    });
   });
 
 // Directory of all rombel with student totals + konsentrasi — used for
