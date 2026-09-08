@@ -206,6 +206,71 @@ export const bulkDeleteJadwal = createServerFn({ method: "POST" })
     return { ok: true, deleted: data.ids.length };
   });
 
+export const copyJadwal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      sourceRombelId: z.string().uuid().optional(),
+      sourceKelompokId: z.string().uuid().optional(),
+      targetRombelIds: z.array(z.string().uuid()).default([]),
+      targetKelompokIds: z.array(z.string().uuid()).default([]),
+      replace: z.boolean().default(true),
+    })
+      .refine((d) => !!d.sourceRombelId !== !!d.sourceKelompokId, {
+        message: "Pilih satu sumber: Rombel atau Kelompok Belajar",
+      })
+      .refine((d) => d.targetRombelIds.length + d.targetKelompokIds.length > 0, {
+        message: "Pilih minimal satu tujuan",
+      }).parse,
+  )
+  .handler(async ({ context, data }) => {
+    let q = context.supabase
+      .from("jadwal_pelajaran")
+      .select("hari, jam_ke, jam_mulai, jam_selesai, mata_pelajaran_id, guru_id");
+    q = data.sourceRombelId
+      ? q.eq("rombel_id", data.sourceRombelId)
+      : q.eq("kelompok_belajar_id", data.sourceKelompokId!);
+    const { data: src, error } = await q;
+    if (error) throw new Error(error.message);
+    if (!src || src.length === 0) throw new Error("Jadwal sumber kosong");
+
+    const targets = [
+      ...data.targetRombelIds
+        .filter((id) => id !== data.sourceRombelId)
+        .map((id) => ({ kind: "rombel" as const, id })),
+      ...data.targetKelompokIds
+        .filter((id) => id !== data.sourceKelompokId)
+        .map((id) => ({ kind: "kelompok" as const, id })),
+    ];
+    if (targets.length === 0) throw new Error("Tujuan tidak boleh sama dengan sumber");
+
+    let inserted = 0;
+    for (const t of targets) {
+      if (data.replace) {
+        const del = context.supabase.from("jadwal_pelajaran").delete();
+        const { error: delErr } = t.kind === "rombel"
+          ? await del.eq("rombel_id", t.id)
+          : await del.eq("kelompok_belajar_id", t.id);
+        if (delErr) throw new Error(delErr.message);
+      }
+      const rows = src.map((r: any) => ({
+        hari: r.hari,
+        jam_ke: r.jam_ke,
+        jam_mulai: r.jam_mulai,
+        jam_selesai: r.jam_selesai,
+        mata_pelajaran_id: r.mata_pelajaran_id,
+        guru_id: r.guru_id,
+        rombel_id: t.kind === "rombel" ? t.id : null,
+        kelompok_belajar_id: t.kind === "kelompok" ? t.id : null,
+        created_by: context.userId,
+      }));
+      const { error: insErr } = await context.supabase.from("jadwal_pelajaran").insert(rows);
+      if (insErr) throw new Error(insErr.message);
+      inserted += rows.length;
+    }
+    return { ok: true, targets: targets.length, inserted };
+  });
+
 export const listAlokasiWaktu = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
