@@ -16,7 +16,7 @@ import {
 } from "@/lib/jadwal.functions";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Eraser, Plus, Pencil, Trash2, X, CheckCircle2, Circle, Check, ChevronsUpDown, Clock } from "lucide-react";
+import { Eraser, Plus, Pencil, Trash2, X, CheckCircle2, Circle, Check, ChevronsUpDown, Clock, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
