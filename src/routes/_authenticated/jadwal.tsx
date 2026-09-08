@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   listJadwal, jadwalOptions, clearJadwal,
   bulkCreateJadwal, bulkUpdateJadwal, bulkDeleteJadwal,
-  listAlokasiWaktu, upsertAlokasiWaktu,
+  listAlokasiWaktu, upsertAlokasiWaktu, copyJadwal,
 } from "@/lib/jadwal.functions";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
