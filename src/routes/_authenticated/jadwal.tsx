@@ -187,6 +187,15 @@ function JadwalPage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <AlokasiWaktuDialog />
+          <SalinJadwalDialog
+            target={target}
+            rombelId={filterRombel}
+            kelompokId={filterKelompok}
+            targetName={activeTargetName ?? undefined}
+            rombelList={opts.rombel ?? []}
+            kelompokList={opts.kelompok ?? []}
+            onDone={invalidate}
+          />
           <ClearJadwalDialog
             target={target}
             rombelId={filterRombel}
