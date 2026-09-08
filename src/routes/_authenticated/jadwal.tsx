@@ -729,3 +729,120 @@ function AlokasiWaktuDialog() {
     </Dialog>
   );
 }
+
+function SalinJadwalDialog({
+  target, rombelId, kelompokId, targetName, rombelList, kelompokList, onDone,
+}: {
+  target: "rombel" | "kelompok";
+  rombelId: string; kelompokId: string; targetName?: string;
+  rombelList: any[]; kelompokList: any[]; onDone: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [replace, setReplace] = useState(true);
+  const [q, setQ] = useState("");
+  const [selR, setSelR] = useState<Set<string>>(new Set());
+  const [selK, setSelK] = useState<Set<string>>(new Set());
+  const copyFn = useServerFn(copyJadwal);
+
+  const sourceId = target === "rombel" ? rombelId : kelompokId;
+
+  const rombelOpts = useMemo(
+    () => (rombelList ?? []).filter((r) => r.id !== (target === "rombel" ? rombelId : "")),
+    [rombelList, rombelId, target],
+  );
+  const kelompokOpts = useMemo(
+    () => (kelompokList ?? []).filter((k) => k.id !== (target === "kelompok" ? kelompokId : "")),
+    [kelompokList, kelompokId, target],
+  );
+  const term = q.trim().toLowerCase();
+  const showR = rombelOpts.filter((r) => !term || String(r.name ?? "").toLowerCase().includes(term));
+  const showK = kelompokOpts.filter((k) => !term || String(k.nama ?? "").toLowerCase().includes(term));
+
+  const toggle = (set: Set<string>, setter: (s: Set<string>) => void, id: string) => {
+    const n = new Set(set);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    setter(n);
+  };
+
+  const run = useMutation({
+    mutationFn: () => copyFn({ data: {
+      sourceRombelId: target === "rombel" ? rombelId : undefined,
+      sourceKelompokId: target === "kelompok" ? kelompokId : undefined,
+      targetRombelIds: Array.from(selR),
+      targetKelompokIds: Array.from(selK),
+      replace,
+    } }),
+    onSuccess: (r: any) => {
+      toast.success(`Jadwal disalin ke ${r.targets} tujuan (${r.inserted} slot)`);
+      setOpen(false); setSelR(new Set()); setSelK(new Set()); onDone();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const total = selR.size + selK.size;
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" disabled={!sourceId}>
+          <Copy className="h-4 w-4 mr-1" /> Salin Jadwal
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Salin Jadwal</DialogTitle>
+          <DialogDescription>
+            Menyalin seluruh jadwal dari <b>{targetName ?? "—"}</b> ke tujuan yang dipilih.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <Input placeholder="Cari rombel / kelompok..." value={q} onChange={(e) => setQ(e.target.value)} />
+
+          {showR.length > 0 && (
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Rombel</Label>
+              <div className="rounded-lg border divide-y max-h-52 overflow-y-auto">
+                {showR.map((r) => (
+                  <label key={r.id} className="flex items-center gap-3 p-2 text-sm cursor-pointer hover:bg-muted/40">
+                    <input type="checkbox" checked={selR.has(r.id)} onChange={() => toggle(selR, setSelR, r.id)} />
+                    <span>{r.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {showK.length > 0 && (
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Kelompok Belajar</Label>
+              <div className="rounded-lg border divide-y max-h-40 overflow-y-auto">
+                {showK.map((k) => (
+                  <label key={k.id} className="flex items-center gap-3 p-2 text-sm cursor-pointer hover:bg-muted/40">
+                    <input type="checkbox" checked={selK.has(k.id)} onChange={() => toggle(selK, setSelK, k.id)} />
+                    <span>{k.nama}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <label className="flex items-start gap-3 rounded-lg border p-3 text-sm cursor-pointer">
+            <input type="checkbox" className="mt-1" checked={replace} onChange={(e) => setReplace(e.target.checked)} />
+            <div>
+              <div className="font-medium">Ganti jadwal tujuan</div>
+              <div className="text-xs text-muted-foreground">Hapus dulu jadwal lama di tujuan sebelum disalin. Jika tidak dicentang, jadwal ditambahkan.</div>
+            </div>
+          </label>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Batal</Button>
+          <Button onClick={() => run.mutate()} disabled={run.isPending || total === 0}>
+            {run.isPending ? "Menyalin..." : `Salin ke ${total} tujuan`}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
