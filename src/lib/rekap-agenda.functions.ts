@@ -256,6 +256,7 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
       perGuru,
       rows: enriched,
       sessions,
+      kehDetail,
       scope: { isPrivileged, restrictedGuruId },
     };
   });
