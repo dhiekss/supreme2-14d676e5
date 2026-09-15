@@ -158,12 +158,20 @@ function RekapAgendaGuruPage() {
         const [rombel, mapel] = key.split("|||");
         list.sort((a: any, b: any) => String(a.tanggal).localeCompare(String(b.tanggal)) || (a.jam_ke ?? 0) - (b.jam_ke ?? 0));
         aoa.push([`Rombel: ${rombel} — Mapel: ${mapel}`]);
-        aoa.push(["Tanggal", "Jam ke", "Status", "TP", "Materi"]);
-        for (const r of list) aoa.push([r.tanggal, r.jam_ke, r.guru_status, r.tp_manual ?? "", r.materi_detail ?? ""]);
+        aoa.push(["Tanggal", "Jam ke", "Status", "TP", "Materi", "Hadir", "Sakit", "Izin", "Dispensasi", "Bolos", "Alfa"]);
+        for (const r of list) {
+          aoa.push([r.tanggal, r.jam_ke, r.guru_status, r.tp_manual ?? "", r.materi_detail ?? "", r.hadir ?? 0, r.sakit ?? 0, r.izin ?? 0, r.dispensasi ?? 0, r.bolos ?? 0, r.alfa ?? 0]);
+          // Detail kehadiran murid yang diinput pada agenda ini
+          const det = ((d as any).kehDetail ?? []).filter((k: any) => k.kbm_agenda_id === r.id);
+          det.sort((a: any, b: any) => String(a.student_nama).localeCompare(String(b.student_nama)));
+          for (const k of det) {
+            aoa.push(["", "", `• ${k.student_nama}${k.student_nis ? ` (${k.student_nis})` : ""}`, statusLabel(k.status)]);
+          }
+        }
         aoa.push([]);
       }
       const wsGuruSheet = XLSX.utils.aoa_to_sheet(aoa);
-      wsGuruSheet["!cols"] = [{ wch: 14 }, { wch: 8 }, { wch: 28 }, { wch: 40 }, { wch: 60 }];
+      wsGuruSheet["!cols"] = [{ wch: 14 }, { wch: 8 }, { wch: 40 }, { wch: 40 }, { wch: 60 }, { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 11 }, { wch: 7 }, { wch: 7 }];
       XLSX.utils.book_append_sheet(wb, wsGuruSheet, sheetName);
     }
     XLSX.writeFile(wb, `rekap-agenda-guru-${from}_${to}.xlsx`);
