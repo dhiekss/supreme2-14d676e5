@@ -94,6 +94,41 @@ function RekapAgendaGuruPage() {
       })),
     );
     XLSX.utils.book_append_sheet(wb, wsAll, "Detail");
+
+    // Lembar per guru: agenda dikelompokkan berdasarkan Rombel lalu Mapel
+    const byGuru = new Map<string, any[]>();
+    for (const r of d.rows as any[]) {
+      const arr = byGuru.get(r.guru_nama) ?? [];
+      arr.push(r);
+      byGuru.set(r.guru_nama, arr);
+    }
+    const usedNames = new Set<string>();
+    const sanitize = (name: string) => name.replace(/[\\/?*\[\]:]/g, "").slice(0, 28) || "Guru";
+    for (const [guruNama, guruRows] of [...byGuru.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+      let sheetName = sanitize(guruNama);
+      let n = 2;
+      while (usedNames.has(sheetName)) sheetName = `${sanitize(guruNama)} (${n++})`;
+      usedNames.add(sheetName);
+      const groups = new Map<string, any[]>();
+      for (const r of guruRows) {
+        const key = `${r.rombel_name}|||${r.mapel_nama}`;
+        const arr = groups.get(key) ?? [];
+        arr.push(r);
+        groups.set(key, arr);
+      }
+      const aoa: any[][] = [[`Rekap Agenda Guru: ${guruNama}`], [`Periode: ${from} s.d. ${to}`], []];
+      for (const [key, list] of [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+        const [rombel, mapel] = key.split("|||");
+        list.sort((a: any, b: any) => String(a.tanggal).localeCompare(String(b.tanggal)) || (a.jam_ke ?? 0) - (b.jam_ke ?? 0));
+        aoa.push([`Rombel: ${rombel} — Mapel: ${mapel}`]);
+        aoa.push(["Tanggal", "Jam ke", "Status", "TP", "Materi"]);
+        for (const r of list) aoa.push([r.tanggal, r.jam_ke, r.guru_status, r.tp_manual ?? "", r.materi_detail ?? ""]);
+        aoa.push([]);
+      }
+      const wsGuruSheet = XLSX.utils.aoa_to_sheet(aoa);
+      wsGuruSheet["!cols"] = [{ wch: 14 }, { wch: 8 }, { wch: 28 }, { wch: 40 }, { wch: 60 }];
+      XLSX.utils.book_append_sheet(wb, wsGuruSheet, sheetName);
+    }
     XLSX.writeFile(wb, `rekap-agenda-guru-${from}_${to}.xlsx`);
   };
 
