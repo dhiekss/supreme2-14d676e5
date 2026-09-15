@@ -54,7 +54,7 @@ export const listNilaiAssignments = createServerFn({ method: "GET" })
     let q = s.from("rombel_mata_pelajaran")
       .select("id, rombel_id, mata_pelajaran_id, guru_id, semester_id")
       .is("deleted_at", null)
-      .eq("semester_id", semester.id);
+      .or(`semester_id.eq.${semester.id},semester_id.is.null`);
     if (guruIds) q = q.in("guru_id", guruIds);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
@@ -93,7 +93,7 @@ export const getNilaiWorkspace = createServerFn({ method: "GET" })
     const [{ data: students, error: stError }, { data: objectives, error: tpError }] = await Promise.all([
       s.from("students").select("id, name, nis").eq("rombel_id", (assignment as any).rombel_id).order("name"),
       s.from("tujuan_pembelajaran").select("id, kode_tp, deskripsi, model_penilaian, urutan, is_active, komponen_type, bobot, tanggal_rencana_penilaian, semester_id")
-        .eq("rombel_mata_pelajaran_id", data.assignment_id).eq("semester_id", semester.id).order("urutan"),
+        .eq("rombel_mata_pelajaran_id", data.assignment_id).or(`semester_id.eq.${semester.id},semester_id.is.null`).order("urutan"),
     ]);
     if (stError) throw new Error(stError.message);
     if (tpError) throw new Error(tpError.message);
@@ -101,11 +101,18 @@ export const getNilaiWorkspace = createServerFn({ method: "GET" })
     const grades: any[] = [];
     if (objectiveIds.length) {
       for (let i = 0; i < objectiveIds.length; i += 150) {
-        const { data: chunk, error } = await s.from("nilai_siswa")
-          .select("id, tujuan_pembelajaran_id, student_id, nilai, catatan")
-          .in("tujuan_pembelajaran_id", objectiveIds.slice(i, i + 150)).eq("semester_id", semester.id);
-        if (error) throw new Error(error.message);
-        grades.push(...(chunk ?? []));
+        let from = 0;
+        while (true) {
+          const { data: chunk, error } = await s.from("nilai_siswa")
+            .select("id, tujuan_pembelajaran_id, student_id, nilai, catatan")
+            .in("tujuan_pembelajaran_id", objectiveIds.slice(i, i + 150))
+            .or(`semester_id.eq.${semester.id},semester_id.is.null`)
+            .range(from, from + 999);
+          if (error) throw new Error(error.message);
+          grades.push(...(chunk ?? []));
+          if (!chunk || chunk.length < 1000) break;
+          from += 1000;
+        }
       }
     }
     return { students: students ?? [], objectives: objectives ?? [], grades, semester };
@@ -172,7 +179,7 @@ export const setSikapEnabled = createServerFn({ method: "POST" })
     const s = context.supabase;
     await requireAssignment(s, context.userId, data.assignment_id);
     const semester = await activeSemester(s);
-    const { data: existing } = await s.from("tujuan_pembelajaran").select("id").eq("rombel_mata_pelajaran_id", data.assignment_id).eq("semester_id", semester.id).eq("komponen_type", "sikap").maybeSingle();
+    const { data: existing } = await s.from("tujuan_pembelajaran").select("id").eq("rombel_mata_pelajaran_id", data.assignment_id).or(`semester_id.eq.${semester.id},semester_id.is.null`).eq("komponen_type", "sikap").limit(1).maybeSingle();
     if (existing) {
       const { error } = await s.from("tujuan_pembelajaran").update({ is_active: data.enabled, updated_at: new Date().toISOString() }).eq("id", (existing as any).id);
       if (error) throw new Error(error.message);
@@ -208,7 +215,7 @@ export const saveStudentGrades = createServerFn({ method: "POST" })
     const allowedIds = new Set((allowed ?? []).map((x: any) => x.id));
     if (allowedIds.size !== objectiveIds.length) throw new Error("Komponen nilai tidak valid");
     for (const grade of data.grades) {
-      const { data: existing, error: lookupError } = await s.from("nilai_siswa").select("id").eq("tujuan_pembelajaran_id", grade.objective_id).eq("student_id", grade.student_id).eq("semester_id", semester.id).maybeSingle();
+      const { data: existing, error: lookupError } = await s.from("nilai_siswa").select("id").eq("tujuan_pembelajaran_id", grade.objective_id).eq("student_id", grade.student_id).or(`semester_id.eq.${semester.id},semester_id.is.null`).limit(1).maybeSingle();
       if (lookupError) throw new Error(lookupError.message);
       if (grade.nilai === null) {
         if (existing) {
@@ -233,7 +240,7 @@ export const copyNilaiObjectives = createServerFn({ method: "POST" })
     const s = context.supabase;
     await requireAssignment(s, context.userId, data.target_assignment_id);
     const semester = await activeSemester(s);
-    const { data: source, error } = await s.from("tujuan_pembelajaran").select("kode_tp, deskripsi, model_penilaian, urutan, is_active, komponen_type, bobot, tanggal_rencana_penilaian").eq("rombel_mata_pelajaran_id", data.source_assignment_id).eq("semester_id", semester.id).neq("komponen_type", "sikap").order("urutan");
+    const { data: source, error } = await s.from("tujuan_pembelajaran").select("kode_tp, deskripsi, model_penilaian, urutan, is_active, komponen_type, bobot, tanggal_rencana_penilaian").eq("rombel_mata_pelajaran_id", data.source_assignment_id).or(`semester_id.eq.${semester.id},semester_id.is.null`).neq("komponen_type", "sikap").order("urutan");
     if (error) throw new Error(error.message);
     if (!source?.length) throw new Error("Rombel sumber belum memiliki komponen penilaian");
     const rows = source.map((x: any) => ({ ...x, rombel_mata_pelajaran_id: data.target_assignment_id, semester_id: semester.id, created_by: context.userId }));
