@@ -76,7 +76,7 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
           while (true) {
             const { data, error } = await supabase
               .from("kbm_agenda_kehadiran")
-              .select("kbm_agenda_id, status")
+              .select("kbm_agenda_id, student_id, status")
               .in("kbm_agenda_id", slice)
               .range(from, from + PAGE - 1);
             if (error) throw new Error(error.message);
