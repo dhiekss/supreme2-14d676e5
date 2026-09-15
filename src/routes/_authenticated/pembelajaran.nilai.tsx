@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import * as XLSX from "xlsx";
 import { Award, BookOpen, Copy, FileSpreadsheet, Heart, Pencil, Plus, Save, Settings2, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -227,7 +227,7 @@ function PengelolaanNilaiPage() {
             <ObjectiveCard title="Final Test" subtitle={contextTitle} objectives={finalObjectives} loading={workspaceLoading} onAdd={() => openObjective("final_test")} onEdit={(o) => openObjective("final_test", o)} onDelete={(id) => deleteObjectiveM.mutate(id)} />
           </TabsContent>
           <TabsContent value="input" className="space-y-4">
-            <Card><CardContent className="p-0"><button type="button" className="flex w-full items-center justify-between p-5 text-left" onClick={() => setWeightsOpen((v) => !v)}><span className="flex items-center gap-3 font-semibold"><Settings2 className="h-5 w-5" />Pengaturan Bobot Komponen</span><span className="text-sm">{weightsOpen ? "Tutup" : "Buka"}</span></button>{weightsOpen ? <WeightEditor objectives={gradingObjectives} weights={weights} setWeights={setWeights} total={totalWeight} saving={weightM.isPending} onSave={() => weightM.mutate()} /> : null}</CardContent></Card>
+            <Card><CardContent className="p-0"><Button type="button" variant="ghost" className="h-auto w-full justify-between rounded-none p-5 text-left" onClick={() => setWeightsOpen((v) => !v)}><span className="flex items-center gap-3 font-semibold"><Settings2 className="h-5 w-5" />Pengaturan Bobot Komponen</span><span className="text-sm">{weightsOpen ? "Tutup" : "Buka"}</span></Button>{weightsOpen ? <WeightEditor objectives={gradingObjectives} weights={weights} setWeights={setWeights} total={totalWeight} saving={weightM.isPending} onSave={() => weightM.mutate()} /> : null}</CardContent></Card>
             <GradeTable title="Input Nilai Murid" subtitle={contextTitle} students={ws?.students ?? []} objectives={gradingObjectives} values={draftGrades} onChange={(k, v) => setDraftGrades((old) => ({ ...old, [k]: v }))} onSave={() => gradeM.mutate()} saving={gradeM.isPending} onImport={() => fileRef.current?.click()} />
             <input ref={fileRef} className="hidden" type="file" accept=".xlsx,.xls" onChange={(e) => { const f = e.target.files?.[0]; if (f) importGrades(f); e.target.value = ""; }} />
           </TabsContent>
@@ -264,7 +264,7 @@ function CopyDialog({ open, setOpen, assignments, value, setValue, saving, onCop
   return <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>Salin dari Rombel Lain</DialogTitle><DialogDescription>Pilih sumber tujuan pembelajaran pada semester aktif.</DialogDescription></DialogHeader><div className="space-y-2"><Label>Rombel sumber</Label><Select value={value} onValueChange={setValue}><SelectTrigger><SelectValue placeholder="Pilih rombel dan mata pelajaran" /></SelectTrigger><SelectContent>{assignments.map((x) => <SelectItem key={x.id} value={x.id}>{x.rombel_name} — {x.mapel_name} — {x.guru_name}</SelectItem>)}</SelectContent></Select></div><DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Batal</Button><Button disabled={!value || saving} onClick={onCopy}><Copy className="mr-2 h-4 w-4" />{saving ? "Menyalin…" : "Salin"}</Button></DialogFooter></DialogContent></Dialog>;
 }
 
-function WeightEditor({ objectives, weights, setWeights, total, saving, onSave }: { objectives: Objective[]; weights: Record<string, number>; setWeights: React.Dispatch<React.SetStateAction<Record<string, number>>>; total: number; saving: boolean; onSave: () => void }) {
+function WeightEditor({ objectives, weights, setWeights, total, saving, onSave }: { objectives: Objective[]; weights: Record<string, number>; setWeights: Dispatch<SetStateAction<Record<string, number>>>; total: number; saving: boolean; onSave: () => void }) {
   return <div className="border-t p-5"><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{objectives.map((o) => <div key={o.id} className="flex items-center gap-3 rounded-md border p-3"><Badge>{o.komponen_type === "final_test" ? "FT" : "TP"}</Badge><div className="min-w-0 flex-1"><p className="truncate font-medium">{o.kode_tp}</p><p className="truncate text-xs text-muted-foreground">{o.deskripsi}</p></div><Input className="w-20" type="number" min={0} max={100} value={weights[o.id] ?? 0} onChange={(e) => setWeights((old) => ({ ...old, [o.id]: Math.max(0, Math.min(100, Number(e.target.value))) }))} /><span className="text-sm">%</span></div>)}</div><div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4"><p className="text-sm text-muted-foreground">Total Bobot: <strong className={total === 100 ? "text-primary" : "text-destructive"}>{total}%</strong> <span>(Idealnya 100%)</span></p><Button disabled={!objectives.length || saving} onClick={onSave}><Save className="mr-2 h-4 w-4" />Simpan Bobot</Button></div></div>;
 }
 
