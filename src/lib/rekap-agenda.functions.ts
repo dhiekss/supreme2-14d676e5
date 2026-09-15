@@ -135,6 +135,7 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
     }
 
     const enriched = (rows ?? []).map((r) => ({
+      ...(kehPerAgenda.get(r.id) ?? { hadir: 0, sakit: 0, izin: 0, alfa: 0, dispensasi: 0, bolos: 0, total: 0 }),
       id: r.id,
       tanggal: r.tanggal,
       jam_ke: r.jam_ke,
