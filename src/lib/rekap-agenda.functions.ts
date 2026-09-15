@@ -99,6 +99,23 @@ export const getRekapAgendaGuru = createServerFn({ method: "GET" })
     ]);
     const keh = { data: kehRows } as { data: any[] };
 
+    // Ambil nama/NIS murid untuk detail kehadiran per agenda
+    const studentIds = [...new Set((keh.data ?? []).map((k: any) => k.student_id).filter(Boolean))] as string[];
+    const stuMap = new Map<string, { name: string; nis: string }>();
+    for (let i = 0; i < studentIds.length; i += 300) {
+      const { data: stuRows } = await supabase
+        .from("students")
+        .select("id, name, nis")
+        .in("id", studentIds.slice(i, i + 300));
+      for (const s of stuRows ?? []) stuMap.set(s.id, { name: s.name ?? "—", nis: s.nis ?? "" });
+    }
+    const kehDetail = (keh.data ?? []).map((k: any) => ({
+      kbm_agenda_id: k.kbm_agenda_id,
+      student_nama: stuMap.get(k.student_id)?.name ?? "—",
+      student_nis: stuMap.get(k.student_id)?.nis ?? "",
+      status: k.status,
+    }));
+
     const gMap = new Map((guru.data ?? []).map((x: any) => [x.id, x]));
     const rMap = new Map((rombel.data ?? []).map((x: any) => [x.id, x.name]));
     const mMap = new Map((mapel.data ?? []).map((x: any) => [x.id, x.nama]));
