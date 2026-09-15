@@ -185,6 +185,7 @@ export const getDashboardNilai = createServerFn({ method: "GET" })
           mapel_id: r.mata_pelajaran_id,
           mapel_name: mp?.nama ?? "—",
           guru_name: gu?.nama ?? "—",
+          guru_id: r.guru_id,
           avg: agg.sum / agg.count,
           count: agg.count,
         });

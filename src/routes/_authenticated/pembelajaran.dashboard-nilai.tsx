@@ -83,7 +83,7 @@ function Page() {
     return {
       tingkat: [...t].sort(),
       konsentrasi: [...k].sort(),
-      mapel: [...m].entries ? [...m.entries()].sort((x, y) => x[1].localeCompare(y[1])) : [],
+      mapel: [...m.entries()].sort((x, y) => x[1].localeCompare(y[1])),
       guru: [...g.entries()].sort((x, y) => x[1].localeCompare(y[1])),
     };
   }, [assignments]);
@@ -102,9 +102,9 @@ function Page() {
           (tingkat === ALL || s.tingkat === tingkat) &&
           (konsentrasi === ALL || s.konsentrasi === konsentrasi) &&
           (mapel === ALL || s.mapel_id === mapel) &&
-          (guru === ALL || s.guru_name === (opts.guru.find(([id]) => id === guru)?.[1] ?? "")),
+          (guru === ALL || s.guru_id === guru),
       ),
-    [scores, tingkat, konsentrasi, mapel, guru, opts.guru],
+    [scores, tingkat, konsentrasi, mapel, guru],
   );
 
   const totals = useMemo(() => {
