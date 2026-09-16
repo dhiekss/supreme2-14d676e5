@@ -1128,6 +1128,7 @@ function BulkDownloadDialog({ filters }: { filters: any }) {
       }
 
       const zip = new JSZip();
+      const usedNames = new Map<string, number>();
       let ok = 0;
       const failed: string[] = [];
       setProg({ current: 0, total: items.length });
@@ -1152,7 +1153,10 @@ function BulkDownloadDialog({ filters }: { filters: any }) {
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
           const blob = await resp.blob();
           const ext = extFromContentType(resp.headers.get("content-type")) || extFromUrlOrKey(url, it.key);
-          zip.file(`${guruName}/${mapelName}-${rombelName}-${jenisName}.${ext}`, blob);
+          const base = `${guruName}-${jenisName}-${mapelName}-${rombelName}`;
+          const dup = usedNames.get(base) ?? 0;
+          usedNames.set(base, dup + 1);
+          zip.file(`${base}${dup > 0 ? ` (${dup + 1})` : ""}.${ext}`, blob);
           ok++;
         } catch (e: any) {
           failed.push(`${guruName} — ${jenisName} (${e?.message ?? "gagal"})`);
@@ -1218,7 +1222,7 @@ function BulkDownloadDialog({ filters }: { filters: any }) {
             Ikuti filter yang sedang aktif (rombel, mapel, guru, keterangan)
           </label>
           <p className="text-xs text-muted-foreground">
-            Berkas dikelompokkan ke dalam folder per nama guru di dalam satu file ZIP.
+            Semua berkas berada di dalam satu file ZIP dengan penamaan Nama Guru - Jenis Berkas - Mata Pelajaran - Rombel.
           </p>
           {loading && prog && (
             <div className="space-y-1">
