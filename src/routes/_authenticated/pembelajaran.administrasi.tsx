@@ -312,6 +312,9 @@ function AdministrasiPage() {
                   <RotateCcw className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Reset Guru Ini</span>
                 </Button>
               )}
+              <BulkDownloadDialog
+                filters={{ rombel_id: rombelId, mapel_id: mapelId, guru_id: guruId, keterangan, sort }}
+              />
               <Button variant="outline" size="sm" onClick={exportExcel}>
                 <Download className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Export Excel</span>
               </Button>
