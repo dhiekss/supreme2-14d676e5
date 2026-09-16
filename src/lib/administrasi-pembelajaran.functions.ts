@@ -254,7 +254,7 @@ export const listAdministrasi = createServerFn({ method: "GET" })
 
     const total = merged.length;
     const page = Math.max(1, data?.page ?? 1);
-    const pageSize = Math.max(5, Math.min(200, data?.pageSize ?? 20));
+    const pageSize = Math.max(5, Math.min(100000, data?.pageSize ?? 20));
     const start = (page - 1) * pageSize;
     const rows = merged.slice(start, start + pageSize);
 
