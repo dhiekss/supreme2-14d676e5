@@ -312,6 +312,9 @@ function AdministrasiPage() {
                   <RotateCcw className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Reset Guru Ini</span>
                 </Button>
               )}
+              <BulkDownloadDialog
+                filters={{ rombel_id: rombelId, mapel_id: mapelId, guru_id: guruId, keterangan, sort }}
+              />
               <Button variant="outline" size="sm" onClick={exportExcel}>
                 <Download className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Export Excel</span>
               </Button>
@@ -1079,6 +1082,162 @@ function RowDownloadButton({ row }: { row: any }) {
 
 
 
+
+/** Unduh berkas seluruh guru (sesuai filter & hak akses) dalam satu ZIP. */
+function BulkDownloadDialog({ filters }: { filters: any }) {
+  const listAllFn = useServerFn(listAdministrasi);
+  const signFn = useServerFn(getBerkasSignedUrl);
+  const [open, setOpen] = useState(false);
+  const [jenis, setJenis] = useState<Set<DocKey>>(new Set(DOC_KEYS));
+  const [pakaiFilter, setPakaiFilter] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [prog, setProg] = useState<{ current: number; total: number; label?: string } | null>(null);
+
+  const toggle = (k: DocKey) => {
+    setJenis((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k); else next.add(k);
+      return next;
+    });
+  };
+
+  const handleDownload = async () => {
+    const keys = DOC_KEYS.filter((k) => jenis.has(k));
+    if (keys.length === 0) { toast.error("Pilih minimal satu jenis berkas"); return; }
+    setLoading(true);
+    const toastId = toast.loading("Mengambil daftar berkas…");
+    try {
+      const payload: any = pakaiFilter
+        ? { ...filters, page: 1, pageSize: 100000 }
+        : { rombel_id: "all", mapel_id: "all", guru_id: "all", keterangan: "all", page: 1, pageSize: 100000 };
+      const res: any = await listAllFn({ data: payload });
+      const rows: any[] = res?.rows ?? [];
+
+      type Item = { row: any; key: DocKey; value: string };
+      const items: Item[] = [];
+      for (const r of rows) {
+        for (const k of keys) {
+          const v = r[k];
+          if (typeof v === "string" && v.trim().length > 0) items.push({ row: r, key: k, value: v });
+        }
+      }
+      if (items.length === 0) {
+        toast.dismiss(toastId);
+        toast.info("Tidak ada berkas yang cocok dengan pilihan Anda");
+        return;
+      }
+
+      const zip = new JSZip();
+      let ok = 0;
+      const failed: string[] = [];
+      setProg({ current: 0, total: items.length });
+      for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        const guruName = sanitizeSegment(it.row.guru_nama ?? "Guru");
+        const mapelName = sanitizeSegment(it.row.mapel_nama ?? "Mapel");
+        const rombelName = sanitizeSegment(it.row.rombel_name ?? "Rombel");
+        const jenisName = sanitizeSegment(DOC_LABELS[it.key]);
+        setProg({ current: i, total: items.length, label: `${guruName} — ${jenisName}` });
+        toast.loading(`Mengunduh ${i + 1}/${items.length} — ${guruName}`, { id: toastId });
+        try {
+          let url = it.value;
+          if (url.startsWith("storage://")) {
+            const r = await signFn({ data: { path: url.replace(/^storage:\/\//, "") } });
+            if (!r.url) throw new Error("URL kosong");
+            url = r.url;
+          } else {
+            url = toDownloadUrl(url);
+          }
+          const resp = await fetch(url, { redirect: "follow" });
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const blob = await resp.blob();
+          const ext = extFromContentType(resp.headers.get("content-type")) || extFromUrlOrKey(url, it.key);
+          zip.file(`${guruName}/${mapelName}-${rombelName}-${jenisName}.${ext}`, blob);
+          ok++;
+        } catch (e: any) {
+          failed.push(`${guruName} — ${jenisName} (${e?.message ?? "gagal"})`);
+        }
+        setProg({ current: i + 1, total: items.length });
+      }
+
+      if (ok === 0) {
+        toast.dismiss(toastId);
+        toast.error("Semua berkas gagal diunduh");
+        return;
+      }
+      toast.loading("Membuat ZIP…", { id: toastId });
+      const blob = await zip.generateAsync({ type: "blob" }, (meta) => {
+        toast.loading(`Membuat ZIP… ${Math.round(meta.percent)}%`, { id: toastId });
+      });
+      const zipUrl = URL.createObjectURL(blob);
+      triggerDownload(zipUrl, withDateSuffix("berkas-administrasi-pembelajaran.zip"));
+      setTimeout(() => URL.revokeObjectURL(zipUrl), 30_000);
+      toast.dismiss(toastId);
+      if (failed.length > 0) toast.warning(`Diunduh ${ok} berkas, ${failed.length} gagal`);
+      else toast.success(`Diunduh ${ok} berkas dalam satu ZIP`);
+      setOpen(false);
+    } catch (e: any) {
+      toast.dismiss(toastId);
+      toast.error(e?.message ?? "Gagal mengunduh berkas");
+    } finally {
+      setLoading(false);
+      setProg(null);
+    }
+  };
+
+  const pct = prog && prog.total > 0 ? Math.round((prog.current / prog.total) * 100) : 0;
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!loading) setOpen(o); }}>
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+        <Download className="h-4 w-4 sm:mr-2" />
+        <span className="hidden sm:inline">Unduh Berkas Semua Guru</span>
+      </Button>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Unduh Berkas Semua Guru</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-sm">Pilih jenis berkas</Label>
+            <div className="space-y-2 rounded-md border p-3">
+              {DOC_KEYS.map((k) => (
+                <label key={k} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Checkbox checked={jenis.has(k)} onCheckedChange={() => toggle(k)} />
+                  {DOC_LABELS[k]}
+                </label>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={() => setJenis(new Set(DOC_KEYS))}>Pilih semua</Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setJenis(new Set())}>Kosongkan</Button>
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <Checkbox checked={pakaiFilter} onCheckedChange={(v) => setPakaiFilter(Boolean(v))} />
+            Ikuti filter yang sedang aktif (rombel, mapel, guru, keterangan)
+          </label>
+          <p className="text-xs text-muted-foreground">
+            Berkas dikelompokkan ke dalam folder per nama guru di dalam satu file ZIP.
+          </p>
+          {loading && prog && (
+            <div className="space-y-1">
+              <Progress value={pct} className="h-2" />
+              <div className="text-xs text-muted-foreground">{prog.current}/{prog.total} berkas{prog.label ? ` — ${prog.label}` : ""}</div>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>Batal</Button>
+          <Button onClick={handleDownload} disabled={loading}>
+            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+            Unduh ZIP
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function labelKet(k: Ket) {
   return k === "valid" ? "Valid"
