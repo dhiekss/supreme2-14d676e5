@@ -31,6 +31,7 @@ type Row = {
   pangkat_golongan: string | null;
   konsentrasi_keahlian_id: string | null;
   konsentrasi_nama?: string | null;
+  ttd_spesimen_path?: string | null;
 };
 
 const STATUS_OPTIONS = ["PNS", "PPPK", "GTT", "GTY", "Honorer", "CPNS"];
