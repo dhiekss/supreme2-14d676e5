@@ -3,7 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 export type DaftarHadirRombelData = {
-  rombel: { id: string; name: string; tingkat: string | null; konsentrasi_keahlian: string | null; wali_kelas_name: string | null; wali_kelas_nip: string | null };
+  rombel: { id: string; name: string; tingkat: string | null; konsentrasi_keahlian: string | null; wali_kelas_name: string | null; wali_kelas_nip: string | null; wali_ttd_spesimen_path: string | null };
   students: { id: string; nis: string | null; name: string; gender: string | null }[];
   /** map studentId -> map dateISO -> status ("H"|"S"|"I"|"A"|"P") */
   attendance: Record<string, Record<string, string>>;
@@ -39,6 +39,23 @@ export const monthlyAttendanceData = createServerFn({ method: "GET" })
       .select("id, name, tingkat, konsentrasi_keahlian, wali_kelas_name, wali_kelas_nip")
       .in("id", data.rombelIds);
     if (rErr) throw new Error(rErr.message);
+
+    // Resolve each wali kelas to the teacher record that owns the specimen.
+    // NIP is authoritative; an exact name is only used when it is unambiguous.
+    const nips = [...new Set((rombelRows ?? []).map((r) => r.wali_kelas_nip?.trim()).filter((v): v is string => !!v))];
+    const names = [...new Set((rombelRows ?? []).filter((r) => !r.wali_kelas_nip?.trim()).map((r) => r.wali_kelas_name?.trim()).filter((v): v is string => !!v))];
+    const [byNipResult, byNameResult] = await Promise.all([
+      nips.length ? supabase.from("guru").select("nama, nip, ttd_spesimen_path").in("nip", nips) : Promise.resolve({ data: [], error: null }),
+      names.length ? supabase.from("guru").select("nama, nip, ttd_spesimen_path").in("nama", names) : Promise.resolve({ data: [], error: null }),
+    ]);
+    if (byNipResult.error) throw new Error(byNipResult.error.message);
+    if (byNameResult.error) throw new Error(byNameResult.error.message);
+    const guruByNip = new Map((byNipResult.data ?? []).filter((g) => g.nip).map((g) => [g.nip?.trim(), g]));
+    const guruByName = new Map<string, NonNullable<typeof byNameResult.data>[number] | null>();
+    for (const g of byNameResult.data ?? []) {
+      const name = g.nama?.trim();
+      if (name) guruByName.set(name, guruByName.has(name) ? null : g);
+    }
 
     // Tahun ajaran aktif
     const { data: ta } = await supabase
@@ -112,6 +129,9 @@ export const monthlyAttendanceData = createServerFn({ method: "GET" })
           konsentrasi_keahlian: (meta as any).konsentrasi_keahlian ?? null,
           wali_kelas_name: (meta as any).wali_kelas_name ?? null,
           wali_kelas_nip: (meta as any).wali_kelas_nip ?? null,
+          wali_ttd_spesimen_path: (meta.wali_kelas_nip?.trim()
+            ? guruByNip.get(meta.wali_kelas_nip.trim())
+            : guruByName.get(meta.wali_kelas_name?.trim() ?? ""))?.ttd_spesimen_path ?? null,
         },
         students: (students ?? []) as any,
         attendance,
