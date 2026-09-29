@@ -16,7 +16,10 @@ export type DaftarHadirData = {
   /** dates (YYYY-MM-DD) marked as libur/non-efektif within the month */
   liburDates: string[];
   rombels: DaftarHadirRombelData[];
+  kepsek_ttd_spesimen_path?: string | null;
 };
+
+export const KEPSEK_NIP = "198111222009021003";
 
 export const monthlyAttendanceData = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -138,11 +141,19 @@ export const monthlyAttendanceData = createServerFn({ method: "GET" })
       });
     }
 
+    // Kepala sekolah specimen, matched strictly by NIP.
+    const { data: kepsek } = await supabase
+      .from("guru")
+      .select("ttd_spesimen_path")
+      .eq("nip", KEPSEK_NIP)
+      .maybeSingle();
+
     return {
       month: data.month,
       year: data.year,
       tahun_ajaran: ta?.nama ?? null,
       liburDates,
       rombels,
+      kepsek_ttd_spesimen_path: kepsek?.ttd_spesimen_path ?? null,
     } as DaftarHadirData;
   });
