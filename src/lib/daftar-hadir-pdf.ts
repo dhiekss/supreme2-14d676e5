@@ -195,7 +195,7 @@ function buildAttendanceTable(
   `;
 }
 
-function footerHtml(r: DaftarHadirRombelData, month: number, year: number, signature: string | null, overrideName?: string | null, overrideNip?: string | null): string {
+function footerHtml(r: DaftarHadirRombelData, month: number, year: number, signature: string | null, overrideName?: string | null, overrideNip?: string | null, kepsekSignature: string | null = null): string {
   const laki = r.students.filter((s) => String(s.gender || "").toUpperCase().startsWith("L")).length;
   const perempuan = r.students.filter((s) => String(s.gender || "").toUpperCase().startsWith("P")).length;
   const jumlah = r.students.length;
@@ -239,7 +239,7 @@ function footerHtml(r: DaftarHadirRombelData, month: number, year: number, signa
       <td style="width:35%; vertical-align:top; text-align:center;">
         <div>Mengetahui,</div>
         <div>Kepala SMKN 1 Pusakanagara</div>
-        <div style="height:56px;"></div>
+        <div style="height:56px; display:flex; align-items:center; justify-content:center;">${kepsekSignature ? `<img src="${kepsekSignature}" style="max-width:150px; max-height:54px; object-fit:contain;" alt="Tanda tangan kepala sekolah" />` : ""}</div>
         <div style="font-weight:bold;">Abdul Rosid, S.T</div>
         <div>NIP. 198111222009021003</div>
       </td>
@@ -282,6 +282,10 @@ export async function exportDaftarHadirPdf(data: DaftarHadirData, opts: PdfOptio
   const pdf = new jsPDF({ orientation: "landscape", unit: "px", format: "a4" });
   let first = true;
   const signatureCache = new Map<string, string>();
+  let kepsekSignature: string | null = null;
+  if (data.kepsek_ttd_spesimen_path) {
+    try { kepsekSignature = await loadWaliSignature(data.kepsek_ttd_spesimen_path); } catch { kepsekSignature = null; }
+  }
 
   const PER_PAGE = 19; // students per page based on sample
 
@@ -302,7 +306,7 @@ export async function exportDaftarHadirPdf(data: DaftarHadirData, opts: PdfOptio
           <div style="font-size:11px; margin:4px 0 6px 4px;">Daftar Hadir Murid - <b>${escapeHtml(r.rombel.name)}</b> - ${BULAN_ID[data.month - 1]} ${data.year}</div>
         `}
         ${buildAttendanceTable(pageRombel, data.month, data.year, liburSet, !!opts.kosong)}
-         ${isLast ? footerHtml(r, data.month, data.year, signature, opts.overrideWaliName, opts.overrideWaliNip) : ""}
+         ${isLast ? footerHtml(r, data.month, data.year, signature, opts.overrideWaliName, opts.overrideWaliNip, kepsekSignature) : ""}
       `;
       await addHtmlPageToPdf(pdf, html, "landscape", first);
       first = false;
