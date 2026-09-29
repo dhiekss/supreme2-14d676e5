@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import { addHtmlPageToPdf, loadLogoDataUrl, escapeHtml } from "./pdf-html-common";
 import { fetchDisplaySettings } from "./display-settings";
 import type { DaftarHadirData, DaftarHadirRombelData } from "./daftar-hadir.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 const BULAN_ID = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -194,7 +195,7 @@ function buildAttendanceTable(
   `;
 }
 
-function footerHtml(r: DaftarHadirRombelData, month: number, year: number, overrideName?: string | null, overrideNip?: string | null): string {
+function footerHtml(r: DaftarHadirRombelData, month: number, year: number, signature: string | null, overrideName?: string | null, overrideNip?: string | null): string {
   const laki = r.students.filter((s) => String(s.gender || "").toUpperCase().startsWith("L")).length;
   const perempuan = r.students.filter((s) => String(s.gender || "").toUpperCase().startsWith("P")).length;
   const jumlah = r.students.length;
@@ -245,7 +246,7 @@ function footerHtml(r: DaftarHadirRombelData, month: number, year: number, overr
       <td style="width:35%; vertical-align:top; text-align:center;">
         <div>Subang, &nbsp;&nbsp;&nbsp; ${bulan} ${year}</div>
         <div>Wali Kelas,</div>
-        <div style="height:56px;"></div>
+         <div style="height:56px; display:flex; align-items:center; justify-content:center;">${signature ? `<img src="${signature}" style="max-width:150px; max-height:54px; object-fit:contain;" alt="Tanda tangan wali kelas" />` : ""}</div>
         <div style="font-weight:bold;">${escapeHtml(wali)}</div>
         <div>${nip ? `NIP. ${escapeHtml(nip)}` : ""}</div>
       </td>
@@ -255,6 +256,17 @@ function footerHtml(r: DaftarHadirRombelData, month: number, year: number, overr
     Laporan ini diekspor melalui : Aplikasi Students Presence Module SMKN 1 Pusakanagara
   </div>
   `;
+}
+
+async function loadWaliSignature(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from("spesimen-ttd").download(path);
+  if (error || !data) throw new Error(`Gagal memuat tanda tangan wali kelas: ${error?.message ?? "berkas tidak ditemukan"}`);
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Gagal membaca tanda tangan wali kelas"));
+    reader.readAsDataURL(data);
+  });
 }
 
 function chunkStudents<T>(arr: T[], size: number): T[][] {
@@ -269,10 +281,17 @@ export async function exportDaftarHadirPdf(data: DaftarHadirData, opts: PdfOptio
   const liburSet = new Set(data.liburDates);
   const pdf = new jsPDF({ orientation: "landscape", unit: "px", format: "a4" });
   let first = true;
+  const signatureCache = new Map<string, string>();
 
   const PER_PAGE = 19; // students per page based on sample
 
   for (const r of data.rombels) {
+    // Never sign an overridden identity with the original wali kelas's specimen.
+    const changedIdentity = (!!opts.overrideWaliName && opts.overrideWaliName.trim() !== (r.rombel.wali_kelas_name ?? "").trim())
+      || (!!opts.overrideWaliNip && opts.overrideWaliNip.trim() !== (r.rombel.wali_kelas_nip ?? "").trim());
+    const path = changedIdentity ? null : r.rombel.wali_ttd_spesimen_path;
+    if (path && !signatureCache.has(path)) signatureCache.set(path, await loadWaliSignature(path));
+    const signature = path ? signatureCache.get(path) ?? null : null;
     const chunks = chunkStudents(r.students, PER_PAGE);
     if (chunks.length === 0) chunks.push([]);
     for (let ci = 0; ci < chunks.length; ci++) {
@@ -283,7 +302,7 @@ export async function exportDaftarHadirPdf(data: DaftarHadirData, opts: PdfOptio
           <div style="font-size:11px; margin:4px 0 6px 4px;">Daftar Hadir Murid - <b>${escapeHtml(r.rombel.name)}</b> - ${BULAN_ID[data.month - 1]} ${data.year}</div>
         `}
         ${buildAttendanceTable(pageRombel, data.month, data.year, liburSet, !!opts.kosong)}
-        ${isLast ? footerHtml(r, data.month, data.year, opts.overrideWaliName, opts.overrideWaliNip) : ""}
+         ${isLast ? footerHtml(r, data.month, data.year, signature, opts.overrideWaliName, opts.overrideWaliNip) : ""}
       `;
       await addHtmlPageToPdf(pdf, html, "landscape", first);
       first = false;
