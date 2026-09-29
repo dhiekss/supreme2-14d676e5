@@ -402,6 +402,7 @@ function Page() {
               status_kepegawaian: editing?.status_kepegawaian || null,
               pangkat_golongan: editing?.pangkat_golongan || null,
               konsentrasi_keahlian_id: editingIsProduktif ? (editing?.konsentrasi_keahlian_id || null) : null,
+              ttd_spesimen_path: editing?.ttd_spesimen_path || null,
             })}>Simpan</Button>
           </DialogFooter>
         </DialogContent>
