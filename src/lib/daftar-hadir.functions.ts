@@ -51,7 +51,7 @@ export const monthlyAttendanceData = createServerFn({ method: "GET" })
     if (byNipResult.error) throw new Error(byNipResult.error.message);
     if (byNameResult.error) throw new Error(byNameResult.error.message);
     const guruByNip = new Map((byNipResult.data ?? []).filter((g) => g.nip).map((g) => [g.nip?.trim(), g]));
-    const guruByName = new Map<string, (typeof byNameResult.data)[number] | null>();
+    const guruByName = new Map<string, NonNullable<typeof byNameResult.data>[number] | null>();
     for (const g of byNameResult.data ?? []) {
       const name = g.nama?.trim();
       if (name) guruByName.set(name, guruByName.has(name) ? null : g);
