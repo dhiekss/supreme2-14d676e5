@@ -255,6 +255,7 @@ const GuruInput = z.object({
   status_kepegawaian: z.string().trim().max(50).optional().nullable(),
   pangkat_golongan: z.string().trim().max(50).optional().nullable(),
   konsentrasi_keahlian_id: uuid.optional().nullable(),
+  ttd_spesimen_path: z.string().trim().max(500).optional().nullable(),
 });
 
 export const saveGuru = createServerFn({ method: "POST" })
