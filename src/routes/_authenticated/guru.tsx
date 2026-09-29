@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { CrudTable } from "@/components/crud-table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Download, Upload } from "lucide-react";
+import { Download, Upload, PenLine, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { listGuru, saveGuru, deleteGuru, listMapel, importGuru, listKonsentrasi } from "@/lib/sekolah.functions";
 import { toast } from "sonner";
 import { GuruStats } from "@/components/guru-stats";
@@ -30,6 +31,7 @@ type Row = {
   pangkat_golongan: string | null;
   konsentrasi_keahlian_id: string | null;
   konsentrasi_nama?: string | null;
+  ttd_spesimen_path?: string | null;
 };
 
 const STATUS_OPTIONS = ["PNS", "PPPK", "GTT", "GTY", "Honorer", "CPNS"];
@@ -55,6 +57,102 @@ export const Route = createFileRoute("/_authenticated/guru")({
   head: () => ({ meta: [{ title: "Manajemen Guru — SUPREME XPOES" }] }),
   component: Page,
 });
+
+const SPESIMEN_BUCKET = "spesimen-ttd";
+
+function SpesimenField({ guruId, path, onChange }: { guruId?: string; path?: string | null; onChange: (p: string | null) => void }) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let alive = true;
+    setPreviewUrl(null);
+    if (path) {
+      supabase.storage.from(SPESIMEN_BUCKET).createSignedUrl(path, 600).then(({ data, error }) => {
+        if (alive && !error && data?.signedUrl) setPreviewUrl(data.signedUrl);
+      });
+    }
+    return () => { alive = false; };
+  }, [path]);
+
+  const upload = async (file: File) => {
+    if (!guruId) {
+      toast.error("Simpan data guru terlebih dahulu, lalu unggah spesimen.");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("File harus berupa gambar (PNG/JPG).");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Ukuran file maksimal 2 MB.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+      const key = `${guruId}/spesimen-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from(SPESIMEN_BUCKET).upload(key, file, { upsert: false });
+      if (error) throw error;
+      onChange(key);
+      toast.success("Spesimen tanda tangan terunggah. Jangan lupa klik Simpan.");
+    } catch (e: any) {
+      toast.error("Gagal mengunggah: " + e.message);
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  const remove = async () => {
+    if (!path) return;
+    setBusy(true);
+    try {
+      await supabase.storage.from(SPESIMEN_BUCKET).remove([path]);
+      onChange(null);
+      toast.success("Spesimen dihapus. Jangan lupa klik Simpan.");
+    } catch (e: any) {
+      toast.error("Gagal menghapus: " + e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div>
+      <Label>Spesimen Tanda Tangan</Label>
+      <div className="mt-1 flex items-start gap-3">
+        <div className="flex h-20 w-40 items-center justify-center rounded-md border bg-muted/30 overflow-hidden">
+          {previewUrl ? (
+            <img src={previewUrl} alt="Spesimen tanda tangan" className="max-h-full max-w-full object-contain" />
+          ) : (
+            <span className="text-xs text-muted-foreground px-2 text-center">{path ? "Memuat…" : "Belum ada spesimen"}</span>
+          )}
+        </div>
+        <div className="flex flex-col gap-2">
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); }}
+          />
+          <Button type="button" variant="outline" size="sm" disabled={busy || !guruId} onClick={() => inputRef.current?.click()}>
+            <PenLine className="mr-2 h-4 w-4" /> {path ? "Ganti Spesimen" : "Unggah Spesimen"}
+          </Button>
+          {path && (
+            <Button type="button" variant="ghost" size="sm" className="text-destructive" disabled={busy} onClick={remove}>
+              <Trash2 className="mr-2 h-4 w-4" /> Hapus
+            </Button>
+          )}
+          {!guruId && <p className="text-xs text-muted-foreground">Simpan data guru dulu untuk mengunggah spesimen.</p>}
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground mt-1">Gambar PNG/JPG maks. 2 MB. Spesimen ini dapat dipakai pada fitur-fitur berikutnya (mis. tanda tangan dokumen).</p>
+    </div>
+  );
+}
 
 function Page() {
   const qc = useQueryClient();
@@ -283,6 +381,11 @@ function Page() {
                 <div><Label>Pangkat/Golongan</Label><Input value={editing.pangkat_golongan ?? ""} onChange={(e) => setEditing({ ...editing, pangkat_golongan: e.target.value })} placeholder="III/a, IV/b" /></div>
               </div>
               <div><Label>No. WhatsApp</Label><Input value={editing.no_whatsapp ?? ""} onChange={(e) => setEditing({ ...editing, no_whatsapp: e.target.value })} /></div>
+              <SpesimenField
+                guruId={editing.id}
+                path={editing.ttd_spesimen_path}
+                onChange={(p) => setEditing({ ...editing, ttd_spesimen_path: p })}
+              />
             </div>
           )}
           <DialogFooter>
@@ -299,6 +402,7 @@ function Page() {
               status_kepegawaian: editing?.status_kepegawaian || null,
               pangkat_golongan: editing?.pangkat_golongan || null,
               konsentrasi_keahlian_id: editingIsProduktif ? (editing?.konsentrasi_keahlian_id || null) : null,
+              ttd_spesimen_path: editing?.ttd_spesimen_path || null,
             })}>Simpan</Button>
           </DialogFooter>
         </DialogContent>
