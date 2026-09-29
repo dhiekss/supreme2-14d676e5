@@ -484,6 +484,7 @@ export type Database = {
           no_whatsapp: string | null
           pangkat_golongan: string | null
           status_kepegawaian: string | null
+          ttd_spesimen_path: string | null
         }
         Insert: {
           created_at?: string | null
@@ -498,6 +499,7 @@ export type Database = {
           no_whatsapp?: string | null
           pangkat_golongan?: string | null
           status_kepegawaian?: string | null
+          ttd_spesimen_path?: string | null
         }
         Update: {
           created_at?: string | null
@@ -512,6 +514,7 @@ export type Database = {
           no_whatsapp?: string | null
           pangkat_golongan?: string | null
           status_kepegawaian?: string | null
+          ttd_spesimen_path?: string | null
         }
         Relationships: [
           {
