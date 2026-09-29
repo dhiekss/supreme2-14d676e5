@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { CrudTable } from "@/components/crud-table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -381,6 +381,11 @@ function Page() {
                 <div><Label>Pangkat/Golongan</Label><Input value={editing.pangkat_golongan ?? ""} onChange={(e) => setEditing({ ...editing, pangkat_golongan: e.target.value })} placeholder="III/a, IV/b" /></div>
               </div>
               <div><Label>No. WhatsApp</Label><Input value={editing.no_whatsapp ?? ""} onChange={(e) => setEditing({ ...editing, no_whatsapp: e.target.value })} /></div>
+              <SpesimenField
+                guruId={editing.id}
+                path={editing.ttd_spesimen_path}
+                onChange={(p) => setEditing({ ...editing, ttd_spesimen_path: p })}
+              />
             </div>
           )}
           <DialogFooter>
