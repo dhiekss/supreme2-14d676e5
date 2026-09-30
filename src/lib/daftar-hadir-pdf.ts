@@ -15,9 +15,9 @@ const COLOR_WEEKEND_BG = "#F6C1BE"; // pinkish for Sabtu/Minggu
 const COLOR_LIBUR_BG = "#C6EFCE";   // green for libur
 const COLOR_LIBUR_TEXT = "#0F6A2F";
 const COLOR_HEADER_RED = "#C81E1E"; // red day letter/date for weekend & libur
-const COLOR_EMPTY_BG = "#F6C1BE";   // same pink for cells with no data on weekdays
+const COLOR_EMPTY_BG = "#FFF2A8";   // yellow for weekdays without attendance input
 
-const STATUS_DOT = "·"; // for Hadir
+const STATUS_HADIR = "✓";
 
 type PdfOptions = {
   kosong?: boolean; // if true, output blank sheet (no cell contents)
@@ -160,13 +160,13 @@ function buildAttendanceTable(
         bg = COLOR_WEEKEND_BG;
         text = "";
       } else if (status) {
-        if (status === "H") { text = STATUS_DOT; h++; }
+        if (status === "H") { text = STATUS_HADIR; h++; }
         else if (status === "S") { text = "S"; color = "#B8860B"; sc++; }
         else if (status === "I") { text = "I"; color = "#0369A1"; i++; }
         else if (status === "A") { text = "A"; color = "#B91C1C"; a++; }
         else if (status === "P") { text = "P"; color = "#7C3AED"; }
       } else {
-        // Weekday, no attendance recorded → pink empty
+        // Weekday, no attendance recorded → yellow empty
         bg = COLOR_EMPTY_BG;
         text = "";
       }
