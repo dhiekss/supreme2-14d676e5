@@ -83,7 +83,7 @@ export const Route = createFileRoute("/_authenticated/jadwal")({
     return { opts };
   },
   component: JadwalPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error?.message ?? String(error)}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error)?.message ?? String(error)}</div>,
 });
 
 

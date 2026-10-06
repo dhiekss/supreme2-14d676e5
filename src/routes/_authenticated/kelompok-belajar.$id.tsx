@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/kelompok-belajar/$id")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(detailQO(params.id)),
   component: DetailPage,
   errorComponent: ({ error }) => (
-    <div className="p-6 text-destructive">Gagal memuat: {error.message}</div>
+    <div className="p-6 text-destructive">Gagal memuat: {(error as Error).message}</div>
   ),
   notFoundComponent: () => <div className="p-6">Kelompok belajar tidak ditemukan</div>,
 });
