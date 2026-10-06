@@ -23,6 +23,7 @@ import {
   attendanceDetailView,
   deleteAttendanceRecord,
   listOfficers,
+  presensiPerMurid,
 } from "@/lib/presensi-report.functions";
 import { listRombel, saveAttendance } from "@/lib/presensi.functions";
 import { importAttendance } from "@/lib/presensi-import.functions";
@@ -458,6 +459,9 @@ function LaporanPresensi() {
 
       {/* Detail presensi */}
       <DetailPresensiCard />
+
+      {/* Detail presensi per murid */}
+      <PresensiPerMuridCard />
 
       {/* Ekspor PDF Daftar Hadir Murid */}
       <DaftarHadirExportCards />
@@ -1364,3 +1368,160 @@ function EditDetailDialog({ recordId, onClose }: { recordId: string | null; onCl
   );
 }
 
+
+function PresensiPerMuridCard() {
+  const today = todayWIB();
+  const [from, setFrom] = useState(today.slice(0, 8) + "01");
+  const [to, setTo] = useState(today);
+  const [tingkat, setTingkat] = useState("__all");
+  const [konsentrasi, setKonsentrasi] = useState("__all");
+  const [rombel, setRombel] = useState("__all");
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [sortKey, setSortKey] = useState<string>("rombel");
+  const [sortDir, setSortDir] = useState<1 | -1>(1);
+  const fetchFn = useServerFn(presensiPerMurid);
+  const { data, isFetching } = useQuery({
+    queryKey: ["presensi-per-murid", from, to],
+    queryFn: () => fetchFn({ data: { from, to } }),
+    enabled: !!from && !!to && from <= to,
+  });
+  const all = (data?.rows ?? []) as any[];
+  const uniq = (xs: string[]) => [...new Set(xs.filter((x) => x && x !== "-"))].sort();
+  const tingkatList = uniq(all.map((r) => r.tingkat));
+  const konsList = uniq(all.map((r) => r.konsentrasi));
+  const rombelList = uniq(
+    all.filter((r) => (tingkat === "__all" || r.tingkat === tingkat) && (konsentrasi === "__all" || r.konsentrasi === konsentrasi)).map((r) => r.rombel),
+  );
+  const rows = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    const f = all.filter((r) =>
+      (tingkat === "__all" || r.tingkat === tingkat) &&
+      (konsentrasi === "__all" || r.konsentrasi === konsentrasi) &&
+      (rombel === "__all" || r.rombel === rombel) &&
+      (!s || String(r.name).toLowerCase().includes(s) || String(r.nis).includes(s)),
+    );
+    return [...f].sort((a, b) => {
+      const va = a[sortKey], vb = b[sortKey];
+      if (typeof va === "number") return (va - vb) * sortDir;
+      return String(va).localeCompare(String(vb)) * sortDir;
+    });
+  }, [all, tingkat, konsentrasi, rombel, q, sortKey, sortDir]);
+  useEffect(() => setPage(1), [tingkat, konsentrasi, rombel, q, from, to, pageSize]);
+  const size = pageSize === 0 ? Math.max(rows.length, 1) : pageSize;
+  const totalPages = Math.max(1, Math.ceil(rows.length / size));
+  const cur = Math.min(page, totalPages);
+  const pageRows = rows.slice((cur - 1) * size, cur * size);
+
+  const toggleSort = (k: string) => {
+    if (sortKey === k) setSortDir((d) => (d === 1 ? -1 : 1));
+    else { setSortKey(k); setSortDir(1); }
+  };
+  const exportXlsx = () => {
+    if (!rows.length) return toast.error("Tidak ada data untuk diunduh");
+    const ws = XLSX.utils.json_to_sheet(rows.map((r, i) => ({
+      No: i + 1, NIS: r.nis, Nama: r.name, Tingkat: r.tingkat, "Konsentrasi Keahlian": r.konsentrasi,
+      Rombel: r.rombel, Hadir: r.H, Sakit: r.S, Izin: r.I, Alfa: r.A,
+    })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Presensi per Murid");
+    XLSX.writeFile(wb, `presensi-per-murid_${from}_sd_${to}.xlsx`);
+  };
+  const cols: [string, string, boolean][] = [
+    ["name", "Nama", false], ["tingkat", "Tingkat", false], ["konsentrasi", "Konsentrasi Keahlian", false],
+    ["rombel", "Rombel", false], ["H", "Hadir", true], ["S", "Sakit", true], ["I", "Izin", true], ["A", "Alfa", true],
+  ];
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4 text-primary" /> Detail Presensi per Murid</CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">Jumlah Hadir, Sakit, Izin, dan Alfa setiap murid pada rentang tanggal terpilih.</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={exportXlsx} disabled={!rows.length}>
+            <Download className="h-4 w-4 mr-1" /> Unduh Excel
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+          <div className="space-y-1"><Label className="text-xs">Dari</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+          <div className="space-y-1"><Label className="text-xs">Sampai</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+          <div className="space-y-1"><Label className="text-xs">Tingkat</Label>
+            <Select value={tingkat} onValueChange={(v) => { setTingkat(v); setRombel("__all"); }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="__all">Semua</SelectItem>{tingkatList.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1"><Label className="text-xs">Konsentrasi</Label>
+            <Select value={konsentrasi} onValueChange={(v) => { setKonsentrasi(v); setRombel("__all"); }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="__all">Semua</SelectItem>{konsList.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1"><Label className="text-xs">Rombel</Label>
+            <Select value={rombel} onValueChange={setRombel}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="__all">Semua</SelectItem>{rombelList.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1"><Label className="text-xs">Cari</Label>
+            <div className="relative"><Search className="h-4 w-4 absolute left-2 top-2.5 text-muted-foreground" />
+              <Input className="pl-8" placeholder="Nama / NIS" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+          </div>
+        </div>
+        {from > to && <p className="text-xs text-destructive">Tanggal awal tidak boleh melebihi tanggal akhir.</p>}
+        <div className="rounded-md border overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">No</TableHead>
+                {cols.map(([k, label, num]) => (
+                  <TableHead key={k} className={cn("cursor-pointer select-none whitespace-nowrap", num && "text-center")} onClick={() => toggleSort(k)}>
+                    <span className="inline-flex items-center gap-1">{label}<ArrowUpDown className={cn("h-3 w-3", sortKey === k ? "text-primary" : "opacity-40")} /></span>
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isFetching && !data ? (
+                <TableRow><TableCell colSpan={9} className="text-center py-6 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin inline mr-2" />Memuat...</TableCell></TableRow>
+              ) : pageRows.length === 0 ? (
+                <TableRow><TableCell colSpan={9} className="text-center py-6 text-muted-foreground">Tidak ada data</TableCell></TableRow>
+              ) : pageRows.map((r, i) => (
+                <TableRow key={r.id}>
+                  <TableCell>{(cur - 1) * size + i + 1}</TableCell>
+                  <TableCell><div className="font-medium">{r.name}</div><div className="text-xs text-muted-foreground">{r.nis}</div></TableCell>
+                  <TableCell>{r.tingkat}</TableCell>
+                  <TableCell>{r.konsentrasi}</TableCell>
+                  <TableCell>{r.rombel}</TableCell>
+                  <TableCell className="text-center">{r.H}</TableCell>
+                  <TableCell className="text-center">{r.S}</TableCell>
+                  <TableCell className="text-center">{r.I}</TableCell>
+                  <TableCell className={cn("text-center", r.A > 0 && "text-destructive font-semibold")}>{r.A}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">{rows.length} murid · Tampilkan</span>
+            <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+              <SelectTrigger className="w-24 h-8"><SelectValue /></SelectTrigger>
+              <SelectContent>{[10, 20, 50, 100].map((n) => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}<SelectItem value="0">Semua</SelectItem></SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" disabled={cur <= 1} onClick={() => setPage(cur - 1)}>Sebelumnya</Button>
+            <span>{cur} / {totalPages}</span>
+            <Button size="sm" variant="outline" disabled={cur >= totalPages} onClick={() => setPage(cur + 1)}>Berikutnya</Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
