@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/pembelajaran/rekap-kbm")({
   loader: ({ context }) =>
     Promise.all([context.queryClient.ensureQueryData(listQO), context.queryClient.ensureQueryData(optsQO)]),
   component: RekapKbmPage,
-  errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal memuat: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal memuat: {(error as Error).message}</div>,
 });
 
 type JamStatus = "M" | "T+" | "T-";

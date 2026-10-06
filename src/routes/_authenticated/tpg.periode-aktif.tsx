@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/tpg/periode-aktif")({
   ssr: false,
   head: () => ({ meta: [{ title: "Periode Aktif TPG — SUPREME XPOES" }] }),
   component: PeriodeAktifPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error).message}</div>,
 });
 
 function PeriodeAktifPage() {

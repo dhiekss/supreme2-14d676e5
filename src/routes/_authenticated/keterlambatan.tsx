@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/keterlambatan")({
   head: () => ({ meta: [{ title: "Input Keterlambatan — SUPREME XPOES" }] }),
   loader: async () => ({ rombel: await listRombel() }),
   component: KeterlambatanPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error).message}</div>,
 });
 
 function useNow() {

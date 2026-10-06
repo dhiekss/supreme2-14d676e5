@@ -29,7 +29,7 @@ import { RombelAccessDialog, BulkRombelAccessDialog } from "@/components/rombel-
 export const Route = createFileRoute("/_authenticated/users")({
   head: () => ({ meta: [{ title: "Manajemen User — SUPREME XPOES" }] }),
   component: UsersPage,
-  errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal: {(error as Error).message}</div>,
 });
 
 const ROLES = ["superadmin", "admin", "wakasek", "kakonli", "walas", "guru", "murid", "tendik", "admin_sarpras", "admin_persuratan", "admin_tpg"] as const;

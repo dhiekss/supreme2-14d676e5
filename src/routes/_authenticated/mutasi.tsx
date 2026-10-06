@@ -35,7 +35,7 @@ function useDebounced<T>(value: T, delay = 350) {
 export const Route = createFileRoute("/_authenticated/mutasi")({
   head: () => ({ meta: [{ title: "Mutasi Murid — SUPREME XPOES" }] }),
   component: MutasiPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error).message}</div>,
 });
 
 const ALASAN_RESIGN = [

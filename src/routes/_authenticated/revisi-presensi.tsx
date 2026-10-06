@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/revisi-presensi")({
     return { rombel };
   },
   component: RevisiPage,
-  errorComponent: ({ error }) => <div className="text-destructive p-4">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive p-4">Gagal: {(error as Error).message}</div>,
 });
 
 const STATUS_LABEL: Record<string, string> = { H: "Hadir", S: "Sakit", I: "Izin", A: "Alfa", P: "PKL" };

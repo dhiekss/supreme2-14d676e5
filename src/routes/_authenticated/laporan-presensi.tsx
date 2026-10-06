@@ -43,7 +43,7 @@ import {
 export const Route = createFileRoute("/_authenticated/laporan-presensi")({
   head: () => ({ meta: [{ title: "Laporan Presensi — SUPREME XPOES" }] }),
   component: LaporanPresensi,
-  errorComponent: ({ error }) => <div className="text-destructive p-4">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive p-4">Gagal: {(error as Error).message}</div>,
 });
 
 const STATUS_COLORS: Record<string, string> = {

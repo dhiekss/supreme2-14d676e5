@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/sarpras")({
     context.queryClient.ensureQueryData(optsQO),
   ]),
   component: SarprasPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error).message}</div>,
 });
 
 function SarprasPage() {

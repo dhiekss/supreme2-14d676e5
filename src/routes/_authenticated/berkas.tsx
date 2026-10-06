@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/berkas")({
   head: () => ({ meta: [{ title: "Berkas Pembelajaran — SUPREME XPOES" }] }),
   loader: async () => ({ opts: await berkasOptions() }),
   component: BerkasPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error).message}</div>,
 });
 
 function BerkasPage() {

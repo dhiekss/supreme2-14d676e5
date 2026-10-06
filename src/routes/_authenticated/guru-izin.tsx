@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/guru-izin")({
   head: () => ({ meta: [{ title: "Izin Guru — SUPREME XPOES" }] }),
   loader: async () => ({ opts: await izinOptions() }),
   component: IzinPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error).message}</div>,
 });
 
 function IzinPage() {

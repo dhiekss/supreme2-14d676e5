@@ -25,7 +25,7 @@ import {
 export const Route = createFileRoute("/_authenticated/verval")({
   head: () => ({ meta: [{ title: "Verval Murid — SUPREME XPOES" }] }),
   component: VervalPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error).message}</div>,
 });
 
 const STATUS_OPTS = [

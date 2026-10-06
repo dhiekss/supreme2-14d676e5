@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/pembelajaran/kbm")({
   head: () => ({ meta: [{ title: "Lapor KBM — SUPREME EXPOES" }] }),
   loader: ({ context }) => context.queryClient.ensureQueryData(rombelQO),
   component: LaporKbmPage,
-  errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal memuat: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal memuat: {(error as Error).message}</div>,
 });
 
 const HOURS = Array.from({ length: 10 }, (_, i) => i + 1);

@@ -15,7 +15,7 @@ import { listSettings, upsertSetting, deleteSetting } from "@/lib/settings.funct
 export const Route = createFileRoute("/_authenticated/pengaturan/database")({
   head: () => ({ meta: [{ title: "Pengaturan — SUPREME XPOES" }] }),
   component: PengaturanPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error).message}</div>,
 });
 
 function PengaturanPage() {

@@ -23,7 +23,7 @@ import {
 export const Route = createFileRoute("/_authenticated/notifikasi")({
   head: () => ({ meta: [{ title: "Notifikasi WA — SUPREME XPOES" }] }),
   component: NotifikasiPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error).message}</div>,
 });
 
 const TYPES = ["umum", "presensi", "izin", "sp", "tpg", "persuratan", "perpus"];
