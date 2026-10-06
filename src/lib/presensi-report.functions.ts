@@ -555,3 +555,43 @@ export const listOfficers = createServerFn({ method: "GET" })
     return [...set].sort();
   });
 
+
+export const presensiPerMurid = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ from: z.string(), to: z.string() }).parse)
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const allowed = await getAllowedRombelIds(supabase, context.userId);
+    if (allowed !== null && allowed.length === 0) return { rows: [] as any[] };
+    const [rombelAll, studentsAll, records] = await Promise.all([
+      fetchAllPaged((f, t) => supabase.from("rombel").select("id, name, tingkat, konsentrasi_keahlian").range(f, t)),
+      fetchAllPaged((f, t) => supabase.from("students").select("id, nis, name, rombel_id").range(f, t)),
+      fetchAllPaged((f, t) =>
+        supabase.from("attendance_records").select("id, rombel_id").gte("date", data.from).lte("date", data.to).range(f, t),
+      ),
+    ]);
+    const rombel = allowed === null ? rombelAll : rombelAll.filter((r: any) => allowed.includes(r.id));
+    const rombelById = new Map(rombel.map((r: any) => [r.id, r]));
+    const students = studentsAll.filter((s: any) => s.rombel_id && rombelById.has(s.rombel_id));
+    const recIds = records.filter((r: any) => r.rombel_id && rombelById.has(r.rombel_id)).map((r: any) => r.id);
+    const dets = await fetchDetailsByRecordIds(supabase, recIds);
+    const counts = new Map<string, { H: number; S: number; I: number; A: number; P: number }>();
+    for (const d of dets) {
+      let c = counts.get(d.student_id);
+      if (!c) { c = { H: 0, S: 0, I: 0, A: 0, P: 0 }; counts.set(d.student_id, c); }
+      const st = d.status as keyof typeof c;
+      if (st in c) c[st]++;
+    }
+    const rows = students.map((s: any) => {
+      const r: any = rombelById.get(s.rombel_id);
+      const c = counts.get(s.id) ?? { H: 0, S: 0, I: 0, A: 0, P: 0 };
+      return {
+        id: s.id, nis: s.nis ?? "", name: s.name,
+        rombel_id: s.rombel_id, rombel: r?.name ?? "-",
+        tingkat: r?.tingkat != null ? String(r.tingkat) : "-",
+        konsentrasi: r?.konsentrasi_keahlian ?? "-",
+        ...c,
+      };
+    }).sort((a: any, b: any) => a.rombel.localeCompare(b.rombel) || String(a.name).localeCompare(String(b.name)));
+    return { rows };
+  });

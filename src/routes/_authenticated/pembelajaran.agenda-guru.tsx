@@ -29,7 +29,7 @@ import {
 export const Route = createFileRoute("/_authenticated/pembelajaran/agenda-guru")({
   head: () => ({ meta: [{ title: "Agenda Guru — SUPREME XPOES" }] }),
   component: AgendaGuruPage,
-  errorComponent: ({ error }) => (<div className="text-destructive p-6">Gagal: {error.message}</div>),
+  errorComponent: ({ error }) => (<div className="text-destructive p-6">Gagal: {(error as Error).message}</div>),
 });
 
 const HARI_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];

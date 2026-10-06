@@ -109,7 +109,7 @@ export const Route = createFileRoute("/_authenticated/sp")({
     <div className="p-6 text-sm text-muted-foreground">Memuat data BP/BK…</div>
   ),
   errorComponent: ({ error }) => (
-    <div className="text-destructive">Gagal: {error.message}</div>
+    <div className="text-destructive">Gagal: {(error as Error).message}</div>
   ),
 });
 

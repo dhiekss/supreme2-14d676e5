@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
     return null;
   },
   component: Dashboard,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal memuat: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal memuat: {(error as Error).message}</div>,
   notFoundComponent: () => <div>Halaman tidak ditemukan.</div>,
 });
 

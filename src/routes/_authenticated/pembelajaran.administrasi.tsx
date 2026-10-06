@@ -35,7 +35,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated/pembelajaran/administrasi")({
   head: () => ({ meta: [{ title: "Administrasi Pembelajaran — SUPREME XPOES" }] }),
   component: AdministrasiPage,
-  errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal: {(error as Error).message}</div>,
 });
 
 type Ket = "belum" | "menunggu" | "valid" | "perbaikan";

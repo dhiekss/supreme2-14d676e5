@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/tpg/penyerahan-iuran")({
   ssr: false,
   head: () => ({ meta: [{ title: "Penyerahan Iuran TPG — SUPREME XPOES" }] }),
   component: PenyerahanIuranPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error).message}</div>,
 });
 
 function StatCard({ label, value, icon, valueClass, cardClass }: {

@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/tpg/laporan")({
     return null;
   },
   component: LaporanPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error).message}</div>,
 });
 
 function InfoItem({ label, value }: { label: string; value: ReactNode }) {

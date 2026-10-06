@@ -34,7 +34,7 @@ import { useRef } from "react";
 export const Route = createFileRoute("/_authenticated/pembelajaran/pengaturan")({
   head: () => ({ meta: [{ title: "Pengaturan Pembelajaran — SUPREME XPOES" }] }),
   component: PengaturanPembelajaranPage,
-  errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal: {(error as Error).message}</div>,
 });
 
 type SortKey =

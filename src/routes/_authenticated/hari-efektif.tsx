@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/hari-efektif")({
   head: () => ({ meta: [{ title: "Hari Efektif — SUPREME XPOES" }] }),
   loader: async () => ({ items: await listHariEfektif({ data: {} }) }),
   component: HariEfektifPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error).message}</div>,
 });
 
 const JENIS_LABEL: Record<string, string> = {

@@ -40,7 +40,7 @@ export const Route = createFileRoute("/_authenticated/presensi")({
     ]),
   component: PresensiPage,
   errorComponent: ({ error }) => (
-    <div className="text-destructive">Gagal memuat: {error.message}</div>
+    <div className="text-destructive">Gagal memuat: {(error as Error).message}</div>
   ),
 });
 

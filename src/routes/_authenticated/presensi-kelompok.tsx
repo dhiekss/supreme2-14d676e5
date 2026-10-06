@@ -41,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/presensi-kelompok")({
     ]),
   component: PresensiKelompokPage,
   errorComponent: ({ error }) => (
-    <div className="text-destructive">Gagal memuat: {error.message}</div>
+    <div className="text-destructive">Gagal memuat: {(error as Error).message}</div>
   ),
 });
 

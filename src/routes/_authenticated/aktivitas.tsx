@@ -20,7 +20,7 @@ import {
 export const Route = createFileRoute("/_authenticated/aktivitas")({
   head: () => ({ meta: [{ title: "Aktivitas / Audit Log — SUPREME XPOES" }] }),
   component: AktivitasPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error).message}</div>,
 });
 
 function AktivitasPage() {

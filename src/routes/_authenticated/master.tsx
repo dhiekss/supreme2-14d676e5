@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/master")({
   head: () => ({ meta: [{ title: "Master Data — SUPREME XPOES" }] }),
   loader: ({ context }) => context.queryClient.ensureQueryData(masterQO),
   component: MasterPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal memuat: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal memuat: {(error as Error).message}</div>,
 });
 
 function MasterPage() {

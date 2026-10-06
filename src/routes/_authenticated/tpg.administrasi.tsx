@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/tpg/administrasi")({
   ssr: false,
   head: () => ({ meta: [{ title: "Administrasi TPG — SUPREME XPOES" }] }),
   component: AdministrasiPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error).message}</div>,
 });
 
 function fmtDateTime(v: string | null | undefined) {

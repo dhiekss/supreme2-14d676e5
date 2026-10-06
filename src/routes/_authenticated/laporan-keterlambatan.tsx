@@ -49,7 +49,7 @@ export const Route = createFileRoute("/_authenticated/laporan-keterlambatan")({
     directory: await listRombelDirectory(),
   }),
   component: LaporanKeterlambatanPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error).message}</div>,
 });
 
 const BULAN_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];

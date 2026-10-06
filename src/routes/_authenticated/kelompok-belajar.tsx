@@ -50,7 +50,7 @@ export const Route = createFileRoute("/_authenticated/kelompok-belajar")({
   },
   component: KelompokBelajarPage,
   errorComponent: ({ error }) => (
-    <div className="text-destructive">Gagal memuat: {error.message}</div>
+    <div className="text-destructive">Gagal memuat: {(error as Error).message}</div>
   ),
   notFoundComponent: () => <div>Tidak ditemukan</div>,
 });

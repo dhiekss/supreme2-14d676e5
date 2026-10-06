@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/tpg/referensi")({
     return null;
   },
   component: ReferensiPage,
-  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Gagal: {(error as Error).message}</div>,
 });
 
 function ReferensiPage() {

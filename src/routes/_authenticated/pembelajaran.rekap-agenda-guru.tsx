@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/pembelajaran/rekap-agenda-
   head: () => ({ meta: [{ title: "Rekap Agenda Guru — SUPREME EXPOES" }] }),
   loader: ({ context }) => context.queryClient.ensureQueryData(optsQO),
   component: RekapAgendaGuruPage,
-  errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal memuat: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal memuat: {(error as Error).message}</div>,
 });
 
 function RekapAgendaGuruPage() {
