@@ -122,13 +122,18 @@ export const resetMenuLayout = createServerFn({ method: "POST" })
 
 export const applyMenuLayoutToAll = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { layout: LayoutNode[] }) => {
+  .inputValidator((input: { layout: LayoutNode[]; roles?: Role[] }) => {
     if (!Array.isArray(input.layout)) throw new Error("Invalid layout");
+    if (input.roles) {
+      if (!Array.isArray(input.roles) || input.roles.length === 0) throw new Error("Pilih minimal satu role");
+      if (input.roles.some((r) => !ROLES.includes(r))) throw new Error("Invalid role");
+    }
     return input;
   })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const rows = ROLES.map((role) => ({
+    const targets = data.roles ? Array.from(new Set(data.roles)) : [...ROLES];
+    const rows = targets.map((role) => ({
       role,
       layout: data.layout,
       updated_by: context.userId,

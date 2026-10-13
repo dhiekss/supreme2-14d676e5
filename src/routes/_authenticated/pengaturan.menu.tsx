@@ -26,7 +26,17 @@ import {
   ChevronRight,
   ChevronDown,
   ArrowRightLeft,
+  Copy,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -153,6 +163,20 @@ function Editor() {
     onError: (e: any) => toast.error(e?.message ?? "Gagal mereset"),
   });
 
+  const [copyOpen, setCopyOpen] = useState(false);
+  const [copyTargets, setCopyTargets] = useState<Role[]>([]);
+  const copyMut = useMutation({
+    mutationFn: (payload: { layout: LayoutNode[]; roles: Role[] }) => applyAllFn({ data: payload }),
+    onSuccess: (res: any) => {
+      toast.success(`Pengaturan disalin ke ${res?.count ?? 0} role`);
+      qc.invalidateQueries({ queryKey: ["menu-layouts-all"] });
+      qc.invalidateQueries({ queryKey: ["sidebar-layout"] });
+      setCopyOpen(false);
+      setCopyTargets([]);
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Gagal menyalin"),
+  });
+
   const applyAllMut = useMutation({
     mutationFn: (payload: { layout: LayoutNode[] }) => applyAllFn({ data: payload }),
     onSuccess: (res: any) => {
@@ -237,6 +261,59 @@ function Editor() {
                     >
                       Terapkan ke Semua Role
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        setCopyTargets([]);
+                        setCopyOpen(true);
+                      }}
+                    >
+                      <Copy className="h-4 w-4 mr-1" />
+                      Salin ke Role…
+                    </Button>
+                    <Dialog open={copyOpen} onOpenChange={setCopyOpen}>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Salin Pengaturan Menu</DialogTitle>
+                          <DialogDescription>
+                            Salin layout role <b>{ROLE_LABEL[role]}</b>
+                            {dirty ? " (termasuk perubahan yang belum disimpan)" : ""} ke role tujuan.
+                            Layout tersimpan pada role tujuan akan ditimpa.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="flex gap-2 text-xs">
+                          <Button size="sm" variant="outline" onClick={() => setCopyTargets(ROLES.filter((r) => r !== role))}>
+                            Pilih semua
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => setCopyTargets([])}>
+                            Kosongkan
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 max-h-72 overflow-y-auto">
+                          {ROLES.filter((r) => r !== role).map((r) => (
+                            <label key={r} className="flex items-center gap-2 rounded-md border p-2 text-sm cursor-pointer">
+                              <Checkbox
+                                checked={copyTargets.includes(r)}
+                                onCheckedChange={(c) =>
+                                  setCopyTargets((prev) => (c ? [...prev, r] : prev.filter((x) => x !== r)))
+                                }
+                              />
+                              {ROLE_LABEL[r]}
+                            </label>
+                          ))}
+                        </div>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setCopyOpen(false)}>Batal</Button>
+                          <Button
+                            disabled={copyTargets.length === 0 || copyMut.isPending}
+                            onClick={() => copyMut.mutate({ layout, roles: copyTargets })}
+                          >
+                            {copyMut.isPending ? "Menyalin…" : `Salin ke ${copyTargets.length} role`}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                     <Button
                       size="sm"
                       variant="outline"
