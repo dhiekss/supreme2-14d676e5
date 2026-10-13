@@ -275,14 +275,25 @@ export const userSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
+    const callerSuper = await isSuperadmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: profiles } = await supabaseAdmin.from("profiles").select("is_active");
-    const { data: roles } = await supabaseAdmin.from("user_roles").select("role");
+    const { data: profiles } = await supabaseAdmin.from("profiles").select("id, is_active");
+    const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id, role");
     const { data: presence } = await supabaseAdmin.from("user_presence").select("is_online, last_seen_at");
-    const total = profiles?.length ?? 0;
-    const active = (profiles ?? []).filter((p: any) => p.is_active !== false).length;
+    // Hide superadmin accounts from non-superadmin callers (same rule as listUsers)
+    let visibleProfiles = profiles ?? [];
+    let visibleRoles = roles ?? [];
+    if (!callerSuper) {
+      const superIds = new Set(
+        (roles ?? []).filter((r: any) => r.role === "superadmin").map((r: any) => r.user_id),
+      );
+      visibleProfiles = visibleProfiles.filter((p: any) => !superIds.has(p.id));
+      visibleRoles = visibleRoles.filter((r: any) => r.role !== "superadmin" && !superIds.has(r.user_id));
+    }
+    const total = visibleProfiles.length;
+    const active = visibleProfiles.filter((p: any) => p.is_active !== false).length;
     const byRole: Record<string, number> = {};
-    for (const r of roles ?? []) {
+    for (const r of visibleRoles) {
       const k = (r as any).role;
       byRole[k] = (byRole[k] ?? 0) + 1;
     }
