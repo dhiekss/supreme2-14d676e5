@@ -25,15 +25,20 @@ import {
   toggleUserActive, bulkSetAllActive, forceLogoutAll, listUserActivity,
 } from "@/lib/users.functions";
 import { RombelAccessDialog, BulkRombelAccessDialog } from "@/components/rombel-access-dialogs";
+import { ROLES, type Role } from "@/lib/roles";
 
 export const Route = createFileRoute("/_authenticated/users")({
-  head: () => ({ meta: [{ title: "Manajemen User — SUPREME XPOES" }] }),
+  head: () => ({ meta: [
+    { title: "Manajemen User — SUPREME XPOES" },
+    { name: "description", content: "Kelola akun, role, dan akses pengguna SUPREME." },
+    { property: "og:title", content: "Manajemen User — SUPREME XPOES" },
+    { property: "og:description", content: "Pengelolaan akun dan role pengguna sekolah." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: UsersPage,
   errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal: {(error as Error).message}</div>,
 });
-
-const ROLES = ["superadmin", "admin", "wakasek", "kakonli", "walas", "guru", "murid", "tendik", "admin_sarpras", "admin_persuratan", "admin_tpg"] as const;
-type Role = typeof ROLES[number];
 
 const ROLE_LABEL: Record<string, string> = {
   superadmin: "Superadmin",
@@ -44,6 +49,7 @@ const ROLE_LABEL: Record<string, string> = {
   guru: "Guru",
   murid: "Murid",
   tendik: "Tendik",
+  staff_kurikulum: "Staff Kurikulum",
   admin_sarpras: "Admin Sarpras",
   admin_persuratan: "Admin Persuratan",
   admin_tpg: "Admin TPG",
@@ -58,6 +64,7 @@ const ROLE_BADGE: Record<string, string> = {
   kakonli: "bg-pink-500/10 text-pink-700 border-pink-500/20",
   walas: "bg-indigo-500/10 text-indigo-700 border-indigo-500/20",
   tendik: "bg-lime-500/10 text-lime-700 border-lime-500/20",
+  staff_kurikulum: "bg-secondary text-secondary-foreground border-border",
   admin_sarpras: "bg-amber-500/10 text-amber-700 border-amber-500/20",
   admin_persuratan: "bg-cyan-500/10 text-cyan-700 border-cyan-500/20",
   admin_tpg: "bg-teal-500/10 text-teal-700 border-teal-500/20",

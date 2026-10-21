@@ -1,22 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { LayoutNode } from "@/lib/sidebar-menu";
-
-export const ROLES = [
-  "superadmin",
-  "admin",
-  "wakasek",
-  "kakonli",
-  "walas",
-  "guru",
-  "murid",
-  "tendik",
-  "admin_sarpras",
-  "admin_persuratan",
-  "admin_tpg",
-] as const;
-
-export type Role = (typeof ROLES)[number];
+import { ROLES, getPrimaryRole, type Role } from "@/lib/roles";
+export { ROLES, type Role } from "@/lib/roles";
 
 async function assertAdmin(ctx: {
   supabase: any;
@@ -37,21 +23,7 @@ export const getMyMenuLayout = createServerFn({ method: "GET" })
       .select("role")
       .eq("user_id", context.userId);
     const roles: Role[] = (roleRows ?? []).map((r: any) => r.role);
-    // Priority: superadmin > admin > wakasek > kakonli > walas > admin_* > guru > murid
-    const priority: Role[] = [
-      "superadmin",
-      "admin",
-      "wakasek",
-      "kakonli",
-      "walas",
-      "admin_persuratan",
-      "admin_sarpras",
-      "admin_tpg",
-      "tendik",
-      "guru",
-      "murid",
-    ];
-    const role: Role = priority.find((p) => roles.includes(p)) ?? "guru";
+    const role: Role = getPrimaryRole(roles) ?? "guru";
 
 
     // Superadmin memakai layout tersimpan bila ada; tanpa layout → menu default penuh.
