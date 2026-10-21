@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { listLaporanKbm, listLaporanKbmOptions, deleteLaporanKbm, signKbmMedia, getAttendanceDetailForKbm } from "@/lib/lapor-kbm.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useEffect } from "react";
+import { KbmInputStatus, kbmInputStatusQO } from "@/components/kbm-input-status";
+import { todayWIB } from "@/lib/wib";
 import { todayStamp } from "@/lib/utils";
 import {
   ClipboardList, Trash2, Download, Printer, RefreshCw, BookOpen, CheckCircle2, AlertCircle, XCircle, Eye,
@@ -30,9 +32,16 @@ export const optsQO = queryOptions({
 });
 
 export const Route = createFileRoute("/_authenticated/pembelajaran/rekap-kbm")({
-  head: () => ({ meta: [{ title: "Rekap KBM — SUPREME EXPOES" }] }),
+  head: () => ({ meta: [
+    { title: "Rekap KBM — SUPREME EXPOES" },
+    { name: "description", content: "Rekap pelaksanaan KBM dan kelengkapan input jam 1–9 per rombel." },
+    { property: "og:title", content: "Rekap KBM — SUPREME EXPOES" },
+    { property: "og:description", content: "Pantau laporan KBM dan jam pelajaran yang belum diinput per rombel." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   loader: ({ context }) =>
-    Promise.all([context.queryClient.ensureQueryData(listQO), context.queryClient.ensureQueryData(optsQO)]),
+    Promise.all([context.queryClient.ensureQueryData(listQO), context.queryClient.ensureQueryData(optsQO), context.queryClient.ensureQueryData(kbmInputStatusQO(todayWIB()))]),
   component: RekapKbmPage,
   errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal memuat: {(error as Error).message}</div>,
 });
@@ -173,16 +182,6 @@ function RekapKbmPage() {
     return [...map.values()].sort((a, b) => b.count - a.count);
   }, [statRows]);
 
-  const rombelBelum = useMemo(() => {
-    const usedToday = new Set(
-      statRows
-        .filter((r) => !statTo || r.tanggal <= statTo)
-        .filter((r) => !statFrom || r.tanggal >= statFrom)
-        .map((r) => r.rombel_id),
-    );
-    return (opts.rombel as any[]).filter((r) => !usedToday.has(r.id));
-  }, [opts.rombel, statRows, statFrom, statTo]);
-
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     return (rows as any[]).filter((r) => {
@@ -206,6 +205,7 @@ function RekapKbmPage() {
     onSuccess: () => {
       toast.success("Laporan dihapus");
       qc.invalidateQueries({ queryKey: ["lapor-kbm-list"] });
+      qc.invalidateQueries({ queryKey: ["kbm-input-status"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -336,41 +336,7 @@ function RekapKbmPage() {
             </CardContent>
           </Card>
 
-          {/* Rombel belum menginput */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-red-500" />
-                Peringatan: Rombel Belum Menginput Laporan
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">Daftar rombel yang belum mencatat laporan pada rentang tanggal terpilih.</p>
-            </CardHeader>
-            <CardContent className="p-0 overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">No</TableHead>
-                    <TableHead>Rombel</TableHead>
-                    <TableHead className="text-right">Jumlah Kosong</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rombelBelum.length === 0 && (
-                    <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-6">Semua rombel sudah menginput.</TableCell></TableRow>
-                  )}
-                  {rombelBelum.slice(0, 15).map((r: any, i: number) => (
-                    <TableRow key={r.id}>
-                      <TableCell>{i + 1}</TableCell>
-                      <TableCell className="font-medium">{r.name}</TableCell>
-                      <TableCell className="text-right">
-                        <span className="inline-flex rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-medium">Kosong</span>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <KbmInputStatus />
 
           {/* Guru tanpa tugas */}
           <Card>

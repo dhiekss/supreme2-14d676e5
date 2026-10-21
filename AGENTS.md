@@ -10,3 +10,5 @@
 <!-- LOVABLE:END -->
 
 Use the wali kelas teacher record's private `spesimen-ttd` image in monthly attendance PDF exports, matching by NIP (or an unambiguous exact name) and embedding downloaded data URLs; this avoids exposing private file links and signing the wrong teacher's name.
+
+Compute daily KBM input completeness from paginated reports in a dedicated authenticated read, independently of the limited recap list; this prevents recorded periods being mislabeled as missing.

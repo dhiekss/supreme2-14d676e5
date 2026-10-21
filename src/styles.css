@@ -42,6 +42,10 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-input-complete: var(--input-complete);
+  --color-input-complete-foreground: var(--input-complete-foreground);
+  --color-input-missing: var(--input-missing);
+  --color-input-missing-foreground: var(--input-missing-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -62,6 +66,10 @@
 }
 
 :root {
+  --input-complete: oklch(0.48 0.15 150);
+  --input-complete-foreground: oklch(1 0 0);
+  --input-missing: oklch(0.53 0.2 26);
+  --input-missing-foreground: oklch(1 0 0);
   --radius: 0.625rem;
   --background: oklch(0.985 0.005 240);
   --foreground: oklch(0.320 0.054 134.6);
@@ -101,6 +109,10 @@
 }
 
 .dark {
+  --input-complete: oklch(0.48 0.15 150);
+  --input-complete-foreground: oklch(1 0 0);
+  --input-missing: oklch(0.53 0.2 26);
+  --input-missing-foreground: oklch(1 0 0);
   --background: oklch(0.231 0.018 131.5);
   --foreground: oklch(0.951 0.021 106.9);
   --card: oklch(0.320 0.054 134.6);
