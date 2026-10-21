@@ -1,7 +1,7 @@
 export const KBM_PERIODS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
 export function summarizeKbmInput(
-  rombel: { id: string; name: string | null }[],
+  rombel: { id: string; name: string | null; tingkat?: string | null }[],
   reports: { rombel_id: string | null; jam_list: number[] | null }[],
 ) {
   const input = new Map<string, Set<number>>();
