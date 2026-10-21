@@ -10,7 +10,7 @@ export const getKbmInputStatus = createServerFn({ method: "GET" })
   .handler(async ({ context, data }) => {
     const allowed = await getAllowedRombelIds(context.supabase, context.userId);
     if (allowed !== null && allowed.length === 0) return [];
-    let rombelQuery = context.supabase.from("rombel").select("id, name").order("name");
+    let rombelQuery = context.supabase.from("rombel").select("id, name, tingkat").order("name");
     if (allowed !== null) rombelQuery = rombelQuery.in("id", allowed);
     const { data: rombel, error: rombelError } = await rombelQuery;
     if (rombelError) throw new Error(rombelError.message);
