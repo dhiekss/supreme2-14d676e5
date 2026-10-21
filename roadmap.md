@@ -1,7 +1,8 @@
 # Roadmap
 
-- [ ] Tambahkan detail status input jam KBM 1–9 per rombel dan tanggal
-- [ ] Verifikasi perhitungan dan tampilan status input KBM
+- [x] Tambahkan detail status input jam KBM 1–9 per rombel dan tanggal
+- [x] Verifikasi perhitungan status input KBM dengan 3 tes; pemeriksaan aplikasi berhasil
+- [ ] Verifikasi tampilan status input KBM dengan data asli — terhalang halaman pratinjau kosong saat dibuka otomatis
 
 - [x] Tambahkan akses aman guru untuk mengelola nilai pada penugasan sendiri
 - [x] Tambahkan fungsi data tujuan pembelajaran dan nilai
