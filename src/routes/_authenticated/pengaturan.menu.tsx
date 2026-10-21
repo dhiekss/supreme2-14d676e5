@@ -72,6 +72,14 @@ import {
 } from "@/lib/sidebar-menu";
 
 export const Route = createFileRoute("/_authenticated/pengaturan/menu")({
+  head: () => ({ meta: [
+    { title: "Pengaturan Menu Sidebar — SUPREME" },
+    { name: "description", content: "Atur menu sidebar dan visibilitas menu untuk setiap role sekolah." },
+    { property: "og:title", content: "Pengaturan Menu Sidebar — SUPREME" },
+    { property: "og:description", content: "Pengaturan menu per role dan penyalinan pengaturan antar-role." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: PengaturanMenuPage,
 });
 
@@ -84,6 +92,7 @@ const ROLE_LABEL: Record<Role, string> = {
   guru: "Guru",
   murid: "Murid",
   tendik: "Tendik",
+  staff_kurikulum: "Staff Kurikulum",
 
   admin_persuratan: "Admin Persuratan",
   admin_sarpras: "Admin Sarpras",

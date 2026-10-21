@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getPrimaryRole } from "@/lib/roles";
 
 export const getMyProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -13,21 +14,7 @@ export const getMyProfile = createServerFn({ method: "GET" })
       context.supabase.from("user_roles").select("role").eq("user_id", context.userId),
     ]);
     const roles: string[] = (roleRows ?? []).map((r: any) => r.role);
-    const priority = [
-      "superadmin",
-      "admin",
-      "wakasek",
-      "kakonli",
-      "walas",
-      "admin_persuratan",
-      "admin_sarpras",
-      "admin_tpg",
-      "tendik",
-      "guru",
-      "murid",
-    ];
-
-    const primary = priority.find((p) => roles.includes(p)) ?? roles[0] ?? null;
+    const primary = getPrimaryRole(roles) ?? roles[0] ?? null;
     return {
       id: context.userId,
       email: (profile as any)?.email ?? context.claims?.email ?? null,
