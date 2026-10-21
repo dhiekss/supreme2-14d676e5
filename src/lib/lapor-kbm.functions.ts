@@ -2,6 +2,31 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getAllowedRombelIds } from "@/lib/rombel-access";
 import { z } from "zod";
+import { summarizeKbmInput } from "./kbm-input-status";
+
+export const getKbmInputStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ tanggal: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
+  .handler(async ({ context, data }) => {
+    const allowed = await getAllowedRombelIds(context.supabase, context.userId);
+    if (allowed !== null && allowed.length === 0) return [];
+    let rombelQuery = context.supabase.from("rombel").select("id, name").order("name");
+    if (allowed !== null) rombelQuery = rombelQuery.in("id", allowed);
+    const { data: rombel, error: rombelError } = await rombelQuery;
+    if (rombelError) throw new Error(rombelError.message);
+    const reports: { rombel_id: string | null; jam_list: number[] | null }[] = [];
+    for (let offset = 0; ; offset += 500) {
+      let query = context.supabase.from("kbm_laporan")
+        .select("id, rombel_id, jam_list").eq("tanggal", data.tanggal)
+        .order("id").range(offset, offset + 499);
+      if (allowed !== null) query = query.in("rombel_id", allowed);
+      const { data: page, error } = await query;
+      if (error) throw new Error(error.message);
+      reports.push(...(page ?? []));
+      if (!page || page.length < 500) break;
+    }
+    return summarizeKbmInput(rombel ?? [], reports);
+  });
 
 // ============ Options / dependent selects ============
 
