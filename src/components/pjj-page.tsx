@@ -169,7 +169,7 @@ function PjjEditor({ detail, options, onClose }: { detail?: Detail; options: Awa
           </Table>
         </div>
       </section>
-      <div className="grid sm:grid-cols-2 gap-4"><PhotoField id="pjj-instruksi" label="Bukti Instruksi Tugas" file={instruksi} url={detail?.instruksi_url} onChange={setInstruksi} /><PhotoField id="pjj-terkumpul" label="Bukti Tugas Terkumpul" file={terkumpul} url={detail?.terkumpul_url} onChange={setTerkumpul} /></div>
+      <div className="grid sm:grid-cols-2 gap-4"><PhotoField id="pjj-instruksi" label="Bukti Instruksi Tugas" required file={instruksi} url={detail?.instruksi_url} onChange={setInstruksi} /><PhotoField id="pjj-terkumpul" label="Bukti Tugas Terkumpul" required file={terkumpul} url={detail?.terkumpul_url} onChange={setTerkumpul} /></div>
       <div className="space-y-2"><Label>Tanda Tangan</Label>{detail?.ttd_guru && <img src={detail.ttd_guru} alt="Tanda tangan tersimpan" className="max-h-24" />}<SignaturePad ref={sig} className="h-40 border rounded-md" /><Button type="button" variant="outline" size="sm" onClick={() => sig.current?.clear()}>Bersihkan</Button></div>
       <div className="flex justify-end gap-2 border-t pt-4"><Button type="button" variant="outline" disabled={save.isPending} onClick={onClose}>Batal</Button><Button type="submit" disabled={save.isPending || schedule.isFetching || !validSlot || students.isFetching || students.isError}><Save className="h-4 w-4 mr-2" />{save.isPending ? "Menyimpan…" : "Simpan Laporan"}</Button></div>
     </form>
