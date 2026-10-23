@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Sesuaikan pilihan kelas PJJ dengan jadwal harian Agenda Guru dan uji aturan jadwal
+- [x] Sesuaikan pilihan kelas PJJ dengan jadwal harian Agenda Guru dan uji aturan jadwal
 
 - [x] Tambahkan menu PJJ, laporan pribadi dengan murid aktif dan dua bukti foto
 - [x] Tambahkan rekap PJJ: admin semua laporan, akun lain hanya laporan sendiri
