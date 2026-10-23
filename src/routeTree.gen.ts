@@ -62,6 +62,7 @@ import { Route as AuthenticatedPembelajaranDashboardNilaiRouteImport } from './r
 import { Route as AuthenticatedPembelajaranKbmRouteImport } from './routes/_authenticated/pembelajaran.kbm'
 import { Route as AuthenticatedPembelajaranNilaiRouteImport } from './routes/_authenticated/pembelajaran.nilai'
 import { Route as AuthenticatedPembelajaranPengaturanRouteImport } from './routes/_authenticated/pembelajaran.pengaturan'
+import { Route as AuthenticatedPembelajaranPjjRouteImport } from './routes/_authenticated/pembelajaran.pjj'
 import { Route as AuthenticatedPembelajaranRekapAgendaGuruRouteImport } from './routes/_authenticated/pembelajaran.rekap-agenda-guru'
 import { Route as AuthenticatedPembelajaranRekapKbmRouteImport } from './routes/_authenticated/pembelajaran.rekap-kbm'
 import { Route as AuthenticatedPengaturanAnalyticsRouteImport } from './routes/_authenticated/pengaturan.analytics'
@@ -372,6 +373,12 @@ const AuthenticatedPembelajaranPengaturanRoute =
     path: '/pembelajaran/pengaturan',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPembelajaranPjjRoute =
+  AuthenticatedPembelajaranPjjRouteImport.update({
+    id: '/pembelajaran/pjj',
+    path: '/pembelajaran/pjj',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPembelajaranRekapAgendaGuruRoute =
   AuthenticatedPembelajaranRekapAgendaGuruRouteImport.update({
     id: '/pembelajaran/rekap-agenda-guru',
@@ -542,6 +549,7 @@ export interface FileRoutesByFullPath {
   '/pembelajaran/kbm': typeof AuthenticatedPembelajaranKbmRoute
   '/pembelajaran/nilai': typeof AuthenticatedPembelajaranNilaiRoute
   '/pembelajaran/pengaturan': typeof AuthenticatedPembelajaranPengaturanRoute
+  '/pembelajaran/pjj': typeof AuthenticatedPembelajaranPjjRoute
   '/pembelajaran/rekap-agenda-guru': typeof AuthenticatedPembelajaranRekapAgendaGuruRoute
   '/pembelajaran/rekap-kbm': typeof AuthenticatedPembelajaranRekapKbmRoute
   '/pengaturan/analytics': typeof AuthenticatedPengaturanAnalyticsRoute
@@ -615,6 +623,7 @@ export interface FileRoutesByTo {
   '/pembelajaran/kbm': typeof AuthenticatedPembelajaranKbmRoute
   '/pembelajaran/nilai': typeof AuthenticatedPembelajaranNilaiRoute
   '/pembelajaran/pengaturan': typeof AuthenticatedPembelajaranPengaturanRoute
+  '/pembelajaran/pjj': typeof AuthenticatedPembelajaranPjjRoute
   '/pembelajaran/rekap-agenda-guru': typeof AuthenticatedPembelajaranRekapAgendaGuruRoute
   '/pembelajaran/rekap-kbm': typeof AuthenticatedPembelajaranRekapKbmRoute
   '/pengaturan/analytics': typeof AuthenticatedPengaturanAnalyticsRoute
@@ -691,6 +700,7 @@ export interface FileRoutesById {
   '/_authenticated/pembelajaran/kbm': typeof AuthenticatedPembelajaranKbmRoute
   '/_authenticated/pembelajaran/nilai': typeof AuthenticatedPembelajaranNilaiRoute
   '/_authenticated/pembelajaran/pengaturan': typeof AuthenticatedPembelajaranPengaturanRoute
+  '/_authenticated/pembelajaran/pjj': typeof AuthenticatedPembelajaranPjjRoute
   '/_authenticated/pembelajaran/rekap-agenda-guru': typeof AuthenticatedPembelajaranRekapAgendaGuruRoute
   '/_authenticated/pembelajaran/rekap-kbm': typeof AuthenticatedPembelajaranRekapKbmRoute
   '/_authenticated/pengaturan/analytics': typeof AuthenticatedPengaturanAnalyticsRoute
@@ -767,6 +777,7 @@ export interface FileRouteTypes {
     | '/pembelajaran/kbm'
     | '/pembelajaran/nilai'
     | '/pembelajaran/pengaturan'
+    | '/pembelajaran/pjj'
     | '/pembelajaran/rekap-agenda-guru'
     | '/pembelajaran/rekap-kbm'
     | '/pengaturan/analytics'
@@ -840,6 +851,7 @@ export interface FileRouteTypes {
     | '/pembelajaran/kbm'
     | '/pembelajaran/nilai'
     | '/pembelajaran/pengaturan'
+    | '/pembelajaran/pjj'
     | '/pembelajaran/rekap-agenda-guru'
     | '/pembelajaran/rekap-kbm'
     | '/pengaturan/analytics'
@@ -915,6 +927,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pembelajaran/kbm'
     | '/_authenticated/pembelajaran/nilai'
     | '/_authenticated/pembelajaran/pengaturan'
+    | '/_authenticated/pembelajaran/pjj'
     | '/_authenticated/pembelajaran/rekap-agenda-guru'
     | '/_authenticated/pembelajaran/rekap-kbm'
     | '/_authenticated/pengaturan/analytics'
@@ -1318,6 +1331,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPembelajaranPengaturanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pembelajaran/pjj': {
+      id: '/_authenticated/pembelajaran/pjj'
+      path: '/pembelajaran/pjj'
+      fullPath: '/pembelajaran/pjj'
+      preLoaderRoute: typeof AuthenticatedPembelajaranPjjRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/pembelajaran/rekap-agenda-guru': {
       id: '/_authenticated/pembelajaran/rekap-agenda-guru'
       path: '/pembelajaran/rekap-agenda-guru'
@@ -1567,6 +1587,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPembelajaranKbmRoute: typeof AuthenticatedPembelajaranKbmRoute
   AuthenticatedPembelajaranNilaiRoute: typeof AuthenticatedPembelajaranNilaiRoute
   AuthenticatedPembelajaranPengaturanRoute: typeof AuthenticatedPembelajaranPengaturanRoute
+  AuthenticatedPembelajaranPjjRoute: typeof AuthenticatedPembelajaranPjjRoute
   AuthenticatedPembelajaranRekapAgendaGuruRoute: typeof AuthenticatedPembelajaranRekapAgendaGuruRoute
   AuthenticatedPembelajaranRekapKbmRoute: typeof AuthenticatedPembelajaranRekapKbmRoute
   AuthenticatedPersuratanArsipRoute: typeof AuthenticatedPersuratanArsipRoute
@@ -1636,6 +1657,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPembelajaranNilaiRoute: AuthenticatedPembelajaranNilaiRoute,
   AuthenticatedPembelajaranPengaturanRoute:
     AuthenticatedPembelajaranPengaturanRoute,
+  AuthenticatedPembelajaranPjjRoute: AuthenticatedPembelajaranPjjRoute,
   AuthenticatedPembelajaranRekapAgendaGuruRoute:
     AuthenticatedPembelajaranRekapAgendaGuruRoute,
   AuthenticatedPembelajaranRekapKbmRoute:

@@ -1524,6 +1524,82 @@ export type Database = {
         }
         Relationships: []
       }
+      pjj_reports: {
+        Row: {
+          bukti_instruksi_path: string
+          bukti_terkumpul_path: string
+          created_at: string
+          created_by: string
+          id: string
+          jam_list: number[]
+          mata_pelajaran_id: string
+          materi: string
+          murid_aktif: Json
+          rombel_id: string
+          semester_id: string | null
+          tanggal: string
+          ttd_guru: string
+          tujuan_pembelajaran: string
+          updated_at: string
+        }
+        Insert: {
+          bukti_instruksi_path: string
+          bukti_terkumpul_path: string
+          created_at?: string
+          created_by: string
+          id?: string
+          jam_list?: number[]
+          mata_pelajaran_id: string
+          materi?: string
+          murid_aktif?: Json
+          rombel_id: string
+          semester_id?: string | null
+          tanggal: string
+          ttd_guru?: string
+          tujuan_pembelajaran?: string
+          updated_at?: string
+        }
+        Update: {
+          bukti_instruksi_path?: string
+          bukti_terkumpul_path?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          jam_list?: number[]
+          mata_pelajaran_id?: string
+          materi?: string
+          murid_aktif?: Json
+          rombel_id?: string
+          semester_id?: string | null
+          tanggal?: string
+          ttd_guru?: string
+          tujuan_pembelajaran?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pjj_reports_mata_pelajaran_id_fkey"
+            columns: ["mata_pelajaran_id"]
+            isOneToOne: false
+            referencedRelation: "mata_pelajaran"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pjj_reports_rombel_id_fkey"
+            columns: ["rombel_id"]
+            isOneToOne: false
+            referencedRelation: "rombel"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pjj_reports_semester_id_fkey"
+            columns: ["semester_id"]
+            isOneToOne: false
+            referencedRelation: "semester"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null

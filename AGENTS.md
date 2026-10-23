@@ -14,3 +14,5 @@ Use the wali kelas teacher record's private `spesimen-ttd` image in monthly atte
 Compute daily KBM input completeness from paginated reports in a dedicated authenticated read, independently of the limited recap list; this prevents recorded periods being mislabeled as missing.
 
 Use the shared role registry and primary-role selector for account validation, menu settings, and profile display; this keeps new roles consistent without granting administrator privileges.
+
+Keep PJJ reports owned by the signed-in creator with RLS-enforced reads and private storage evidence; input lists are always owner-scoped, while only admin/superadmin recap reads span owners.
