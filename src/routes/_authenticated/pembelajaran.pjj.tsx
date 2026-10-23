@@ -15,5 +15,5 @@ export const Route = createFileRoute("/_authenticated/pembelajaran/pjj")({
     context.queryClient.ensureQueryData(pjjListQO(false)),
   ]),
   component: PjjPage,
-  errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal membuka PJJ: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive p-6">Gagal membuka PJJ: {error instanceof Error ? error.message : "Silakan coba kembali"}</div>,
 });

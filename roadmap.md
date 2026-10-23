@@ -1,8 +1,9 @@
 # Roadmap
 
-- [ ] Tambahkan menu PJJ, laporan pribadi dengan murid aktif dan dua bukti foto
-- [ ] Tambahkan rekap PJJ: admin semua laporan, akun lain hanya laporan sendiri
-- [ ] Uji penyimpanan, unggahan, dan pembatasan akses PJJ
+- [x] Tambahkan menu PJJ, laporan pribadi dengan murid aktif dan dua bukti foto
+- [x] Tambahkan rekap PJJ: admin semua laporan, akun lain hanya laporan sendiri
+- [x] Uji pembatasan akses PJJ dengan 3 tes dan pengamanan halaman tanpa sesi
+- [ ] Uji penyimpanan dan unggahan PJJ lewat akun masuk — menunggu pengguna masuk di preview; sesi akun pengguna tidak dapat dibuat
 
 - [x] Tambahkan role Staff Kurikulum pada data role, pemilihan akun, dan pengaturan menu
 - [x] Uji role Staff Kurikulum: 3 tes lulus, pengaturan menu tersimpan dan terbaca setelah muat ulang
