@@ -50,7 +50,7 @@ export const pjjStudents = createServerFn({ method: "GET" }).middleware([require
     for (let offset = 0; ; offset += 500) {
       const result = await context.supabase.from("students").select("id, name, nis").eq("rombel_id", data.rombelId).order("name").order("id").range(offset, offset + 499);
       if (result.error) throw new Error(result.error.message);
-      students.push(...(result.data ?? []));
+      students.push(...(result.data ?? []).map(s => ({ ...s, name: s.name ?? "—" })));
       if ((result.data?.length ?? 0) < 500) break;
     }
     return students;
@@ -83,7 +83,7 @@ export const pjjDetail = createServerFn({ method: "GET" }).middleware([requireSu
   });
 
 export const savePjj = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ id: z.string().uuid().optional(), tanggal: z.iso.date(), rombelId: z.string().uuid(), mapelId: z.string().uuid(), jamList: z.array(z.number().int().min(1).max(9)).min(1), tujuan: z.string().max(2000), materi: z.string().trim().min(1).max(4000), muridIds: z.array(z.string().uuid()), instruksiPath: z.string().min(1), terkumpulPath: z.string().min(1), ttd: z.string().max(500000).default("") }).parse)
+  .inputValidator(z.object({ id: z.string().uuid().optional(), tanggal: z.string().date(), rombelId: z.string().uuid(), mapelId: z.string().uuid(), jamList: z.array(z.number().int().min(1).max(9)).min(1), tujuan: z.string().max(2000), materi: z.string().trim().min(1).max(4000), muridIds: z.array(z.string().uuid()), instruksiPath: z.string().min(1), terkumpulPath: z.string().min(1), ttd: z.string().max(500000).default("") }).parse)
   .handler(async ({ context, data }) => {
     const options = await getOptions(context);
     if (!options.rombel.some(r => r.id === data.rombelId) || !options.mapel.some(r => r.id === data.mapelId)) throw new Error("Rombel atau mata pelajaran tidak dapat diakses");
