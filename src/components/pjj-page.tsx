@@ -118,7 +118,31 @@ function PjjEditor({ detail, options, onClose }: { detail?: Detail; options: Awa
       <fieldset className="space-y-2"><legend className="text-sm font-medium">Jam Pelajaran</legend><div className="flex flex-wrap gap-4">{Array.from({ length: 9 }, (_, i) => i+1).map(j => <label key={j} className="flex items-center gap-2 text-sm"><Checkbox aria-label={`Jam ${j}`} checked={jam.includes(j)} onCheckedChange={v => setJam(prev => v ? [...prev, j] : prev.filter(n => n !== j))} />{j}</label>)}</div></fieldset>
       <div className="space-y-2"><Label htmlFor="pjj-tujuan">Tujuan Pembelajaran</Label><Textarea id="pjj-tujuan" value={tujuan} maxLength={2000} onChange={e => setTujuan(e.target.value)} /></div>
       <div className="space-y-2"><Label htmlFor="pjj-materi">Materi / Instruksi Tugas</Label><Textarea id="pjj-materi" required value={materi} maxLength={4000} rows={4} onChange={e => setMateri(e.target.value)} /></div>
-      <section className="space-y-3"><div className="flex flex-wrap justify-between gap-2"><h3 className="font-semibold">Murid yang Aktif Mengikuti PJJ ({selected.length})</h3><label className="flex items-center gap-2 text-sm"><Checkbox aria-label="Pilih semua murid" checked={!!students.data?.length && selected.length === students.data.length} onCheckedChange={v => setSelected(v ? (students.data ?? []).map(s => s.id) : [])} />Semua aktif</label></div><Input aria-label="Cari murid" placeholder="Cari nama / NIS" value={search} onChange={e => setSearch(e.target.value)} /><div className="border rounded-md max-h-64 overflow-y-auto divide-y">{visibleStudents.map(s => <label key={s.id} className="flex items-center gap-3 p-3 text-sm"><Checkbox aria-label={`Aktif ${s.name}`} checked={selected.includes(s.id)} onCheckedChange={v => setSelected(prev => v ? [...prev, s.id] : prev.filter(id => id !== s.id))} /><span className="flex-1">{s.name}</span><span className="text-muted-foreground">{s.nis}</span></label>)}{!visibleStudents.length && <div className="p-5 text-sm text-muted-foreground text-center">{students.isFetching ? "Memuat murid…" : students.isError ? "Gagal membaca murid" : rombel ? "Tidak ada murid" : "Pilih rombel"}</div>}</div></section>
+      <section className="space-y-3">
+        <div className="flex flex-wrap justify-between gap-2">
+          <h3 className="font-semibold">Murid yang Aktif Mengikuti PJJ ({selected.length})</h3>
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox aria-label="Pilih semua murid" disabled={!students.data?.length} checked={!!students.data?.length && students.data.every(s => selected.includes(s.id)) ? true : selected.length ? "indeterminate" : false} onCheckedChange={v => setSelected(v === true ? (students.data ?? []).map(s => s.id) : [])} />Semua aktif
+          </label>
+        </div>
+        <Input aria-label="Cari murid" placeholder="Cari nama / NIS" value={search} onChange={e => setSearch(e.target.value)} />
+        <div className="border rounded-md max-h-64 overflow-auto">
+          <Table>
+            <TableHeader className="sticky top-0 bg-muted z-10">
+              <TableRow><TableHead className="w-12">No</TableHead><TableHead>Nama Murid</TableHead><TableHead>NIS</TableHead><TableHead className="w-20 text-center">Aktif</TableHead></TableRow>
+            </TableHeader>
+            <TableBody>
+              {visibleStudents.map((s, i) => <TableRow key={s.id}>
+                <TableCell>{i + 1}</TableCell>
+                <TableCell className="font-medium uppercase"><label htmlFor={`pjj-active-${s.id}`} className="cursor-pointer">{s.name}</label></TableCell>
+                <TableCell className="text-muted-foreground whitespace-nowrap">{s.nis ?? "—"}</TableCell>
+                <TableCell className="text-center"><Checkbox id={`pjj-active-${s.id}`} aria-label={`Aktif ${s.name}`} checked={selected.includes(s.id)} onCheckedChange={v => setSelected(prev => v === true ? [...new Set([...prev, s.id])] : prev.filter(id => id !== s.id))} /></TableCell>
+              </TableRow>)}
+              {!visibleStudents.length && <TableRow><TableCell colSpan={4} className="p-5 text-muted-foreground text-center">{students.isFetching ? "Memuat murid…" : students.isError ? "Gagal membaca murid" : rombel ? "Tidak ada murid" : "Pilih rombel"}</TableCell></TableRow>}
+            </TableBody>
+          </Table>
+        </div>
+      </section>
       <div className="grid sm:grid-cols-2 gap-4"><PhotoField id="pjj-instruksi" label="Bukti Instruksi Tugas" file={instruksi} url={detail?.instruksi_url} onChange={setInstruksi} /><PhotoField id="pjj-terkumpul" label="Bukti Tugas Terkumpul" file={terkumpul} url={detail?.terkumpul_url} onChange={setTerkumpul} /></div>
       <div className="space-y-2"><Label>Tanda Tangan</Label>{detail?.ttd_guru && <img src={detail.ttd_guru} alt="Tanda tangan tersimpan" className="max-h-24" />}<SignaturePad ref={sig} className="h-40 border rounded-md" /><Button type="button" variant="outline" size="sm" onClick={() => sig.current?.clear()}>Bersihkan</Button></div>
       <div className="flex justify-end gap-2 border-t pt-4"><Button type="button" variant="outline" disabled={save.isPending} onClick={onClose}>Batal</Button><Button type="submit" disabled={save.isPending || students.isFetching || students.isError}><Save className="h-4 w-4 mr-2" />{save.isPending ? "Menyimpan…" : "Simpan Laporan"}</Button></div>
