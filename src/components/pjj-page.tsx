@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { queryOptions, useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Plus, Pencil, Eye, Trash2, Save, Upload } from "lucide-react";
@@ -15,6 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { SignaturePad, type SignaturePadHandle } from "@/components/signature-pad";
 import { supabase } from "@/integrations/supabase/client";
 import { todayWIB } from "@/lib/wib";
+import { listGuruForAgenda, listJadwalAgenda } from "@/lib/agenda-guru.functions";
+import { pjjClassSlots, matchesPjjSchedule } from "@/lib/pjj-schedule";
 import { pjjOptions, pjjStudents, listPjj, pjjDetail, savePjj, deletePjj } from "@/lib/pjj.functions";
 
 export const pjjOptionsQO = queryOptions({ queryKey: ["pjj-options"], queryFn: () => pjjOptions() });
@@ -78,6 +80,7 @@ export function PjjPage() {
 
 function PjjEditor({ detail, options, onClose }: { detail?: Detail; options: Awaited<ReturnType<typeof pjjOptions>>; onClose: () => void }) {
   const [tanggal, setTanggal] = useState(detail?.tanggal ?? todayWIB());
+  const [guruId, setGuruId] = useState("");
   const [rombel, setRombel] = useState(detail?.rombel_id ?? "");
   const [mapel, setMapel] = useState(detail?.mata_pelajaran_id ?? "");
   const [jam, setJam] = useState<number[]>(detail?.jam_list ?? []);
@@ -88,11 +91,20 @@ function PjjEditor({ detail, options, onClose }: { detail?: Detail; options: Awa
   const [instruksi, setInstruksi] = useState<File | null>(null);
   const [terkumpul, setTerkumpul] = useState<File | null>(null);
   const sig = useRef<SignaturePadHandle>(null);
+  const teachersFn = useServerFn(listGuruForAgenda);
+  const scheduleFn = useServerFn(listJadwalAgenda);
+  const teachers = useQuery({ queryKey: ["agenda-guru-list"], queryFn: () => teachersFn() });
+  useEffect(() => { if (!guruId && teachers.data?.rows.length === 1) setGuruId(teachers.data.rows[0].id); }, [guruId, teachers.data]);
+  const schedule = useQuery({ queryKey: ["agenda-jadwal", guruId, tanggal], queryFn: () => scheduleFn({ data: { guruId, tanggal } }), enabled: !!guruId && !!tanggal });
+  const slots = pjjClassSlots(schedule.data ?? []);
+  const validSlot = matchesPjjSchedule(slots, rombel, mapel, jam);
+  const resetSlot = () => { setRombel(""); setMapel(""); setJam([]); setSelected([]); };
   const studentsFn = useServerFn(pjjStudents);
   const students = useQuery({ queryKey: ["pjj-students", rombel], queryFn: () => studentsFn({ data: { rombelId: rombel } }), enabled: !!rombel });
   const saveFn = useServerFn(savePjj);
   const qc = useQueryClient();
   const save = useMutation({ mutationFn: async () => {
+    if (!validSlot) throw new Error("Pilih kelas dari jadwal mengajar pada tanggal ini");
     if (!tanggal || !rombel || !mapel || !jam.length || !materi.trim()) throw new Error("Lengkapi tanggal, rombel, mata pelajaran, jam, dan materi");
     if ((!instruksi && !detail?.bukti_instruksi_path) || (!terkumpul && !detail?.bukti_terkumpul_path)) throw new Error("Unggah kedua bukti foto");
     const uploaded: string[] = [];
@@ -108,14 +120,26 @@ function PjjEditor({ detail, options, onClose }: { detail?: Detail; options: Awa
     try {
       const instruksiPath = await upload(instruksi, detail?.bukti_instruksi_path);
       const terkumpulPath = await upload(terkumpul, detail?.bukti_terkumpul_path);
-      return await saveFn({ data: { id: detail?.id, tanggal, rombelId: rombel, mapelId: mapel, jamList: jam, tujuan, materi, muridIds: selected, instruksiPath, terkumpulPath, ttd: sig.current && !sig.current.isEmpty() ? sig.current.toDataURL() : detail?.ttd_guru ?? "" } });
+      return await saveFn({ data: { id: detail?.id, tanggal, guruId, rombelId: rombel, mapelId: mapel, jamList: jam, tujuan, materi, muridIds: selected, instruksiPath, terkumpulPath, ttd: sig.current && !sig.current.isEmpty() ? sig.current.toDataURL() : detail?.ttd_guru ?? "" } });
     } catch(e) { if (uploaded.length) await supabase.storage.from("pjj-bukti").remove(uploaded); throw e; }
   }, onSuccess: () => { toast.success("Laporan PJJ tersimpan"); void qc.invalidateQueries({ queryKey: ["pjj-list"] }); onClose(); }, onError: (e: Error) => toast.error(e.message) });
   const visibleStudents = (students.data ?? []).filter(s => `${s.name} ${s.nis ?? ""}`.toLowerCase().includes(search.toLowerCase()));
   return <Dialog open onOpenChange={v => { if (!v && !save.isPending) onClose(); }}><DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>{detail ? "Ubah" : "Isi"} Laporan PJJ</DialogTitle><DialogDescription>{options.nama}</DialogDescription></DialogHeader>
     <form className="space-y-5" onSubmit={e => { e.preventDefault(); save.mutate(); }}>
-      <div className="grid sm:grid-cols-3 gap-3"><div className="space-y-2"><Label htmlFor="pjj-date">Tanggal</Label><Input id="pjj-date" type="date" required value={tanggal} onChange={e => setTanggal(e.target.value)} /></div><div className="space-y-2"><Label>Rombel</Label><Select value={rombel} onValueChange={v => { setRombel(v); setSelected([]); }}><SelectTrigger aria-label="Rombel laporan"><SelectValue placeholder="Pilih rombel" /></SelectTrigger><SelectContent>{options.rombel.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent></Select></div><div className="space-y-2"><Label>Mata Pelajaran</Label><Select value={mapel} onValueChange={setMapel}><SelectTrigger aria-label="Mata pelajaran laporan"><SelectValue placeholder="Pilih mata pelajaran" /></SelectTrigger><SelectContent>{options.mapel.map(m => <SelectItem key={m.id} value={m.id}>{m.nama}</SelectItem>)}</SelectContent></Select></div></div>
-      <fieldset className="space-y-2"><legend className="text-sm font-medium">Jam Pelajaran</legend><div className="flex flex-wrap gap-4">{Array.from({ length: 9 }, (_, i) => i+1).map(j => <label key={j} className="flex items-center gap-2 text-sm"><Checkbox aria-label={`Jam ${j}`} checked={jam.includes(j)} onCheckedChange={v => setJam(prev => v ? [...prev, j] : prev.filter(n => n !== j))} />{j}</label>)}</div></fieldset>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div className="space-y-2"><Label>Pilih Guru</Label><Select value={guruId} onValueChange={v => { setGuruId(v); resetSlot(); }}><SelectTrigger aria-label="Guru laporan PJJ"><SelectValue placeholder="Pilih guru" /></SelectTrigger><SelectContent>{teachers.data?.rows.map(g => <SelectItem key={g.id} value={g.id}>{g.nama}{g.nip ? ` (${g.nip})` : ""}</SelectItem>)}</SelectContent></Select></div>
+        <div className="space-y-2"><Label htmlFor="pjj-date">Tanggal Pengisian</Label><Input id="pjj-date" type="date" required value={tanggal} onChange={e => { setTanggal(e.target.value); resetSlot(); }} /></div>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {slots.map((slot, index) => <div key={`${slot.rombel_id}-${slot.mata_pelajaran_id}-${index}`} className="border rounded-md p-4 space-y-3">
+          <p className="font-semibold">Jam ke-{slot.jam_list.join(", ")}</p>
+          <p className="text-sm text-muted-foreground">{slot.jam_mulai} – {slot.jam_selesai}</p>
+          <div><Label>Kelas</Label><p>{String(slot.rombel_name)}</p></div>
+          <div><Label>Mata Pelajaran</Label><p>{String(slot.mapel_nama)}</p></div>
+          <Button type="button" variant={slot.rombel_id === rombel && slot.mata_pelajaran_id === mapel && slot.jam_list.length === jam.length && slot.jam_list.every((j: number) => jam.includes(j)) ? "default" : "outline"} className="w-full" onClick={() => { if (!slot.rombel_id || !slot.mata_pelajaran_id) return; setRombel(slot.rombel_id); setMapel(slot.mata_pelajaran_id); setJam(slot.jam_list); setSelected([]); }}>Pilih Kelas</Button>
+        </div>)}
+      </div>
+      {!slots.length && <p className="text-sm text-muted-foreground">{schedule.isFetching || teachers.isPending ? "Memuat jadwal…" : schedule.isError || teachers.isError ? "Gagal membaca jadwal guru" : !guruId ? "Pilih guru" : "Tidak ada jadwal mengajar pada hari ini"}</p>}
       <div className="space-y-2"><Label htmlFor="pjj-tujuan">Tujuan Pembelajaran</Label><Textarea id="pjj-tujuan" value={tujuan} maxLength={2000} onChange={e => setTujuan(e.target.value)} /></div>
       <div className="space-y-2"><Label htmlFor="pjj-materi">Materi / Instruksi Tugas</Label><Textarea id="pjj-materi" required value={materi} maxLength={4000} rows={4} onChange={e => setMateri(e.target.value)} /></div>
       <section className="space-y-3">
@@ -145,7 +169,7 @@ function PjjEditor({ detail, options, onClose }: { detail?: Detail; options: Awa
       </section>
       <div className="grid sm:grid-cols-2 gap-4"><PhotoField id="pjj-instruksi" label="Bukti Instruksi Tugas" file={instruksi} url={detail?.instruksi_url} onChange={setInstruksi} /><PhotoField id="pjj-terkumpul" label="Bukti Tugas Terkumpul" file={terkumpul} url={detail?.terkumpul_url} onChange={setTerkumpul} /></div>
       <div className="space-y-2"><Label>Tanda Tangan</Label>{detail?.ttd_guru && <img src={detail.ttd_guru} alt="Tanda tangan tersimpan" className="max-h-24" />}<SignaturePad ref={sig} className="h-40 border rounded-md" /><Button type="button" variant="outline" size="sm" onClick={() => sig.current?.clear()}>Bersihkan</Button></div>
-      <div className="flex justify-end gap-2 border-t pt-4"><Button type="button" variant="outline" disabled={save.isPending} onClick={onClose}>Batal</Button><Button type="submit" disabled={save.isPending || students.isFetching || students.isError}><Save className="h-4 w-4 mr-2" />{save.isPending ? "Menyimpan…" : "Simpan Laporan"}</Button></div>
+      <div className="flex justify-end gap-2 border-t pt-4"><Button type="button" variant="outline" disabled={save.isPending} onClick={onClose}>Batal</Button><Button type="submit" disabled={save.isPending || schedule.isFetching || !validSlot || students.isFetching || students.isError}><Save className="h-4 w-4 mr-2" />{save.isPending ? "Menyimpan…" : "Simpan Laporan"}</Button></div>
     </form>
   </DialogContent></Dialog>;
 }
