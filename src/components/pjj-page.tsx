@@ -98,6 +98,8 @@ function PjjEditor({ detail, options, onClose }: { detail?: Detail; options: Awa
   const schedule = useQuery({ queryKey: ["agenda-jadwal", guruId, tanggal], queryFn: () => scheduleFn({ data: { guruId, tanggal } }), enabled: !!guruId && !!tanggal });
   const slots = pjjClassSlots(schedule.data ?? []);
   const validSlot = matchesPjjSchedule(slots, rombel, mapel, jam);
+  const hasInstruksi = !!instruksi || !!detail?.bukti_instruksi_path;
+  const hasTerkumpul = !!terkumpul || !!detail?.bukti_terkumpul_path;
   const resetSlot = () => { setRombel(""); setMapel(""); setJam([]); setSelected([]); };
   const studentsFn = useServerFn(pjjStudents);
   const students = useQuery({ queryKey: ["pjj-students", rombel], queryFn: () => studentsFn({ data: { rombelId: rombel } }), enabled: !!rombel });

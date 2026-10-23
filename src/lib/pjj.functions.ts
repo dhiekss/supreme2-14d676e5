@@ -84,7 +84,7 @@ export const pjjDetail = createServerFn({ method: "GET" }).middleware([requireSu
   });
 
 export const savePjj = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ id: z.string().uuid().optional(), tanggal: z.string().date(), guruId: z.string().uuid(), rombelId: z.string().uuid(), mapelId: z.string().uuid(), jamList: z.array(z.number().int().min(1).max(9)).min(1), tujuan: z.string().max(2000), materi: z.string().trim().min(1).max(4000), muridIds: z.array(z.string().uuid()), instruksiPath: z.string().min(1), terkumpulPath: z.string().min(1), ttd: z.string().max(500000).default("") }).parse)
+  .inputValidator(z.object({ id: z.string().uuid().optional(), tanggal: z.string().date(), guruId: z.string().uuid(), rombelId: z.string().uuid(), mapelId: z.string().uuid(), jamList: z.array(z.number().int().min(1).max(9)).min(1), tujuan: z.string().max(2000), materi: z.string().trim().min(1).max(4000), muridIds: z.array(z.string().uuid()), instruksiPath: z.string().min(1, "Bukti instruksi tugas wajib diunggah"), terkumpulPath: z.string().min(1, "Bukti tugas terkumpul wajib diunggah"), ttd: z.string().max(500000).default("") }).parse)
   .handler(async ({ context, data }) => {
     const options = await getOptions(context);
     if (!options.rombel.some(r => r.id === data.rombelId) || !options.mapel.some(r => r.id === data.mapelId)) throw new Error("Rombel atau mata pelajaran tidak dapat diakses");
