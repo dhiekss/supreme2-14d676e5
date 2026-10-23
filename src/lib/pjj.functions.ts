@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { scopePjjQuery } from "./pjj-access";
 import { getAllowedRombelIds } from "./rombel-access";
+import { matchesPjjSchedule } from "./pjj-schedule";
 
 async function getOptions(context: { supabase: any; userId: string }) {
   const { supabase, userId } = context;
@@ -83,10 +84,19 @@ export const pjjDetail = createServerFn({ method: "GET" }).middleware([requireSu
   });
 
 export const savePjj = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ id: z.string().uuid().optional(), tanggal: z.string().date(), rombelId: z.string().uuid(), mapelId: z.string().uuid(), jamList: z.array(z.number().int().min(1).max(9)).min(1), tujuan: z.string().max(2000), materi: z.string().trim().min(1).max(4000), muridIds: z.array(z.string().uuid()), instruksiPath: z.string().min(1), terkumpulPath: z.string().min(1), ttd: z.string().max(500000).default("") }).parse)
+  .inputValidator(z.object({ id: z.string().uuid().optional(), tanggal: z.string().date(), guruId: z.string().uuid(), rombelId: z.string().uuid(), mapelId: z.string().uuid(), jamList: z.array(z.number().int().min(1).max(9)).min(1), tujuan: z.string().max(2000), materi: z.string().trim().min(1).max(4000), muridIds: z.array(z.string().uuid()), instruksiPath: z.string().min(1), terkumpulPath: z.string().min(1), ttd: z.string().max(500000).default("") }).parse)
   .handler(async ({ context, data }) => {
     const options = await getOptions(context);
     if (!options.rombel.some(r => r.id === data.rombelId) || !options.mapel.some(r => r.id === data.mapelId)) throw new Error("Rombel atau mata pelajaran tidak dapat diakses");
+    const teacher = await context.supabase.from("guru").select("id, nip").eq("id", data.guruId).maybeSingle();
+    const profile = await context.supabase.from("profiles").select("nip").eq("id", context.userId).maybeSingle();
+    if (teacher.error || profile.error || !teacher.data || (!options.isAdmin && (!profile.data?.nip || profile.data.nip !== teacher.data.nip))) throw new Error("Guru tidak dapat diakses");
+    const hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"][new Date(`${data.tanggal}T00:00:00Z`).getUTCDay()];
+    const scheduled = await context.supabase.from("jadwal_pelajaran").select("rombel_id, mata_pelajaran_id, jam_ke, kelompok_belajar_id").eq("guru_id", data.guruId).eq("hari", hari);
+    if (scheduled.error) throw new Error("Gagal membaca jadwal guru");
+    const slots = (scheduled.data ?? []).filter(r => !r.kelompok_belajar_id);
+    const periods = slots.filter(r => r.rombel_id === data.rombelId && r.mata_pelajaran_id === data.mapelId).map(r => Number(r.jam_ke));
+    if (!matchesPjjSchedule([{ rombel_id: data.rombelId, mata_pelajaran_id: data.mapelId, jam_list: periods, is_kelompok: false }], data.rombelId, data.mapelId, data.jamList)) throw new Error("Kelas dan jam tidak sesuai jadwal guru pada tanggal ini");
     for (const path of [data.instruksiPath, data.terkumpulPath]) {
       if (!path.startsWith(`${context.userId}/`) || path.includes("..")) throw new Error("Bukti foto harus milik akun sendiri");
       const check = await context.supabase.storage.from("pjj-bukti").createSignedUrl(path, 60);

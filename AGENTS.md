@@ -16,3 +16,4 @@ Compute daily KBM input completeness from paginated reports in a dedicated authe
 Use the shared role registry and primary-role selector for account validation, menu settings, and profile display; this keeps new roles consistent without granting administrator privileges.
 
 Keep PJJ reports owned by the signed-in creator with RLS-enforced reads and private storage evidence; input lists are always owner-scoped, while only admin/superadmin recap reads span owners.
+Use Agenda Guru's authenticated teacher and daily schedule reads for PJJ class selection, and validate the selected slot when saving; this keeps classes, subjects, and periods consistent with teaching assignments.
